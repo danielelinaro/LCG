@@ -1,0 +1,218 @@
+#ifndef RANDLIB
+#define RANDLIB
+
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
+
+//#define DEBUG
+#define RANDOMDEVICE	"/dev/random"
+#define BUFSIZE			8192
+
+typedef unsigned long long ullong;
+typedef unsigned int uint;
+
+const double maxint = 4294967296.;
+const double maxlong = 18446744073709551616.;
+
+class UniformRandomHW {
+public:
+	
+	UniformRandomHW(int size = BUFSIZE) {
+		bufsize = sizeof(ullong)*size;
+		buffer = new unsigned char[bufsize];
+		fid = open(RANDOMDEVICE, O_RDONLY);
+		FillBuffer();
+	}
+	
+	~UniformRandomHW() {
+		close(fid);
+		delete buffer;
+	}
+	
+	inline ullong int64() {
+		FillUnion();
+		return n.aLong;
+	}
+	
+	inline uint int32() {
+		FillUnion();
+		return n.aInt[0];
+	}
+	
+	inline double doub() {
+		return ((double) int64()) / maxlong;
+	}
+	
+private:
+	union _number {
+		unsigned char s[sizeof(ullong)];
+		ullong aLong;
+		uint aInt[2];
+	};
+	
+	inline void FillBuffer() {
+#ifdef DEBUG
+		fprintf(stderr, "Reading from %s... ", RANDOMDEVICE);
+		read(fid, buffer, bufsize);
+		fprintf(stderr, "done.\n");
+#else
+		read(fid, buffer, bufsize);
+#endif
+		k=0;
+	}
+	
+	inline void FillUnion() {
+		if(k > bufsize-(int)sizeof(ullong)) {
+			FillBuffer();
+		}
+		memcpy((void *) &n.s, (const void *) (buffer+k), sizeof(ullong));
+		k += sizeof(ullong);
+	}
+	
+	union _number n;
+	int bufsize;
+	int k;
+	int fid;
+	unsigned char *buffer;
+};
+
+
+class UniformRandom { 
+private:
+	ullong u,v,w; 
+public:
+	UniformRandom(ullong j) : v(4101842887655102017LL), w(1) { 
+		u = j ^ v; int64(); 
+		v = u; int64(); 
+		w = v; int64(); 
+	} 
+	
+	inline ullong int64() { 
+		u = u * 2862933555777941757LL + 7046029254386353087LL; 
+		v ^= v >> 17;
+		v ^= v << 31;
+		v ^= v >> 8; 
+		w = 4294957665U*(w & 0xffffffff) + (w >> 32); 
+		ullong x = u ^ (u << 21); x ^= x >> 35; x ^= x << 4; 
+		return (x + v) ^ w;
+	}
+
+	inline uint int32() {
+		return (uint) int64();
+	}
+
+	inline double doub() {
+		return 5.42101086242752217E-20 * int64();
+	}
+};
+
+/*
+class NormalRandomBM : UniformRandomHW {
+private:
+	double mu,sig;
+	double storedval;
+public:
+	NormalRandomBM(double mmu, double ssig, ullong bufsize = BUFSIZE) 
+	: UniformRandomHW(bufsize), mu(mmu), sig(ssig), storedval(0.) {} 
+	
+	double random() { 
+		double v1,v2,rsq,fac; 
+		if (storedval == 0.) {
+			do { 
+				v1 = 2.0*doub()-1.0;
+				v2 = 2.0*doub()-1.0; 
+				rsq=v1*v1+v2*v2;
+			} while (rsq >= 1.0 || rsq == 0.0); 
+			fac = sqrt(-2.0*log(rsq)/rsq);
+			storedval = v1*fac; 
+			return mu + sig*v2*fac; 
+		} else {
+			fac = storedval; 
+			storedval = 0.; 
+			return mu + sig*fac; 
+		} 
+	} 
+};
+*/
+
+class NormalRandomBM : UniformRandom {
+private:
+	double mu,sig;
+	double storedval;
+public:
+	NormalRandomBM(double mmu, double ssig, ullong seed = 5061983) 
+	: UniformRandom(seed), mu(mmu), sig(ssig), storedval(0.) {} 
+	
+	double random() { 
+		double v1,v2,rsq,fac; 
+		if (storedval == 0.) {
+			do { 
+				v1 = 2.0*doub()-1.0;
+				v2 = 2.0*doub()-1.0; 
+				rsq=v1*v1+v2*v2;
+			} while (rsq >= 1.0 || rsq == 0.0); 
+			fac = sqrt(-2.0*log(rsq)/rsq);
+			storedval = v1*fac; 
+			return mu + sig*v2*fac; 
+		} else {
+			fac = storedval; 
+			storedval = 0.; 
+			return mu + sig*fac; 
+		} 
+	} 
+};
+
+class PoissonRandom : UniformRandomHW {
+private:
+	double lambda;
+	double factor;
+	
+public:
+	PoissonRandom(double llambda, ullong bufsize = BUFSIZE)
+	: UniformRandomHW(bufsize), lambda(llambda) {
+		factor = -1.0 / lambda;
+	}
+	
+	inline double expon() {
+		return factor * log(1. - doub());
+	}
+
+        void setLambda(double llambda) {
+                lambda = llambda;
+                factor = -1.0 / lambda;
+        }
+
+	int random() {
+		/*
+		int prn = 0;                        //Counter
+		const int max = 1000;				//prn upper limit
+		double p = doub();	//uniform random number
+		double P = exp(-lambda);          //probability
+		double sum = P;                     //cumulant
+		if(sum >= p)
+			return 0;			            //done already
+		for(prn=1; prn<max; prn++) {      //Loop over all k:s
+			P *= lambda / (double)prn;        //Calc next prob
+			printf("%e\n", P);
+			sum += P;                       //Increase cumulant
+			if(sum >= p)
+				break;						//Leave loop
+		}
+		getchar();
+		return prn;                       //return random number
+		 */
+		int count = 1;
+		double sum = 0.;
+		for (;; count++) {
+			sum += expon();
+			if (sum > 1.)
+				return count-1;
+		}
+	}
+};
+
+#endif
