@@ -1,11 +1,13 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <assert.h>
 #include "utils.h"
 
 namespace dynclamp
 {
 
 LogLevel verbosity = Info;
+double globalDt = 1.0 / 20e3;
 
 void SetLoggingLevel(LogLevel level)
 {
@@ -20,6 +22,24 @@ void Logger(LogLevel level, const char *fmt, ...)
 		vprintf(fmt, argp);
 		va_end(argp);
 	}
+}
+
+uint GetId()
+{
+        static uint progressiveId = 0;
+        progressiveId++;
+        return progressiveId-1;
+}
+
+void SetGlobalDt(double dt)
+{
+        assert(dt > 0.0);
+        globalDt = dt;
+}
+
+double GetGlobalDt()
+{
+        return globalDt;
 }
 
 } // namespace dynclamp

@@ -16,7 +16,8 @@ namespace dynclamp {
 class OU : public DynamicalEntity
 {
 public:
-        OU(double dt, double sigma, double tau, double eta0 = 0.0, double seed = SEED);
+        OU(double sigma, double tau, double eta0 = 0.0, double seed = SEED,
+           uint id = GetId(), double dt = GetGlobalDt());
         
         virtual void step();
         virtual double getOutput() const;

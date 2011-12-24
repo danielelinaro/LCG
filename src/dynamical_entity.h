@@ -2,6 +2,7 @@
 #define DYNAMICAL_ENTITY_H
 
 #include "types.h"
+#include "utils.h"
 #include <list>
 
 namespace dynclamp
@@ -12,8 +13,10 @@ class DynamicalEntity;
 class DynamicalEntity
 {
 public:
-        DynamicalEntity(double dt);
+        DynamicalEntity(uint id = GetId(), double dt = GetGlobalDt());
         virtual ~DynamicalEntity();
+
+        uint getId() const;
 
         void setDt(double dt);
         double getDt() const;
@@ -22,26 +25,28 @@ public:
         void removeInputEntity(const DynamicalEntity* entity);
 
         void setInputs(const array& inputs);
-        void setInput(double input, int index);
+        void setInput(double input, uint index);
         const array& getInputs() const;
-        double getInput(int index) const;
-
-        virtual double getOutput() const = 0;
+        double getInput(uint index) const;
         
         void setParameters(const array& parameters);
-        void setParameter(double parameter, int index);
+        void setParameter(double parameter, uint index);
         const array& getParameters() const;
-        double getParameter(int index) const;
+        double getParameter(uint index) const;
 
+        virtual double getOutput() const = 0;
         virtual void step() = 0;
+        virtual void handleEvent(EventType type);
 
 protected:
+        uint   m_id;
+        double m_dt;
+
         std::list<const DynamicalEntity*> m_inputEntities;
         array  m_state;
         array  m_parameters;
         array  m_inputs;
 
-        double m_dt;
 };
 
 }

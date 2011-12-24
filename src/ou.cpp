@@ -3,8 +3,8 @@
 
 namespace dynclamp {
 
-OU::OU(double dt, double sigma, double tau, double eta0, double seed)
-        : DynamicalEntity(dt), m_randn(0,1,seed)
+OU::OU(double sigma, double tau, double eta0, double seed, uint id, double dt)
+        : DynamicalEntity(id, dt), m_randn(0, 1, seed)
 {
         m_parameters.push_back(sigma);
         m_parameters.push_back(tau);
