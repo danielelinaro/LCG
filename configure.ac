@@ -48,10 +48,10 @@ AC_CHECK_LIB([hdf5_hl], [H5LTmake_dataset_double], [], [
 echo "Can't find HDF5 library."
 exit
 ])
-#AC_CHECK_LIB([boost_thread], [pthread_create], [], [
-#echo "Can't find boost thread library."
-#exit
-#])
+AC_CHECK_LIB([boost_thread], [pthread_create], [], [
+echo "Can't find boost thread library."
+exit
+])
 
 # defines
 LIB_CURRENT=0
