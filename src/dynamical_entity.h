@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include "utils.h"
+#include "events.h"
 #include <list>
 
 namespace dynclamp
@@ -36,7 +37,7 @@ public:
 
         virtual double getOutput() const = 0;
         virtual void step() = 0;
-        virtual void handleEvent(EventType type);
+        virtual void handleEvent(const Event *event);
 
 protected:
         uint   m_id;

@@ -86,7 +86,7 @@ double DynamicalEntity::getParameter(uint index) const
         return m_parameters[index];
 }
 
-void DynamicalEntity::handleEvent(EventType type)
+void DynamicalEntity::handleEvent(const Event *event)
 {
 }
 

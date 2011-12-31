@@ -7,10 +7,10 @@ namespace dynclamp {
 namespace synapses {
 
 Synapse::Synapse(double E, uint id, double dt)
-        : DynamicalEntity(id, dt), m_tPrevSpike(0.0)
+        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0)
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
-        m_parameters.push_back(E);      // m_parameters[0]
+        m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
 }
 
 double Synapse::getOutput() const
@@ -39,9 +39,10 @@ void ExponentialSynapse::step()
 	G_SYN = G_SYN * m_parameters[2];
 }
 
-void ExponentialSynapse::handleEvent(EventType type)
+void ExponentialSynapse::handleEvent(const Event *event)
 {
-	G_SYN += m_parameters[1];
+        if (event->type() == SPIKE && event->hasExpired())
+	        G_SYN += m_parameters[1];
 }
 
 //~~~
@@ -67,10 +68,12 @@ void Exp2Synapse::step()
 	G_SYN = m_state[2] - m_state[1];
 }
 	
-void Exp2Synapse::handleEvent(EventType type)
+void Exp2Synapse::handleEvent(const Event *event)
 {
-	m_state[1] += m_parameters[1] * m_parameters[4];
-	m_state[2] += m_parameters[1] * m_parameters[4];
+        if (event->type() == SPIKE && event->hasExpired()) {
+        	m_state[1] += m_parameters[1] * m_parameters[4];
+        	m_state[2] += m_parameters[1] * m_parameters[4];
+        }
 }
 
 //~~~
@@ -83,13 +86,13 @@ TsodyksSynapse::TsodyksSynapse(double E, double dg, double U, double tau[3],
         m_state.push_back(0.0);         // m_state[2] -> z
         m_state.push_back(U);           // m_state[3] -> u
 
-        m_parameters.push_back(dg);     // m_parameters[1]
-        m_parameters.push_back(U);      // m_parameters[2]
-        m_parameters.push_back(tau[2]); // m_parameters[3]
+        m_parameters.push_back(dg);     // m_parameters[1] -> dg
+        m_parameters.push_back(U);      // m_parameters[2] -> U
+        m_parameters.push_back(tau[2]); // m_parameters[3] -> tau_facil
         m_parameters.push_back(exp(-m_dt/tau[0]));      // m_parameters[4] -> exp. decay
-        m_parameters.push_back(1.0 / tau[0]);           // m_parameters[5]
-        m_parameters.push_back(1.0 / tau[1]);           // m_parameters[6]
-        m_parameters.push_back(1.0 / tau[2]);           // m_parameters[7]
+        m_parameters.push_back(1.0 / tau[0]);           // m_parameters[5] -> 1 / tau_1
+        m_parameters.push_back(1.0 / tau[1]);           // m_parameters[6] -> 1 / tau_rec
+        m_parameters.push_back(1.0 / tau[2]);           // m_parameters[7] -> 1 / tau_facil
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[8] -> coeff.
 }
 
@@ -99,28 +102,33 @@ void TsodyksSynapse::step()
 	G_SYN = G_SYN * m_parameters[4];
 }
 	
-void TsodyksSynapse::handleEvent(EventType type)
+void TsodyksSynapse::handleEvent(const Event *event)
 {
-	// first calculate z at event, based on prior y and z
-        m_state[2] = m_state[2] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_REC);
-	m_state[2] += (m_state[1] * (exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_1) -
-			exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_REC)) * m_parameters[8]);
+        if (event->type() == SPIKE && event->hasExpired()) {
+        	// first calculate z at event, based on prior y and z
+                m_state[2] = m_state[2] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_REC);
+        	m_state[2] += (m_state[1] * (exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_1) -
+        			exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_REC)) * m_parameters[8]);
+        
+        	// then calculate y at event
+        	m_state[1] = m_state[1] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_1);
+        	double x = 1. - m_state[1] - m_state[2];
+        		
+        	// calculate u at event
+        	if (TAU_FACIL > 0.) {
+        		m_state[3] = m_state[3] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_FACIL);
+        		m_state[3] += m_parameters[2] * (1. - m_state[3]);
+        	}
+        	else {
+        		m_state[3] = m_parameters[2];
+        	}
+        		
+                double xu = x * m_state[3];
+        	G_SYN += m_parameters[1] * xu;
+        	m_state[1] += xu;
 
-	// then calculate y at event
-	m_state[1] = m_state[1] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_1);
-	double x = 1. - m_state[1] - m_state[2];
-		
-	// calculate u at event
-	if (TAU_FACIL > 0.) {
-		m_state[3] = m_state[3] * exp(-(m_t - m_tPrevSpike) * ONE_OVER_TAU_FACIL);
-		m_state[3] += m_parameters[2] * (1. - m_state[3]);
-	}
-	else {
-		m_state[3] = m_parameters[2];
-	}
-		
-	G_SYN += m_parameters[1] * x * m_state[3];
-	m_state[1] += x * m_state[3];
+                m_tPrevSpike = m_t;
+        }
 }
 
 } // namespace synapses

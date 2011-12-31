@@ -30,7 +30,7 @@ class ExponentialSynapse : public Synapse {
 public:
 	ExponentialSynapse(double E, double dg, double tau, uint id = GetId(), double dt = GetGlobalDt());
 	virtual void step();	
-	virtual void handleEvent(EventType type);
+	virtual void handleEvent(const Event *event);
 };
 
 //~~
@@ -39,7 +39,7 @@ class Exp2Synapse : public Synapse {
 public:
 	Exp2Synapse(double E, double dg, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
 	virtual void step();
-	virtual void handleEvent(EventType type);
+	virtual void handleEvent(const Event *event);
 };
 
 
@@ -54,7 +54,7 @@ class TsodyksSynapse : public Synapse {
 public:
 	TsodyksSynapse(double E, double dg, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
 	virtual void step();
-	virtual void handleEvent(EventType type);
+	virtual void handleEvent(const Event *event);
 private:
 	double m_t;
 };
