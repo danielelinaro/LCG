@@ -18,7 +18,7 @@ int main()
         double dg = 1.0;        // (nS)
         int i, j;
 
-        SpikeEvent event(0.0, 1);
+        SpikeEvent event(NULL, 0.0);
 
         Synapse *syn[4];
 

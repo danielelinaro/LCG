@@ -1,7 +1,13 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
+#include "utils.h"
+
+#define SPIKE_DELAY 2e-3
+
 namespace dynclamp {
+
+class DynamicalEntity;
 
 typedef enum _event_type {
         SPIKE = 0
@@ -10,11 +16,11 @@ typedef enum _event_type {
 class Event
 {
 public:
-        Event(EventType type, double timeout, int senderId);
+        Event(EventType type, const DynamicalEntity *sender, double timeout);
 
         EventType type() const;
         double timeout() const;
-        int senderId() const;
+        const DynamicalEntity* sender() const;
         bool hasExpired() const;
 
         void decreaseTimeout(double dt);
@@ -22,14 +28,17 @@ public:
 private:
         EventType m_type;
         double m_timeout;
-        int m_id;
+        const DynamicalEntity *m_sender;
 };
 
 class SpikeEvent : public Event
 {
 public:
-        SpikeEvent(double timeout, int senderId);
+        SpikeEvent(const DynamicalEntity *sender, double timeout = SPIKE_DELAY);
 };
+
+void EnqueueEvent(const Event *event);
+void ProcessEvents(double dt = GetGlobalDt());
 
 } // namespace dynclamp
 

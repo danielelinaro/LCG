@@ -15,13 +15,13 @@ OU::OU(double sigma, double tau, double eta0, double seed, uint id, double dt)
         m_state.push_back(eta0);
 } 
 
-void OU::step()
+void OU::evolve()
 {
         m_noise = m_coeff * m_randn.random();
-        ETA = ETA0 + m_mu*ETA + m_noise;
+        ETA = ETA0 + m_mu*(ETA-ETA0) + m_noise;
 }
 
-double OU::getOutput() const
+double OU::output() const
 {
         return ETA;
 }

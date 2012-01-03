@@ -17,11 +17,16 @@ public:
 	Synapse(double E, uint id = GetId(), double dt = GetGlobalDt());
 	
         double g() const;
-        virtual double getOutput() const;
-        virtual void step() = 0;
+        virtual double output() const;
         
 protected:
+        //virtual void finalizeConnect(DynamicalEntity *entity);
+
+protected:
         double m_tPrevSpike;
+
+private:
+        DynamicalEntity *m_postSynapticNeuron;
 };
 
 //~~
@@ -29,8 +34,9 @@ protected:
 class ExponentialSynapse : public Synapse {
 public:
 	ExponentialSynapse(double E, double dg, double tau, uint id = GetId(), double dt = GetGlobalDt());
-	virtual void step();	
 	virtual void handleEvent(const Event *event);
+protected:
+	virtual void evolve();	
 };
 
 //~~
@@ -38,8 +44,9 @@ public:
 class Exp2Synapse : public Synapse {
 public:
 	Exp2Synapse(double E, double dg, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
-	virtual void step();
 	virtual void handleEvent(const Event *event);
+protected:
+	virtual void evolve();	
 };
 
 
@@ -53,8 +60,9 @@ public:
 class TsodyksSynapse : public Synapse {
 public:
 	TsodyksSynapse(double E, double dg, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
-	virtual void step();
 	virtual void handleEvent(const Event *event);
+protected:
+	virtual void evolve();	
 private:
 	double m_t;
 };

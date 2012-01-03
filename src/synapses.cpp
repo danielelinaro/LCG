@@ -1,23 +1,31 @@
 #include "synapses.h"
-#include <cstdio>
-#include <cstring>
+#include <cstdlib>
 
 namespace dynclamp {
 
 namespace synapses {
 
 Synapse::Synapse(double E, uint id, double dt)
-        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0)
+        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0), m_postSynapticNeuron(NULL)
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
 }
 
-double Synapse::getOutput() const
+double Synapse::output() const
 {
-        // i = g * (V_pre - E)
-        return G_SYN * (m_inputs[0] - E_SYN);
+        // i = g * (E - V_post)
+        //return G_SYN * (m_postSynapticNeuron->output() - E_SYN);
+        return G_SYN * (E_SYN - m_post[0]->output());
 }
+
+/*
+void Synapse::finalizeConnect(DynamicalEntity *entity)
+{
+        Logger(Debug, "Synapse::finalizeConnect(DynamicalEntity *)\n");
+        m_postSynapticNeuron = entity;
+}
+*/
 
 double Synapse::g() const
 {
@@ -34,7 +42,7 @@ ExponentialSynapse::ExponentialSynapse(double E, double dg, double tau,
         m_parameters.push_back(exp(-dt/tau));   // m_parameters[2]
 }
 
-void ExponentialSynapse::step()
+void ExponentialSynapse::evolve()
 {
 	G_SYN = G_SYN * m_parameters[2];
 }
@@ -61,7 +69,7 @@ Exp2Synapse::Exp2Synapse(double E, double dg, double tau[2],
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[4]
 }
 
-void Exp2Synapse::step()
+void Exp2Synapse::evolve()
 {
 	m_state[1] = m_state[1] * m_parameters[2];
 	m_state[2] = m_state[2] * m_parameters[3];
@@ -96,7 +104,7 @@ TsodyksSynapse::TsodyksSynapse(double E, double dg, double U, double tau[3],
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[8] -> coeff.
 }
 
-void TsodyksSynapse::step()
+void TsodyksSynapse::evolve()
 {
         m_t += m_dt;
 	G_SYN = G_SYN * m_parameters[4];

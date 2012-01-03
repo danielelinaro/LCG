@@ -19,8 +19,10 @@ public:
         OU(double sigma, double tau, double eta0 = 0.0, double seed = SEED,
            uint id = GetId(), double dt = GetGlobalDt());
         
-        virtual void step();
-        virtual double getOutput() const;
+        virtual double output() const;
+
+protected:
+        virtual void evolve();
 
 private:
         double m_mu, m_noise, m_coeff;

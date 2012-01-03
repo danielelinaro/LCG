@@ -48,7 +48,6 @@ public:
                         boost::unique_lock<boost::mutex> lock(m_mutex);
                         m_queue.push_front(elem);
                 }
-
                 m_cv.notify_all();
         }
 

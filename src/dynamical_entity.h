@@ -1,10 +1,10 @@
 #ifndef DYNAMICAL_ENTITY_H
 #define DYNAMICAL_ENTITY_H
 
+#include <vector>
 #include "types.h"
 #include "utils.h"
 #include "events.h"
-#include <list>
 
 namespace dynclamp
 {
@@ -17,36 +17,48 @@ public:
         DynamicalEntity(uint id = GetId(), double dt = GetGlobalDt());
         virtual ~DynamicalEntity();
 
-        uint getId() const;
+        uint id() const;
 
         void setDt(double dt);
-        double getDt() const;
+        double dt() const;
 
-        void setInputEntity(const DynamicalEntity* entity);
-        void removeInputEntity(const DynamicalEntity* entity);
+        // connect this entity TO the one passed as a parameter,
+        // i.e., this entity will be an input of the one passed
+        // as a parameter.
+        void connect(DynamicalEntity* entity);
 
-        void setInputs(const array& inputs);
-        void setInput(double input, uint index);
-        const array& getInputs() const;
-        double getInput(uint index) const;
-        
+        const std::vector<DynamicalEntity*> pre() const;
+        const std::vector<DynamicalEntity*> post() const;
+
         void setParameters(const array& parameters);
         void setParameter(double parameter, uint index);
-        const array& getParameters() const;
-        double getParameter(uint index) const;
+        const array& parameters() const;
+        double parameter(uint index) const;
 
-        virtual double getOutput() const = 0;
-        virtual void step() = 0;
+        void readAndStoreInputs();
+        void step();
+        virtual double output() const = 0;
+
         virtual void handleEvent(const Event *event);
 
 protected:
+        virtual void evolve() = 0;
+        //virtual void finalizeConnect(DynamicalEntity *entity);
+
+private:
+        bool isPost(const DynamicalEntity *entity) const;
+
+protected:
         uint   m_id;
+        double m_t;
         double m_dt;
 
-        std::list<const DynamicalEntity*> m_inputEntities;
         array  m_state;
         array  m_parameters;
         array  m_inputs;
+
+        std::vector<DynamicalEntity*> m_pre;
+        std::vector<DynamicalEntity*> m_post;
 
 };
 
