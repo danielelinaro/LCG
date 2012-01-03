@@ -1,0 +1,2 @@
+-) check correctness of OU::evolve.
+-) substitute Euler with exact solution in LIFNeuron::evolve.

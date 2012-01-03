@@ -21,7 +21,7 @@ void ProcessEvents(double dt)
         for (i=0; i<nEvents; i++) {
                 event = eventsQueue.pop_front();
                 if (event->hasExpired()) {
-                        const std::vector<DynamicalEntity*>& post = event->sender()->post();
+                        const std::vector<Entity*>& post = event->sender()->post();
                         nPost = post.size();
                         for (j=0; j<nPost; j++)
                                 post[j]->handleEvent(event);

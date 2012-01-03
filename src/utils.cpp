@@ -17,6 +17,14 @@ void SetLoggingLevel(LogLevel level)
 #endif
 }
 
+LogLevel GetLoggingLevel()
+{
+#ifdef NDEBUG
+        fprintf(stderr, "Logging has been disabled by defining NDEBUG.\n");
+#endif
+        return verbosity;
+}
+
 #ifndef NDEBUG
 void Logger(LogLevel level, const char *fmt, ...)
 {

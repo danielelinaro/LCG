@@ -12,10 +12,9 @@ Synapse::Synapse(double E, uint id, double dt)
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
 }
 
-double Synapse::output() const
+double Synapse::output()
 {
         // i = g * (E - V_post)
-        //return G_SYN * (m_postSynapticNeuron->output() - E_SYN);
         return G_SYN * (E_SYN - m_post[0]->output());
 }
 

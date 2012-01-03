@@ -25,7 +25,7 @@ OUcurrent::OUcurrent(double sigma, double tau, double I0, double seed, uint id, 
         : OU(sigma, tau, I0, seed, id, dt)
 {}
 
-double OUcurrent::output() const
+double OUcurrent::output()
 {
         // ETA is a current
         return ETA;
@@ -37,7 +37,7 @@ OUconductance::OUconductance(double sigma, double tau, double E, double G0, doub
         m_parameters.push_back(E);      // m_parameters[3]
 }
 
-double OUconductance::output() const
+double OUconductance::output()
 {
         // ETA is a conductance
         return ETA * (m_parameters[3] - m_post[0]->output());

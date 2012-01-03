@@ -17,7 +17,7 @@
 #include "waveforms.h"
 #include "stimgen_common.h"
 
-int generate_trial(char *, int , int , char *, double **, INT *, double, double);	// function prototype
+int generate_trial(const char *, int , int , char *, double **, INT *, double, double);	// function prototype
 
 #endif
 

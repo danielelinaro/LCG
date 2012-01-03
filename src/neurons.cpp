@@ -19,7 +19,7 @@ double Neuron::Vm() const
         return VM;
 }
 
-double Neuron::output() const
+double Neuron::output()
 {
         return VM;
 }

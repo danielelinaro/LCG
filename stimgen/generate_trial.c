@@ -7,7 +7,7 @@
 
 #include "generate_trial.h"
 
-int generate_trial(char *filename, int verbose, int output_on_file, char *outfilename, double **output, INT *index, double srate, double dt)
+int generate_trial(const char *filename, int verbose, int output_on_file, char *outfilename, double **output, INT *index, double srate, double dt)
 {
 char mytext[500];
 double **parsed_data;

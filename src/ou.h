@@ -30,7 +30,7 @@ class OUcurrent : public OU
 public:
         OUcurrent(double sigma, double tau, double I0 = 0.0, double seed = SEED,
                   uint id = GetId(), double dt = GetGlobalDt());
-        virtual double output() const;
+        virtual double output();
 };
 
 class OUconductance : public OU
@@ -38,7 +38,7 @@ class OUconductance : public OU
 public:
         OUconductance(double sigma, double tau, double E, double G0 = 0.0, double seed = SEED,
                       uint id = GetId(), double dt = GetGlobalDt());
-        virtual double output() const;
+        virtual double output();
 };
 
 }

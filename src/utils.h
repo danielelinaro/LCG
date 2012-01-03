@@ -12,6 +12,7 @@ typedef enum
 } LogLevel;
 
 void SetLoggingLevel(LogLevel level);
+LogLevel GetLoggingLevel();
 #ifdef NDEBUG
 #define Logger(level, fmt, ...) asm("nop")
 #else
