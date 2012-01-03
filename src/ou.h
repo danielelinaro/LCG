@@ -18,15 +18,27 @@ class OU : public DynamicalEntity
 public:
         OU(double sigma, double tau, double eta0 = 0.0, double seed = SEED,
            uint id = GetId(), double dt = GetGlobalDt());
-        
-        virtual double output() const;
-
 protected:
         virtual void evolve();
-
 private:
         double m_mu, m_noise, m_coeff;
         NormalRandomBM m_randn;
+};
+
+class OUcurrent : public OU
+{
+public:
+        OUcurrent(double sigma, double tau, double I0 = 0.0, double seed = SEED,
+                  uint id = GetId(), double dt = GetGlobalDt());
+        virtual double output() const;
+};
+
+class OUconductance : public OU
+{
+public:
+        OUconductance(double sigma, double tau, double E, double G0 = 0.0, double seed = SEED,
+                      uint id = GetId(), double dt = GetGlobalDt());
+        virtual double output() const;
 };
 
 }

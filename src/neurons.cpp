@@ -24,6 +24,15 @@ double Neuron::output() const
         return VM;
 }
 
+void Neuron::emitSpike(double timeout) const
+{
+#ifdef __APPLE__
+        eventsQueue.push_back(new SpikeEvent(this, timeout));
+#else
+        EnqueueEvent(new SpikeEvent(this, timeout));
+#endif
+}
+
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
                      double Er, double E0, double Vth, double Iext,
                      uint id, double dt)
@@ -54,8 +63,6 @@ void LIFNeuron::evolve()
                 VM = VM + m_parameters[7] * (LIF_E0 - VM) + m_parameters[8] * Iinj;
         }
         if(VM > LIF_VTH) {
-                EnqueueEvent(new SpikeEvent(this, 2e-3));
-                //eventsQueue.push_back(new SpikeEvent(this, 2e-3));
 #ifdef LIF_ARTIFICIAL_SPIKE
                 /* an ``artificial'' spike is added when the membrane potential reaches threshold */
                 VM = -LIF_VTH;
@@ -64,6 +71,7 @@ void LIFNeuron::evolve()
                 VM = LIF_E0;
 #endif
                 m_tPrevSpike = m_t;
+                emitSpike(2e-3);
         }
 }
 

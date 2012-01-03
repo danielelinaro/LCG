@@ -13,8 +13,7 @@ DynamicalEntity::DynamicalEntity(uint id, double dt)
 }
 
 DynamicalEntity::~DynamicalEntity()
-{
-}
+{}
 
 uint DynamicalEntity::id() const
 {
@@ -36,54 +35,6 @@ void DynamicalEntity::step()
         m_t += m_dt;
         evolve();
 }
-
-/*
-void DynamicalEntity::connect(DynamicalEntity* entity)
-{
-        Logger(Debug, "DynamicalEntity::connect(DynamicalEntity *)\n");
-
-        if (entity == this) {
-                Logger(Debug, "Can't connect an entity to itself.\n");
-                return;
-        }
-
-        uint idPre = id();
-        uint idPost = entity->id();
-
-        if (connectionsMatrix.count(idPost) == 0) {
-                connectionsMatrix[idPost] = std::map<uint,const DynamicalEntity*>();
-                Logger(Debug, "Entity #%d had no inputs.\n", idPost);
-        }
-
-        if (connectionsMatrix[idPost].count(idPre) == 0) {
-                connectionsMatrix[idPost][idPre] = this;
-                entity->m_inputs.push_back(0.0);
-                Logger(Debug, "Connecting entity #%d to entity #%d.\n", idPre, idPost);
-        }
-        else {
-                Logger(Debug, "Entity #%d was already connected to entity #%d.", idPre, idPost);
-        }
-
-        finalizeConnect(entity);
-}
-
-void DynamicalEntity::finalizeConnect(DynamicalEntity *entity)
-{}
-
-void DynamicalEntity::readAndStoreInputs()
-{
-        Logger(Debug, "DynamicalEntity::readAndStoreInputs()\n");
-        uint i;
-        uint myId = id();
-        uint nInputs = connectionsMatrix[myId].size();
-        Logger(Debug, "Entity #%d has %d inputs.\n", myId, nInputs);
-        std::map< uint, const DynamicalEntity*>::iterator it;
-        for (it = connectionsMatrix[myId].begin(), i = 0; it != connectionsMatrix[myId].end(); it++, i++) {
-                m_inputs[i] = it->second->output();
-        }
-        Logger(Debug, "Read all inputs to entity #%d.\n", myId);
-}
-*/
 
 bool DynamicalEntity::isPost(const DynamicalEntity *entity) const
 {
@@ -108,9 +59,8 @@ void DynamicalEntity::connect(DynamicalEntity *entity)
                 return;
         }
 
-        m_post.push_back(entity);
-        entity->m_pre.push_back(this);
-        entity->m_inputs.push_back(0.0);
+        addPost(entity);
+        entity->addPre(this, output());
 }
 
 const std::vector<DynamicalEntity*> DynamicalEntity::pre() const
@@ -121,6 +71,17 @@ const std::vector<DynamicalEntity*> DynamicalEntity::pre() const
 const std::vector<DynamicalEntity*> DynamicalEntity::post() const
 {
         return m_post;
+}
+
+void DynamicalEntity::addPre(DynamicalEntity *entity, double input)
+{
+        m_pre.push_back(entity);
+        m_inputs.push_back(input);
+}
+
+void DynamicalEntity::addPost(DynamicalEntity *entity)
+{
+        m_post.push_back(entity);
 }
 
 void DynamicalEntity::readAndStoreInputs()
@@ -156,8 +117,7 @@ double DynamicalEntity::parameter(uint index) const
 }
 
 void DynamicalEntity::handleEvent(const Event *event)
-{
-}
+{}
 
 } // namespace dynclamp
 

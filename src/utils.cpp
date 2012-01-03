@@ -12,8 +12,12 @@ double globalDt = 1.0 / 20e3;
 void SetLoggingLevel(LogLevel level)
 {
 	verbosity = level;
+#ifdef NDEBUG
+        fprintf(stderr, "Logging has been disabled by defining NDEBUG.\n");
+#endif
 }
 
+#ifndef NDEBUG
 void Logger(LogLevel level, const char *fmt, ...)
 {
 	if (level >= verbosity) {
@@ -23,6 +27,7 @@ void Logger(LogLevel level, const char *fmt, ...)
 		va_end(argp);
 	}
 }
+#endif
 
 uint GetId()
 {

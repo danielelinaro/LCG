@@ -1,8 +1,5 @@
-LDADD = ../src/libdynclamp.la
-
-# debug off
-#AM_CPPFLAGS = -I$(srcdir)/../src -I.
-AM_CPPFLAGS = -I../src -I.
+LDADD = ../stimgen/libstimgen.la ../src/libdynclamp.la
+AM_CPPFLAGS = -I../stimgen -I../src -I.
 
 if EXAMPLES
 noinst_PROGRAMS = ou_test syn_test lif_test

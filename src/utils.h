@@ -12,7 +12,11 @@ typedef enum
 } LogLevel;
 
 void SetLoggingLevel(LogLevel level);
+#ifdef NDEBUG
+#define Logger(level, fmt, ...) asm("nop")
+#else
 void Logger(LogLevel level, const char *fmt, ...);
+#endif
 
 uint GetId();
 void SetGlobalDt(double dt);

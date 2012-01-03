@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = src bin
+SUBDIRS = stimgen src bin
 EXTRA_DIST = CHANGES LICENSE
 dist_doc_DATA = README
 

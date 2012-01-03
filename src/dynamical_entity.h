@@ -43,10 +43,11 @@ public:
 
 protected:
         virtual void evolve() = 0;
-        //virtual void finalizeConnect(DynamicalEntity *entity);
 
 private:
         bool isPost(const DynamicalEntity *entity) const;
+        void addPre(DynamicalEntity *entity, double input);
+        void addPost(DynamicalEntity *entity);
 
 protected:
         uint   m_id;

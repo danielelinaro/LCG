@@ -12,8 +12,8 @@ int main()
         double tend = 100;
         double sigma = 50;
         double tau = 10e-3;
-        double eta0 = 250;
-        OU ou(sigma, tau, eta0);
+        double i0 = 250;
+        OUcurrent ou(sigma, tau, i0);
 
         SetLoggingLevel(Critical);
 

@@ -24,9 +24,10 @@ namespace neurons {
 class Neuron : public DynamicalEntity {
 public:
         Neuron(double Vm0, uint id = GetId(), double dt = GetGlobalDt());
-
         double Vm() const;
         virtual double output() const;
+protected:
+        void emitSpike(double timeout = 2e-3) const;
 };
 
 class LIFNeuron : public Neuron {
