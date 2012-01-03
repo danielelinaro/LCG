@@ -14,6 +14,7 @@ public:
         ~StimulusGenerator();
 
         INT stimulusLength() const;
+        bool hasNext() const;
 
         virtual double output();
 

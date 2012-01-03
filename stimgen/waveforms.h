@@ -13,6 +13,10 @@
 
 #include "stimgen_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 double how_long_lasts_trial(double **, INT);
 int    simple_waveform(double *, double *, INT *, INT, double, double, int);
 int    composite_waveform(double **, INT, double *, INT *, INT, double, double, int);
@@ -29,6 +33,10 @@ void SQUARE(double, double, double, double *, INT *, INT, double, double, double
 void SAW(double, double, double, double *, INT *, INT, double, double, double); 
 void SWEEP(double, double, double, double *, INT *, INT, double, double, double);
 void UNIFNOISE(double, double, double *, INT *, INT, double, double, double); 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

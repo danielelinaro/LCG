@@ -15,11 +15,19 @@
 #include <string.h>
 #include "stimgen_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MAXCOLS             15      // maximal number of columns in the input data vector
 #define MAXROWS             100     // maximal number of lines 
 
 int extract(double *,char *);
 int readmatrix(char *, double **, INT *, INT *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

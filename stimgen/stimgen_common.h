@@ -1,6 +1,10 @@
 #ifndef STIMGEN_COMMON_H
 #define STIMGEN_COMMON_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SOFTWARE            "CREATE_STIMULUS"
 #define VERSION             2009
 #define USAGE               "USAGE:\n%s verb{0,1} outbinfile{0,1,-1} srate[Hz] fname1 [fname2 [fname3 [fname4 ...[fnameNchan]]]]\n\n"
@@ -39,6 +43,10 @@
 #define DIVISION        4
 
 typedef unsigned long int INT;                   // Type definition for my convenience.
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

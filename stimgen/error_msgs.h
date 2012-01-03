@@ -13,9 +13,17 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void msg(char*, int);
 void error(char*, int);
 void warning(char *, int);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

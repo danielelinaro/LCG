@@ -37,8 +37,16 @@ public:
         SpikeEvent(const DynamicalEntity *sender, double timeout = SPIKE_DELAY);
 };
 
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
+
 void EnqueueEvent(const Event *event);
 void ProcessEvents(double dt = GetGlobalDt());
+
+//#ifdef __cplusplus
+//}
+//#endif
 
 } // namespace dynclamp
 

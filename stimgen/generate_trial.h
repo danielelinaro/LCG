@@ -17,7 +17,15 @@
 #include "waveforms.h"
 #include "stimgen_common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int generate_trial(const char *, int , int , char *, double **, INT *, double, double);	// function prototype
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
