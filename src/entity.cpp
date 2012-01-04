@@ -6,11 +6,8 @@ namespace dynclamp {
 std::map< uint, std::map< uint, const Entity* > > connectionsMatrix;
 
 Entity::Entity(uint id, double dt)
-{
-        m_id = id;
-        m_t = 0;
-        m_dt = dt;
-}
+        : m_id(id), m_t(0.0), m_dt(dt), m_inputs(), m_pre(), m_post()
+{}
 
 Entity::~Entity()
 {}

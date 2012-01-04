@@ -19,7 +19,6 @@ public:
         virtual double output();
 
 private:
-        double m_dt;
         double m_srate;
         double *m_stimulus;
         INT m_stimulusLength;

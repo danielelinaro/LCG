@@ -36,7 +36,7 @@ float drand49()	{
             iy=(rand49_idum);
         }
         j=1 + 97.0*iy/MM;
-    if (j > 97 || j < 1) printf("RAN2: This cannot happen.");
+    if (j > 97 || j < 1) fprintf(stderr, "RAN2: This cannot happen.");
         iy=ir[j];
         rand49_idum=(IA*(rand49_idum)+IC) % MM;
         ir[j]=(rand49_idum);

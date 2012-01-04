@@ -10,6 +10,7 @@ StimulusGenerator::StimulusGenerator(const char *stimulusFile, uint id, double d
         int flag;
         struct stat buf;
 
+        // check for file existence
         if (stat(stimulusFile, &buf) != 0) {
                 std::stringstream ss;
                 ss << stimulusFile << ": no such file.";

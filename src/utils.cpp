@@ -31,7 +31,7 @@ void Logger(LogLevel level, const char *fmt, ...)
 	if (level >= verbosity) {
 		va_list argp;
 		va_start(argp, fmt);
-		vprintf(fmt, argp);
+		vfprintf(stderr, fmt, argp);
 		va_end(argp);
 	}
 }

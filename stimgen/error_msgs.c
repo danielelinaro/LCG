@@ -15,7 +15,7 @@ void msg(char *mytext, int verbose) {
  char mystring[500];
  if (verbose) {
  sprintf(mystring, "[%s - %d]: %s\n", SOFTWARE, VERSION, mytext);
- printf("%s", mystring); fflush(NULL);
+ fprintf(stderr, "%s", mystring); fflush(NULL);
  }
  return;
 } // end msg()
