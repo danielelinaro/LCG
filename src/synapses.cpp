@@ -12,19 +12,11 @@ Synapse::Synapse(double E, uint id, double dt)
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
 }
 
-double Synapse::output()
+double Synapse::output() const
 {
         // i = g * (E - V_post)
         return G_SYN * (E_SYN - m_post[0]->output());
 }
-
-/*
-void Synapse::finalizeConnect(DynamicalEntity *entity)
-{
-        Logger(Debug, "Synapse::finalizeConnect(DynamicalEntity *)\n");
-        m_postSynapticNeuron = entity;
-}
-*/
 
 double Synapse::g() const
 {
@@ -77,6 +69,7 @@ void Exp2Synapse::evolve()
 	
 void Exp2Synapse::handleEvent(const Event *event)
 {
+        Logger(Debug, "Exp2Synapse::handleEvent(const Event*)\n");
         if (event->type() == SPIKE && event->hasExpired()) {
         	m_state[1] += m_parameters[1] * m_parameters[4];
         	m_state[2] += m_parameters[1] * m_parameters[4];

@@ -3,7 +3,6 @@
 
 #include "dynamical_entity.h"
 #include "types.h"
-#include "events.h"
 
 #define VM       m_state[0]
 
@@ -25,7 +24,7 @@ class Neuron : public DynamicalEntity {
 public:
         Neuron(double Vm0, uint id = GetId(), double dt = GetGlobalDt());
         double Vm() const;
-        virtual double output();
+        virtual double output() const;
 protected:
         void emitSpike(double timeout = 2e-3) const;
 };

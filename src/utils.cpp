@@ -7,6 +7,7 @@ namespace dynclamp
 {
 
 LogLevel verbosity = Info;
+double globalT = 0.0;
 double globalDt = 1.0 / 20e3;
 
 void SetLoggingLevel(LogLevel level)
@@ -53,6 +54,16 @@ void SetGlobalDt(double dt)
 double GetGlobalDt()
 {
         return globalDt;
+}
+
+double GetGlobalTime()
+{
+        return globalT;
+}
+
+void IncreaseGlobalTime()
+{
+        globalT += globalDt;
 }
 
 } // namespace dynclamp

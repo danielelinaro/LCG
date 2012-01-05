@@ -1,5 +1,5 @@
 #include "events.h"
-#include "dynamical_entity.h"
+#include "entity.h"
 #include "thread_safe_queue.h"
 
 namespace dynclamp {
@@ -35,7 +35,7 @@ void ProcessEvents(double dt)
         }
 }
 
-Event::Event(EventType type, const DynamicalEntity *sender, double timeout)
+Event::Event(EventType type, const Entity *sender, double timeout)
         : m_type(type), m_timeout(timeout), m_sender(sender)
 {}
 
@@ -49,7 +49,7 @@ double Event::timeout() const
         return m_timeout;
 }
 
-const DynamicalEntity* Event::sender() const
+const Entity* Event::sender() const
 {
         return m_sender;
 }
@@ -64,7 +64,7 @@ void Event::decreaseTimeout(double dt)
         m_timeout -= dt;
 }
 
-SpikeEvent::SpikeEvent(const DynamicalEntity *sender, double timeout)
+SpikeEvent::SpikeEvent(const Entity *sender, double timeout)
         : Event(SPIKE, sender, timeout)
 {}
 

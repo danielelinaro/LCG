@@ -1,12 +1,13 @@
+#include "events.h"
+#include "thread_safe_queue.h"
 #include "entity.h"
-#include <map>
 
 namespace dynclamp {
 
-std::map< uint, std::map< uint, const Entity* > > connectionsMatrix;
+extern ThreadSafeQueue<Event*> eventsQueue;
 
 Entity::Entity(uint id, double dt)
-        : m_id(id), m_t(0.0), m_dt(dt), m_inputs(), m_pre(), m_post()
+        : m_id(id), m_dt(dt), m_inputs(), m_pre(), m_post()
 {}
 
 Entity::~Entity()
@@ -25,6 +26,30 @@ void Entity::setDt(double dt)
 double Entity::dt() const
 {
         return m_dt;
+}
+
+void Entity::setParameters(const array& parameters)
+{
+        m_parameters = parameters;
+}
+        
+void Entity::setParameter(double parameter, uint index)
+{
+        if (index >= m_parameters.size())
+                throw "Parameter out of bounds.";
+        m_parameters[index] = parameter;
+}
+
+const array& Entity::parameters() const
+{
+        return m_parameters;
+}
+
+double Entity::parameter(uint index) const
+{
+        if (index >= m_parameters.size())
+                throw "Parameter out of bounds.";
+        return m_parameters[index];
 }
 
 bool Entity::isPost(const Entity *entity) const
@@ -85,6 +110,15 @@ void Entity::readAndStoreInputs()
 
 void Entity::handleEvent(const Event *event)
 {}
+
+void Entity::emitEvent(Event *event) const
+{
+#ifdef __APPLE__
+        eventsQueue.push_back(event);
+#else
+        EnqueueEvent(event);
+#endif
+}
 
 } // namespace dynclamp
 

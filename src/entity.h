@@ -1,7 +1,6 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include <vector>
 #include "types.h"
 #include "utils.h"
 #include "events.h"
@@ -22,18 +21,28 @@ public:
         void setDt(double dt);
         double dt() const;
 
+        void setParameters(const array& parameters);
+        void setParameter(double parameter, uint index);
+        const array& parameters() const;
+        double parameter(uint index) const;
+
         // connect this entity TO the one passed as a parameter,
         // i.e., this entity will be an input of the one passed
         // as a parameter.
-        void connect(Entity* entity);
+        virtual void connect(Entity* entity);
 
         const std::vector<Entity*> pre() const;
         const std::vector<Entity*> post() const;
 
         void readAndStoreInputs();
-        virtual double output() = 0;
+
+        virtual void step() = 0;
+
+        virtual double output() const = 0;
 
         virtual void handleEvent(const Event *event);
+
+        virtual void emitEvent(Event *event) const;
 
 private:
         bool isPost(const Entity *entity) const;
@@ -42,9 +51,9 @@ private:
 
 protected:
         uint   m_id;
-        double m_t;
         double m_dt;
 
+        array  m_parameters;
         array  m_inputs;
 
         std::vector<Entity*> m_pre;

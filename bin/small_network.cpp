@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include "utils.h"
 #include "dynamical_entity.h"
 #include "ou.h"
@@ -14,7 +14,7 @@ using namespace dynclamp::neurons;
 int main()
 {
         int i;
-        double t, tend = 2, dt = GetGlobalDt();
+        double t, tend = 2;
         double taus[3] = {3e-3, 100e-3, 1000e-3};
 
         DynamicalEntity *entities[N_ENTITIES];
@@ -33,16 +33,17 @@ int main()
         entities[3]->connect(entities[4]);
         entities[4]->connect(entities[5]);
 
-        for (t=0.0; t<=tend; t+=dt) {
+        while ((t = GetGlobalTime()) <= tend) {
                 ProcessEvents();
                 for (i=0; i<N_ENTITIES; i++)
                         entities[i]->readAndStoreInputs();
-                std::cout << t;
+                printf("%e", t);
                 for (i=0; i<N_ENTITIES; i++) {
-                        std::cout << " " << entities[i]->output();
+                        printf(" %13e", entities[i]->output());
                         entities[i]->step();
                 }
-                std::cout << std::endl;
+                printf("\n");
+                IncreaseGlobalTime();
         }
 
         for (i=0; i<N_ENTITIES; i++)

@@ -4,8 +4,10 @@
 
 namespace dynclamp {
 
-StimulusGenerator::StimulusGenerator(const char *stimulusFile, uint id, double dt)
-        : Entity(id, dt), m_srate(1.0/dt), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
+namespace generators {
+
+Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
+        : Generator(id, dt), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
 {
         int flag;
         struct stat buf;
@@ -17,8 +19,10 @@ StimulusGenerator::StimulusGenerator(const char *stimulusFile, uint id, double d
                 throw ss.str().c_str();
         }
 
+        m_parameters.push_back(1.0/dt);         // m_parameters[0] -> sampling rate
+
         flag = generate_trial(stimulusFile, GetLoggingLevel() <= Debug,
-                              0, NULL, &m_stimulus, &m_stimulusLength, m_srate, m_dt);
+                              0, NULL, &m_stimulus, &m_stimulusLength, m_parameters[0], m_dt);
 
         if (flag == -1) {
                 if (m_stimulus != NULL)
@@ -27,29 +31,34 @@ StimulusGenerator::StimulusGenerator(const char *stimulusFile, uint id, double d
         }
 }
 
-StimulusGenerator::~StimulusGenerator()
+Stimulus::~Stimulus()
 {
         if (m_stimulus != NULL)
                 free(m_stimulus);
 }
 
 
-INT StimulusGenerator::stimulusLength() const
+INT Stimulus::stimulusLength() const
 {
         return m_stimulusLength;
 }
 
-bool StimulusGenerator::hasNext() const
+bool Stimulus::hasNext() const
 {
         return m_position < m_stimulusLength;
 }
 
-double StimulusGenerator::output()
+double Stimulus::output() const
 {
-        double retval = m_stimulus[m_position];
-        m_position++;
-        return retval;
+        return m_stimulus[m_position];
 }
+
+void Stimulus::step()
+{
+        m_position++;
+}
+
+} // namespace generators
 
 } // namespace dynclamp
 

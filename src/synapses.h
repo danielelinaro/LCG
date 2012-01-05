@@ -17,7 +17,7 @@ public:
 	Synapse(double E, uint id = GetId(), double dt = GetGlobalDt());
 	
         double g() const;
-        virtual double output();
+        virtual double output() const;
         
 protected:
         //virtual void finalizeConnect(DynamicalEntity *entity);

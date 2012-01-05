@@ -1,7 +1,6 @@
 #ifndef DYNAMICAL_ENTITY_H
 #define DYNAMICAL_ENTITY_H
 
-#include <vector>
 #include "entity.h"
 #include "types.h"
 #include "utils.h"
@@ -16,20 +15,15 @@ class DynamicalEntity : public Entity
 public:
         DynamicalEntity(uint id = GetId(), double dt = GetGlobalDt());
 
-        void setParameters(const array& parameters);
-        void setParameter(double parameter, uint index);
-        const array& parameters() const;
-        double parameter(uint index) const;
+        const array& state() const;
 
-        void step();
+        virtual void step();
 
 protected:
         virtual void evolve() = 0;
 
 protected:
         array  m_state;
-        array  m_parameters;
-
 };
 
 }

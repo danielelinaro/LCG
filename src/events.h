@@ -7,7 +7,7 @@
 
 namespace dynclamp {
 
-class DynamicalEntity;
+class Entity;
 
 typedef enum _event_type {
         SPIKE = 0
@@ -16,11 +16,11 @@ typedef enum _event_type {
 class Event
 {
 public:
-        Event(EventType type, const DynamicalEntity *sender, double timeout);
+        Event(EventType type, const Entity *sender, double timeout);
 
         EventType type() const;
         double timeout() const;
-        const DynamicalEntity* sender() const;
+        const Entity* sender() const;
         bool hasExpired() const;
 
         void decreaseTimeout(double dt);
@@ -28,25 +28,17 @@ public:
 private:
         EventType m_type;
         double m_timeout;
-        const DynamicalEntity *m_sender;
+        const Entity *m_sender;
 };
 
 class SpikeEvent : public Event
 {
 public:
-        SpikeEvent(const DynamicalEntity *sender, double timeout = SPIKE_DELAY);
+        SpikeEvent(const Entity *sender, double timeout = SPIKE_DELAY);
 };
-
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
 
 void EnqueueEvent(const Event *event);
 void ProcessEvents(double dt = GetGlobalDt());
-
-//#ifdef __cplusplus
-//}
-//#endif
 
 } // namespace dynclamp
 

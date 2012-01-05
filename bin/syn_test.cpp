@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include "utils.h"
@@ -44,41 +44,41 @@ int main()
         dt = GetGlobalDt();
         for (int i=0; i<nisi; i++) {
                 tspike = t + isi;
-                while (t <= tspike) {
-                        std::cout << t;
+                while ((t=GetGlobalTime()) <= tspike) {
+                        printf("%e", t);
                         for (j=0; j<4; j++) {
-                                std::cout << " " << syn[j]->g();
+                                printf(" %e", syn[j]->g());
                                 syn[j]->step();
                         }
-                        std::cout << std::endl;
-                        t += dt;
+                        printf("\n");
+                        IncreaseGlobalTime();
                 }
                 for (j=0; j<4; j++)
                         syn[j]->handleEvent(&event);
         }
 
         tspike = t + 0.5;
-        while (t <= tspike) {
-                std::cout << t;
+        while ((t=GetGlobalTime()) <= tspike) {
+                printf("%e", t);
                 for (j=0; j<4; j++) {
-                        std::cout << " " << syn[j]->g();
+                        printf(" %e", syn[j]->g());
                         syn[j]->step();
                 }
-                std::cout << std::endl;
-                t += dt;
+                printf("\n");
+                IncreaseGlobalTime();
         }
 
         for (j=0; j<4; j++)
                 syn[j]->handleEvent(&event);
 
-        while (t <= tspike + 0.3) {
-                std::cout << t;
+        while ((t=GetGlobalTime()) <= tspike + 0.3) {
+                printf("%e", t);
                 for (j=0; j<4; j++) {
-                        std::cout << " " << syn[j]->g();
+                        printf(" %e", syn[j]->g());
                         syn[j]->step();
                 }
-                std::cout << std::endl;
-                t += dt;
+                printf("\n");
+                IncreaseGlobalTime();
         }
 
         for (j=0; j<4; j++)

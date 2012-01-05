@@ -3,20 +3,23 @@
 
 #include "types.h"
 #include "utils.h"
-#include "entity.h"
+#include "generator.h"
 #include "generate_trial.h"
 
 namespace dynclamp {
 
-class StimulusGenerator : public Entity {
+namespace generators {
+
+class Stimulus : public Generator {
 public:
-        StimulusGenerator(const char *filename, uint id = GetId(), double dt = GetGlobalDt());
-        ~StimulusGenerator();
+        Stimulus(const char *filename, uint id = GetId(), double dt = GetGlobalDt());
+        virtual ~Stimulus();
 
         INT stimulusLength() const;
-        bool hasNext() const;
+        virtual bool hasNext() const;
 
-        virtual double output();
+        virtual void step();
+        virtual double output() const;
 
 private:
         double m_srate;
@@ -24,6 +27,8 @@ private:
         INT m_stimulusLength;
         INT m_position;
 };
+
+} // namespace generators
 
 } // namespace dynclamp
 

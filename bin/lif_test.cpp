@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include "utils.h"
 #include "neurons.h"
 
@@ -7,12 +7,13 @@ using namespace dynclamp::neurons;
 
 int main()
 {
-        double t, tend = 2, dt = GetGlobalDt();
+        double t, tend = 2;
 
         LIFNeuron lif(0.08, 0.0075, 0.0014, -65.2, -70, -50, 220);
 
-        for (t=0.0; t<=tend; t+=dt) {
-                std::cout << t << " " << lif.output() << std::endl;
+        while ((t = GetGlobalTime()) <= tend) {
+                printf("%e %e\n", t, lif.output());
+                IncreaseGlobalTime();
                 lif.step();
         }
 

@@ -19,18 +19,14 @@ double Neuron::Vm() const
         return VM;
 }
 
-double Neuron::output()
+double Neuron::output() const
 {
         return VM;
 }
 
 void Neuron::emitSpike(double timeout) const
 {
-#ifdef __APPLE__
-        eventsQueue.push_back(new SpikeEvent(this, timeout));
-#else
-        EnqueueEvent(new SpikeEvent(this, timeout));
-#endif
+        emitEvent(new SpikeEvent(this, timeout));
 }
 
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
@@ -51,7 +47,9 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
 
 void LIFNeuron::evolve()
 {
-        if ((m_t-m_tPrevSpike) <= LIF_TARP) {
+        double t = GetGlobalTime();
+
+        if ((t - m_tPrevSpike) <= LIF_TARP) {
                 VM = LIF_ER;
         }
         else {
@@ -70,7 +68,7 @@ void LIFNeuron::evolve()
                 /* no ``artificial'' spike is added when the membrane potential reaches threshold */
                 VM = LIF_E0;
 #endif
-                m_tPrevSpike = m_t;
+                m_tPrevSpike = t;
                 emitSpike(2e-3);
         }
 }

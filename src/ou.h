@@ -5,11 +5,15 @@
 #include "dynamical_entity.h"
 #include "randlib.h"
 
-#define ETA   m_state[0]
+#define OU_ETA   m_state[0]
 
-#define SIGMA m_parameters[0]
-#define TAU   m_parameters[1]
-#define ETA0  m_parameters[2]
+#define OU_SIGMA m_parameters[0]
+#define OU_TAU   m_parameters[1]
+#define OU_ETA0  m_parameters[2]
+#define OU_MU    m_parameters[3]
+#define OU_COEFF m_parameters[4]
+
+#define OU_E     m_parameters[5]
 
 namespace dynclamp {
 
@@ -22,7 +26,7 @@ protected:
         virtual void evolve();
 private:
         double m_mu, m_noise, m_coeff;
-        NormalRandomBM m_randn;
+        NormalRandom m_randn;
 };
 
 class OUcurrent : public OU
@@ -30,7 +34,7 @@ class OUcurrent : public OU
 public:
         OUcurrent(double sigma, double tau, double I0 = 0.0, double seed = SEED,
                   uint id = GetId(), double dt = GetGlobalDt());
-        virtual double output();
+        virtual double output() const;
 };
 
 class OUconductance : public OU
@@ -38,7 +42,7 @@ class OUconductance : public OU
 public:
         OUconductance(double sigma, double tau, double E, double G0 = 0.0, double seed = SEED,
                       uint id = GetId(), double dt = GetGlobalDt());
-        virtual double output();
+        virtual double output() const;
 };
 
 }

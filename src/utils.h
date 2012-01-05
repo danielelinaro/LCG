@@ -22,6 +22,8 @@ void Logger(LogLevel level, const char *fmt, ...);
 uint GetId();
 void SetGlobalDt(double dt);
 double GetGlobalDt();
+void IncreaseGlobalTime();
+double GetGlobalTime();
 
 } // namespace dynclamp
 
