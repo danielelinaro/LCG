@@ -7,7 +7,6 @@ extern "C" {
 
 #define SOFTWARE            "CREATE_STIMULUS"
 #define VERSION             2009
-#define USAGE               "USAGE:\n%s verb{0,1} outbinfile{0,1,-1} srate[Hz] fname1 [fname2 [fname3 [fname4 ...[fnameNchan]]]]\n\n"
 
 #define TWOPI 6.283185307179586476925286766559   // Mathematical constant := 2 * PI.
 #define POSPART(m) (((m) > 0) ? m : 0.)
