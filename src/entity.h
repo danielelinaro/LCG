@@ -29,7 +29,7 @@ public:
         // connect this entity TO the one passed as a parameter,
         // i.e., this entity will be an input of the one passed
         // as a parameter.
-        virtual void connect(Entity* entity);
+        void connect(Entity* entity);
 
         const std::vector<Entity*> pre() const;
         const std::vector<Entity*> post() const;
@@ -44,10 +44,12 @@ public:
 
         virtual void emitEvent(Event *event) const;
 
+protected:
+        virtual void addPre(Entity *entity, double input);
+        virtual void addPost(Entity *entity);
+
 private:
         bool isPost(const Entity *entity) const;
-        void addPre(Entity *entity, double input);
-        void addPost(Entity *entity);
 
 protected:
         uint   m_id;

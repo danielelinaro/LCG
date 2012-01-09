@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#define OK 0
+
 namespace dynclamp
 {
 

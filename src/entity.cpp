@@ -63,7 +63,7 @@ bool Entity::isPost(const Entity *entity) const
 
 void Entity::connect(Entity *entity)
 {
-        Logger(Debug, "Entity::connect(Entity *)\n");
+        Logger(Debug, "--- Entity::connect(Entity*) ---\n");
 
         if (entity == this) {
                 Logger(Debug, "Can't connect an entity to itself.\n");
@@ -91,12 +91,14 @@ const std::vector<Entity*> Entity::post() const
 
 void Entity::addPre(Entity *entity, double input)
 {
+        Logger(Debug, "--- Entity::addPre(Entity*, double) ---\n");
         m_pre.push_back(entity);
         m_inputs.push_back(input);
 }
 
 void Entity::addPost(Entity *entity)
 {
+        Logger(Debug, "--- Entity::addPost(Entity*, double) ---\n");
         m_post.push_back(entity);
 }
 
@@ -105,7 +107,7 @@ void Entity::readAndStoreInputs()
         uint nInputs = m_pre.size();
         for (int i=0; i<nInputs; i++)
                 m_inputs[i] = m_pre[i]->output();
-        Logger(Debug, "Read all inputs to entity #%d.\n", id());
+        Logger(All, "Read all inputs to entity #%d.\n", id());
 }
 
 void Entity::handleEvent(const Event *event)
