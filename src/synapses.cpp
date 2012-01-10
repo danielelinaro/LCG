@@ -25,11 +25,11 @@ double Synapse::g() const
 
 //~~~
 
-ExponentialSynapse::ExponentialSynapse(double E, double dg, double tau,
+ExponentialSynapse::ExponentialSynapse(double E, double weight, double tau,
                                        uint id, double dt)
         : Synapse(E, id, dt)
 {
-        m_parameters.push_back(dg);             // m_parameters[1]
+        m_parameters.push_back(weight);             // m_parameters[1]
         m_parameters.push_back(exp(-dt/tau));   // m_parameters[2]
 }
 
@@ -46,7 +46,7 @@ void ExponentialSynapse::handleEvent(const Event *event)
 
 //~~~
 
-Exp2Synapse::Exp2Synapse(double E, double dg, double tau[2],
+Exp2Synapse::Exp2Synapse(double E, double weight, double tau[2],
                          uint id, double dt) :
 	Synapse(E, id, dt)
 {
@@ -54,7 +54,7 @@ Exp2Synapse::Exp2Synapse(double E, double dg, double tau[2],
         m_state.push_back(0.0);         // m_state[2]
 
 	double tp = (tau[0]*tau[1])/(tau[1] - tau[0]) * log(tau[1]/tau[0]);
-        m_parameters.push_back(dg);                     // m_parameters[1]
+        m_parameters.push_back(weight);                     // m_parameters[1]
         m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[2]
         m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[3]
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[4]
@@ -78,7 +78,7 @@ void Exp2Synapse::handleEvent(const Event *event)
 
 //~~~
 
-TsodyksSynapse::TsodyksSynapse(double E, double dg, double U, double tau[3],
+TMGSynapse::TMGSynapse(double E, double weight, double U, double tau[3],
                                uint id, double dt) : Synapse(E, id, dt), m_t(0.0)
 {
         // tau = {tau_1, tau_rec, tau_facil}
@@ -86,7 +86,7 @@ TsodyksSynapse::TsodyksSynapse(double E, double dg, double U, double tau[3],
         m_state.push_back(0.0);         // m_state[2] -> z
         m_state.push_back(U);           // m_state[3] -> u
 
-        m_parameters.push_back(dg);     // m_parameters[1] -> dg
+        m_parameters.push_back(weight);     // m_parameters[1] -> weight
         m_parameters.push_back(U);      // m_parameters[2] -> U
         m_parameters.push_back(tau[2]); // m_parameters[3] -> tau_facil
         m_parameters.push_back(exp(-m_dt/tau[0]));      // m_parameters[4] -> exp. decay
@@ -96,13 +96,13 @@ TsodyksSynapse::TsodyksSynapse(double E, double dg, double U, double tau[3],
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[8] -> coeff.
 }
 
-void TsodyksSynapse::evolve()
+void TMGSynapse::evolve()
 {
         m_t += m_dt;
 	G_SYN = G_SYN * m_parameters[4];
 }
 	
-void TsodyksSynapse::handleEvent(const Event *event)
+void TMGSynapse::handleEvent(const Event *event)
 {
         if (event->type() == SPIKE && event->hasExpired()) {
         	// first calculate z at event, based on prior y and z

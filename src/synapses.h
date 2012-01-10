@@ -33,7 +33,7 @@ private:
 
 class ExponentialSynapse : public Synapse {
 public:
-	ExponentialSynapse(double E, double dg, double tau, uint id = GetId(), double dt = GetGlobalDt());
+	ExponentialSynapse(double E, double weight, double tau, uint id = GetId(), double dt = GetGlobalDt());
 	virtual void handleEvent(const Event *event);
 protected:
 	virtual void evolve();	
@@ -43,7 +43,7 @@ protected:
 
 class Exp2Synapse : public Synapse {
 public:
-	Exp2Synapse(double E, double dg, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
+	Exp2Synapse(double E, double weight, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
 	virtual void handleEvent(const Event *event);
 protected:
 	virtual void evolve();	
@@ -57,9 +57,9 @@ protected:
 #define ONE_OVER_TAU_REC	m_parameters[6]
 #define ONE_OVER_TAU_FACIL	m_parameters[7]
 
-class TsodyksSynapse : public Synapse {
+class TMGSynapse : public Synapse {
 public:
-	TsodyksSynapse(double E, double dg, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
+	TMGSynapse(double E, double weight, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
 	virtual void handleEvent(const Event *event);
 protected:
 	virtual void evolve();	

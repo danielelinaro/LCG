@@ -22,7 +22,7 @@ int main()
         entities[1] = new OUconductance(1, 2e-3, 0);
         entities[2] = new OUconductance(2, 10e-3, -80);
         entities[3] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
-        entities[4] = new TsodyksSynapse(0.0, 1.0, 0.03, taus);
+        entities[4] = new TMGSynapse(0.0, 1.0, 0.03, taus);
         entities[5] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
 
         //SetLoggingLevel(Debug);
