@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <vector>
 #include "types.h"
 
 #define OK 0
@@ -24,12 +25,13 @@ void Logger(LogLevel level, const char *fmt, ...);
 #endif
 
 uint GetId();
-void RegisterEntity(Entity *entity);
 
 void SetGlobalDt(double dt);
 double GetGlobalDt();
 void IncreaseGlobalTime();
 double GetGlobalTime();
+
+void Simulate(const std::vector<Entity*>& entities, double tend);
 
 } // namespace dynclamp
 

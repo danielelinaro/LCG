@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include "utils.h"
+#include "events.h"
+#include "entity.h"
 
 namespace dynclamp
 {
@@ -65,6 +67,36 @@ void IncreaseGlobalTime()
 {
         globalT += globalDt;
 }
+
+void ResetGlobalTime()
+{
+        globalT = 0.0;
+}
+
+#ifdef HAVE_RTAI_LXRT_H
+
+void Simulate(const std::vector<Entity*>& entities, double tend)
+{
+}
+
+#else
+
+void Simulate(const std::vector<Entity*>& entities, double tend)
+{
+        size_t i, n = entities.size();
+        ResetGlobalTime();
+        while (GetGlobalTime() <= tend) {
+                ProcessEvents();
+                for (i=0; i<n; i++)
+                        entities[i]->readAndStoreInputs();
+                IncreaseGlobalTime();
+                for (i=0; i<n; i++)
+                        entities[i]->step();
+        }
+}
+
+#endif
+
 
 } // namespace dynclamp
 

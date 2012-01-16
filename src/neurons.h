@@ -59,7 +59,6 @@ private:
 #ifdef HAVE_LIBCOMEDI
 
 #define RN_VM_PREV                  m_state[1]
-
 #define RN_SPIKE_THRESH             m_parameters[0]
 
 class RealNeuron : public Neuron {
@@ -77,8 +76,6 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
                    double spikeThreshold = -20);
-
-        virtual ~RealNeuron();
 
 protected:
         virtual void addPre(Entity *entity, double input);

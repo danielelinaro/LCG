@@ -106,15 +106,20 @@ RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
         m_parameters.push_back(spikeDelay);
 }
 
-RealNeuron::~RealNeuron()
-{}
-
 void RealNeuron::evolve()
 {
+        // read current value of the membrane potential
+        RN_VM_PREV = VM;
         VM = aec.compensate( m_analogInput.read() );
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
-        RN_VM_PREV = VM;
+
+        // inject the total input current into the neuron
+        double Iinj = 0.0;
+        size_t nInputs = m_inputs.size();
+        for (uint i=0; i<nInputs; i++)
+                Iinj += m_inputs[i];
+        m_analogOutput.write(Iinj);
 }
 
 #endif // HAVE_LIBCOMEDI
