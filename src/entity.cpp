@@ -79,12 +79,12 @@ void Entity::connect(Entity *entity)
         entity->addPre(this, output());
 }
 
-const std::vector<Entity*> Entity::pre() const
+const std::vector<Entity*>& Entity::pre() const
 {
         return m_pre;
 }
 
-const std::vector<Entity*> Entity::post() const
+const std::vector<Entity*>& Entity::post() const
 {
         return m_post;
 }

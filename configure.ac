@@ -22,7 +22,7 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
 # required header files
-#AC_CHECK_HEADERS([unistd.h])
+AC_CHECK_HEADERS([unistd.h])
 
 # C language stuff
 AC_C_CONST
@@ -53,6 +53,8 @@ AC_CHECK_LIB([boost_thread], [pthread_create], [], [
 echo "Can't find boost thread library."
 exit
 ])
+AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found: won't compile data acquisition code."])
+AC_CHECK_HEADERS([rtai_lxrt.h], [], [echo "RTAI not found: the code won't run in real-time mode."])
 
 # defines
 LIB_CURRENT=0

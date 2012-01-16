@@ -4,6 +4,10 @@
 #include "dynamical_entity.h"
 #include "types.h"
 
+#ifdef HAVE_LIBCOMEDI
+#include <comedilib.h>
+#endif
+
 #define VM       m_state[0]
 
 #define LIF_C    m_parameters[0]
@@ -52,8 +56,40 @@ private:
         double m_tPrevSpike;
 };
 
+#ifdef HAVE_LIBCOMEDI
+
+#define RN_VM_PREV                  m_state[1]
+
+#define RN_SPIKE_THRESH             m_parameters[0]
+#define RN_SPIKE_DELAY              m_parameters[1]
+
 class RealNeuron : public Neuron {
+public:
+        RealNeuron(const char *kernelFile,
+                   const char *deviceFile,
+                   uint inputSubdevice, uint outputSubdevice,
+                   uint readChannel, uint writeChannel,
+                   double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
+                   double spikeThreshold = -20, double spikeDelay = 1e-3);
+
+        RealNeuron(const double *AECKernel, size_t kernelSize,
+                   const char *deviceFile,
+                   uint inputSubdevice, uint outputSubdevice,
+                   uint readChannel, uint writeChannel,
+                   double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
+                   double spikeThreshold = -20, double spikeDelay = 1e-3);
+
+        virtual ~RealNeuron();
+
+protected:
+        virtual void addPre(Entity *entity, double input);
+
+private:
+        ComediAnalogInput  m_analogInput;
+        ComediAnalogOutput m_analogOutput;
+        AEC m_aec;
 };
+#endif
 
 } // namespace neurons
 

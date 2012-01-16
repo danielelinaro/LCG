@@ -73,6 +73,52 @@ void LIFNeuron::evolve()
         }
 }
 
+#ifdef HAVE_LIBCOMEDI
+
+RealNeuron::RealNeuron(const char *kernelFile,
+                       const char *deviceFile,
+                       uint inputSubdevice, uint outputSubdevice,
+                       uint readChannel, uint writeChannel,
+                       double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
+                       double spikeThreshold = -20, double spikeDelay = 1e-3)
+        : m_aec(kernelFile),
+          m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
+          m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
+{
+        m_state.push_back(-65.);        // m_state[1] -> previous membrane voltage (for spike detection)
+        m_parameters.push_back(spikeThreshold);
+        m_parameters.push_back(spikeDelay);
+}
+
+
+RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
+                       const char *deviceFile,
+                       uint inputSubdevice, uint outputSubdevice,
+                       uint readChannel, uint writeChannel,
+                       double inputConversionFactor, double outputConversionFactor,
+                       double spikeThreshold, double spikeDelay)
+        : m_aec(AECKernel, kernelSize),
+          m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
+          m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
+{
+        m_state.push_back(-65.);        // m_state[1] -> previous membrane voltage (for spike detection)
+        m_parameters.push_back(spikeThreshold);
+        m_parameters.push_back(spikeDelay);
+}
+
+RealNeuron::~RealNeuron()
+{}
+
+void RealNeuron::evolve()
+{
+        VM = aec.compensate( m_analogInput.read() );
+        if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
+                emitSpike(RN_SPIKE_DELAY);
+        RN_VM_PREV = VM;
+}
+
+#endif // HAVE_LIBCOMEDI
+
 } // namespace neurons
 
 } // namespace dynclamp

@@ -8,6 +8,8 @@
 namespace dynclamp
 {
 
+class Entity;
+
 typedef enum
 {
         All = 0, Debug, Info, Critical
@@ -22,6 +24,8 @@ void Logger(LogLevel level, const char *fmt, ...);
 #endif
 
 uint GetId();
+void RegisterEntity(Entity *entity);
+
 void SetGlobalDt(double dt);
 double GetGlobalDt();
 void IncreaseGlobalTime();

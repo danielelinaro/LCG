@@ -31,8 +31,8 @@ public:
         // as a parameter.
         void connect(Entity* entity);
 
-        const std::vector<Entity*> pre() const;
-        const std::vector<Entity*> post() const;
+        const std::vector<Entity*>& pre() const;
+        const std::vector<Entity*>& post() const;
 
         void readAndStoreInputs();
 
