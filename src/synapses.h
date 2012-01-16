@@ -1,12 +1,15 @@
 #ifndef SYNAPSES_H
 #define SYNAPSES_H
 
+#include <queue>
 #include <cmath>
 #include <cstdio>
 #include "dynamical_entity.h"
 
-#define G_SYN m_state[0]
-#define E_SYN m_parameters[0]
+#define SYN_G m_state[0]
+#define SYN_E m_parameters[0]
+#define SYN_W m_parameters[1]
+#define SYN_DELAY m_parameters[2]
 
 namespace dynclamp {
 
@@ -14,15 +17,20 @@ namespace synapses {
 
 class Synapse : public DynamicalEntity {
 public:
-	Synapse(double E, uint id = GetId(), double dt = GetGlobalDt());
+	Synapse(double E, double weight, double delay, uint id = GetId(), double dt = GetGlobalDt());
 	
+        void setWeight(double weight);
         double g() const;
         virtual double output() const;
         
-protected:
-        //virtual void finalizeConnect(DynamicalEntity *entity);
+        virtual void handleEvent(const Event *event);
 
 protected:
+        bool processSpikes();
+        virtual void handleSpike() = 0;
+
+protected:
+        std::deque<double> m_spikeTimeouts;
         double m_tPrevSpike;
 
 private:
@@ -31,37 +39,46 @@ private:
 
 //~~
 
+#define EXP_SYN_DECAY m_parameters[3]
+
 class ExponentialSynapse : public Synapse {
 public:
-	ExponentialSynapse(double E, double weight, double tau, uint id = GetId(), double dt = GetGlobalDt());
-	virtual void handleEvent(const Event *event);
+	ExponentialSynapse(double E, double weight, double delay, double tau, uint id = GetId(), double dt = GetGlobalDt());
 protected:
+	virtual void handleSpike();
 	virtual void evolve();	
 };
 
 //~~
+
+#define EXP2_SYN_DECAY1 m_parameters[3]
+#define EXP2_SYN_DECAY2 m_parameters[4]
+#define EXP2_SYN_FACTOR m_parameters[5]
 
 class Exp2Synapse : public Synapse {
 public:
-	Exp2Synapse(double E, double weight, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
-	virtual void handleEvent(const Event *event);
+	Exp2Synapse(double E, double weight, double delay, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
 protected:
+	virtual void handleSpike();
 	virtual void evolve();	
 };
 
 
 //~~
 
-#define TAU_FACIL               m_parameters[3]
-#define ONE_OVER_TAU_1		m_parameters[5]
-#define ONE_OVER_TAU_REC	m_parameters[6]
-#define ONE_OVER_TAU_FACIL	m_parameters[7]
+#define TMG_SYN_U                       m_parameters[3]
+#define TMG_SYN_TAU_FACIL               m_parameters[4]
+#define TMG_SYN_DECAY                   m_parameters[5]
+#define TMG_SYN_ONE_OVER_TAU_1		m_parameters[6]
+#define TMG_SYN_ONE_OVER_TAU_REC	m_parameters[7]
+#define TMG_SYN_ONE_OVER_TAU_FACIL	m_parameters[8]
+#define TMG_SYN_COEFF                   m_parameters[9]
 
 class TMGSynapse : public Synapse {
 public:
-	TMGSynapse(double E, double weight, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
-	virtual void handleEvent(const Event *event);
+	TMGSynapse(double E, double weight, double delay, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
 protected:
+	virtual void handleSpike();
 	virtual void evolve();	
 private:
 	double m_t;

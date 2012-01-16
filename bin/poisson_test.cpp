@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
         double taus[2] = {0.1e-3,1e-3};
         Entity *entities[2];
         entities[0] = new Poisson(opt.rate);
-        entities[1] = new Exp2Synapse(0.0, 1.0, taus);
+        entities[1] = new Exp2Synapse(0.0, 1.0, 0.0, taus);
         entities[0]->connect(entities[1]);
         Synapse *synapse = dynamic_cast<Synapse*>(entities[1]);
 

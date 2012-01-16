@@ -30,7 +30,7 @@ public:
         double Vm() const;
         virtual double output() const;
 protected:
-        void emitSpike(double timeout = 2e-3) const;
+        void emitSpike() const;
 };
 
 class LIFNeuron : public Neuron {
@@ -61,7 +61,6 @@ private:
 #define RN_VM_PREV                  m_state[1]
 
 #define RN_SPIKE_THRESH             m_parameters[0]
-#define RN_SPIKE_DELAY              m_parameters[1]
 
 class RealNeuron : public Neuron {
 public:
@@ -70,14 +69,14 @@ public:
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20, double spikeDelay = 1e-3);
+                   double spikeThreshold = -20);
 
         RealNeuron(const double *AECKernel, size_t kernelSize,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20, double spikeDelay = 1e-3);
+                   double spikeThreshold = -20);
 
         virtual ~RealNeuron();
 

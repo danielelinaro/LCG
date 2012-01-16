@@ -19,7 +19,7 @@ int main()
         Entity *entities[3];
         entities[0] = new H5Recorder("autapse.h5", compress);
         entities[1] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 220);
-        entities[2] = new TMGSynapse(-80.0, 20.0, 0.03, taus);
+        entities[2] = new TMGSynapse(-80.0, 20.0, 0.0, 0.03, taus);
         for (i=1; i<3; i++) {
                 entities[i]->connect(entities[0]);
         }

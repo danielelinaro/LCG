@@ -28,7 +28,7 @@ double Poisson::output() const
 void Poisson::step()
 {
         if (GetGlobalTime() >= m_tNextSpike) {
-                emitEvent(new SpikeEvent(this,0));
+                emitEvent(new SpikeEvent(this));
                 calculateTimeNextSpike();
         }
 }

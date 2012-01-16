@@ -24,9 +24,9 @@ double Neuron::output() const
         return VM;
 }
 
-void Neuron::emitSpike(double timeout) const
+void Neuron::emitSpike() const
 {
-        emitEvent(new SpikeEvent(this, timeout));
+        emitEvent(new SpikeEvent(this));
 }
 
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
@@ -69,7 +69,7 @@ void LIFNeuron::evolve()
                 VM = LIF_E0;
 #endif
                 m_tPrevSpike = t;
-                emitSpike(2e-3);
+                emitSpike();
         }
 }
 
@@ -79,8 +79,8 @@ RealNeuron::RealNeuron(const char *kernelFile,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
-                       double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                       double spikeThreshold = -20, double spikeDelay = 1e-3)
+                       double inputConversionFactor, double outputConversionFactor,
+                       double spikeThreshold)
         : m_aec(kernelFile),
           m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
           m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
@@ -96,7 +96,7 @@ RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       double spikeThreshold, double spikeDelay)
+                       double spikeThreshold)
         : m_aec(AECKernel, kernelSize),
           m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
           m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
@@ -113,7 +113,7 @@ void RealNeuron::evolve()
 {
         VM = aec.compensate( m_analogInput.read() );
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
-                emitSpike(RN_SPIKE_DELAY);
+                emitSpike();
         RN_VM_PREV = VM;
 }
 
