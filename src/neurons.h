@@ -4,9 +4,14 @@
 #include "dynamical_entity.h"
 #include "types.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
-#endif
+#include "analog_io.h"
+#include "aec.h"
+#endif // HAVE_LIBCOMEDI
+#endif // HAVE_CONFIG_H
 
 #define VM       m_state[0]
 
@@ -67,25 +72,27 @@ public:
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
-                   double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20);
+                   double inputConversionFactor = 100., double outputConversionFactor = 0.0025,
+                   double spikeThreshold = -20., double V0 = -65.,
+                   uint id = GetId(), double dt = GetGlobalDt());
 
         RealNeuron(const double *AECKernel, size_t kernelSize,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20);
+                   double spikeThreshold = -20., double V0 = -65.,
+                   uint id = GetId(), double dt = GetGlobalDt());
 
 protected:
-        virtual void addPre(Entity *entity, double input);
+        virtual void evolve();
 
 private:
         ComediAnalogInput  m_analogInput;
         ComediAnalogOutput m_analogOutput;
         AEC m_aec;
 };
-#endif
+#endif // HAVE_LIBCOMEDI
 
 } // namespace neurons
 

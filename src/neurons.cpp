@@ -79,15 +79,14 @@ RealNeuron::RealNeuron(const char *kernelFile,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
-                       double inputConversionFactor, double outputConversionFactor,
-                       double spikeThreshold)
-        : m_aec(kernelFile),
+                       double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
+                       double V0, uint id, double dt)
+        : Neuron(V0, id, dt), m_aec(kernelFile),
           m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
           m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
 {
         m_state.push_back(-65.);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
-        m_parameters.push_back(spikeDelay);
 }
 
 
@@ -95,22 +94,21 @@ RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
-                       double inputConversionFactor, double outputConversionFactor,
-                       double spikeThreshold)
-        : m_aec(AECKernel, kernelSize),
+                       double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
+                       double V0, uint id, double dt)
+        : Neuron(V0, id, dt), m_aec(AECKernel, kernelSize),
           m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
           m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
 {
         m_state.push_back(-65.);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
-        m_parameters.push_back(spikeDelay);
 }
-
+        
 void RealNeuron::evolve()
 {
         // read current value of the membrane potential
         RN_VM_PREV = VM;
-        VM = aec.compensate( m_analogInput.read() );
+        VM = m_aec.compensate( m_analogInput.read() );
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 

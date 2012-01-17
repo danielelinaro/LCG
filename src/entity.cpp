@@ -115,11 +115,9 @@ void Entity::handleEvent(const Event *event)
 
 void Entity::emitEvent(Event *event) const
 {
-#ifdef __APPLE__
         eventsQueue.push_back(event);
-#else
-        EnqueueEvent(event);
-#endif
+        // TODO: understand why the following line doesn't work...
+        //EnqueueEvent(event);
 }
 
 } // namespace dynclamp

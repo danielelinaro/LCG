@@ -53,8 +53,6 @@ AC_CHECK_LIB([boost_thread], [pthread_create], [], [
 echo "Can't find boost thread library."
 exit
 ])
-AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found: won't compile data acquisition code."])
-AC_CHECK_HEADERS([rtai_lxrt.h], [], [echo "RTAI not found: the code won't run in real-time mode."])
 
 # defines
 LIB_CURRENT=0
@@ -73,12 +71,14 @@ AC_ARG_WITH([examples],
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" == "yes"])
 
 case "$host_os" in
-  darwin*)
-		EXTENSION="dylib"
-    ;;
-  linux*)
+        darwin*)
+                EXTENSION="dylib"
+                ;;
+        linux*)
 		EXTENSION="so"
-    ;;
+                AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found: won't compile data acquisition code."])
+                AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found: the code won't run in real-time mode."])
+                ;;
 esac
 AC_SUBST([EXTENSION])
 		

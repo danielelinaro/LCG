@@ -1,11 +1,11 @@
-#ifdef HAVE_LIBCOMEDI
-
 #include "analog_io.h"
+#ifdef HAVE_LIBCOMEDI
+#include <cstring>
 
 namespace dynclamp {
 
-ComediAnalogIO::ComediAnalogIO(const char *deviceFile, uint subdevice, uint channel, uint id)
-        : Entity(id), m_subdevice(subdevice), m_channel(channel)
+ComediAnalogIO::ComediAnalogIO(const char *deviceFile, uint subdevice, uint channel)
+        : m_subdevice(subdevice), m_channel(channel)
 {
         strncpy(m_deviceFile, deviceFile, 30);
         if (!openDevice())
@@ -62,38 +62,34 @@ const uint ComediAnalogIO::channel() const
 //~~~
 
 ComediAnalogInput::ComediAnalogInput(const char *deviceFile, uint inputSubdevice,
-                                     uint readChannel, double inputConversionFactor,
-                                     uint id)
-        : ComediAnalogIO(deviceFile, inputSubdevice, readChannel, id), m_data(-65.)
-{
-        m_parameters.push_back(inputConversionFactor);  // m_parameters[0] -> inputConversionFactor
-}
+                                     uint readChannel, double inputConversionFactor)
+        : ComediAnalogIO(deviceFile, inputSubdevice, readChannel),
+          m_inputConversionFactor(inputConversionFactor)
+{}
 
 double ComediAnalogInput::inputConversionFactor() const
 {
-        return COMEDI_IO_CONV_FACTOR;
+        return m_inputConversionFactor;
 }
 
 double ComediAnalogInput::read()
 {
         lsampl_t sample;
         comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
-        return comedi_to_phys(sample, m_dataRange, m_maxData) * COMEDI_IO_CONV_FACTOR;
+        return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 
 //~~~
 
 ComediAnalogOutput::ComediAnalogOutput(const char *deviceFile, uint outputSubdevice,
-                                       uint writeChannel, double outputConversionFactor,
-                                       uint id)
-        : ComediAnalogIO(deviceFile, outputSubdevice, writeChannel, id), m_data(0.0)
-{
-        m_parameters.push_back(outputConversionFactor); // m_parameters[0] -> outputConversionFactor
-}
+                                       uint writeChannel, double outputConversionFactor)
+        : ComediAnalogIO(deviceFile, outputSubdevice, writeChannel),
+          m_outputConversionFactor(outputConversionFactor)
+{}
 
-double ComediAnalogOuput::outputConversionFactor() const
+double ComediAnalogOutput::outputConversionFactor() const
 {
-        return COMEDI_IO_CONV_FACTOR;
+        return m_outputConversionFactor;
 }
 
 /**
@@ -102,9 +98,11 @@ double ComediAnalogOuput::outputConversionFactor() const
 void ComediAnalogOutput::write(double data)
 {
         lsampl_t sample; 
-        sample = comedi_from_phys(data*COMEDI_IO_CONV_FACTOR, dataRange, maxData);
-        comedi_data_write(m_device, subdevice, channel, RANGE, AREF_GROUND, sample);
+        sample = comedi_from_phys(data*m_outputConversionFactor, m_dataRange, m_maxData);
+        comedi_data_write(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, sample);
 }
 
-#endif
+} // namespace dynclamp
+
+#endif // HAVE_LIBCOMEDI
 

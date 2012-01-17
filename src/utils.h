@@ -29,6 +29,7 @@ uint GetId();
 void SetGlobalDt(double dt);
 double GetGlobalDt();
 void IncreaseGlobalTime();
+void IncreaseGlobalTime(double dt);
 double GetGlobalTime();
 
 void Simulate(const std::vector<Entity*>& entities, double tend);
