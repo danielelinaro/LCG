@@ -14,7 +14,7 @@ int main()
 {
         uint i;
         double t;
-        double tend = 2;
+        double tend = 2.0;
         double taus[3] = {3e-3, 100e-3, 1000e-3};
         bool compress = false;
         std::vector<Entity*> entities;

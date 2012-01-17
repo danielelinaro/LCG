@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <vector>
+#include <boost/thread.hpp>
 #include "types.h"
 
 #define OK 0

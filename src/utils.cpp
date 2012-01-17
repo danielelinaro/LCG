@@ -9,7 +9,6 @@
 #include "config.h"
 
 #ifdef HAVE_LIBLXRT
-#include <boost/thread.hpp>
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
 
