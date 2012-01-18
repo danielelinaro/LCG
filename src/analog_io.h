@@ -7,6 +7,7 @@
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
 #include "types.h"
+#include "entity.h"
 
 #define RANGE 0
 
@@ -36,7 +37,7 @@ protected:
 class ComediAnalogInput : public ComediAnalogIO {
 public:
         ComediAnalogInput(const char *deviceFile, uint inputSubdevice,
-                          uint readChannel, double inputConversionFactor = 100);
+                          uint readChannel, double inputConversionFactor);
         double inputConversionFactor() const;
         double read();
 private:
@@ -46,14 +47,52 @@ private:
 class ComediAnalogOutput : public ComediAnalogIO {
 public:
         ComediAnalogOutput(const char *deviceFile, uint outputSubdevice,
-                           uint writeChannel, double outputConversionFactor = 0.0025);
+                           uint writeChannel, double outputConversionFactor);
         double outputConversionFactor() const;
         void write(double data);
 private:
         double m_outputConversionFactor;
 };
 
+class AnalogInput : public Entity {
+public:
+        AnalogInput(const char *deviceFile, uint inputSubdevice,
+                    uint readChannel, double inputConversionFactor,
+                     uint id = GetId(), double dt = GetGlobalDt());
+        virtual void step();
+        virtual double output() const;
+private:
+        double m_data;
+        ComediAnalogInput m_input;
+};
+
+class AnalogOutput : public Entity {
+public:
+        AnalogOutput(const char *deviceFile, uint outputSubdevice,
+                     uint writeChannel, double outputConversionFactor,
+                     uint id = GetId(), double dt = GetGlobalDt());
+        virtual void step();
+        virtual double output() const;
+private:
+        double m_data;
+        ComediAnalogOutput m_output;
+};
+
 } // namespace dynclamp
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* AnalogInputFactory(dictionary& args);
+dynclamp::Entity* AnalogOutputFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
 
 #endif // HAVE_LIBCOMEDI
 

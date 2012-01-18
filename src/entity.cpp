@@ -54,6 +54,7 @@ double Entity::parameter(uint index) const
 
 bool Entity::isPost(const Entity *entity) const
 {
+        Logger(Debug, "--- Entity::isPost(Entity*) ---\n");
         for (int i=0; i<m_post.size(); i++) {
                 if (entity->id() == m_post[i]->id())
                         return true;
@@ -66,12 +67,12 @@ void Entity::connect(Entity *entity)
         Logger(Debug, "--- Entity::connect(Entity*) ---\n");
 
         if (entity == this) {
-                Logger(Debug, "Can't connect an entity to itself.\n");
+                Logger(Critical, "Can't connect an entity to itself.\n");
                 return;
         }
 
         if (isPost(entity)) {
-                Logger(Debug, "Entity #%d was already connected to entity #%d.", id(), entity->id());
+                Logger(Info, "Entity #%d was already connected to entity #%d.", id(), entity->id());
                 return;
         }
 

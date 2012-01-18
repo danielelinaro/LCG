@@ -117,6 +117,7 @@ bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, ui
         if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
                 return false;
         *value = (uint) i;
+        return true;
 }
 
 bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value)
