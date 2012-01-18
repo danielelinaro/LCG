@@ -36,9 +36,12 @@ void SetGlobalDt(double dt);
 double GetGlobalDt();
 
 void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt);
-bool CheckAndExtractValue(dictionary& dict, const std::string& key, const std::string& value);
+void GetSeedFromDictionary(dictionary& args, ullong *seed);
+bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value);
 bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value);
 bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value);
+bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value);
+bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value);
 
 void ResetGlobalTime();
 void IncreaseGlobalTime();

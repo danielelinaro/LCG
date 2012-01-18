@@ -1,7 +1,7 @@
 #ifndef RECORDERS_H
 #define RECORDERS_H
 
-#include <cstdio>
+#include <stdio.h>
 #include <boost/thread.hpp>
 
 #include "hdf5.h"
@@ -43,7 +43,7 @@ private:
 
 class H5Recorder : public Recorder {
 public:
-        H5Recorder(const char *filename, bool compress = false, uint id = GetId(), double dt = GetGlobalDt());
+        H5Recorder(const char *filename, bool compress, uint id = GetId(), double dt = GetGlobalDt());
         ~H5Recorder();
 
         virtual void step();
@@ -98,6 +98,21 @@ private:
 } // namespace recorders
 
 } // namespace dynclamp
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* ASCIIRecorderFactory(dictionary& args);
+dynclamp::Entity* H5RecorderFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
 

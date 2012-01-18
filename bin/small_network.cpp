@@ -18,9 +18,9 @@ int main()
         double taus[3] = {3e-3, 100e-3, 1000e-3};
 
         DynamicalEntity *entities[N_ENTITIES];
-        entities[0] = new OUcurrent(100, 100e-3, 100);
-        entities[1] = new OUconductance(1, 2e-3, 0);
-        entities[2] = new OUconductance(2, 10e-3, -80);
+        entities[0] = new OUcurrent(100, 100e-3, 100, SEED);
+        entities[1] = new OUconductance(1, 2e-3, 0, 0, SEED);
+        entities[2] = new OUconductance(2, 10e-3, -80, 0, SEED);
         entities[3] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
         entities[4] = new TMGSynapse(0.0, 1.0, 0.0, 0.03, taus);
         entities[5] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);

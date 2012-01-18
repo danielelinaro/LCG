@@ -1,10 +1,12 @@
 #include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "utils.h"
 #include "events.h"
 #include "entity.h"
+#include "types.h"
 
 #include <dlfcn.h>
 
@@ -63,18 +65,22 @@ double GetGlobalDt()
 
 void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt)
 {
-        if (args.count("id") == 0) {
+        if (args.count("id") == 0)
                 *id = GetId();
-        }
-        else {
+        else
                 *id = atoi(args["id"].c_str());
-        }
-        if (args.count("dt") == 0) {
+        if (args.count("dt") == 0)
                 *dt = GetGlobalDt();
-        }
-        else {
+        else
                 *dt = atof(args["dt"].c_str());
-        }
+}
+
+void GetSeedFromDictionary(dictionary& args, ullong *seed)
+{
+        if (args.count("seed") == 0)
+                *seed = SEED;
+        else
+                *seed = atoll(args["seed"].c_str());
 }
 
 bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value)
@@ -102,6 +108,28 @@ bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value
         if (!CheckAndExtractValue(dict, key, str))
                 return false;
         *value = atoi(str.c_str());
+        return true;
+}
+
+bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value)
+{
+        int i;
+        if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
+                return false;
+        *value = (uint) i;
+}
+
+bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value)
+{
+        std::string str;
+        if (!CheckAndExtractValue(dict, key, str))
+                return false;
+        if (str.compare("true") == 0 || str.compare("TRUE") == 0 || str.compare("True") == 0)
+                *value = true;
+        else if (str.compare("false") == 0 || str.compare("FALSE") == 0 || str.compare("False") == 0)
+                *value = false;
+        else
+                return false;
         return true;
 }
 
@@ -137,7 +165,7 @@ Entity* EntityFactory(const char *entityName, dictionary& args)
                 Logger(Critical, "Unable to open library %s.\n", LIBNAME);
                 return NULL;
         }
-        Logger(Critical, "Successfully opened library %s.\n", LIBNAME);
+        Logger(Debug, "Successfully opened library %s.\n", LIBNAME);
 
         sprintf(symbol, "%sFactory", entityName);
 
@@ -147,7 +175,7 @@ Entity* EntityFactory(const char *entityName, dictionary& args)
                 goto close_lib;
         }
         else {
-                Logger(Critical, "Successfully found symbol %s.\n", symbol);
+                Logger(Debug, "Successfully found symbol %s.\n", symbol);
         }
 
         builder = (Factory) addr;
@@ -155,7 +183,7 @@ Entity* EntityFactory(const char *entityName, dictionary& args)
 
 close_lib:
         if (dlclose(library) == 0) {
-                Logger(Critical, "Successfully closed library %s.\n", LIBNAME);
+                Logger(Debug, "Successfully closed library %s.\n", LIBNAME);
         }
         else {
                 Logger(Critical, "Unable to close library %s: %s.\n", LIBNAME, dlerror());

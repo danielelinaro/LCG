@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "randlib.h"
 #include "generator.h"
-#include "generate_trial.h"
+//#include "generate_trial.h"
 
 namespace dynclamp {
 
@@ -31,6 +31,20 @@ private:
 } // namespace generators
 
 } // namespace dynclamp
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* PoissonFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
 

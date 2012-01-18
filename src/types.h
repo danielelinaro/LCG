@@ -9,6 +9,7 @@
 
 typedef unsigned int uint;
 typedef unsigned long ulong;
+typedef unsigned long long ullong;
 typedef double real;
 typedef std::vector<double> array;
 typedef std::map<std::string,std::string> dictionary;

@@ -2,8 +2,8 @@
 #define SYNAPSES_H
 
 #include <queue>
-#include <cmath>
-#include <cstdio>
+#include <math.h>
+#include <stdio.h>
 #include "dynamical_entity.h"
 
 #define SYN_G m_state[0]
@@ -87,5 +87,21 @@ private:
 } // namespace synapses
 
 } // namespace dynclamp
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* ExponentialSynapseFactory(dictionary& args);
+dynclamp::Entity* Exp2SynapseFactory(dictionary& args);
+dynclamp::Entity* TMGSynapseFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

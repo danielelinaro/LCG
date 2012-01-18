@@ -41,6 +41,10 @@ AC_HEADER_STDBOOL
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 # required libraries
+AC_CHECK_LIB([dl], [dlopen], [], [
+echo "Can't find the dl library."
+exit
+])
 AC_CHECK_LIB([hdf5], [H5Fcreate], [], [
 echo "Can't find HDF5 library."
 exit

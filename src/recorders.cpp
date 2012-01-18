@@ -1,5 +1,30 @@
 #include "recorders.h"
 
+dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
+{
+        uint id;
+        double dt;
+        std::string filename;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return NULL;
+        return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id, dt);
+}
+
+dynclamp::Entity* H5RecorderFactory(dictionary& args)
+{       
+        uint id;
+        double dt;
+        std::string filename;
+        bool compress;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename) ||
+             ! dynclamp::CheckAndExtractBool(args, "compress", &compress))
+                return NULL;
+        return new dynclamp::recorders::H5Recorder(filename.c_str(), compress, id, dt);
+
+}
+
 namespace dynclamp {
 
 namespace recorders {
@@ -55,12 +80,13 @@ H5Recorder::H5Recorder(const char *filename, bool compress, uint id, double dt)
         : Recorder(id, dt),
           m_data(), m_numberOfInputs(0),
           m_bufferPosition(0), m_bufferLength(bufferSize), m_bufferInUse(0), m_bufferToSave(0),
-          m_writerThread(&H5Recorder::buffersWriter, this), m_mutex(), m_cv(), m_dataReady(false), m_threadRun(true),
+          m_mutex(), m_cv(), m_dataReady(false), m_threadRun(true),
           m_dataspaces(), m_datasets(),
           m_offset(0), m_datasetSize(0)
 {
         if (open(filename, compress) != 0)
                 throw "Unable to open H5 file.";
+        m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
 }
 
 H5Recorder::~H5Recorder()
@@ -177,7 +203,7 @@ void H5Recorder::buffersWriter()
                 m_dataReady = false;
                 Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data from buffer #%d.\n", m_bufferToSave);
         }
-        Logger(Debug, "H5Recorder::buffersWriter() >> Thread is terminated.\n");
+        Logger(Debug, "H5Recorder::buffersWriter() >> Writing typedefhread has terminated.\n");
 }
 
 void H5Recorder::addPre(Entity *entity, double input)

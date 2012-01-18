@@ -17,7 +17,7 @@ void ProcessEvents()
         Event *event;
         uint i, j, nEvents, nPost;
         nEvents = eventsQueue.size();
-        Logger(Debug, "There are %d events in the queue.\n", nEvents);
+        Logger(All, "There are %d events in the queue.\n", nEvents);
         for (i=0; i<nEvents; i++) {
                 event = eventsQueue.pop_front();
                 const std::vector<Entity*>& post = event->sender()->post();

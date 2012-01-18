@@ -34,10 +34,10 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
 
         if ( ! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile) ||
              ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
-             ! dynclamp::CheckAndExtractInteger(args, "inputSubdevice", &inputSubdevice) ||
-             ! dynclamp::CheckAndExtractInteger(args, "outputSubdevice", &outputSubdevice) ||
-             ! dynclamp::CheckAndExtractInteger(args, "readChannel", &readChannel) ||
-             ! dynclamp::CheckAndExtractInteger(args, "writeChannel", &writeChannel) ||
+             ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
+             ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
+             ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
+             ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
              ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
              ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
              ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||

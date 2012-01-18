@@ -20,7 +20,7 @@ namespace dynclamp {
 class OU : public DynamicalEntity
 {
 public:
-        OU(double sigma, double tau, double eta0 = 0.0, double seed = SEED,
+        OU(double sigma, double tau, double eta0, ullong seed = SEED,
            uint id = GetId(), double dt = GetGlobalDt());
 protected:
         virtual void evolve();
@@ -32,7 +32,7 @@ private:
 class OUcurrent : public OU
 {
 public:
-        OUcurrent(double sigma, double tau, double I0 = 0.0, double seed = SEED,
+        OUcurrent(double sigma, double tau, double I0, ullong seed = SEED,
                   uint id = GetId(), double dt = GetGlobalDt());
         virtual double output() const;
 };
@@ -40,12 +40,26 @@ public:
 class OUconductance : public OU
 {
 public:
-        OUconductance(double sigma, double tau, double E, double G0 = 0.0, double seed = SEED,
+        OUconductance(double sigma, double tau, double E, double G0, ullong seed = SEED,
                       uint id = GetId(), double dt = GetGlobalDt());
         virtual double output() const;
 };
 
 }
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* OUcurrentFactory(dictionary& args);
+dynclamp::Entity* OUconductanceFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

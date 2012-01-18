@@ -1,4 +1,5 @@
 #include <boost/thread.hpp>
+#include <stdio.h>
 #include "engine.h"
 #include "entity.h"
 #include "utils.h"

@@ -2,6 +2,17 @@
 #include <sstream>
 #include "stimulus_generator.h"
 
+dynclamp::Entity* StimulusFactory(dictionary& args)
+{
+        uint id;
+        double dt;
+        std::string filename;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return NULL;
+        return new dynclamp::generators::Stimulus(filename.c_str(), id, dt);
+}
+
 namespace dynclamp {
 
 namespace generators {

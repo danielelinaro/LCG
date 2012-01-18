@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "types.h"
 #include "utils.h"
 #include "engine.h"
@@ -7,7 +8,6 @@ using namespace dynclamp;
 
 int main()
 {
-        double t, tend = 2;
         std::vector<Entity*> entities;
         dictionary parameters;
 
@@ -21,15 +21,18 @@ int main()
 
         entities.push_back( EntityFactory("LIFNeuron", parameters) );
 
-        while ((t = GetGlobalTime()) <= tend) {
-                printf("%e %e\n", t, entities[0]->output());
-                IncreaseGlobalTime();
-                entities[0]->step();
-        }
+        parameters.clear();
+        parameters["filename"] = "lif.h5";
+        parameters["compress"] = "false";
+
+        entities.push_back( EntityFactory("H5Recorder", parameters) );
         
-        //Simulate(entities, 10);
+        entities[0]->connect(entities[1]);
+
+        Simulate(entities, 5);
 
         delete entities[0];
+        delete entities[1];
 
         return 0;
 }

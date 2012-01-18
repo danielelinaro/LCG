@@ -32,5 +32,18 @@ private:
 
 } // namespace dynclamp
 
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* StimulusFactory(dictionary& args);
+	
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 

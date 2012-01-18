@@ -1,7 +1,19 @@
-#include <cmath>
+#include <math.h>
 #include "events.h"
 #include "thread_safe_queue.h"
 #include "poisson_generator.h"
+
+dynclamp::Entity* PoissonFactory(dictionary& args)
+{
+        uint id;
+        double rate, dt;
+        ullong seed;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        dynclamp::GetSeedFromDictionary(args, &seed);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate))
+                return NULL;
+        return new dynclamp::generators::Poisson(rate, seed, id, dt);
+}
 
 namespace dynclamp {
 

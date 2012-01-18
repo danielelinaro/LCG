@@ -1,5 +1,48 @@
 #include "synapses.h"
-#include <cstdlib>
+#include <stdlib.h>
+
+dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
+{
+        uint id;
+        double E, weight, delay, tau, dt;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
+             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
+             ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau))
+                return NULL;
+        return new dynclamp::synapses::ExponentialSynapse(E, weight, delay, tau, id, dt);
+}
+
+dynclamp::Entity* Exp2SynapseFactory(dictionary& args)
+{        
+        uint id;
+        double E, weight, delay, tau[2], dt;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
+             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
+             ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1]))
+                return NULL;
+        return new dynclamp::synapses::Exp2Synapse(E, weight, delay, tau, id, dt);
+}
+
+dynclamp::Entity* TMGSynapseFactory(dictionary& args)
+{
+        uint id;
+        double E, weight, delay, U, tau[3], dt;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
+             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
+             ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
+             ! dynclamp::CheckAndExtractDouble(args, "U", &U) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tau1", &tau[0]) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tauFacil", &tau[2]))
+                return NULL;
+        return new dynclamp::synapses::TMGSynapse(E, weight, delay, U, tau, id, dt);
+}
 
 namespace dynclamp {
 

@@ -1,6 +1,6 @@
 #include "analog_io.h"
 #ifdef HAVE_LIBCOMEDI
-#include <cstring>
+#include <string.h>
 
 namespace dynclamp {
 
