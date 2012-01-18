@@ -72,16 +72,16 @@ public:
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
-                   double inputConversionFactor = 100., double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20., double V0 = -65.,
+                   double inputConversionFactor, double outputConversionFactor,
+                   double spikeThreshold, double V0,
                    uint id = GetId(), double dt = GetGlobalDt());
 
         RealNeuron(const double *AECKernel, size_t kernelSize,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
-                   double inputConversionFactor = 100, double outputConversionFactor = 0.0025,
-                   double spikeThreshold = -20., double V0 = -65.,
+                   double inputConversionFactor, double outputConversionFactor,
+                   double spikeThreshold, double V0,
                    uint id = GetId(), double dt = GetGlobalDt());
 
 protected:
@@ -97,6 +97,23 @@ private:
 } // namespace neurons
 
 } // namespace dynclamp
+
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* LIFNeuronFactory(dictionary& args);
+#ifdef HAVE_LIBCOMEDI
+dynclamp::Entity* RealNeuronFactory(dictionary& args);
+#endif
+	
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

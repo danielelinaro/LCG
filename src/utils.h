@@ -2,8 +2,13 @@
 #define UTILS_H
 
 #include <vector>
-#include <boost/thread.hpp>
 #include "types.h"
+
+#if defined(__APPLE__)
+#define LIBNAME "libdynclamp.dylib"
+#elif defined(__linux__)
+#define LIBNAME "libdynclamp.so"
+#endif
 
 #define OK 0
 
@@ -29,11 +34,18 @@ uint GetId();
 
 void SetGlobalDt(double dt);
 double GetGlobalDt();
+
+void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt);
+bool CheckAndExtractValue(dictionary& dict, const std::string& key, const std::string& value);
+bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value);
+bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value);
+
+void ResetGlobalTime();
 void IncreaseGlobalTime();
 void IncreaseGlobalTime(double dt);
 double GetGlobalTime();
 
-void Simulate(const std::vector<Entity*>& entities, double tend);
+Entity* EntityFactory(const char *name, dictionary& args);
 
 } // namespace dynclamp
 

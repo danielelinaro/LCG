@@ -1,6 +1,7 @@
 #include <cstdio>>
 #include <vector>
 #include "utils.h"
+#include "engine.h"
 #include "recorders.h"
 #include "neurons.h"
 #include "synapses.h"

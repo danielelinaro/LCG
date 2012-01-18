@@ -1,6 +1,56 @@
 #include "neurons.h"
 #include "events.h"
 #include "thread_safe_queue.h"
+#include "utils.h"
+
+dynclamp::Entity* LIFNeuronFactory(dictionary& args)
+{
+        uint id;
+        double C, tau, tarp, Er, E0, Vth, Iext, dt;
+
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+
+        if ( ! dynclamp::CheckAndExtractDouble(args, "C", &C) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tarp", &tarp) ||
+             ! dynclamp::CheckAndExtractDouble(args, "Er", &Er) ||
+             ! dynclamp::CheckAndExtractDouble(args, "E0", &E0) ||
+             ! dynclamp::CheckAndExtractDouble(args, "Vth", &Vth) ||
+             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext))
+                return NULL;
+
+        return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id, dt);
+}
+
+#ifdef HAVE_LIBCOMEDI
+
+dynclamp::Entity* RealNeuronFactory(dictionary& args)
+{
+        uint inputSubdevice, outputSubdevice, readChannel, writeChannel, id;
+        std::string kernelFile, deviceFile;
+        double inputConversionFactor, outputConversionFactor, spikeThreshold, V0, dt;
+
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+
+        if ( ! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile) ||
+             ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+             ! dynclamp::CheckAndExtractInteger(args, "inputSubdevice", &inputSubdevice) ||
+             ! dynclamp::CheckAndExtractInteger(args, "outputSubdevice", &outputSubdevice) ||
+             ! dynclamp::CheckAndExtractInteger(args, "readChannel", &readChannel) ||
+             ! dynclamp::CheckAndExtractInteger(args, "writeChannel", &writeChannel) ||
+             ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
+             ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
+             ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
+             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0))
+                return NULL;
+
+        return new dynclamp::neurons::RealNeuron(kernelFile.c_str(), deviceFile.c_str(),
+                                                 inputSubdevice, outputSubdevice, readChannel, writeChannel,
+                                                 inputConversionFactor, outputConversionFactor,
+                                                 spikeThreshold, V0, id, dt);
+}
+
+#endif
 
 namespace dynclamp {
 
