@@ -4,12 +4,14 @@
 #include "utils.h"
 #include "engine.h"
 #include "entity.h"
+#include "stimulus_generator.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 using namespace dynclamp;
+using namespace dynclamp::generators;
 
 int main()
 {
@@ -17,39 +19,48 @@ int main()
         std::vector<Entity*> entities;
         dictionary parameters;
 
-        SetLoggingLevel(Critical);
+        SetLoggingLevel(Info);
 
 #ifdef HAVE_LIBCOMEDI
-        tend = 9.0;     // duration of the stimulus
 
-        parameters["filename"] = "recording.h5";
-        parameters["compress"] = "false";
-        entities.push_back( EntityFactory("H5Recorder", parameters) );
-        
-        parameters.clear();
-        parameters["deviceFile"] = "/dev/comedi0";
-        parameters["inputSubdevice"] = "0";
-        parameters["readChannel"] = "2";
-        parameters["inputConversionFactor"] = "20";
-        entities.push_back( EntityFactory("AnalogInput", parameters) );
+        try {
+                parameters["filename"] = "recording.h5";
+                parameters["compress"] = "false";
+                entities.push_back( EntityFactory("H5Recorder", parameters) );
+                
+                parameters.clear();
+                parameters["deviceFile"] = "/dev/comedi0";
+                parameters["inputSubdevice"] = "0";
+                parameters["readChannel"] = "2";
+                parameters["inputConversionFactor"] = "20";
+                entities.push_back( EntityFactory("AnalogInput", parameters) );
 
-        parameters.clear();
-        parameters["deviceFile"] = "/dev/comedi0";
-        parameters["outputSubdevice"] = "1";
-        parameters["writeChannel"] = "1";
-        parameters["outputConversionFactor"] = "0.0025";
-        entities.push_back( EntityFactory("AnalogOutput", parameters) );
+                parameters.clear();
+                parameters["deviceFile"] = "/dev/comedi0";
+                parameters["outputSubdevice"] = "1";
+                parameters["writeChannel"] = "1";
+                parameters["outputConversionFactor"] = "0.0025";
+                entities.push_back( EntityFactory("AnalogOutput", parameters) );
 
-        parameters.clear();
-        parameters["filename"] = "example.stim";
-        entities.push_back( EntityFactory("Stimulus", parameters) );
+                parameters.clear();
+                parameters["filename"] = "example.stim";
+                entities.push_back( EntityFactory("Stimulus", parameters) );
 
-        Logger(Debug, "Connecting the analog input to the recorder.\n");
-        entities[1]->connect(entities[0]);      // connect the analog input to the recorder
-        Logger(Debug, "Connecting the analog output to the recorder.\n");
-        entities[2]->connect(entities[0]);      // connect the analog output to the recorder (save the injected current)
-        Logger(Debug, "Connecting the stimulus to the analog output.\n");
-        entities[3]->connect(entities[2]);      // connect the stimulus to the analog output
+                Logger(Info, "Connecting the analog input to the recorder.\n");
+                entities[1]->connect(entities[0]);
+                Logger(Info, "Connecting the analog output to the recorder.\n");
+                entities[2]->connect(entities[0]);
+                Logger(Info, "Connecting the stimulus to the recorder.\n");
+                entities[3]->connect(entities[0]);
+                Logger(Info, "Connecting the stimulus to the analog output.\n");
+                entities[3]->connect(entities[2]);
+
+                tend = dynamic_cast<Stimulus*>(entities[3])->duration();
+
+        } catch (const char *msg) {
+                Logger(Critical, "Error: %s.\n", msg);
+                exit(1);
+        }
 
 #else
         tend = 5;

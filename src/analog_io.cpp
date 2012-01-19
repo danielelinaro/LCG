@@ -12,7 +12,6 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
 
         dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
 
-        /*
         if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
@@ -21,23 +20,6 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 dictionary::iterator it;
                 for (it = args.begin(); it != args.end(); it++)
                         dynclamp::Logger(dynclamp::Debug, "%s -> %s\n", (*it).first.c_str(), (*it).second.c_str());
-                return NULL;
-        }
-        */
-        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile)) {
-                dynclamp::Logger(dynclamp::Critical, "deviceFile is not present.\n");
-                return NULL;
-        }
-        if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice)) {
-                dynclamp::Logger(dynclamp::Critical, "inputSubdevice is not present.\n");
-                return NULL;
-        }
-        if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel)) {
-                dynclamp::Logger(dynclamp::Critical, "readChannel is not present.\n");
-                return NULL;
-        }
-        if ( ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor)) {
-                dynclamp::Logger(dynclamp::Critical, "inputConversionFactor is not present.\n");
                 return NULL;
         }
 
@@ -60,7 +42,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
                 return NULL;
         }
 
-        return new dynclamp::AnalogInput(deviceFile.c_str(), outputSubdevice, writeChannel, outputConversionFactor, id, dt);
+        return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel, outputConversionFactor, id, dt);
 }
 
 namespace dynclamp {
@@ -147,6 +129,11 @@ ComediAnalogOutput::ComediAnalogOutput(const char *deviceFile, uint outputSubdev
         : ComediAnalogIO(deviceFile, outputSubdevice, writeChannel),
           m_outputConversionFactor(outputConversionFactor)
 {}
+
+ComediAnalogOutput::~ComediAnalogOutput()
+{
+        write(0.0);
+}
 
 double ComediAnalogOutput::outputConversionFactor() const
 {

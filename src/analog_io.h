@@ -48,6 +48,7 @@ class ComediAnalogOutput : public ComediAnalogIO {
 public:
         ComediAnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor);
+        ~ComediAnalogOutput();
         double outputConversionFactor() const;
         void write(double data);
 private:
