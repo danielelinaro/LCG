@@ -9,7 +9,7 @@
                                         each numerical value, assuming ' ' and '\t' as separa-
                                         tors, and finally returning the number of values found.
                                         
- int readmatrix(char *, double **, INT *, INT *)        : takes advantage of the previous func.
+ int readmatrix(char *, double **, uint *, uint *)        : takes advantage of the previous func.
                                                     to process a multi-line text file, repeating
                                                     for every line the 'extract' procedure. Note: a
                                                     line which starts with '%', '/' or '#' is 
@@ -20,11 +20,9 @@
 #include "file_parsing.h"
 
 //----------------------------------------------------------------
-int extract(double *v,char *buf)	{
+int extract(double *v, const char *buf)	{
   int n = 0;
-  char *s;
-
-  s=buf;
+  const char *s = buf;
 
   // reach the first number (if any) of the current buffer
   while(*s && (*s==' ' || *s=='\t')) s++; // skip blanks
@@ -46,10 +44,10 @@ int extract(double *v,char *buf)	{
 
 
 //----------------------------------------------------------------
-int readmatrix(char *file, double **matr, INT *rownum, INT *colnum)	{
+int readmatrix(const char *file, double **matr, size_t *rownum, size_t *colnum)	{
   FILE *dev;
   char buf[1000];                                   // tmp buffer
-  INT i = 0;
+  size_t i = 0;
    
   if ((dev = fopen(file, "r")) == NULL)             // The file is open read-only. If it doesn't exist, 
  { fprintf(stderr,"input file not found!"); return -1; }     // a standard error message is printed..

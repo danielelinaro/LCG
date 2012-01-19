@@ -23,6 +23,7 @@ public:
 
         void setParameters(const array& parameters);
         void setParameter(double parameter, uint index);
+        size_t numberOfParameters() const;
         const array& parameters() const;
         double parameter(uint index) const;
 
@@ -43,6 +44,9 @@ public:
         virtual void handleEvent(const Event *event);
 
         virtual void emitEvent(Event *event) const;
+
+        virtual bool hasMetadata(size_t *ndims) const;
+        virtual const double* metadata(size_t *dims, char *label) const;
 
 protected:
         virtual void addPre(Entity *entity, double input);

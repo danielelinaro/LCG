@@ -22,8 +22,8 @@ extern "C" {
 #define MAXCOLS             15      // maximal number of columns in the input data vector
 #define MAXROWS             100     // maximal number of lines 
 
-int extract(double *,char *);
-int readmatrix(char *, double **, INT *, INT *);
+int extract(double *, const char *);
+int readmatrix(const char *, double **, size_t *, size_t *);
 
 #ifdef __cplusplus
 }

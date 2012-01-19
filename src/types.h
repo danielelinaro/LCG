@@ -5,7 +5,8 @@
 #include <vector>
 #include <map>
 
-#define SEED 5061983
+#define SEED            5061983
+#define LABEL_LEN       30
 
 typedef unsigned int uint;
 typedef unsigned long ulong;

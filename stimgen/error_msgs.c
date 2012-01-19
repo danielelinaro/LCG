@@ -14,7 +14,7 @@
 void msg(char *mytext, int verbose) {
  char mystring[500];
  if (verbose) {
- sprintf(mystring, "[%s - %d]: %s\n", SOFTWARE, VERSION, mytext);
+ sprintf(mystring, "[%s - %d]: %s\n", STIMGEN_SOFTWARE, STIMGEN_VERSION, mytext);
  fprintf(stderr, "%s", mystring); fflush(NULL);
  }
  return;
@@ -24,7 +24,7 @@ void msg(char *mytext, int verbose) {
 void error(char *mytext, int verbose) {
  char mystring[500];
  if (verbose) {
- sprintf(mystring, "(Error)[%s - %d]: %s\n", SOFTWARE, VERSION, mytext);
+ sprintf(mystring, "(Error)[%s - %d]: %s\n", STIMGEN_SOFTWARE, STIMGEN_VERSION, mytext);
  fprintf(stderr, "%s", mystring); fflush(NULL);
  }
  return;
@@ -34,7 +34,7 @@ void error(char *mytext, int verbose) {
 void warning(char *mytext, int verbose) {
  char mystring[500];
  if (verbose) {
- sprintf(mystring, "(Warning)[%s - %d]: %s\n", SOFTWARE, VERSION, mytext);
+ sprintf(mystring, "(Warning)[%s - %d]: %s\n", STIMGEN_SOFTWARE, STIMGEN_VERSION, mytext);
  fprintf(stderr, "%s", mystring); fflush(NULL);
  }
  return;

@@ -20,7 +20,8 @@ namespace generators {
 Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
         : Generator(id, dt), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
 {
-        int flag;
+        int i, j, flag;
+        double **metadata;
         struct stat buf;
 
         // check for file existence
@@ -30,7 +31,7 @@ Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
                 throw ss.str().c_str();
         }
 
-        m_parameters.push_back(1.0/dt);         // m_parameters[0] -> sampling rate
+        m_parameters.push_back(1.0/m_dt);         // m_parameters[0] -> sampling rate
 
         flag = generate_trial(stimulusFile, GetLoggingLevel() <= Debug,
                               0, NULL, &m_stimulus, &m_stimulusLength, m_parameters[0], m_dt);
@@ -40,16 +41,46 @@ Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
                         free(m_stimulus);
                 throw "Error in <generate_trial>.";
         }
+
+        metadata = new double*[MAXROWS];
+        if (metadata == NULL)
+                throw "Unable to allocate memory for <parsed_data> !";
+        for (i=0; i<MAXROWS; i++)  { 
+                metadata[i] = new double[MAXCOLS];
+                if (metadata[i] == NULL)
+                        throw "Unable to allocate memory for <parsed_data> !";
+        }
+        
+        if (readmatrix(stimulusFile, metadata, &m_stimulusRows, &m_stimulusCols) == -1)
+                throw "Unable to parse file.";
+
+        m_stimulusMetadata = new double[m_stimulusRows * m_stimulusCols];
+        for (i=0; i<m_stimulusRows; i++) {
+                for (j=0; j<m_stimulusCols; j++) {
+                        m_stimulusMetadata[i*m_stimulusCols + j] = metadata[i][j];
+                        Logger(Debug, "%7.1lf ", m_stimulusMetadata[i*m_stimulusCols + j]);
+                }
+                Logger(Debug, "\n");
+                delete metadata[i];
+        }
+        delete metadata;
 }
 
 Stimulus::~Stimulus()
 {
-        if (m_stimulus != NULL)
-                free(m_stimulus);
+        if (m_stimulus != NULL) {
+                delete m_stimulus;
+                delete m_stimulusMetadata;
+        }
 }
 
 
-INT Stimulus::stimulusLength() const
+double Stimulus::duration() const
+{
+        return stimulusLength() * dt();
+}
+
+uint Stimulus::stimulusLength() const
 {
         return m_stimulusLength;
 }
@@ -66,7 +97,22 @@ double Stimulus::output() const
 
 void Stimulus::step()
 {
-        m_position++;
+        if (hasNext())
+                m_position++;
+}
+
+bool Stimulus::hasMetadata(size_t *ndims) const
+{
+        *ndims = 2;
+        return true;
+}
+
+const double* Stimulus::metadata(size_t *dims, char *label) const
+{
+        sprintf(label, "Stimulus_Matrix");
+        dims[0] = m_stimulusRows;
+        dims[1] = m_stimulusCols;
+        return m_stimulusMetadata;
 }
 
 } // namespace generators

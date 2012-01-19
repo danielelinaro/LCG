@@ -15,17 +15,24 @@ public:
         Stimulus(const char *filename, uint id = GetId(), double dt = GetGlobalDt());
         virtual ~Stimulus();
 
-        INT stimulusLength() const;
+        uint stimulusLength() const;
         virtual bool hasNext() const;
 
         virtual void step();
         virtual double output() const;
 
+        virtual bool hasMetadata(size_t *ndims) const;
+        virtual const double* metadata(size_t *dims, char *label) const;
+
+        double duration() const;
+
 private:
-        double m_srate;
         double *m_stimulus;
-        INT m_stimulusLength;
-        INT m_position;
+        uint m_stimulusLength;
+        uint m_position;
+
+        double *m_stimulusMetadata;
+        size_t m_stimulusRows, m_stimulusCols;
 };
 
 } // namespace generators

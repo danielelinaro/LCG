@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-int generate_trial(const char *, int , int , char *, double **, INT *, double, double);	// function prototype
+int generate_trial(const char *, int , int , char *, double **, uint *, double, double);	// function prototype
 
 #ifdef __cplusplus
 }

@@ -62,11 +62,13 @@ ASCIIRecorder::~ASCIIRecorder()
 
 void ASCIIRecorder::step()
 {
-        fprintf(m_fid, "%14e", GetGlobalTime());
         uint i, n = m_inputs.size();
-        for (i=0; i<n; i++)
-                fprintf(m_fid, " %14e", m_inputs[i]);
-        fprintf(m_fid, "\n");
+        if (n > 0) {
+                fprintf(m_fid, "%14e", GetGlobalTime());
+                for (i=0; i<n; i++)
+                        fprintf(m_fid, " %14e", m_inputs[i]);
+                fprintf(m_fid, "\n");
+        }
 }
 
 const hsize_t H5Recorder::rank           = 1;
@@ -113,6 +115,9 @@ H5Recorder::~H5Recorder()
 
 void H5Recorder::step()
 {
+        if (m_numberOfInputs == 0)
+                return;
+
         if (m_bufferPosition == 0)
                 Logger(Debug, "         H5Recorder::step() >> Started writing in buffer #%d.\n", m_bufferInUse);
         for (uint i=0; i<m_numberOfInputs; i++) {
@@ -224,8 +229,8 @@ void H5Recorder::addPre(Entity *entity, double input)
         herr_t status;
 
         // the name of the dataset
-        char datasetName[7];
-        sprintf(datasetName, "CH%04d", m_numberOfInputs);
+        char datasetName[DATASET_NAME_LEN];
+        sprintf(datasetName, "/Data/Entity-%04d", m_numberOfInputs, entity->id());
 
         // create the dataspace with unlimited dimensions
         m_dataspaces.push_back(H5Screate_simple(rank, &bufferSize, &maxSize));
@@ -278,6 +283,64 @@ void H5Recorder::addPre(Entity *entity, double input)
         }
 
         H5Pclose(cparms);
+
+        // save parameters
+        size_t npars = entity->numberOfParameters();
+        if (npars > 0) {
+                double *pars = new double[npars];
+                for (uint i=0; i<npars; i++)
+                        pars[i] = entity->parameter(i);
+                sprintf(datasetName, "/Parameters/Entity-%04d", entity->id());
+                if (!writeData(datasetName, pars, &npars, 1))
+                        Logger(Critical, "Unable to save parameters for entity #%d.\n", entity->id());
+                delete pars;
+        }
+        
+        // save metadata
+        size_t ndims;
+        if (entity->hasMetadata(&ndims)) {
+                char label[LABEL_LEN];
+                size_t *dims = new size_t[ndims];
+                const double *metadata = entity->metadata(dims, label);
+                sprintf(datasetName, "/Metadata/Entity-%04d-%s", entity->id(), label);
+                if (!writeData(datasetName, metadata, dims, ndims))
+                        Logger(Critical, "Unable to write metadata for entity #%d.\n", entity->id());
+                delete dims;
+        }
+}
+
+bool H5Recorder::writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims)
+{
+        herr_t status;
+        hid_t dataspace, dataset;
+        hsize_t *hdims;
+
+        hdims = new hsize_t[ndims];
+        for (int i=0; i<ndims; i++)
+                hdims[i] = (hsize_t) dims[i];
+        dataspace = H5Screate_simple(ndims, hdims, NULL);
+        if (dataspace < 0) {
+                delete hdims;
+                return false;
+        }
+
+        dataset = H5Dcreate2(m_fid, datasetName, H5T_IEEE_F64LE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (dataset < 0) {
+                H5Sclose(dataspace);
+                delete hdims;
+                return false;
+        }
+
+        status = H5Dwrite(dataset, H5T_IEEE_F64LE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+        delete hdims;
+
+        if (status < 0)
+                return false;
+
+        return true;
 }
 
 int H5Recorder::isCompressionAvailable() const
@@ -328,7 +391,45 @@ int H5Recorder::open(const char *filename, bool compress)
 
         m_fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         if(m_fid < 0)
-                return H5_CREATE_ERROR;
+                return H5_FILE_OPEN_ERROR;
+
+        if (!createGroups())
+                return H5_GROUPS_OPEN_ERROR;
+
+        if (!writeMiscellanea())
+                return H5_MISC_WRITE_ERROR;
+
+        return checkCompression();
+}
+
+bool H5Recorder::createGroups()
+{
+        hid_t grp;
+        grp = H5Gcreate2(m_fid, "/Data", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (grp < 0)
+                return false;
+        m_groups["data"] = grp;
+
+        grp = H5Gcreate2(m_fid, "/Metadata", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (grp < 0)
+                return false;
+        m_groups["metadata"] = grp;
+
+        grp = H5Gcreate2(m_fid, "/Parameters", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (grp < 0)
+                return false;
+        m_groups["parameters"] = grp;
+
+        grp = H5Gcreate2(m_fid, "/Misc", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (grp < 0)
+                return false;
+        m_groups["misc"] = grp;
+
+        return true;
+}
+
+int H5Recorder::checkCompression()
+{
         if(m_compressed) {
                 // Create the dataset creation property list and add the shuffle
                 // filter and the gzip compression filter.
@@ -347,12 +448,55 @@ int H5Recorder::open(const char *filename, bool compress)
         }
         return OK;
 }
+        
+bool H5Recorder::writeMiscellanea()
+{
+        herr_t status;
+        hid_t dataspace, dataset, aid, attr;
+        hsize_t dims = 0;
+
+        dataspace = H5Screate_simple(1, &dims, NULL);
+        if (dataspace < 0) {
+                return false;
+        }
+
+        dataset = H5Dcreate2(m_fid, "/Misc/Simulation_properties", H5T_IEEE_F64LE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (dataset < 0) {
+                H5Sclose(dataspace);
+                return false;
+        }
+
+        aid = H5Screate(H5S_SCALAR);
+        attr = H5Acreate2(dataset, "dt", H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
+        status = H5Awrite(attr, H5T_IEEE_F64LE, &m_dt);
+
+        H5Aclose(attr);
+        H5Sclose(aid);
+        H5Dclose(dataset);
+        H5Sclose(dataspace);
+
+        if (status < 0)
+                return false;
+
+        return true;
+}
 
 void H5Recorder::close()
 {
         Logger(Debug, "--- H5Recorder::close() ---\n");
         Logger(Debug, "Closing file.\n");
         if (m_fid != -1) {
+
+                hid_t dataset = H5Dopen2(m_fid, "/Misc/Simulation_properties", H5P_DEFAULT);
+                if (dataset >= 0) {
+                        hid_t aid = H5Screate(H5S_SCALAR);
+                        hid_t attr = H5Acreate2(dataset, "tend", H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
+                        double tend = GetGlobalTime() - m_dt;
+                        H5Awrite(attr, H5T_IEEE_F64LE, &tend);
+                        H5Aclose(attr);
+                        H5Sclose(aid);
+                        H5Dclose(dataset);
+                }
 
                 if(m_compressed)
                         H5Pclose(m_datasetPropertiesList);
@@ -362,7 +506,12 @@ void H5Recorder::close()
                         H5Sclose(m_dataspaces[i]);
                 }
 
+                std::map<std::string,hid_t>::iterator it;
+                for (it = m_groups.begin(); it != m_groups.end(); it++)
+                        H5Gclose((*it).second);
+
                 H5Fclose(m_fid);
+                
                 m_fid = -1;
         }
 }

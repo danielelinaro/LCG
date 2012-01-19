@@ -4,6 +4,7 @@
 #include "engine.h"
 #include "recorders.h"
 #include "neurons.h"
+#include "stimulus_generator.h"
 #include "synapses.h"
 
 using namespace dynclamp;

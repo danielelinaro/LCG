@@ -32,14 +32,18 @@ private:
 };
 
 
-#define H5_CREATE_ERROR  1
-#define H5_DATASET_ERROR 2
-#define H5_SHUFFLE_ERROR 3
-#define H5_DEFLATE_ERROR 4
+#define DATASET_NAME_LEN 128
 
-#define H5_NO_GZIP_COMPRESSION 5
-#define H5_NO_FILTER_INFO      6
-#define H5_NO_SHUFFLE_FILTER   7
+#define H5_FILE_OPEN_ERROR      -1
+#define H5_GROUPS_OPEN_ERROR    -2
+#define H5_MISC_WRITE_ERROR     -3
+#define H5_DATASET_ERROR        -4
+#define H5_SHUFFLE_ERROR        -5
+#define H5_DEFLATE_ERROR        -6
+
+#define H5_NO_GZIP_COMPRESSION  -7
+#define H5_NO_FILTER_INFO       -8
+#define H5_NO_SHUFFLE_FILTER    -9
 
 class H5Recorder : public Recorder {
 public:
@@ -64,6 +68,10 @@ private:
         int open(const char *filename, bool compress);
         void close();
         void buffersWriter();
+        bool writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims);
+        bool writeMiscellanea();
+        bool createGroups();
+        int checkCompression();
 
 private:
         // the handle of the file
@@ -88,6 +96,7 @@ private:
         bool m_dataReady;
         bool m_threadRun;
 
+        std::map<std::string,hid_t> m_groups;
         std::vector<hid_t> m_dataspaces;
         std::vector<hid_t> m_datasets;
         hsize_t m_offset;

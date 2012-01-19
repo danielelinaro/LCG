@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#define SOFTWARE            "CREATE_STIMULUS"
-#define VERSION             2009
+#define STIMGEN_SOFTWARE            "CREATE_STIMULUS"
+#define STIMGEN_VERSION             2009
 
 #define TWOPI 6.283185307179586476925286766559   // Mathematical constant := 2 * PI.
 #define POSPART(m) (((m) > 0) ? m : 0.)
@@ -41,7 +41,7 @@ extern "C" {
 #define SUBTRACTION     3
 #define DIVISION        4
 
-typedef unsigned long int INT;                   // Type definition for my convenience.
+typedef unsigned int uint;                   // Type definition for my convenience.
 
 #ifdef __cplusplus
 }

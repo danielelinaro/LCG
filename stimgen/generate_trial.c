@@ -7,17 +7,17 @@
 
 #include "generate_trial.h"
 
-int generate_trial(const char *filename, int verbose, int output_on_file, char *outfilename, double **output, INT *index, double srate, double dt)
+int generate_trial(const char *filename, int verbose, int output_on_file, char *outfilename, double **output, uint *index, double srate, double dt)
 {
 char mytext[500];
 double **parsed_data;
 double T;                           // Total duration [s].
-INT Ni;                             // Partial duration [points].
-INT N;                              // Size of the output waveform (i.e. N = T / dt).
+uint Ni;                             // Partial duration [points].
+uint N;                              // Size of the output waveform (i.e. N = T / dt).
 FILE *fp;
 
-INT  cols, nlines, current_line;
-INT i,j, return_code;
+uint  cols, nlines, current_line;
+uint i,j, return_code;
 
  //--------------------------------------------------------------------------------------
  // Data structure containing the input file is defined and created here. 
@@ -55,7 +55,7 @@ INT i,j, return_code;
  T      = how_long_lasts_trial(parsed_data, nlines);
  if (T <= 0) { error("Zero trial duration !", verbose);  return -1; }
  sprintf(mytext, "Total time: %.2f s @ %.1f Hz", T, srate); msg(mytext, verbose);
- N      = (INT) ceill(T * srate);
+ N      = (uint) ceill(T * srate);
  (*output) = (double *) calloc(N, sizeof(double));   // Please note: "c"-alloc is indeed required here!
  if ((*output) == NULL) { error("Unable to allocate memory for <output> !", verbose);  return -1; } 
 
@@ -70,7 +70,7 @@ INT i,j, return_code;
  while (current_line < nlines) {
  
   if (parsed_data[current_line][CODE] > 0) {
-  Ni = (INT) ceill(parsed_data[current_line][DURATION] * srate);
+  Ni = (uint) ceill(parsed_data[current_line][DURATION] * srate);
   if (((*index)+Ni) > N) { error("Out of range in <output> !", verbose);  return -1; } 
   return_code = simple_waveform(parsed_data[current_line], (*output), index, Ni, srate, dt, verbose); 
   if (return_code == -1) { error("simple_waveform returned -1", verbose); return -1;}

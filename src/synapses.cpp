@@ -99,7 +99,7 @@ ExponentialSynapse::ExponentialSynapse(double E, double weight, double delay, do
                                        uint id, double dt)
         : Synapse(E, weight, delay, id, dt)
 {
-        m_parameters.push_back(exp(-dt/tau));   // m_parameters[3] -> decay coefficient
+        m_parameters.push_back(exp(-m_dt/tau));   // m_parameters[3] -> decay coefficient
 }
 
 void ExponentialSynapse::evolve()
@@ -123,8 +123,8 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
         m_state.push_back(0.0);         // m_state[2]
 
 	double tp = (tau[0]*tau[1])/(tau[1] - tau[0]) * log(tau[1]/tau[0]);
-        m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[3] -> first decay coefficient
-        m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[4] -> second decay coefficient
+        m_parameters.push_back(exp(-m_dt/tau[0]));        // m_parameters[3] -> first decay coefficient
+        m_parameters.push_back(exp(-m_dt/tau[1]));        // m_parameters[4] -> second decay coefficient
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
 }
 

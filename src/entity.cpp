@@ -40,6 +40,11 @@ void Entity::setParameter(double parameter, uint index)
         m_parameters[index] = parameter;
 }
 
+size_t Entity::numberOfParameters() const
+{
+        return m_parameters.size();
+}
+
 const array& Entity::parameters() const
 {
         return m_parameters;
@@ -67,7 +72,7 @@ void Entity::connect(Entity *entity)
         Logger(Debug, "--- Entity::connect(Entity*) ---\n");
 
         if (entity == this) {
-                Logger(Critical, "Can't connect an entity to itself.\n");
+                Logger(Critical, "Can't connect an entity to itself (entity #%d).\n", entity->id());
                 return;
         }
 
@@ -119,6 +124,17 @@ void Entity::emitEvent(Event *event) const
         eventsQueue.push_back(event);
         // TODO: understand why the following line doesn't work...
         //EnqueueEvent(event);
+}
+
+bool Entity::hasMetadata(size_t *ndims) const
+{
+        *ndims = 0;
+        return false;
+}
+
+const double* Entity::metadata(size_t *dims, char *label) const
+{
+        return NULL;
 }
 
 } // namespace dynclamp
