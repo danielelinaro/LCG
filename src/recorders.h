@@ -54,7 +54,7 @@ public:
 
 public:
         static const hsize_t rank;
-        static const hsize_t maxSize;
+        static const hsize_t unlimitedSize;
         static const hsize_t chunkSize;
         static const uint    numberOfChunks; 
         static const hsize_t bufferSize;

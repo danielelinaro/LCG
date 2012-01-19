@@ -72,7 +72,7 @@ void ASCIIRecorder::step()
 }
 
 const hsize_t H5Recorder::rank           = 1;
-const hsize_t H5Recorder::maxSize         = H5S_UNLIMITED;
+const hsize_t H5Recorder::unlimitedSize         = H5S_UNLIMITED;
 const hsize_t H5Recorder::chunkSize      = 100;
 const uint    H5Recorder::numberOfChunks = 20;
 const hsize_t H5Recorder::bufferSize     = 2000;
@@ -233,7 +233,7 @@ void H5Recorder::addPre(Entity *entity, double input)
         sprintf(datasetName, "/Data/Entity-%04d", m_numberOfInputs, entity->id());
 
         // create the dataspace with unlimited dimensions
-        m_dataspaces.push_back(H5Screate_simple(rank, &bufferSize, &maxSize));
+        m_dataspaces.push_back(H5Screate_simple(rank, &bufferSize, &unlimitedSize));
         if (m_dataspaces[k] < 0)
                 throw "Unable to create dataspace.";
         else
@@ -452,31 +452,77 @@ int H5Recorder::checkCompression()
 bool H5Recorder::writeMiscellanea()
 {
         herr_t status;
-        hid_t dataspace, dataset, aid, attr;
-        hsize_t dims = 0;
+        hid_t dataspace, cparms, dataset, aid, attr;
+        hsize_t dims = 0, chunk = 1;
 
-        dataspace = H5Screate_simple(1, &dims, NULL);
+        dataspace = H5Screate_simple(1, &dims, &unlimitedSize);
         if (dataspace < 0) {
+                Logger(Critical, "Unable to create dataspace.\n");
                 return false;
         }
 
-        dataset = H5Dcreate2(m_fid, "/Misc/Simulation_properties", H5T_IEEE_F64LE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (dataset < 0) {
+        cparms = H5Pcreate(H5P_DATASET_CREATE);
+        if (cparms < 0) {
                 H5Sclose(dataspace);
+                Logger(Critical, "Unable to create properties.\n");
+                return false;
+        }
+
+        status = H5Pset_chunk(cparms, 1, &chunk);
+        if (status < 0) {
+                H5Pclose(cparms);
+                H5Sclose(dataspace);
+                Logger(Critical, "Unable to set chunking.\n");
+                return false;
+        }
+
+        status = H5Pset_fill_value(cparms, H5T_IEEE_F64LE, &fillValue);
+        if (status < 0) {
+                H5Pclose(cparms);
+                H5Sclose(dataspace);
+                Logger(Critical, "Unable to set fill value.\n");
+                return false;
+        }
+
+        dataset = H5Dcreate2(m_fid, "/Misc/Simulation_properties", H5T_IEEE_F64LE, dataspace, H5P_DEFAULT, cparms, H5P_DEFAULT);
+        if (dataset < 0) {
+                H5Pclose(cparms);
+                H5Sclose(dataspace);
+                Logger(Critical, "Unable to create dataset.\n");
                 return false;
         }
 
         aid = H5Screate(H5S_SCALAR);
+        if (aid < 0) {
+                H5Dclose(dataset);
+                H5Pclose(cparms);
+                H5Sclose(dataspace);
+                Logger(Critical, "Unable to create scalar.\n");
+                return false;
+        }
+
         attr = H5Acreate2(dataset, "dt", H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
+        if (attr < 0) {
+                H5Sclose(aid);
+                H5Dclose(dataset);
+                H5Pclose(cparms);
+                H5Sclose(dataspace);
+                Logger(Critical, "Unable to create attribute.\n");
+                return false;
+        }
+
         status = H5Awrite(attr, H5T_IEEE_F64LE, &m_dt);
 
         H5Aclose(attr);
         H5Sclose(aid);
         H5Dclose(dataset);
+        H5Pclose(cparms);
         H5Sclose(dataspace);
 
-        if (status < 0)
+        if (status < 0) {
+                Logger(Critical, "Unable to write attribute.\n");
                 return false;
+        }
 
         return true;
 }
