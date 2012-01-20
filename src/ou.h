@@ -10,10 +10,11 @@
 #define OU_SIGMA m_parameters[0]
 #define OU_TAU   m_parameters[1]
 #define OU_ETA0  m_parameters[2]
-#define OU_MU    m_parameters[3]
-#define OU_COEFF m_parameters[4]
+#define OU_CONST m_parameters[3]
+#define OU_MU    m_parameters[4]
+#define OU_COEFF m_parameters[5]
 
-#define OU_E     m_parameters[5]
+#define OU_E     m_parameters[6]
 
 namespace dynclamp {
 
