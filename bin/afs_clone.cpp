@@ -10,12 +10,20 @@
 
 #include "types.h"
 #include "utils.h"
+#include "entity.h"
+#include "engine.h"
+#include "stimulus_generator.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
 #define AFS_CLONE_VERSION 0.1
+#define AFS_BANNER \
+        "\n\tArbitrary Function Stimulator (AFS)\n" \
+        "\nAuthor: Daniele Linaro (daniele@tnb.ua.ac.be)\n" \
+        "\nThis program has some of the basic functionalities provided by the AFS developed\n" \
+        "by Mike Wijnants at the Theoretical Neurobiology lab in Antwerp.\n"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -34,7 +42,9 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
         double iti, ibi;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
-        po::options_description description("Allowed options");
+        po::options_description description(
+                        AFS_BANNER
+                        "\nAllowed options");
         po::variables_map options;
 
         try {
@@ -81,7 +91,7 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
                 }
                 else {
                         std::cout << description << "\n";
-                        std::cout << ">> You have to specify one of stimulus file or stimulus directory. <<\n";
+                        std::cout << "ERROR: you have to specify one of [stimulus file] or [stimulus directory]. Aborting...\n";
                         exit(1);
                 }
 
@@ -138,7 +148,7 @@ void runStimulus(const std::string& stimfile)
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");
                 entities[3]->connect(entities[2]);
 
-                tend = dynamic_cast<Stimulus*>(entities[3])->duration();
+                tend = dynamic_cast<generators::Stimulus*>(entities[3])->duration();
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s.\n", msg);
@@ -161,10 +171,11 @@ int main(int argc, char *argv[])
 
         parseArgs(argc, argv, &opt);
 
-        std::cout << "number of batches: " << opt.nBatches << std::endl;
-        std::cout << "number of trials: " << opt.nTrials << std::endl;
-        std::cout << "iti: " << opt.iti << std::endl;
-        std::cout << "ibi: " << opt.ibi << std::endl;
+        Logger(Info, AFS_BANNER);
+        Logger(Info, "Number of batches: %d.\n", opt.nBatches);
+        Logger(Info, "Number of trials: %d.\n", opt.nTrials);
+        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
+        Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.stimulusFiles.size(); j++) {

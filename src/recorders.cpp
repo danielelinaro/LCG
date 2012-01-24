@@ -1,3 +1,4 @@
+#include <string.h>
 #include "recorders.h"
 
 dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
