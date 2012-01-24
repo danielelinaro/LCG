@@ -6,8 +6,8 @@ dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
         double dt;
         std::string filename;
         dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
-        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return NULL;
+        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return new dynclamp::recorders::ASCIIRecorder((const char *) NULL, id, dt);
         return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id, dt);
 }
 
@@ -18,10 +18,11 @@ dynclamp::Entity* H5RecorderFactory(dictionary& args)
         std::string filename;
         bool compress;
         dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
-        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename) ||
-             ! dynclamp::CheckAndExtractBool(args, "compress", &compress))
+        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
                 return NULL;
-        return new dynclamp::recorders::H5Recorder(filename.c_str(), compress, id, dt);
+        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return new dynclamp::recorders::H5Recorder(compress, NULL, id, dt);
+        return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id, dt);
 
 }
 
@@ -41,7 +42,13 @@ double Recorder::output() const
 ASCIIRecorder::ASCIIRecorder(const char *filename, uint id, double dt)
         : Recorder(id, dt)
 {
-        m_fid = fopen(filename, "w");
+        char fname[FILENAME_MAXLEN];
+        if (filename == NULL)
+                MakeFilename(fname, "dat");
+        else
+                strncpy(fname, filename, FILENAME_MAXLEN);
+
+        m_fid = fopen(fname, "w");
         if (m_fid == NULL) {
                 char msg[100];
                 sprintf(msg, "Unable to open %s.\n", filename); 
@@ -78,7 +85,7 @@ const uint    H5Recorder::numberOfChunks = 20;
 const hsize_t H5Recorder::bufferSize     = 2000;
 const double  H5Recorder::fillValue      = 0.0;
 
-H5Recorder::H5Recorder(const char *filename, bool compress, uint id, double dt)
+H5Recorder::H5Recorder(bool compress, const char *filename, uint id, double dt)
         : Recorder(id, dt),
           m_data(), m_numberOfInputs(0),
           m_bufferPosition(0), m_bufferLength(bufferSize), m_bufferInUse(0), m_bufferToSave(0),
@@ -86,8 +93,15 @@ H5Recorder::H5Recorder(const char *filename, bool compress, uint id, double dt)
           m_dataspaces(), m_datasets(),
           m_offset(0), m_datasetSize(0)
 {
-        if (open(filename, compress) != 0)
+        char fname[FILENAME_MAXLEN];
+        if (filename == NULL)
+                MakeFilename(fname, "h5");
+        else
+                strncpy(fname, filename, FILENAME_MAXLEN);
+
+        if (open(fname, compress) != 0)
                 throw "Unable to open H5 file.";
+
         m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
 }
 

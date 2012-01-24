@@ -11,6 +11,7 @@
 #endif
 
 #define OK 0
+#define FILENAME_MAXLEN 30
 
 namespace dynclamp
 {
@@ -42,11 +43,11 @@ bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *val
 bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value);
 bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value);
 bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value);
-
 void ResetGlobalTime();
 void IncreaseGlobalTime();
 void IncreaseGlobalTime(double dt);
 double GetGlobalTime();
+void MakeFilename(char *filename, const char *extension);
 
 Entity* EntityFactory(const char *name, dictionary& args);
 

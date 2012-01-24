@@ -3,6 +3,7 @@
 #include "ou.h"
 #include "recorders.h"
 #include "engine.h"
+#include "randlib.h"
 
 using namespace dynclamp;
 using namespace dynclamp::recorders;
@@ -11,6 +12,14 @@ using namespace dynclamp::recorders;
 
 int main()
 {
+        {
+                const int n = 10000;
+                int data[n];
+                shuffle(-5000,n-50001,data);
+                for (int i=0; i<n; i++)
+                        fprintf(stderr, "%d\n", data[i]);
+        }
+
         int i;
         double tend = 5;
         double sigma = 50;

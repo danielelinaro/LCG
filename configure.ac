@@ -57,6 +57,18 @@ AC_CHECK_LIB([boost_thread], [pthread_create], [], [
 echo "Can't find boost thread library."
 exit
 ])
+AC_CHECK_LIB([boost_program_options], [memcmp], [], [
+echo "Can't find boost program options library."
+exit
+])
+AC_CHECK_LIB([boost_system], [malloc], [], [
+echo "Can't find boost system library."
+exit
+])
+AC_CHECK_LIB([boost_filesystem], [open], [], [
+echo "Can't find boost filesystem library."
+exit
+])
 
 # defines
 LIB_CURRENT=0

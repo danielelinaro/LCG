@@ -18,6 +18,7 @@ typedef unsigned int uint;
 const double maxint = 4294967296.;
 const double maxlong = 18446744073709551616.;
 
+bool shuffle(int start, int stop, int *data);
 double gammln(double x);
 
 class UniformRandom { 

@@ -21,7 +21,7 @@ public:
 
 class ASCIIRecorder : public Recorder {
 public:
-        ASCIIRecorder(const char *filename, uint id = GetId(), double dt = GetGlobalDt());
+        ASCIIRecorder(const char *filename = NULL, uint id = GetId(), double dt = GetGlobalDt());
         ASCIIRecorder(FILE *fid, uint id = GetId(), double dt = GetGlobalDt());
         ~ASCIIRecorder();
 
@@ -47,7 +47,7 @@ private:
 
 class H5Recorder : public Recorder {
 public:
-        H5Recorder(const char *filename, bool compress, uint id = GetId(), double dt = GetGlobalDt());
+        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId(), double dt = GetGlobalDt());
         ~H5Recorder();
 
         virtual void step();

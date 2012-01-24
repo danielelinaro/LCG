@@ -9,6 +9,7 @@
 #include "types.h"
 
 #include <dlfcn.h>
+#include <sys/stat.h>
 
 namespace dynclamp
 {
@@ -132,6 +133,36 @@ bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value)
         else
                 return false;
         return true;
+}
+
+void MakeFilename(char *filename, const char *extension)
+{
+        time_t rawTime;
+        struct tm * timeInfo;
+        int extensionLen, cnt;
+        char *base;
+        struct stat s;
+
+        extensionLen = strlen(extension);
+
+        base = new char[FILENAME_MAXLEN - extensionLen];
+
+        time(&rawTime);
+        timeInfo = localtime(&rawTime);
+
+        sprintf(base, "%d%02d%02d%02d%02d%02d",
+                timeInfo->tm_year+1900, timeInfo->tm_mon+1, timeInfo->tm_mday,
+                timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec);
+
+        sprintf(filename, "%s.%s", base, extension);
+
+        cnt = 1;
+        while (stat(filename, &s) == 0) {
+                sprintf(filename, "%s-%02d.%s", base, cnt, extension);
+                cnt++;
+        }
+
+        delete base;
 }
 
 double GetGlobalTime()

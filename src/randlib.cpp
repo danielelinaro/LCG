@@ -1,4 +1,33 @@
 #include "randlib.h"
+#include <time.h>
+
+bool shuffle(int start, int stop, int *data)
+{
+        if (start > stop) {
+                return false;
+        }
+
+        int i, cnt, r;
+        size_t n = stop - start;
+        bool *idx = new bool[n+1];
+        UniformRandom rnd(time(NULL));
+
+        for (i=0; i<n+1; i++)
+                idx[i] = false;
+
+        cnt = 0;
+        while (cnt <= n) {
+                r = round(start + n*rnd.doub());
+                if (!idx[r-start]) {
+                        idx[r-start] = true;
+                        data[cnt] = r;
+                        cnt++;
+                }
+        }
+
+        delete idx;
+        return true;
+}
 
 double gammln(double x) {
 	int j;

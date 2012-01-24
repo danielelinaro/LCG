@@ -1,0 +1,185 @@
+#include <stdlib.h>
+#include <sys/types.h>
+
+#include <vector>
+#include <string>
+#include <iostream>
+
+#include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
+
+#include "types.h"
+#include "utils.h"
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#define AFS_CLONE_VERSION 0.1
+
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
+using namespace dynclamp;
+
+struct AFSoptions {
+        useconds_t iti, ibi;
+        uint nTrials, nBatches;
+        std::vector<std::string> stimulusFiles;
+};
+
+void parseArgs(int argc, char *argv[], AFSoptions *opt)
+{
+
+        double iti, ibi;
+        uint nTrials, nBatches;
+        std::string stimfile, stimdir;
+        po::options_description description("Allowed options");
+        po::variables_map options;
+
+        try {
+                description.add_options()
+                        ("help,h", "print help message")
+                        ("version,v", "print version number")
+                        ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
+                        ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
+                        ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
+                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
+                        ("stimfile,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
+                        ("stimdir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
+
+                po::store(po::parse_command_line(argc, argv, description), options);
+                po::notify(options);    
+
+                if (options.count("help")) {
+                        std::cout << description << "\n";
+                        exit(0);
+                }
+
+                if (options.count("version")) {
+                        std::cout << fs::path(argv[0]).filename() << " version " << AFS_CLONE_VERSION << std::endl;
+                        exit(0);
+                }
+
+                if(options.count("stimfile")) {
+                        if (!fs::exists(stimfile)) {
+                                std::cout << "Stimulus file \"" << stimfile << "\" not found. Aborting...\n";
+                                exit(1);
+                        }
+                        opt->stimulusFiles.push_back(stimfile);
+                }
+                else if (options.count("stimdir")) {
+                        if (!fs::exists(stimdir)) {
+                                std::cout << "Directory \"" << stimdir << "\" not found. Aborting...\n";
+                                exit(1);
+                        }
+                        for (fs::directory_iterator it(stimdir); it != fs::directory_iterator(); it++) {
+                                if (! fs::is_directory(it->status())) {
+                                        opt->stimulusFiles.push_back(it->path().string());
+                                }
+                        }
+                }
+                else {
+                        std::cout << description << "\n";
+                        std::cout << ">> You have to specify one of stimulus file or stimulus directory. <<\n";
+                        exit(1);
+                }
+
+                opt->iti = (useconds_t) (iti * 1e6);
+                opt->ibi = (useconds_t) (ibi * 1e6);
+                opt->nTrials = nTrials;
+                opt->nBatches = nBatches;
+
+        } catch (std::exception e) {
+                std::cout << e.what() << std::endl;
+                exit(2);
+        }
+
+}
+
+void runStimulus(const std::string& stimfile)
+{
+        Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
+
+#ifdef HAVE_LIBCOMEDI
+
+        std::vector<Entity*> entities;
+        dictionary parameters;
+        double tend;
+
+        try {
+                parameters["compress"] = "false";
+                entities.push_back( EntityFactory("H5Recorder", parameters) );
+                
+                parameters.clear();
+                parameters["deviceFile"] = "/dev/comedi0";
+                parameters["inputSubdevice"] = "0";
+                parameters["readChannel"] = "2";
+                parameters["inputConversionFactor"] = "20";
+                entities.push_back( EntityFactory("AnalogInput", parameters) );
+
+                parameters.clear();
+                parameters["deviceFile"] = "/dev/comedi0";
+                parameters["outputSubdevice"] = "1";
+                parameters["writeChannel"] = "1";
+                parameters["outputConversionFactor"] = "0.0025";
+                entities.push_back( EntityFactory("AnalogOutput", parameters) );
+
+                parameters.clear();
+                parameters["filename"] = stimfile;
+                entities.push_back( EntityFactory("Stimulus", parameters) );
+
+                Logger(Debug, "Connecting the analog input to the recorder.\n");
+                entities[1]->connect(entities[0]);
+                Logger(Debug, "Connecting the analog output to the recorder.\n");
+                entities[2]->connect(entities[0]);
+                Logger(Debug, "Connecting the stimulus to the recorder.\n");
+                entities[3]->connect(entities[0]);
+                Logger(Debug, "Connecting the stimulus to the analog output.\n");
+                entities[3]->connect(entities[2]);
+
+                tend = dynamic_cast<Stimulus*>(entities[3])->duration();
+
+        } catch (const char *msg) {
+                Logger(Critical, "Error: %s.\n", msg);
+                exit(1);
+        }
+
+        Simulate(entities, tend);
+
+        for (uint i=0; i<entities.size(); i++)
+                delete entities[i];
+#endif
+}
+
+int main(int argc, char *argv[])
+{
+        AFSoptions opt;
+        int i, j, k;
+
+        SetLoggingLevel(Info);
+
+        parseArgs(argc, argv, &opt);
+
+        std::cout << "number of batches: " << opt.nBatches << std::endl;
+        std::cout << "number of trials: " << opt.nTrials << std::endl;
+        std::cout << "iti: " << opt.iti << std::endl;
+        std::cout << "ibi: " << opt.ibi << std::endl;
+
+        for (i=0; i<opt.nBatches; i++) {
+                for (j=0; j<opt.stimulusFiles.size(); j++) {
+                        for (k=0; k<opt.nTrials; k++) {
+                                runStimulus(opt.stimulusFiles[j]);
+                                if (k != opt.nTrials-1)
+                                        usleep(opt.iti);
+                        }
+                        if (j != opt.stimulusFiles.size()-1)
+                                usleep(opt.iti);
+                }
+                if (i != opt.nBatches-1)
+                        usleep(opt.ibi);
+        }
+
+        return 0;
+}
+
