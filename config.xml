@@ -1,0 +1,10 @@
+<dynamicclamp>
+<entities>
+<entity>
+<name>LIFNeuron</name>
+<parameters>
+<C></C>
+</parameters>
+</entity>
+</entities>
+</dynamicclamp>

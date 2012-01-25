@@ -71,5 +71,15 @@ double AEC::convolve() const
         return U;
 }
 
+const double* AEC::kernel() const
+{
+        return m_kernel;
+}
+
+size_t AEC::kernelLength() const
+{
+        return m_length;
+}
+
 } // namespace dynclamp
 

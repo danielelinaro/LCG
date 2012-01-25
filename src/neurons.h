@@ -84,6 +84,8 @@ public:
                    double spikeThreshold, double V0,
                    uint id = GetId(), double dt = GetGlobalDt());
 
+        virtual const double* metadata(size_t *dims, char *label) const;
+
 protected:
         virtual void evolve();
 

@@ -18,7 +18,10 @@ dynclamp::Entity* OUcurrentFactory(dictionary& args)
 dynclamp::Entity* OUconductanceFactory(dictionary& args)
 {
         uint id;
-        double sigma, tau, E, G0, seed, dt;
+        ullong seed;
+        double sigma, tau, E, G0, dt;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        dynclamp::GetSeedFromDictionary(args, &seed);
         if ( ! dynclamp::CheckAndExtractDouble(args, "sigma", &sigma) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
              ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||

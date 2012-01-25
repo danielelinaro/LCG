@@ -1,16 +1,20 @@
-#include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <dlfcn.h>
+#include <sys/stat.h>
+
+#include <sstream>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
 #include "utils.h"
 #include "events.h"
 #include "entity.h"
 #include "types.h"
-
-#include <dlfcn.h>
-#include <sys/stat.h>
 
 namespace dynclamp
 {
@@ -184,6 +188,10 @@ void IncreaseGlobalTime(double dt)
 void ResetGlobalTime()
 {
         globalT = 0.0;
+}
+
+void ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
+{
 }
 
 Entity* EntityFactory(const char *entityName, dictionary& args)

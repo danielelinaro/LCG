@@ -170,6 +170,14 @@ void RealNeuron::evolve()
         m_analogOutput.write(Iinj);
 }
 
+const double* RealNeuron::metadata(size_t *dims, char *label) const
+{
+        sprintf(label, "Electrode_Kernel");
+        dims[0] = 1;
+        dims[1] = m_aec.kernelLength();
+        return m_aec.kernel();
+}
+
 #endif // HAVE_LIBCOMEDI
 
 } // namespace neurons

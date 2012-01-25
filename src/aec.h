@@ -14,6 +14,9 @@ public:
         void pushBack(double I);
         double compensate(double V) const;
 
+        size_t kernelLength() const;
+        const double* kernel() const;
+
 private:
         double convolve() const;
 
