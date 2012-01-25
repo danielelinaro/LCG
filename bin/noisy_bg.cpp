@@ -153,6 +153,7 @@ void runStimulus(const std::string& stimfile, OUoptions *opt)
         std::vector<Entity*> entities;
         dictionary parameters;
         double tend;
+        int i;
 
         try {
                 // entity[0]
@@ -178,12 +179,12 @@ void runStimulus(const std::string& stimfile, OUoptions *opt)
                 entities.push_back( EntityFactory("Stimulus", parameters) );
 
                 // entity[3] & entity[4]
-                for (int i=0; i<2; i++) {
+                for (i=0; i<2; i++) {
                         parameters.clear();
-                        parameters["sigma"] = opt[0]->sigma;
-                        parameters["tau"] = opt[0]->tau;
-                        parameters["E"] = opt[0]->E;
-                        parameters["G0"] = opt[0]->G0;
+                        parameters["sigma"] = opt[i].sigma;
+                        parameters["tau"] = opt[i].tau;
+                        parameters["E"] = opt[i].E;
+                        parameters["G0"] = opt[i].G0;
                         entities.push_back( EntityFactory("OUconductance", parameters) );
                 }
 
