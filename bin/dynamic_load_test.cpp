@@ -24,7 +24,7 @@ int main()
 #ifdef HAVE_LIBCOMEDI
 
         try {
-                parameters["filename"] = "white_noise.h5";
+                parameters["filename"] = "recording.h5";
                 parameters["compress"] = "false";
                 entities.push_back( EntityFactory("H5Recorder", parameters) );
                 
@@ -43,7 +43,7 @@ int main()
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
 
                 parameters.clear();
-                parameters["filename"] = "white_noise.stim";
+                parameters["filename"] = "example.stim";
                 entities.push_back( EntityFactory("Stimulus", parameters) );
 
                 Logger(Info, "Connecting the analog input to the recorder.\n");

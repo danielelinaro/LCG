@@ -63,7 +63,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 goto stopRT;
         }
         
-        SetGlobalDt(count2sec(tickPeriod));
+        //SetGlobalDt(count2sec(tickPeriod));
         Logger(Info, "The period is %g ms (f = %g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
 
         // some sort of preamble

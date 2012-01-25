@@ -39,7 +39,7 @@ Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
         if (flag == -1) {
                 if (m_stimulus != NULL)
                         free(m_stimulus);
-                throw "Error in <generate_trial>.";
+                throw "Error in <generate_trial>";
         }
 
         metadata = new double*[MAXROWS];

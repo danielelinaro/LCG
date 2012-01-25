@@ -180,6 +180,7 @@ int main(int argc, char *argv[])
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
                         for (k=0; k<opt.nTrials; k++) {
+                                ResetGlobalTime();
                                 runStimulus(opt.stimulusFiles[j]);
                                 if (k != opt.nTrials-1)
                                         usleep(opt.iti);
