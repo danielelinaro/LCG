@@ -12,6 +12,7 @@ using namespace dynclamp::recorders;
 
 int main()
 {
+        /*
         {
                 const int n = 10000;
                 int data[n];
@@ -19,6 +20,7 @@ int main()
                 for (int i=0; i<n; i++)
                         fprintf(stderr, "%d\n", data[i]);
         }
+        */
 
         int i;
         double tend = 5;

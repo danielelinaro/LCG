@@ -71,6 +71,8 @@ OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullo
 double OUconductance::output() const
 {
         // OU_ETA is a conductance
+        if (OU_E < -10)
+                Logger(Critical, "%e %e %e %d\n", OU_ETA, OU_E, m_post[0]->output(), m_post[0]->id());
         return OU_ETA * (OU_E - m_post[0]->output());
 }
 

@@ -40,6 +40,7 @@ struct options {
         useconds_t iti, ibi;
         uint nTrials, nBatches;
         std::vector<std::string> stimulusFiles;
+        std::string kernelFile;
         OUoptions ou[2];
 };
 
@@ -52,7 +53,6 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                 i = 0;
                 BOOST_FOREACH(ptree::value_type &v,
                               pt.get_child("dynamicclamp.entities")) {
-                        std::cout << v.first << std::endl;
                         opt->ou[i].sigma = v.second.get<std::string>("sigma");
                         opt->ou[i].tau = v.second.get<std::string>("tau");
                         opt->ou[i].E = v.second.get<std::string>("E");
@@ -72,7 +72,7 @@ void parseArgs(int argc, char *argv[], options *opt)
 
         double iti, ibi;
         uint nTrials, nBatches;
-        std::string stimfile, stimdir, configfile;
+        std::string stimfile, stimdir, configfile, kernelfile;
         po::options_description description(
                         NOISY_BG_BANNER
                         "\nAllowed options");
@@ -82,13 +82,14 @@ void parseArgs(int argc, char *argv[], options *opt)
                 description.add_options()
                         ("help,h", "print help message")
                         ("version,v", "print version number")
+                        ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
                         ("config-file,c", po::value<std::string>(&configfile)->default_value("noisy_bg.xml"), "specify configuration file")
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
-                        ("stimfile,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
-                        ("stimdir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
+                        ("stim-file,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
+                        ("stim-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
 
                 po::store(po::parse_command_line(argc, argv, description), options);
                 po::notify(options);    
@@ -108,14 +109,20 @@ void parseArgs(int argc, char *argv[], options *opt)
                         exit(1);
                 }
 
-                if (options.count("stimfile")) {
+                if (!options.count("kernel-file") || !fs::exists(kernelfile)) {
+                        std::cout << "Kernel file not specified or not found. Aborting...\n";
+                        exit(1);
+                }
+                opt->kernelFile = kernelfile;
+
+                if (options.count("stim-file")) {
                         if (!fs::exists(stimfile)) {
                                 std::cout << "Stimulus file \"" << stimfile << "\" not found. Aborting...\n";
                                 exit(1);
                         }
                         opt->stimulusFiles.push_back(stimfile);
                 }
-                else if (options.count("stimdir")) {
+                else if (options.count("stim-dir")) {
                         if (!fs::exists(stimdir)) {
                                 std::cout << "Directory \"" << stimdir << "\" not found. Aborting...\n";
                                 exit(1);
@@ -144,7 +151,7 @@ void parseArgs(int argc, char *argv[], options *opt)
 
 }
 
-void runStimulus(const std::string& stimfile, OUoptions *opt)
+void runStimulus(const std::string kernelfile, const std::string& stimfile, OUoptions *opt)
 {
         Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
 
@@ -162,6 +169,7 @@ void runStimulus(const std::string& stimfile, OUoptions *opt)
                 
                 // entity[1]
                 parameters.clear();
+                parameters["kernelFile"] = kernelfile;
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["inputSubdevice"] = "0";
                 parameters["outputSubdevice"] = "1";
@@ -187,10 +195,20 @@ void runStimulus(const std::string& stimfile, OUoptions *opt)
                         parameters["G0"] = opt[i].G0;
                         entities.push_back( EntityFactory("OUconductance", parameters) );
                 }
+                
+                for (i=0; i<entities.size(); i++) {
+                        if (entities[i] == NULL) {
+                                Logger(Critical, "Entity #%d is NULL.\n", i);
+                                exit(1);
+                        }
+                }
 
                 // log everything
-                for (i=1; i<entities.size(); i++)
-                        entities[i]->connect(entities[0]);
+                entities[1]->connect(entities[0]);
+                entities[2]->connect(entities[0]);
+
+                //for (i=1; i<entities.size(); i++)
+                        //entities[i]->connect(entities[0]);
 
                 // connect stimuli to the neuron
                 for (i=2; i<entities.size(); i++)
@@ -229,7 +247,7 @@ int main(int argc, char *argv[])
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
                         for (k=0; k<opt.nTrials; k++) {
                                 ResetGlobalTime();
-                                runStimulus(opt.stimulusFiles[j], opt.ou);
+                                runStimulus(opt.kernelFile, opt.stimulusFiles[j], opt.ou);
                                 if (k != opt.nTrials-1)
                                         usleep(opt.iti);
                         }
