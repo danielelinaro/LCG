@@ -1,6 +1,7 @@
 -) substitute Euler with exact solution in LIFNeuron::evolve.
 -) understand why EnqueueEvent cannot be found.
 -) add name in Entity? (also for data logging...)
+-) fix shuffle function in randlib
 
 Random thoughts:
 Modify the random library to have one base class for UniformRandom and two subclasses for software and hardware implementationstruct. Moreover, there shouldn't be two distinct classes for SW and HW normal and poisson random numbers, but rather a single class which uses either a SW or a HW uniform random number generator.
