@@ -44,6 +44,10 @@ struct options {
         OUoptions ou[2];
 };
 
+void parseArgs(int argc, char *argv[], options *opt);
+bool parseConfigFile(const std::string& configfile, options *opt);
+void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string kernelfile = "");
+
 bool parseConfigFile(const std::string& configfile, options *opt)
 {
         ptree pt;
@@ -82,7 +86,6 @@ void parseArgs(int argc, char *argv[], options *opt)
                 description.add_options()
                         ("help,h", "print help message")
                         ("version,v", "print version number")
-                        ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
                         ("config-file,c", po::value<std::string>(&configfile)->default_value("noisy_bg.xml"), "specify configuration file")
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
@@ -90,6 +93,9 @@ void parseArgs(int argc, char *argv[], options *opt)
                         ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
                         ("stim-file,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
                         ("stim-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
+#ifdef HAVE_LIBCOMEDI
+                        ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
+#endif
 
                 po::store(po::parse_command_line(argc, argv, description), options);
                 po::notify(options);    
@@ -109,11 +115,13 @@ void parseArgs(int argc, char *argv[], options *opt)
                         exit(1);
                 }
 
+#ifdef HAVE_LIBCOMEDI
                 if (!options.count("kernel-file") || !fs::exists(kernelfile)) {
                         std::cout << "Kernel file not specified or not found. Aborting...\n";
                         exit(1);
                 }
                 opt->kernelFile = kernelfile;
+#endif
 
                 if (options.count("stim-file")) {
                         if (!fs::exists(stimfile)) {
@@ -151,13 +159,11 @@ void parseArgs(int argc, char *argv[], options *opt)
 
 }
 
-void runStimulus(const std::string kernelfile, const std::string& stimfile, OUoptions *opt)
+void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string kernelfile)
 {
         Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
 
-#ifdef HAVE_LIBCOMEDI
-
-        std::vector<Entity*> entities;
+        std::vector<Entity*> entities(5);
         dictionary parameters;
         double tend;
         int i;
@@ -165,10 +171,11 @@ void runStimulus(const std::string kernelfile, const std::string& stimfile, OUop
         try {
                 // entity[0]
                 parameters["compress"] = "false";
-                entities.push_back( EntityFactory("H5Recorder", parameters) );
+                entities[0] = EntityFactory("H5Recorder", parameters);
                 
                 // entity[1]
                 parameters.clear();
+#ifdef HAVE_LIBCOMEDI
                 parameters["kernelFile"] = kernelfile;
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["inputSubdevice"] = "0";
@@ -179,12 +186,22 @@ void runStimulus(const std::string kernelfile, const std::string& stimfile, OUop
                 parameters["outputConversionFactor"] = "0.0025";
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
-                entities.push_back( EntityFactory("RealNeuron", parameters) );
+                entities[1] = EntityFactory("RealNeuron", parameters);
+#else
+                parameters["C"] = "0.08";
+                parameters["tau"] = "0.0075";
+                parameters["tarp"] = "0.0014";
+                parameters["Er"] = "-65.2";
+                parameters["E0"] = "-70";
+                parameters["Vth"] = "-50";
+                parameters["Iext"] = "0";
+                entities[1] = EntityFactory("LIFNeuron", parameters);
+#endif
 
                 // entity[2]
                 parameters.clear();
                 parameters["filename"] = stimfile;
-                entities.push_back( EntityFactory("Stimulus", parameters) );
+                entities[2] = EntityFactory("Stimulus", parameters);
 
                 // entity[3] & entity[4]
                 for (i=0; i<2; i++) {
@@ -193,7 +210,7 @@ void runStimulus(const std::string kernelfile, const std::string& stimfile, OUop
                         parameters["tau"] = opt[i].tau;
                         parameters["E"] = opt[i].E;
                         parameters["G0"] = opt[i].G0;
-                        entities.push_back( EntityFactory("OUconductance", parameters) );
+                        entities[3+i] = EntityFactory("OUconductance", parameters);
                 }
                 
                 for (i=0; i<entities.size(); i++) {
@@ -203,16 +220,22 @@ void runStimulus(const std::string kernelfile, const std::string& stimfile, OUop
                         }
                 }
 
-                // log everything
-                entities[1]->connect(entities[0]);
-                entities[2]->connect(entities[0]);
+                /*** !!! THE ORDER IN WHICH ENTITIES ARE CONNECTED MATTERS !!! ***/
+                /*
+                 * This is because the OUconductance entity assumes that the first
+                 * ''post'' object is a neuron, and therefore uses its output (the
+                 * membrane voltage) to compute the actual current.
+                 *
+                 * The current solution to this is to first connect all entities - except
+                 * recorders - among themselves and then connect the entities to the recorders.
+                 */
+                entities[2]->connect(entities[1]);
+                entities[3]->connect(entities[1]);
+                entities[4]->connect(entities[1]);
 
-                //for (i=1; i<entities.size(); i++)
-                        //entities[i]->connect(entities[0]);
-
-                // connect stimuli to the neuron
-                for (i=2; i<entities.size(); i++)
-                        entities[i]->connect(entities[1]);
+                // connect all the entities to the recorder
+                for (i=1; i<entities.size(); i++)
+                        entities[i]->connect(entities[0]);
 
                 tend = dynamic_cast<generators::Stimulus*>(entities[2])->duration();
 
@@ -225,7 +248,6 @@ void runStimulus(const std::string kernelfile, const std::string& stimfile, OUop
 
         for (uint i=0; i<entities.size(); i++)
                 delete entities[i];
-#endif
 }
 
 int main(int argc, char *argv[])
@@ -247,7 +269,11 @@ int main(int argc, char *argv[])
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
                         for (k=0; k<opt.nTrials; k++) {
                                 ResetGlobalTime();
-                                runStimulus(opt.kernelFile, opt.stimulusFiles[j], opt.ou);
+#ifdef HAVE_LIBCOMEDI
+                                runStimulus(opt.ou, opt.stimulusFiles[j], opt.kernelFile);
+#else
+                                runStimulus(opt.ou, opt.stimulusFiles[j]);
+#endif
                                 if (k != opt.nTrials-1)
                                         usleep(opt.iti);
                         }

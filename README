@@ -1,0 +1,12 @@
+
+Very important note: THE ORDER IN WHICH ENTITIES ARE CONNECTED MATTERS !!!
+
+This is because the OUconductance entity assumes that the first
+''post'' object is a neuron, and therefore uses its output (the
+membrane voltage) to compute the actual current.
+
+The current solution to this is to first connect all entities - except
+recorders - among themselves and then connect the entities to the recorders.
+
+See bin/noisy_bg.cpp for an example.
+
