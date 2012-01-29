@@ -82,7 +82,7 @@ void Entity::connect(Entity *entity)
         }
 
         addPost(entity);
-        entity->addPre(this, output());
+        entity->addPre(this);
 }
 
 const std::vector<Entity*>& Entity::pre() const
@@ -95,11 +95,12 @@ const std::vector<Entity*>& Entity::post() const
         return m_post;
 }
 
-void Entity::addPre(Entity *entity, double input)
+void Entity::addPre(Entity *entity)
 {
         Logger(Debug, "--- Entity::addPre(Entity*, double) ---\n");
         m_pre.push_back(entity);
-        m_inputs.push_back(input);
+        m_inputs.push_back(0);
+        //m_inputs.reserve(m_inputs.size()+1);
 }
 
 void Entity::addPost(Entity *entity)

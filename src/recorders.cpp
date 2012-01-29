@@ -226,9 +226,9 @@ void H5Recorder::buffersWriter()
         Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
 }
 
-void H5Recorder::addPre(Entity *entity, double input)
+void H5Recorder::addPre(Entity *entity)
 {
-        Entity::addPre(entity, input);
+        Entity::addPre(entity);
 
         Logger(Debug, "--- H5Recorder::addPre(Entity*, double) ---\n");
 

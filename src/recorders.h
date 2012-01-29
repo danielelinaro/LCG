@@ -61,7 +61,7 @@ public:
         static const double  fillValue;
 
 protected:
-        virtual void addPre(Entity *entity, double input);
+        virtual void addPre(Entity *entity);
 
 private:
         int isCompressionAvailable() const;

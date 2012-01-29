@@ -49,7 +49,7 @@ public:
         virtual const double* metadata(size_t *dims, char *label) const;
 
 protected:
-        virtual void addPre(Entity *entity, double input);
+        virtual void addPre(Entity *entity);
         virtual void addPost(Entity *entity);
 
 private:

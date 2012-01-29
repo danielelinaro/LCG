@@ -1,4 +1,5 @@
 #include "ou.h"
+#include "neurons.h"
 #include <iostream>
 
 dynclamp::Entity* OUcurrentFactory(dictionary& args)
@@ -63,7 +64,7 @@ double OUcurrent::output() const
 }
 
 OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullong seed, uint id, double dt)
-        : OU(sigma, tau, G0, seed, id, dt)
+        : OU(sigma, tau, G0, seed, id, dt), m_neuron(NULL)
 {
         m_parameters.push_back(E);      // m_parameters[6] -> reversal potential
 }
@@ -71,7 +72,21 @@ OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullo
 double OUconductance::output() const
 {
         // OU_ETA is a conductance
-        return OU_ETA * (OU_E - m_post[0]->output());
+        return OU_ETA * (OU_E - m_neuron->output());
+}
+
+void OUconductance::addPost(Entity *entity)
+{
+        Logger(Critical, "OUconductance::addPost(Entity*)\n");
+        Entity::addPost(entity);
+        neurons::Neuron *n = dynamic_cast<neurons::Neuron*>(entity);
+        if (n != NULL) {
+                Logger(Critical, "Connected to a neuron (id #%d).\n", entity->id());
+                m_neuron = n;
+        }
+        else {
+                Logger(Critical, "Entity #%d is not a neuron.\n", entity->id());
+        }
 }
 
 } // namespace dynclamp

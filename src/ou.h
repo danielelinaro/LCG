@@ -18,6 +18,10 @@
 
 namespace dynclamp {
 
+namespace neurons {
+class Neuron;
+}
+
 class OU : public DynamicalEntity
 {
 public:
@@ -44,6 +48,10 @@ public:
         OUconductance(double sigma, double tau, double E, double G0, ullong seed = SEED,
                       uint id = GetId(), double dt = GetGlobalDt());
         virtual double output() const;
+protected:
+        virtual void addPost(Entity *entity);
+private:
+        neurons::Neuron *m_neuron;
 };
 
 }

@@ -49,7 +49,7 @@ void IncreaseGlobalTime(double dt);
 double GetGlobalTime();
 void MakeFilename(char *filename, const char *extension);
 
-void ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities);
+bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities);
 
 Entity* EntityFactory(const char *name, dictionary& args);
 

@@ -10,6 +10,9 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+
+using boost::property_tree::ptree;
 
 #include "utils.h"
 #include "events.h"
@@ -190,8 +193,30 @@ void ResetGlobalTime()
         globalT = 0.0;
 }
 
-void ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
+bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
 {
+        ptree pt;
+        std::string name, id;
+        int i;
+        try {
+                read_xml(filename, pt);
+                i = 0;
+                BOOST_FOREACH(ptree::value_type &v,
+                              pt.get_child("dynamicclamp.entities")) {
+                        dictionary args;
+                        name = v.second.get<std::string>("name");
+                        id = v.second.get<std::string>("id");
+                        std::cerr << name << " " << id << std::endl;
+                        BOOST_FOREACH(ptree::value_type &vv,
+                                        v.second.get_child("parameters")) {
+                                std::cerr << vv.first << std::endl;
+                        }
+                }
+        } catch(std::exception e) {
+                Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
+                return false;
+        }
+        return true;
 }
 
 Entity* EntityFactory(const char *entityName, dictionary& args)

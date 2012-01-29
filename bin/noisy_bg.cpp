@@ -220,22 +220,13 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                         }
                 }
 
-                /*** !!! THE ORDER IN WHICH ENTITIES ARE CONNECTED MATTERS !!! ***/
-                /*
-                 * This is because the OUconductance entity assumes that the first
-                 * ''post'' object is a neuron, and therefore uses its output (the
-                 * membrane voltage) to compute the actual current.
-                 *
-                 * The current solution to this is to first connect all entities - except
-                 * recorders - among themselves and then connect the entities to the recorders.
-                 */
-                entities[2]->connect(entities[1]);
-                entities[3]->connect(entities[1]);
-                entities[4]->connect(entities[1]);
-
                 // connect all the entities to the recorder
                 for (i=1; i<entities.size(); i++)
                         entities[i]->connect(entities[0]);
+
+                // connect the stimuli to the neuron
+                for (i=2; i<entities.size(); i++)
+                        entities[i]->connect(entities[1]);
 
                 tend = dynamic_cast<generators::Stimulus*>(entities[2])->duration();
 

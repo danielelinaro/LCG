@@ -1,0 +1,61 @@
+<dynamicclamp>
+  <entities>
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>false</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>RealNeuron</name>
+      <id>1</id>
+      <parameters>
+	<kernelFile>kernel.dat</kernelFile>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
+	<readChannel>2</readChannel>
+	<writeChannel>1</writeChannel>
+	<inputConversionFactor>20</inputConversionFactor>
+	<outputConversionFactor>0.0025</outputConversionFactor>
+	<spikeThreshold>-20</spikeThreshold>
+	<V0>-57</V0>
+      </parameters>
+      <connectedTo>0</connectedTo>
+    </entity>
+
+    <entity>
+      <name>Stimulus</name>
+      <id>2</id>
+      <parameters>
+	<filename>stimulus.stim</filename>
+      </parameters>
+      <connectedTo>0,1</connectedTo>
+    </entity>
+
+    <entity>
+      <name>OUconductance</name>
+      <id>3</id>
+      <parameters>
+	<sigma>0.1</sigma>
+	<tau>5</tau>
+	<E>0</E>
+	<G0>1</G0>
+      </parameters>
+      <connectedTo>0,1</connectedTo>
+    </entity>
+
+    <entity>
+      <name>OUconductance</name>
+      <id>4</id>
+      <parameters>
+	<sigma>0.2</sigma>
+	<tau>10</tau>
+	<E>-80</E>
+	<G0>2</G0>
+      </parameters>
+      <connectedTo>0,1</connectedTo>
+    </entity>
+
+  </entities>
+</dynamicclamp>
