@@ -132,8 +132,8 @@ RealNeuron::RealNeuron(const char *kernelFile,
                        double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
                        double V0, uint id, double dt)
         : Neuron(V0, id, dt), m_aec(kernelFile),
-          m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
-          m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -147,8 +147,8 @@ RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
                        double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
                        double V0, uint id, double dt)
         : Neuron(V0, id, dt), m_aec(AECKernel, kernelSize),
-          m_analogInput(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
-          m_analogOutput(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -158,18 +158,20 @@ void RealNeuron::evolve()
 {
         // read current value of the membrane potential
         RN_VM_PREV = VM;
-        double Vr = m_analogInput.read();
+        double Vr = m_input.read();
         VM = m_aec.compensate( Vr );
-        //Logger(Critical, "%e %e\n", Vr, VM);
+        Logger(Critical, "%e %e\n", Vr, VM);
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
         // inject the total input current into the neuron
         double Iinj = 0.0;
         size_t nInputs = m_inputs.size();
-        for (uint i=0; i<nInputs; i++)
+        for (uint i=0; i<nInputs; i++) {
                 Iinj += m_inputs[i];
-        m_analogOutput.write(Iinj);
+        }
+        m_output.write(Iinj);
+        m_aec.pushBack(Iinj);
 }
 
 const double* RealNeuron::metadata(size_t *dims, char *label) const

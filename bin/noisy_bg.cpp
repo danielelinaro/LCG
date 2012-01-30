@@ -94,7 +94,7 @@ void parseArgs(int argc, char *argv[], options *opt)
                         ("stim-file,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
                         ("stim-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
 #ifdef HAVE_LIBCOMEDI
-                        ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
+                description.add_options()("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file");
 #endif
 
                 po::store(po::parse_command_line(argc, argv, description), options);

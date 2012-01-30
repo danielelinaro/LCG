@@ -18,11 +18,9 @@ AEC::AEC(const char *kernelFile)
 
         while (fscanf(fid, "%le\n", &tmp) != EOF)
                 m_length++;
-        // reset position in file
         fclose(fid);
-        fid = fopen(kernelFile, "r");
-        //fseek(fid, 0, SEEK_SET);
 
+        fid = fopen(kernelFile, "r");
         m_kernel = new double[m_length];
         m_current = new double[m_length];
         for (int i=0; i<m_length; i++) {

@@ -77,15 +77,15 @@ double OUconductance::output() const
 
 void OUconductance::addPost(Entity *entity)
 {
-        Logger(Critical, "OUconductance::addPost(Entity*)\n");
+        Logger(Debug, "OUconductance::addPost(Entity*)\n");
         Entity::addPost(entity);
         neurons::Neuron *n = dynamic_cast<neurons::Neuron*>(entity);
         if (n != NULL) {
-                Logger(Critical, "Connected to a neuron (id #%d).\n", entity->id());
+                Logger(Debug, "Connected to a neuron (id #%d).\n", entity->id());
                 m_neuron = n;
         }
         else {
-                Logger(Critical, "Entity #%d is not a neuron.\n", entity->id());
+                Logger(Debug, "Entity #%d is not a neuron.\n", entity->id());
         }
 }
 

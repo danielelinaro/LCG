@@ -90,8 +90,8 @@ protected:
         virtual void evolve();
 
 private:
-        ComediAnalogInput  m_analogInput;
-        ComediAnalogOutput m_analogOutput;
+        ComediAnalogInput  m_input;
+        ComediAnalogOutput m_output;
         AEC m_aec;
 };
 #endif // HAVE_LIBCOMEDI
