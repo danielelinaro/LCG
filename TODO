@@ -1,6 +1,7 @@
 
 Short term (and therefore relatively simple):
 
+-) comedi_data_read -> non-reference single ended.
 -) substitute Euler with exact solution in LIFNeuron::evolve.
 -) understand why EnqueueEvent cannot be found.
 -) add name in Entity? (also for data logging...)

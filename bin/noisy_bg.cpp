@@ -33,7 +33,7 @@ using boost::property_tree::ptree;
 using namespace dynclamp;
 
 struct OUoptions {
-        std::string sigma, tau, E, G0;
+        std::string sigma, tau, E, G0, seed;
 };
 
 struct options {
@@ -61,6 +61,7 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                         opt->ou[i].tau = v.second.get<std::string>("tau");
                         opt->ou[i].E = v.second.get<std::string>("E");
                         opt->ou[i].G0 = v.second.get<std::string>("G0");
+                        opt->ou[i].seed = v.second.get<std::string>("seed");
                         if (++i == 2)
                                 break;
                 }
@@ -210,6 +211,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                         parameters["tau"] = opt[i].tau;
                         parameters["E"] = opt[i].E;
                         parameters["G0"] = opt[i].G0;
+                        parameters["seed"] = opt[i].seed;
                         entities[3+i] = EntityFactory("OUconductance", parameters);
                 }
                 

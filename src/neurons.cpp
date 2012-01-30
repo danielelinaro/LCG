@@ -160,7 +160,7 @@ void RealNeuron::evolve()
         RN_VM_PREV = VM;
         double Vr = m_input.read();
         VM = m_aec.compensate( Vr );
-        Logger(Critical, "%e %e\n", Vr, VM);
+        //Logger(Critical, "%e %e\n", Vr, VM);
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
