@@ -81,15 +81,13 @@ private:
         // dataset creation property list
         hid_t m_datasetPropertiesList;
         // the data
-        std::vector<double**> m_data;
+        std::vector<double*> m_data;
         // number of inputs
         uint m_numberOfInputs;
 
         // position in the buffer
         uint m_bufferPosition;
         hsize_t m_bufferLength;
-        uint m_bufferInUse;
-        uint m_bufferToSave;
         boost::thread m_writerThread;
         boost::mutex m_mutex;
         boost::condition_variable m_cv;

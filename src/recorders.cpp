@@ -89,7 +89,7 @@ const double  H5Recorder::fillValue      = 0.0;
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id, double dt)
         : Recorder(id, dt),
           m_data(), m_numberOfInputs(0),
-          m_bufferPosition(0), m_bufferLength(bufferSize), m_bufferInUse(0), m_bufferToSave(0),
+          m_bufferPosition(0), m_bufferLength(bufferSize),
           m_mutex(), m_cv(), m_dataReady(false), m_threadRun(true),
           m_dataspaces(), m_datasets(),
           m_offset(0), m_datasetSize(0)
@@ -112,7 +112,6 @@ H5Recorder::~H5Recorder()
         {
                 boost::unique_lock<boost::mutex> lock(m_mutex);
                 m_bufferLength = m_bufferPosition;
-                m_bufferToSave = m_bufferInUse;
                 m_threadRun = false;
                 m_dataReady = true;
                 Logger(Debug, "H5Recorder::~H5Recorder() >> %d values left to save.\n", m_bufferLength);
@@ -122,8 +121,6 @@ H5Recorder::~H5Recorder()
         Logger(Debug, "H5Recorder::~H5Recorder() >> Writer thread has terminated.\n");
         close();
         for (uint i=0; i<m_numberOfInputs; i++) {
-                delete m_data[i][0];
-                delete m_data[i][1];
                 delete m_data[i];
         }
 }
@@ -133,26 +130,20 @@ void H5Recorder::step()
         if (m_numberOfInputs == 0)
                 return;
 
-        if (m_bufferPosition == 0)
-                Logger(Debug, "         H5Recorder::step() >> Started writing in buffer #%d.\n", m_bufferInUse);
-        for (uint i=0; i<m_numberOfInputs; i++) {
-                m_data[i][m_bufferInUse][m_bufferPosition] = m_inputs[i];
-        }
-        m_bufferPosition = (m_bufferPosition+1) % bufferSize;
+        {
+                boost::unique_lock<boost::mutex> lock(m_mutex);
+                for (uint i=0; i<m_numberOfInputs; i++)
+                        m_data[i][m_bufferPosition] = m_inputs[i];
+                m_bufferPosition = (m_bufferPosition+1) % bufferSize;
 
-        if (m_bufferPosition == 0) {
-                Logger(Debug, "         H5Recorder::step() >> Finished writing in buffer #%d.\n", m_bufferInUse);
-                {
-                        Logger(Info, "Main thread>> Trying to lock mutex...\n");
-                        boost::unique_lock<boost::mutex> lock(m_mutex);
-                        Logger(Info, "Main thread>> Mutex locked.\n");
+                if (m_bufferPosition == 0) {
+                        Logger(Debug, "         H5Recorder::step() >> The buffer is full.\n");
                         m_bufferLength = bufferSize;
-                        m_bufferToSave = m_bufferInUse;
-                        m_bufferInUse = (m_bufferInUse + 1) % 2;
                         m_dataReady = true;
                 }
-                m_cv.notify_all();
         }
+
+        m_cv.notify_all();
 }
 
 void H5Recorder::buffersWriter()
@@ -161,8 +152,7 @@ void H5Recorder::buffersWriter()
                 boost::unique_lock<boost::mutex> lock(m_mutex);
                 while (!m_dataReady)
                         m_cv.wait(lock);
-                Logger(Info, "H5Recorder::buffersWriter() >> Acquired lock for buffer #%d.\n", m_bufferToSave);
-                Logger(Info, "H5Recorder::buffersWriter() >> Starting writing data from buffer #%d.\n", m_bufferToSave);
+                Logger(Debug, "H5Recorder::buffersWriter() >> Acquired lock for buffer.\n");
 
                 hid_t filespace;
                 herr_t status;
@@ -171,7 +161,7 @@ void H5Recorder::buffersWriter()
                         continue;
                 m_datasetSize += m_bufferLength;
 
-                Logger(Info, "Dataset size = %d. Offset = %d. Time = %g sec.\n", m_datasetSize, m_offset, m_datasetSize*GetGlobalDt());
+                Logger(Debug, "Dataset size = %d. Offset = %d. Time = %g sec.\n", m_datasetSize, m_offset, m_datasetSize*GetGlobalDt());
 
                 for (uint i=0; i<m_numberOfInputs; i++) {
 
@@ -210,7 +200,7 @@ void H5Recorder::buffersWriter()
                         }
 
                         // write data
-                        status = H5Dwrite(m_datasets[i], H5T_IEEE_F64LE, m_dataspaces[i], filespace, H5P_DEFAULT, m_data[i][m_bufferToSave]);
+                        status = H5Dwrite(m_datasets[i], H5T_IEEE_F64LE, m_dataspaces[i], filespace, H5P_DEFAULT, m_data[i]);
                         if (status < 0) {
                                 H5Sclose(filespace);
                                 throw "Unable to write data.";
@@ -223,12 +213,9 @@ void H5Recorder::buffersWriter()
                 m_offset = m_datasetSize;
                 
                 m_dataReady = false;
-                Logger(Info, "H5Recorder::buffersWriter() >> Finished writing data from buffer #%d.\n", m_bufferToSave);
-                //Logger(Info, "H5Recorder::buffersWriter() >> Sleeping for 1 second.\n");
-                //boost::this_thread::sleep(boost::posix_time::seconds(1));
-                //Logger(Info, "H5Recorder::buffersWriter() >> Releasing lock.\n");
+                Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
         }
-        Logger(Info, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
+        Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
 }
 
 void H5Recorder::addPre(Entity *entity)
@@ -241,9 +228,7 @@ void H5Recorder::addPre(Entity *entity)
 
         m_numberOfInputs++;
         uint k = m_numberOfInputs-1;
-        double **buffer = new double*[2];
-        buffer[0] = new double[bufferSize];
-        buffer[1] = new double[bufferSize];
+        double *buffer = new double[bufferSize];
         m_data.push_back(buffer);
 
         herr_t status;
