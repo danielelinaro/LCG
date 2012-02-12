@@ -5,7 +5,8 @@
 
 #define PP_FREQUENCY    m_parameters[0]
 #define PP_AMPLITUDE    m_parameters[1]
-#define PP_PERIOD       m_parameters[2]
+#define PP_DURATION     m_parameters[2]
+#define PP_PERIOD       m_parameters[3]
 
 namespace dynclamp {
 
@@ -13,7 +14,7 @@ namespace generators {
 
 class PeriodicPulse : public Generator {
 public:
-        PeriodicPulse(double frequency, double amplitude, uint id = GetId(), double dt = GetGlobalDt());
+        PeriodicPulse(double frequency, double amplitude, double duration, uint id = GetId(), double dt = GetGlobalDt());
 
         virtual bool hasNext() const;
 
@@ -23,9 +24,15 @@ public:
         double frequency() const;
         double period() const;
         double amplitude() const;
+        double duration() const;
         void setFrequency(double frequency);
         void setPeriod(double period);
         void setAmplitude(double amplitude);
+        void setDuration(double duration);
+
+private:
+        double m_output;
+        double m_tPrevPulse, m_tNextPulse;
 
 };
 
