@@ -2,6 +2,11 @@
 #define RECORDERS_H
 
 #include <stdio.h>
+
+#include <vector>
+#include <map>
+#include <queue>
+
 #include <boost/thread.hpp>
 
 #include "hdf5.h"
@@ -81,19 +86,28 @@ private:
         // dataset creation property list
         hid_t m_datasetPropertiesList;
         // the data
-        std::vector<double*> m_data;
+        std::vector<double**> m_data;
+        // the queue of the indices of the buffers to save
+        std::deque<uint> m_dataQueue;
         // number of inputs
         uint m_numberOfInputs;
 
         // position in the buffer
         uint m_bufferPosition;
-        hsize_t m_bufferLength;
+        // the length of each buffer
+        hsize_t *m_bufferLengths;
+        // the number of buffers
+        uint m_numberOfBuffers;
+        // the thread that continuosly waits for data to save
         boost::thread m_writerThread;
+        // the index of the buffer in which the main thread saves data
+        uint m_bufferInUse;
+        // multithreading stuff for controlling access to the queue m_dataQueue;
         boost::mutex m_mutex;
         boost::condition_variable m_cv;
-        bool m_dataReady;
         bool m_threadRun;
 
+        // H5 stuff
         std::map<std::string,hid_t> m_groups;
         std::vector<hid_t> m_dataspaces;
         std::vector<hid_t> m_datasets;
