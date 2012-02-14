@@ -123,6 +123,36 @@ void LIFNeuron::evolve()
         }
 }
 
+ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, double Iext,
+                                               double area, double spikeThreshold, double V0,
+                                               uint id, double dt)
+        : Neuron(V0, id, dt)
+{
+        m_parameters.push_back(C*1e-8*area);    // m_parameters[0] -> capacitance
+        m_parameters.push_back(gl);             // m_parameters[1] -> leak conductance
+        m_parameters.push_back(El);             // m_parameters[2] -> leak reversal potential
+        m_parameters.push_back(Iext);           // m_parameters[3] -> externally applied current
+        m_parameters.push_back(area);           // m_parameters[4] -> area
+        m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
+}
+
+void ConductanceBasedNeuron::evolve()
+{
+        double Iion, Ileak;
+	
+	Ileak = CBN_GL * (CBN_EL - VM);		// (mA/cm^2)
+	
+	Iion = 0.;
+	for(uint i=0; i<m_inputs.size(); i++) {
+		Iion += m_inputs[i];	        // (pA)
+	}
+        Iion = Iion * 1e-9 / (CBN_AREA * 1e-8); // (mA/cm^2)
+
+	//v = v + 1e-3 * (dt/(Cm*1e-6)) * (Iext*1e-9 - (Ileak+Iion)*(1e-8*area));
+	VM = VM + 1e-6 * m_dt/CBN_C * (CBN_IEXT - 10*CBN_AREA*(Ileak+Iion));
+        
+}
+
 #ifdef HAVE_LIBCOMEDI
 
 RealNeuron::RealNeuron(const char *kernelFile,

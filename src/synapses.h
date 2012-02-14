@@ -13,6 +13,10 @@
 
 namespace dynclamp {
 
+namespace neurons {
+class Neuron;
+} // namespace neurons
+
 namespace synapses {
 
 class Synapse : public DynamicalEntity {
@@ -28,13 +32,14 @@ public:
 protected:
         bool processSpikes();
         virtual void handleSpike() = 0;
+        virtual void addPost(Entity *entity);
 
 protected:
         std::deque<double> m_spikeTimeouts;
         double m_tPrevSpike;
 
 private:
-        DynamicalEntity *m_postSynapticNeuron;
+        neurons::Neuron *m_neuron;
 };
 
 //~~

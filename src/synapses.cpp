@@ -1,4 +1,5 @@
 #include "synapses.h"
+#include "neurons.h"
 #include <stdlib.h>
 
 dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
@@ -49,7 +50,7 @@ namespace dynclamp {
 namespace synapses {
 
 Synapse::Synapse(double E, double weight, double delay, uint id, double dt)
-        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0), m_postSynapticNeuron(NULL), m_spikeTimeouts()
+        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0), m_neuron(NULL), m_spikeTimeouts()
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
@@ -60,7 +61,7 @@ Synapse::Synapse(double E, double weight, double delay, uint id, double dt)
 double Synapse::output() const
 {
         // i = g * (E - V_post)
-        return SYN_G * (SYN_E - m_post[0]->output());
+        return SYN_G * (SYN_E - m_neuron->output());
 }
 
 double Synapse::g() const
@@ -91,6 +92,20 @@ bool Synapse::processSpikes()
                 processedSpikes = true;
         }
         return processedSpikes;
+}
+
+void Synapse::addPost(Entity *entity)
+{
+        Logger(Debug, "Synapse::addPost(Entity*)\n");
+        Entity::addPost(entity);
+        neurons::Neuron *n = dynamic_cast<neurons::Neuron*>(entity);
+        if (n != NULL) {
+                Logger(Debug, "Connected to a neuron (id #%d).\n", entity->id());
+                m_neuron = n;
+        }
+        else {
+                Logger(Debug, "Entity #%d is not a neuron.\n", entity->id());
+        }
 }
 
 //~~~

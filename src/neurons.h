@@ -22,8 +22,14 @@
 #define LIF_E0   m_parameters[4]
 #define LIF_VTH  m_parameters[5]
 #define LIF_IEXT m_parameters[6]
-
 //#define LIF_ARTIFICIAL_SPIKE
+
+#define CBN_C           m_parameters[0]
+#define CBN_GL          m_parameters[1]
+#define CBN_EL          m_parameters[2]
+#define CBN_IEXT        m_parameters[3]
+#define CBN_AREA        m_parameters[4]
+#define CBN_THRESH      m_parameters[5]
 
 namespace dynclamp {
 
@@ -59,6 +65,24 @@ protected:
 
 private:
         double m_tPrevSpike;
+};
+
+class ConductanceBasedNeuron : public Neuron {
+public:
+        /**
+         * \param C membrane capacitance (uF/cm^2)
+         * \param gl leak conductance (S/cm^2)
+         * \param El leak reversal potential (mV)
+         * \param Iext externally applied current (pA)
+         * \param area surface of the membrane (um^2)
+         * \param spikeThreshold threshold for emitting a spike (mV)
+         * \param V0 initial value of the membrane potential (mV)
+         */
+        ConductanceBasedNeuron(double C, double gl, double El, double Iext,
+                               double area, double spikeThreshold, double V0,
+                               uint id = GetId(), double dt = GetGlobalDt());
+protected:
+        virtual void evolve();
 };
 
 #ifdef HAVE_LIBCOMEDI
