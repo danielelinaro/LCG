@@ -108,6 +108,7 @@ public:
                    double spikeThreshold, double V0,
                    uint id = GetId(), double dt = GetGlobalDt());
 
+        virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
 
 protected:

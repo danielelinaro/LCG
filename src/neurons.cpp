@@ -190,7 +190,6 @@ void RealNeuron::evolve()
         RN_VM_PREV = VM;
         double Vr = m_input.read();
         VM = m_aec.compensate( Vr );
-        //Logger(Critical, "%e %e\n", Vr, VM);
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
@@ -204,11 +203,16 @@ void RealNeuron::evolve()
         m_aec.pushBack(Iinj);
 }
 
+bool RealNeuron::hasMetadata(size_t *ndims) const
+{
+        *ndims = 1;
+        return true;
+}
+
 const double* RealNeuron::metadata(size_t *dims, char *label) const
 {
         sprintf(label, "Electrode_Kernel");
-        dims[0] = 1;
-        dims[1] = m_aec.kernelLength();
+        dims[0] = m_aec.kernelLength();
         return m_aec.kernel();
 }
 
