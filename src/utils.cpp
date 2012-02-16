@@ -4,7 +4,11 @@
 #include <assert.h>
 #include <string.h>
 #include <dlfcn.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <sstream>
 
@@ -86,10 +90,18 @@ void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt)
 
 void GetSeedFromDictionary(dictionary& args, ullong *seed)
 {
-        if (args.count("seed") == 0)
-                *seed = SEED;
-        else
-                *seed = atoll(args["seed"].c_str());
+        ullong s;
+        if (args.count("seed") == 0 || (s = atoll(args["seed"].c_str())) == -1) {
+               int fd = open("/dev/random",O_RDONLY);
+               if (fd == -1) {
+                       *seed = time(NULL);
+               }
+               else {
+                       read(fd, (void *) &s, sizeof(ullong));
+                       close(fd);
+               }
+        }
+        *seed = s;
 }
 
 bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value)

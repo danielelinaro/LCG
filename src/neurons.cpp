@@ -199,6 +199,10 @@ void RealNeuron::evolve()
         for (uint i=0; i<nInputs; i++) {
                 Iinj += m_inputs[i];
         }
+        if (fabs(Iinj) > 2000) {
+                Logger(Critical, "%e %e %e %e\n", GetGlobalTime(), VM, Vr, Iinj);
+                Iinj = 2000 * fabs(Iinj)/Iinj;
+        }
         m_output.write(Iinj);
         m_aec.pushBack(Iinj);
 }
