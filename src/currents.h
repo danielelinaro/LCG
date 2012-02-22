@@ -3,6 +3,7 @@
 
 #include "dynamical_entity.h"
 #include "neurons.h"
+#include "randlib.h"
 
 #define IC_FRACTION     m_state[0]              // (1)
 
@@ -12,6 +13,11 @@
 #define HH_K_N          m_state[1]
 
 #define NIC_NOPEN       m_state[1]              // (1)
+
+#define HH_NA_CN_M      m_state[2]
+#define HH_NA_CN_H      m_state[3]
+
+#define HH_K_CN_N       m_state[2]
 
 #define IC_AREA         m_parameters[0]         // (um^2)
 #define IC_GBAR         m_parameters[1]         // (S/cm^2)
@@ -40,28 +46,26 @@ class HHSodium : public IonicCurrent {
 public:
         HHSodium(double area, double gbar = 0.12, double E = 50, uint id = GetId(), double dt = GetGlobalDt());
 
+	static double vtrap(double x, double y);
+        static double alpham(double v);
+        static double betam(double v);
+        static double alphah(double v);
+        static double betah(double v);
+
 protected:
         void evolve();
-
-	double vtrap(double x, double y) const;
-        double alpham(double v) const;
-        double betam(double v) const;
-        double alphah(double v) const;
-        double betah(double v) const;
-
 };
 
 class HHPotassium : public IonicCurrent {
 public:
         HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId(), double dt = GetGlobalDt());
 
+	static double vtrap(double x, double y);
+        static double alphan(double v);
+        static double betan(double v);
+
 protected:
         void evolve();
-
-	double vtrap(double x, double y) const;
-        double alphan(double v) const;
-        double betan(double v) const;
-
 };
 
 class NoisyIonicCurrent : public IonicCurrent {
@@ -69,6 +73,39 @@ public:
         NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id = GetId(), double dt = GetGlobalDt());
 };
 
+class HHSodiumCN : public NoisyIonicCurrent {
+public:
+        HHSodiumCN(double area, ullong seed = 5061983, double gbar = 0.12, double E = 50, double gamma = 10,
+                   uint id = GetId(), double dt = GetGlobalDt());
+        ~HHSodiumCN();
+
+public:
+        static const uint numberOfStates = 8;
+
+protected:
+        void evolve();
+
+private:
+        NormalRandom *m_rand;
+        double m_z[numberOfStates-1];
+};
+
+class HHPotassiumCN : public NoisyIonicCurrent {
+public:
+        HHPotassiumCN(double area, ullong seed = 5061983, double gbar = 0.036, double E = -77, double gamma = 10,
+                      uint id = GetId(), double dt = GetGlobalDt());
+        ~HHPotassiumCN();
+
+public:
+        static const uint numberOfStates = 5;
+
+protected:
+        void evolve();
+
+private:
+        NormalRandom *m_rand;
+        double m_z[numberOfStates-1];
+};
 
 } // namespace ionic_currents
 

@@ -3,6 +3,11 @@
 #include "thread_safe_queue.h"
 #include "utils.h"
 
+#ifdef DEBUG_REAL_NEURON
+#include <unistd.h>
+#include <fcntl.h>
+#endif
+
 dynclamp::Entity* LIFNeuronFactory(dictionary& args)
 {
         uint id;
@@ -128,29 +133,32 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
                                                uint id, double dt)
         : Neuron(V0, id, dt)
 {
-        m_parameters.push_back(C*1e-8*area);    // m_parameters[0] -> capacitance
+        m_state.push_back(V0);                  // m_state[1] -> previous membrane voltage (for spike detection)
+
+        m_parameters.push_back(C);              // m_parameters[0] -> capacitance
         m_parameters.push_back(gl);             // m_parameters[1] -> leak conductance
         m_parameters.push_back(El);             // m_parameters[2] -> leak reversal potential
         m_parameters.push_back(Iext);           // m_parameters[3] -> externally applied current
         m_parameters.push_back(area);           // m_parameters[4] -> area
         m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
+        m_parameters.push_back(gl*10*area);     // m_parameters[6] -> leak conductance (in nS)
+        m_parameters.push_back(m_dt / (C*1e-5*area));   // m_parameters[7] -> coefficient
 }
 
 void ConductanceBasedNeuron::evolve()
 {
-        double Iion, Ileak;
+        double Iinj, Ileak;
 	
-	Ileak = CBN_GL * (CBN_EL - VM);		// (mA/cm^2)
+	Ileak = CBN_GL * (CBN_EL - VM);		// (pA)
 	
-	Iion = 0.;
-	for(uint i=0; i<m_inputs.size(); i++) {
-		Iion += m_inputs[i];	        // (pA)
-	}
-        Iion = Iion * 1e-9 / (CBN_AREA * 1e-8); // (mA/cm^2)
+	Iinj = 0.;
+	for(uint i=0; i<m_inputs.size(); i++)
+		Iinj += m_inputs[i];	        // (pA)
 
-	//v = v + 1e-3 * (dt/(Cm*1e-6)) * (Iext*1e-9 - (Ileak+Iion)*(1e-8*area));
-	VM = VM + 1e-6 * m_dt/CBN_C * (CBN_IEXT - 10*CBN_AREA*(Ileak+Iion));
-        
+        VM = VM + CBN_COEFF * (CBN_IEXT + Ileak + Iinj);
+
+        if (VM >= CBN_SPIKE_THRESH && CBN_VM_PREV < CBN_SPIKE_THRESH)
+                emitSpike();
 }
 
 #ifdef HAVE_LIBCOMEDI
@@ -167,6 +175,12 @@ RealNeuron::RealNeuron(const char *kernelFile,
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
+#ifdef DEBUG_REAL_NEURON
+        char fname[FILENAME_MAXLEN];
+        MakeFilename(fname,".bin");
+        m_fd = open(fname, O_WRONLY);
+        m_bufpos = 0;
+#endif
 }
 
 
@@ -182,6 +196,9 @@ RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
+#ifdef DEBUG_REAL_NEURON
+        close(m_fd);
+#endif
 }
         
 void RealNeuron::evolve()
@@ -190,6 +207,7 @@ void RealNeuron::evolve()
         RN_VM_PREV = VM;
         double Vr = m_input.read();
         VM = m_aec.compensate( Vr );
+
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
@@ -205,6 +223,14 @@ void RealNeuron::evolve()
         }
         m_output.write(Iinj);
         m_aec.pushBack(Iinj);
+#ifdef DEBUG_REAL_NEURON
+        m_buffer[m_bufpos] = Vr;
+        m_buffer[m_bufpos+1] = VM;
+        m_buffer[m_bufpos+2] = Iinj;
+        m_bufpos = (m_bufpos+3) % RN_BUFLEN;
+        if (m_bufpos == 0)
+                write(m_fd, (const void *) m_buffer, RN_BUFLEN*sizeof(double));
+#endif
 }
 
 bool RealNeuron::hasMetadata(size_t *ndims) const

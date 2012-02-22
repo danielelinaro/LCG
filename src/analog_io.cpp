@@ -118,7 +118,10 @@ double ComediAnalogInput::inputConversionFactor() const
 double ComediAnalogInput::read()
 {
         lsampl_t sample;
-        comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
+        // this should be Ground Referenced Single Ended
+        //comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
+        // this should be Non-Referenced Single Ended
+        comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_COMMON, &sample);
         return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 

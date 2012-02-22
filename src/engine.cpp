@@ -105,6 +105,10 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 {
         size_t i, n = entities.size();
         ResetGlobalTime();
+        double dt = GetGlobalDt();
+        int nsteps = tend/dt;
+        Logger(Debug, "tend = %e, dt = %e, nsteps = %d\n", tend, dt, nsteps);
+        nsteps = 0;
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<n; i++)

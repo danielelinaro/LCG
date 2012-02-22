@@ -10,6 +10,7 @@
 #include <comedilib.h>
 #include "analog_io.h"
 #include "aec.h"
+#define DEBUG_REAL_NEURON
 #endif // HAVE_LIBCOMEDI
 #endif // HAVE_CONFIG_H
 
@@ -24,12 +25,12 @@
 #define LIF_IEXT m_parameters[6]
 //#define LIF_ARTIFICIAL_SPIKE
 
-#define CBN_C           m_parameters[0]
-#define CBN_GL          m_parameters[1]
-#define CBN_EL          m_parameters[2]
-#define CBN_IEXT        m_parameters[3]
-#define CBN_AREA        m_parameters[4]
-#define CBN_THRESH      m_parameters[5]
+#define CBN_VM_PREV             m_state[1]
+#define CBN_EL                  m_parameters[2]
+#define CBN_IEXT                m_parameters[3]
+#define CBN_SPIKE_THRESH        m_parameters[5]
+#define CBN_GL                  m_parameters[6]
+#define CBN_COEFF               m_parameters[7]
 
 namespace dynclamp {
 
@@ -118,6 +119,13 @@ private:
         ComediAnalogInput  m_input;
         ComediAnalogOutput m_output;
         AEC m_aec;
+
+#ifdef DEBUG_REAL_NEURON
+#define RN_BUFLEN 60000         // 1 second @ 20 kHz
+        int m_fd;
+        uint m_bufpos;
+        double m_buffer[RN_BUFLEN];
+#endif
 };
 #endif // HAVE_LIBCOMEDI
 

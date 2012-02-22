@@ -82,8 +82,8 @@ void ASCIIRecorder::step()
 const hsize_t H5Recorder::rank           = 1;
 const hsize_t H5Recorder::unlimitedSize  = H5S_UNLIMITED;
 const hsize_t H5Recorder::chunkSize      = 100;
-const uint    H5Recorder::numberOfChunks = 200;
-const hsize_t H5Recorder::bufferSize     = 20000;    // This MUST be equal to chunkSize times numberOfChunks.
+const uint    H5Recorder::numberOfChunks = 20;
+const hsize_t H5Recorder::bufferSize     = 2000;    // This MUST be equal to chunkSize times numberOfChunks.
 const double  H5Recorder::fillValue      = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id, double dt)
@@ -114,6 +114,10 @@ H5Recorder::~H5Recorder()
         {
                 Logger(Debug, "H5Recorder::~H5Recorder() >> %d values left to save.\n", m_bufferLengths[m_bufferInUse]);
                 boost::unique_lock<boost::mutex> lock(m_mutex);
+                if (m_bufferPosition == 0) {
+                        m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
+                        m_bufferLengths[m_bufferInUse] = 1;
+                }
                 m_dataQueue.push_back(m_bufferInUse);
         }
         m_threadRun = false;
@@ -144,6 +148,7 @@ void H5Recorder::step()
                 }
                 m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
                 m_bufferLengths[m_bufferInUse] = 0;
+                Logger(Debug, "         H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
 
         for (uint i=0; i<m_numberOfInputs; i++)
