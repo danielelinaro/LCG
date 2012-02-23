@@ -155,6 +155,7 @@ void ConductanceBasedNeuron::evolve()
 	for(uint i=0; i<m_inputs.size(); i++)
 		Iinj += m_inputs[i];	        // (pA)
 
+        CBN_VM_PREV = VM;
         VM = VM + CBN_COEFF * (CBN_IEXT + Ileak + Iinj);
 
         if (VM >= CBN_SPIKE_THRESH && CBN_VM_PREV < CBN_SPIKE_THRESH)

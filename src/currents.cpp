@@ -186,7 +186,7 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
         m_parameters.push_back(gamma);  // gamma -> m_parameters[3]
         m_parameters.push_back(ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA)));     // number of channels -> m_parameters[4]
         m_state.push_back(NIC_NCHANNELS * IC_FRACTION); // number of open channels -> m_state[1]
-        Logger(Debug, "The number of channels is %.0f.\n", NIC_NCHANNELS);
+        Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
 }
 
 //~~
