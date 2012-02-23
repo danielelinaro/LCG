@@ -29,6 +29,42 @@ dynclamp::Entity* HHPotassiumFactory(dictionary& args)
         return new dynclamp::ionic_currents::HHPotassium(area, gbar, E, id, dt);
 }
 
+dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
+{
+        uint id;
+        double area, gbar, E, gamma, dt;
+        ullong seed;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        dynclamp::GetSeedFromDictionary(args, &seed);
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+                return NULL;
+        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+                gbar = 0.12;
+        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+                E = 50;
+        if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
+                gamma = 10;
+        return new dynclamp::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id, dt);
+}
+
+dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
+{
+        uint id;
+        double area, gbar, E, gamma, dt;
+        ullong seed;
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        dynclamp::GetSeedFromDictionary(args, &seed);
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+                return NULL;
+        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+                gbar = 0.036;
+        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+                E = -77;
+        if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
+                gamma = 10;
+        return new dynclamp::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id, dt);
+}
+
 namespace dynclamp {
 
 namespace ionic_currents {

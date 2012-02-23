@@ -33,7 +33,22 @@ private:
 
 } // namespace generators
 
-} // namespace dynclamp
+}
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* FrequencyClampFactory(dictionary& args);
+        
+#ifdef __cplusplus
+}
+#endif
+
+ // namespace dynclamp
 
 #endif
 

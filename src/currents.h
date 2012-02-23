@@ -75,7 +75,7 @@ public:
 
 class HHSodiumCN : public NoisyIonicCurrent {
 public:
-        HHSodiumCN(double area, ullong seed = 5061983, double gbar = 0.12, double E = 50, double gamma = 10,
+        HHSodiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.12, double E = 50, double gamma = 10,
                    uint id = GetId(), double dt = GetGlobalDt());
         ~HHSodiumCN();
 
@@ -92,7 +92,7 @@ private:
 
 class HHPotassiumCN : public NoisyIonicCurrent {
 public:
-        HHPotassiumCN(double area, ullong seed = 5061983, double gbar = 0.036, double E = -77, double gamma = 10,
+        HHPotassiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.036, double E = -77, double gamma = 10,
                       uint id = GetId(), double dt = GetGlobalDt());
         ~HHPotassiumCN();
 
@@ -120,6 +120,8 @@ extern "C" {
 
 dynclamp::Entity* HHSodiumFactory(dictionary& args);
 dynclamp::Entity* HHPotassiumFactory(dictionary& args);
+dynclamp::Entity* HHSodiumCNFactory(dictionary& args);
+dynclamp::Entity* HHPotassiumCNFactory(dictionary& args);
         
 #ifdef __cplusplus
 }

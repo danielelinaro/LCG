@@ -1,6 +1,31 @@
 #include "frequency_clamp.h"
 #include <math.h>
 
+dynclamp::Entity* FrequencyClampFactory(dictionary& args)
+{        
+        uint id;
+        double frequency, baselineCurrent, tau, gp, gi, gd, dt;
+
+        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+
+        if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency) ||
+             ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baselineCurrent) ||
+             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
+             ! dynclamp::CheckAndExtractDouble(args, "gp", &gp)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build FrequencyClamp.\n");
+                return NULL;
+        }
+
+        if ( ! dynclamp::CheckAndExtractDouble(args, "gi", &gi))
+                gi = 0.0;
+        
+        if ( ! dynclamp::CheckAndExtractDouble(args, "gd", &gd))
+                gd = 0.0;
+
+        return new dynclamp::generators::FrequencyClamp(frequency, baselineCurrent, tau, gp, gi, gd, id, dt);
+
+}
+
 namespace dynclamp {
 
 namespace generators {

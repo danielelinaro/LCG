@@ -88,19 +88,21 @@ void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt)
                 *dt = atof(args["dt"].c_str());
 }
 
+ullong GetRandomSeed()
+{
+        ullong seed;
+        int fd = open("/dev/random",O_RDONLY);
+        if (fd == -1)
+                return time(NULL);
+        read(fd, (void *) &seed, sizeof(ullong));
+        return seed;
+}
+
 void GetSeedFromDictionary(dictionary& args, ullong *seed)
 {
         ullong s;
-        if (args.count("seed") == 0 || (s = atoll(args["seed"].c_str())) == -1) {
-               int fd = open("/dev/random",O_RDONLY);
-               if (fd == -1) {
-                       *seed = time(NULL);
-               }
-               else {
-                       read(fd, (void *) &s, sizeof(ullong));
-                       close(fd);
-               }
-        }
+        if (args.count("seed") == 0 || (s = atoll(args["seed"].c_str())) == -1)
+                s = GetRandomSeed();
         *seed = s;
 }
 
@@ -132,12 +134,48 @@ bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value
         return true;
 }
 
+bool CheckAndExtractLong(dictionary& dict, const std::string& key, int *value)
+{
+        std::string str;
+        if (!CheckAndExtractValue(dict, key, str))
+                return false;
+        *value = atol(str.c_str());
+        return true;
+}
+
+bool CheckAndExtractLongLong(dictionary& dict, const std::string& key, int *value)
+{
+        std::string str;
+        if (!CheckAndExtractValue(dict, key, str))
+                return false;
+        *value = atoll(str.c_str());
+        return true;
+}
+
 bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value)
 {
         int i;
         if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
                 return false;
         *value = (uint) i;
+        return true;
+}
+
+bool CheckAndExtractUnsignedLong(dictionary& dict, const std::string& key, uint *value)
+{
+        int i;
+        if (!CheckAndExtractLong(dict, key, &i) || i < 0)
+                return false;
+        *value = (ulong) i;
+        return true;
+}
+
+bool CheckAndExtractUnsignedLongLong(dictionary& dict, const std::string& key, uint *value)
+{
+        int i;
+        if (!CheckAndExtractLongLong(dict, key, &i) || i < 0)
+                return false;
+        *value = (ullong) i;
         return true;
 }
 
