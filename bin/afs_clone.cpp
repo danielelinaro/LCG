@@ -38,7 +38,6 @@ struct AFSoptions {
 
 void parseArgs(int argc, char *argv[], AFSoptions *opt)
 {
-
         double iti, ibi;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
@@ -109,6 +108,10 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
 void runStimulus(const std::string& stimfile)
 {
         Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
+        static int channel = 0;
+        char readChannel[3];
+        sprintf(readChannel, "%d", channel++);
+        Logger(Critical, "Reading from channel #%d.\n", channel-1);
 
 #ifdef HAVE_LIBCOMEDI
 
@@ -122,16 +125,26 @@ void runStimulus(const std::string& stimfile)
                 
                 parameters.clear();
                 parameters["deviceFile"] = "/dev/comedi0";
-                parameters["inputSubdevice"] = "0";
-                parameters["readChannel"] = "2";
-                parameters["inputConversionFactor"] = "20";
+                // AXON
+                //parameters["inputSubdevice"] = "0";
+                //parameters["readChannel"] = "2";
+                // HEKA
+                parameters["inputSubdevice"] = "7";
+                parameters["readChannel"] = readChannel;
+                // AXON
+                //parameters["inputConversionFactor"] = "20";
+                // HEKA
+                parameters["inputConversionFactor"] = "1";
                 entities.push_back( EntityFactory("AnalogInput", parameters) );
 
                 parameters.clear();
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["outputSubdevice"] = "1";
                 parameters["writeChannel"] = "1";
-                parameters["outputConversionFactor"] = "0.0025";
+                // AXON (400 pA/V)
+                //parameters["outputConversionFactor"] = "0.0025";
+                // HEKA (1 pA/mV)
+                parameters["outputConversionFactor"] = "0.001";
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
 
                 parameters.clear();

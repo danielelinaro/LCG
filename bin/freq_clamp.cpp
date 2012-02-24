@@ -16,7 +16,7 @@
 #include "entity.h"
 #include "engine.h"
 #include "stimulus_generator.h"
-#include "generators.h"
+#include "frequency_clamp.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -27,6 +27,7 @@
         "\n\tArbitrary Function Stimulator with noisy background\n" \
         "\nAuthor: Daniele Linaro (daniele@tnb.ua.ac.be)\n"
 
+/*
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
@@ -34,7 +35,7 @@ using boost::property_tree::ptree;
 using namespace dynclamp;
 
 struct FCoptions {
-        std::string frequency, baseline, tau, gp, gi, gd;
+        std::string frequency, baselineCurrent, tau, gp, gi, gd;
 };
 
 struct options {
@@ -58,11 +59,12 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                 i = 0;
                 BOOST_FOREACH(ptree::value_type &v,
                               pt.get_child("dynamicclamp.entities")) {
-                        opt->ou[i].sigma = v.second.get<std::string>("sigma");
-                        opt->ou[i].tau = v.second.get<std::string>("tau");
-                        opt->ou[i].E = v.second.get<std::string>("E");
-                        opt->ou[i].G0 = v.second.get<std::string>("G0");
-                        opt->ou[i].seed = v.second.get<std::string>("seed");
+                        opt->fc.frequency = v.second.get<std::string>("frequency");
+                        opt->fc.baselineCurrent = v.second.get<std::string>("baselineCurrent");
+                        opt->fc.tau = v.second.get<std::string>("tau");
+                        opt->fc.gp = v.second.get<std::string>("gp");
+                        opt->fc.gi = v.second.get<std::string>("gi");
+                        opt->fc.gd = v.second.get<std::string>("gd");
                         if (++i == 2)
                                 break;
                 }
@@ -243,9 +245,11 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
         for (uint i=0; i<entities.size(); i++)
                 delete entities[i];
 }
+*/
 
 int main(int argc, char *argv[])
 {
+        /*
         options opt;
         int i, j, k;
 
@@ -278,6 +282,7 @@ int main(int argc, char *argv[])
                         usleep(opt.ibi);
         }
 
+        */
         return 0;
 }
 

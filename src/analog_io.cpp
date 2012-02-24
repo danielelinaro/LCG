@@ -119,9 +119,9 @@ double ComediAnalogInput::read()
 {
         lsampl_t sample;
         // this should be Ground Referenced Single Ended
-        //comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
+        comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
         // this should be Non-Referenced Single Ended
-        comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_COMMON, &sample);
+        //comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_COMMON, &sample);
         return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 
@@ -158,7 +158,7 @@ void ComediAnalogOutput::write(double data)
 AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
                          uint id, double dt)
-        : Entity(id, dt),
+        : Entity(id, dt), m_data(-65),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
 {
 }
