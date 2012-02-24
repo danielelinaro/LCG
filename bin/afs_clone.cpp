@@ -42,9 +42,8 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
         double iti, ibi;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
-        po::options_description description(
-                        AFS_BANNER
-                        "\nAllowed options");
+        std::string caption(AFS_BANNER "\nAllowed options");
+        po::options_description description(caption);
         po::variables_map options;
 
         try {
