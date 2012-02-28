@@ -16,6 +16,9 @@ public:
         virtual double output() const;
 
 private:
+        void allocateAndInitialiseBuffer();
+
+private:
         uint m_bufferLength;
         double *m_buffer;
         uint m_bufferPosition;

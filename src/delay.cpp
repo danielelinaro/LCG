@@ -23,10 +23,8 @@ Delay::Delay(uint nSamples, uint id, double dt)
         if (nSamples == 0)
                 throw "The number of delay samples must be greater than 0.";
 
-        m_bufferLength = nSamples;
-        m_buffer = new double[m_bufferLength];
-        for (uint i=0; i<m_bufferLength; i++)
-                m_buffer[i] = 0.0;
+        m_bufferLength = nSamples + 1;
+        allocateAndInitialiseBuffer();
 }
 
 Delay::Delay(double delay, uint id, double dt)
@@ -35,7 +33,12 @@ Delay::Delay(double delay, uint id, double dt)
         if (delay <= 0)
                 throw "The delay must be greater than 0.";
 
-        m_bufferLength = ceil(delay / GetGlobalDt());
+        m_bufferLength = ceil(delay / GetGlobalDt()) + 1;
+        allocateAndInitialiseBuffer();
+}
+
+void Delay::allocateAndInitialiseBuffer()
+{
         m_buffer = new double[m_bufferLength];
         for (uint i=0; i<m_bufferLength; i++)
                 m_buffer[i] = 0.0;

@@ -12,6 +12,8 @@
 #include "config.h"
 #endif
 
+#define USE_DELAY
+
 using namespace dynclamp;
 using namespace dynclamp::generators;
 using namespace dynclamp::recorders;
@@ -22,7 +24,11 @@ int main()
 
         SetLoggingLevel(Debug);
 
+#ifdef USE_DELAY
+        std::vector<Entity*> entities(9);
+#else
         std::vector<Entity*> entities(7);
+#endif
 
         try {
                 // AO0
@@ -41,18 +47,16 @@ int main()
 
                 entities[6] = new H5Recorder(false, "daq_test.h5");
         
-                //entities[7] = new Delay();
-                //entities[8] = new Delay();
-
                 // connect positive stimulus to AO0
                 entities[4]->connect(entities[0]);
                 // connect negative stimulus to AO1
                 entities[5]->connect(entities[1]);
 
+#ifdef USE_DELAY
+                entities[7] = new Delay();
+                entities[8] = new Delay();
+
                 // connect entities to the recorder
-                for (uint i=0; i<entities.size()-1; i++)
-                        entities[i]->connect(entities[entities.size()-1]);
-                /*
                 entities[0]->connect(entities[6]);
                 entities[1]->connect(entities[6]);
                 entities[2]->connect(entities[7]);
@@ -61,7 +65,11 @@ int main()
                 entities[8]->connect(entities[6]);
                 entities[4]->connect(entities[6]);
                 entities[5]->connect(entities[6]);
-                */
+#else
+                // connect entities to the recorder
+                for (uint i=0; i<entities.size()-1; i++)
+                        entities[i]->connect(entities[entities.size()-1]);
+#endif
 
                 Simulate(entities, 2.0);
 
