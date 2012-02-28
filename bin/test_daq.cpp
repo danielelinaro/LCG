@@ -22,7 +22,7 @@ int main()
 
         SetLoggingLevel(Debug);
 
-        std::vector<Entity*> entities(9);
+        std::vector<Entity*> entities(7);
 
         try {
                 // AO0
@@ -32,15 +32,17 @@ int main()
                 // AI0
                 entities[2] = new AnalogInput("/dev/comedi0", 0, 0, 1.);
                 // AI1
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1.);
+                //entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1.);
+                // AI2
+                entities[3] = new AnalogInput("/dev/comedi0", 0, 2, 1.);
 
                 entities[4] = new Stimulus("positive-step.stim");
                 entities[5] = new Stimulus("negative-step.stim");
 
                 entities[6] = new H5Recorder(false, "daq_test.h5");
         
-                entities[7] = new Delay();
-                entities[8] = new Delay();
+                //entities[7] = new Delay();
+                //entities[8] = new Delay();
 
                 // connect positive stimulus to AO0
                 entities[4]->connect(entities[0]);
@@ -48,6 +50,9 @@ int main()
                 entities[5]->connect(entities[1]);
 
                 // connect entities to the recorder
+                for (uint i=0; i<entities.size()-1; i++)
+                        entities[i]->connect(entities[entities.size()-1]);
+                /*
                 entities[0]->connect(entities[6]);
                 entities[1]->connect(entities[6]);
                 entities[2]->connect(entities[7]);
@@ -56,6 +61,7 @@ int main()
                 entities[8]->connect(entities[6]);
                 entities[4]->connect(entities[6]);
                 entities[5]->connect(entities[6]);
+                */
 
                 Simulate(entities, 2.0);
 
