@@ -9,6 +9,8 @@
 #include "types.h"
 #include "entity.h"
 
+#define HEKA
+
 namespace dynclamp {
 
 const unsigned int wideRange = 0;

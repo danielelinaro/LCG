@@ -35,12 +35,17 @@ int main()
                 entities[0] = new AnalogOutput("/dev/comedi0", 1, 0, 1.);
                 // AO1
                 entities[1] = new AnalogOutput("/dev/comedi0", 1, 1, 1.);
+#ifdef HEKA
                 // AI0
                 entities[2] = new AnalogInput("/dev/comedi0", 0, 0, 1.);
                 // AI1
-                //entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1.);
+                entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1.);
+#else
                 // AI2
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 2, 1.);
+                entities[2] = new AnalogInput("/dev/comedi0", 0, 2, 1.);
+                // AI3
+                entities[3] = new AnalogInput("/dev/comedi0", 0, 3, 1.);
+#endif
 
                 entities[4] = new Stimulus("positive-step.stim");
                 entities[5] = new Stimulus("negative-step.stim");

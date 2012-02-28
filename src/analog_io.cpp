@@ -129,8 +129,11 @@ double ComediAnalogInput::inputConversionFactor() const
 double ComediAnalogInput::read()
 {
         lsampl_t sample;
+#ifdef HEKA
         comedi_data_read(m_device, m_subdevice, m_channel, wideRange, groundReferencedSingleEnded, &sample);
-        //comedi_data_read(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, &sample);
+#else
+        comedi_data_read(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, &sample);
+#endif
         double dt = GetGlobalDt(), now = GetGlobalTime();
         if (now > 1-dt/2 && now < 1+dt/2)
                 Logger(Debug, "read: 0x%x\n", sample);
@@ -165,8 +168,11 @@ void ComediAnalogOutput::write(double data)
         double dt = GetGlobalDt(), now = GetGlobalTime();
         if (now > 1-dt/2 && now < 1+dt/2)
                 Logger(Debug, "written: 0x%x\n", sample);
+#ifdef HEKA
         comedi_data_write(m_device, m_subdevice, m_channel, wideRange, groundReferencedSingleEnded, sample);
-        //comedi_data_write(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, sample);
+#else
+        comedi_data_write(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, sample);
+#endif
 }
 
 //~~~
