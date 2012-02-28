@@ -81,9 +81,9 @@ void ASCIIRecorder::step()
 
 const hsize_t H5Recorder::rank           = 1;
 const hsize_t H5Recorder::unlimitedSize  = H5S_UNLIMITED;
-const hsize_t H5Recorder::chunkSize      = 100;
+const hsize_t H5Recorder::chunkSize      = 1024;
 const uint    H5Recorder::numberOfChunks = 20;
-const hsize_t H5Recorder::bufferSize     = 2000;    // This MUST be equal to chunkSize times numberOfChunks.
+const hsize_t H5Recorder::bufferSize     = 20480;    // This MUST be equal to chunkSize times numberOfChunks.
 const double  H5Recorder::fillValue      = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id, double dt)
@@ -112,13 +112,12 @@ H5Recorder::~H5Recorder()
 {
         Logger(Debug, "H5Recorder::~H5Recorder() >> Terminating writer thread.\n");
         {
-                Logger(Debug, "H5Recorder::~H5Recorder() >> %d values left to save.\n", m_bufferLengths[m_bufferInUse]);
                 boost::unique_lock<boost::mutex> lock(m_mutex);
-                if (m_bufferPosition == 0) {
-                        m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
-                        m_bufferLengths[m_bufferInUse] = 1;
-                }
-                m_dataQueue.push_back(m_bufferInUse);
+                Logger(Debug, "H5Recorder::~H5Recorder() >> buffer position = %d.\n", m_bufferPosition);
+                if (m_bufferPosition > 0)
+                        m_dataQueue.push_back(m_bufferInUse);
+                Logger(Debug, "H5Recorder::~H5Recorder() >> %d values left to save in buffer #%d.\n",
+                                m_bufferLengths[m_bufferInUse], m_bufferInUse);
         }
         m_threadRun = false;
         m_cv.notify_all();
@@ -143,7 +142,7 @@ void H5Recorder::step()
         {
                 boost::unique_lock<boost::mutex> lock(m_mutex);
                 while (m_dataQueue.size() == m_numberOfBuffers) {
-                        Logger(Debug, "Main thread: the data queue is full.\n");
+                        Logger(All, "Main thread: the data queue is full.\n");
                         m_cv.wait(lock);
                 }
                 m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
@@ -157,7 +156,8 @@ void H5Recorder::step()
         m_bufferPosition = (m_bufferPosition+1) % bufferSize;
 
         if (m_bufferPosition == 0) {
-                Logger(Debug, "         H5Recorder::step() >> Buffer #%d is full.\n", m_bufferInUse);
+                Logger(Debug, "         H5Recorder::step() >> Buffer #%d is full (it contains %d elements).\n",
+                                m_bufferInUse, m_bufferLengths[m_bufferInUse]);
                 {
                         boost::unique_lock<boost::mutex> lock(m_mutex);
                         m_dataQueue.push_back(m_bufferInUse);
@@ -184,7 +184,9 @@ void H5Recorder::buffersWriter()
 
                         m_datasetSize += m_bufferLengths[bufferToSave];
 
-                        Logger(Debug, "Dataset size = %d. Offset = %d. Time = %g sec.\n", m_datasetSize, m_offset, m_datasetSize*GetGlobalDt());
+                        Logger(Debug, "Dataset size = %d.", m_datasetSize);
+                        Logger(Debug, " Offset = %d.", m_offset);
+                        Logger(Debug, " Time = %g sec.\n", m_datasetSize*GetGlobalDt());
 
                         for (uint i=0; i<m_numberOfInputs; i++) {
 
@@ -193,14 +195,14 @@ void H5Recorder::buffersWriter()
                                 if (status < 0)
                                         throw "Unable to extend dataset.";
                                 else
-                                        Logger(Debug, "Extended dataset.\n");
+                                        Logger(All, "Extended dataset.\n");
 
                                 // get the filespace
                                 filespace = H5Dget_space(m_datasets[i]);
                                 if (filespace < 0)
                                         throw "Unable to get filespace.";
                                 else
-                                        Logger(Debug, "Obtained filespace.\n");
+                                        Logger(All, "Obtained filespace.\n");
 
                                 // select an hyperslab
                                 status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &m_offset, NULL, &m_bufferLengths[bufferToSave], NULL);
@@ -209,7 +211,7 @@ void H5Recorder::buffersWriter()
                                         throw "Unable to select hyperslab.";
                                 }
                                 else {
-                                        Logger(Debug, "Selected hyperslab.\n");
+                                        Logger(All, "Selected hyperslab.\n");
                                 }
 
                                 // define memory space
@@ -219,7 +221,7 @@ void H5Recorder::buffersWriter()
                                         throw "Unable to define memory space.";
                                 }
                                 else {
-                                        Logger(Debug, "Memory space defined.\n");
+                                        Logger(All, "Memory space defined.\n");
                                 }
 
                                 // write data
@@ -229,12 +231,12 @@ void H5Recorder::buffersWriter()
                                         throw "Unable to write data.";
                                 }
                                 else {
-                                        Logger(Debug, "Written data.\n");
+                                        Logger(All, "Written data.\n");
                                 }
                         }
                         H5Sclose(filespace);
                         m_offset = m_datasetSize;
-                        Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
+                        Logger(All, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                 }
 
                 {
@@ -243,14 +245,14 @@ void H5Recorder::buffersWriter()
                 }
                 m_cv.notify_all();
         }
-        Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
+        Logger(All, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
 }
 
 void H5Recorder::addPre(Entity *entity)
 {
         Entity::addPre(entity);
 
-        Logger(Debug, "--- H5Recorder::addPre(Entity*, double) ---\n");
+        Logger(All, "--- H5Recorder::addPre(Entity*, double) ---\n");
 
         hid_t cparms;
 
@@ -272,7 +274,7 @@ void H5Recorder::addPre(Entity *entity)
         if (m_dataspaces[k] < 0)
                 throw "Unable to create dataspace.";
         else
-                Logger(Debug, "Dataspace created\n");
+                Logger(All, "Dataspace created\n");
 
         // modify dataset creation properties, i.e. enable chunking.
         cparms = H5Pcreate(H5P_DATASET_CREATE);
@@ -281,7 +283,7 @@ void H5Recorder::addPre(Entity *entity)
                 throw "Unable to create dataset properties.";
         }
         else {
-                Logger(Debug, "Dataset properties created.\n");
+                Logger(All, "Dataset properties created.\n");
         }
 
         status = H5Pset_chunk(cparms, rank, &chunkSize);
@@ -291,7 +293,7 @@ void H5Recorder::addPre(Entity *entity)
                 throw "Unable to set chunking.";
         }
         else {
-                Logger(Debug, "Chunking set.\n");
+                Logger(All, "Chunking set.\n");
         }
 
         status = H5Pset_fill_value(cparms, H5T_IEEE_F64LE, &fillValue);
@@ -301,7 +303,7 @@ void H5Recorder::addPre(Entity *entity)
                 throw "Unable to set fill value.";
         }
         else {
-                Logger(Debug, "Fill value set.\n");
+                Logger(All, "Fill value set.\n");
         }
 
         // create a new dataset within the file using cparms creation properties.
@@ -314,7 +316,7 @@ void H5Recorder::addPre(Entity *entity)
                 throw "Unable to create a dataset.";
         }
         else {
-                Logger(Debug, "Dataset created.\n");
+                Logger(All, "Dataset created.\n");
         }
 
         H5Pclose(cparms);
@@ -384,40 +386,40 @@ int H5Recorder::isCompressionAvailable() const
         herr_t status;
         uint filterInfo;
         
-        Logger(Debug, "Checking whether GZIP compression is available...");
+        Logger(All, "Checking whether GZIP compression is available...");
         // check if gzip compression is available
         avail = H5Zfilter_avail (H5Z_FILTER_DEFLATE);
         if (!avail) {
-                Logger(Debug, "\nGZIP compression is not available on this system.\n");
+                Logger(All, "\nGZIP compression is not available on this system.\n");
                 return H5_NO_GZIP_COMPRESSION;
         }
-        Logger(Debug, " ok.\nGetting filter info...");
+        Logger(All, " ok.\nGetting filter info...");
         status = H5Zget_filter_info (H5Z_FILTER_DEFLATE, &filterInfo);
         if (!(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
-                Logger(Debug, "\nUnable to get filter info: disabling compression.\n");
+                Logger(All, "\nUnable to get filter info: disabling compression.\n");
                 return H5_NO_FILTER_INFO;
         }
-        Logger(Debug, " ok.\nChecking whether the shuffle filter is available...");
+        Logger(All, " ok.\nChecking whether the shuffle filter is available...");
         // check for availability of the shuffle filter.
         avail = H5Zfilter_avail(H5Z_FILTER_SHUFFLE);
         if (!avail) {
-                Logger(Debug, "\nThe shuffle filter is not available on this system.\n");
+                Logger(All, "\nThe shuffle filter is not available on this system.\n");
                 return H5_NO_SHUFFLE_FILTER;
         }
-        Logger(Debug, " ok.\nGetting filter info...");
+        Logger(All, " ok.\nGetting filter info...");
         status = H5Zget_filter_info (H5Z_FILTER_SHUFFLE, &filterInfo);
         if ( !(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ) {
-                Logger(Debug, "Unable to get filter info: disabling compression.\n");
+                Logger(All, "Unable to get filter info: disabling compression.\n");
                 return H5_NO_FILTER_INFO;
         }
-        Logger(Debug, " ok.\nCompression is enabled.\n");
+        Logger(All, " ok.\nCompression is enabled.\n");
         return OK;
 }
 
 int H5Recorder::open(const char *filename, bool compress)
 {
-        Logger(Debug, "--- H5Recorder::open(const char*, bool) ---\n");
-        Logger(Debug, "Opening file %s.\n", filename);
+        Logger(All, "--- H5Recorder::open(const char*, bool) ---\n");
+        Logger(All, "Opening file %s.\n", filename);
 
         if(!compress || isCompressionAvailable() != OK)
                 m_compressed = false;
@@ -564,8 +566,8 @@ bool H5Recorder::writeMiscellanea()
 
 void H5Recorder::close()
 {
-        Logger(Debug, "--- H5Recorder::close() ---\n");
-        Logger(Debug, "Closing file.\n");
+        Logger(All, "--- H5Recorder::close() ---\n");
+        Logger(All, "Closing file.\n");
         if (m_fid != -1) {
 
                 hid_t dataset = H5Dopen2(m_fid, "/Misc/Simulation_properties", H5P_DEFAULT);

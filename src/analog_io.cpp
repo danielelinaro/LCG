@@ -68,8 +68,18 @@ bool ComediAnalogIO::openDevice()
                 return false;
         }
 
+        int nranges = comedi_get_n_ranges(m_device, m_subdevice, m_channel);
+        Logger(Debug, "%s, subdevice #%d, channel #%d has %d range%s.\n", m_deviceFile,
+                        m_subdevice, m_channel, nranges, (nranges > 1 ? "s" : ""));
+
+        // Here, we are using the first (and widest) range, which corresponds (at least on NI boards)
+        // to [-10,+10] volts. One can use the function comedi_find_range, to find the index of
+        // the range that will be enough.
         /* get physical data range for subdevice (min, max, phys. units) */
-        m_dataRange = comedi_get_range(m_device, m_subdevice, m_channel, AREF_GROUND);
+        m_dataRange = comedi_get_range(m_device, m_subdevice, m_channel, wideRange);
+        Logger(Debug, "Range for 0x%x (%s):\n\tmin = %g\n\tmax = %g\n", m_dataRange,
+                        (m_dataRange->unit == UNIT_volt ? "volts" : "milliamps"),
+                        m_dataRange->min, m_dataRange->max);
         if(m_dataRange == NULL) {
                 comedi_perror(m_deviceFile);
                 comedi_close(m_device);
@@ -78,6 +88,7 @@ bool ComediAnalogIO::openDevice()
         
         /* read max data values */
         m_maxData = comedi_get_maxdata(m_device, m_subdevice, m_channel);
+        Logger(Debug, "Max data = %ld\n", m_maxData);
 
         return true;
 }
@@ -118,10 +129,11 @@ double ComediAnalogInput::inputConversionFactor() const
 double ComediAnalogInput::read()
 {
         lsampl_t sample;
-        // this should be Ground Referenced Single Ended
-        comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, &sample);
-        // this should be Non-Referenced Single Ended
-        //comedi_data_read(m_device, m_subdevice, m_channel, RANGE, AREF_COMMON, &sample);
+        comedi_data_read(m_device, m_subdevice, m_channel, wideRange, groundReferencedSingleEnded, &sample);
+        //comedi_data_read(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, &sample);
+        double dt = GetGlobalDt(), now = GetGlobalTime();
+        if (now > 1-dt/2 && now < 1+dt/2)
+                Logger(Debug, "read: 0x%x\n", sample);
         return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 
@@ -150,7 +162,11 @@ void ComediAnalogOutput::write(double data)
 {
         lsampl_t sample; 
         sample = comedi_from_phys(data*m_outputConversionFactor, m_dataRange, m_maxData);
-        comedi_data_write(m_device, m_subdevice, m_channel, RANGE, AREF_GROUND, sample);
+        double dt = GetGlobalDt(), now = GetGlobalTime();
+        if (now > 1-dt/2 && now < 1+dt/2)
+                Logger(Debug, "written: 0x%x\n", sample);
+        comedi_data_write(m_device, m_subdevice, m_channel, wideRange, groundReferencedSingleEnded, sample);
+        //comedi_data_write(m_device, m_subdevice, m_channel, wideRange, nonReferencedSingleEnded, sample);
 }
 
 //~~~
@@ -158,10 +174,9 @@ void ComediAnalogOutput::write(double data)
 AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
                          uint id, double dt)
-        : Entity(id, dt), m_data(-65),
+        : Entity(id, dt), m_data(0.0),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor)
-{
-}
+{}
 
 void AnalogInput::step()
 {
@@ -180,7 +195,11 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint id, double dt)
         : Entity(id, dt),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor)
+{}
+
+AnalogOutput::~AnalogOutput()
 {
+        m_output.write(0.0);
 }
 
 void AnalogOutput::step()

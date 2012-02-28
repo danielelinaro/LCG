@@ -4,7 +4,6 @@
 #include "types.h"
 #include "utils.h"
 #include "generator.h"
-#include "generate_trial.h"
 
 namespace dynclamp {
 

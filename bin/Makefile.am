@@ -3,7 +3,7 @@ AM_CPPFLAGS = -I../stimgen -I../src -I.
 
 if EXAMPLES
 noinst_PROGRAMS = ou_test syn_test lif_test stimgen_test poisson_test h5rec_test aec_test dynamic_load_test small_network autapse pp_test cbn_test currents_test freq_clamp_test
-bin_PROGRAMS = afs_clone noisy_bg zero_output freq_clamp
+bin_PROGRAMS = afs_clone noisy_bg zero_output freq_clamp test_daq
 ou_test_SOURCES = ou_test.cpp
 syn_test_SOURCES = syn_test.cpp
 lif_test_SOURCES = lif_test.cpp
@@ -22,5 +22,6 @@ freq_clamp_SOURCES = freq_clamp.cpp
 afs_clone_SOURCES = afs_clone.cpp
 noisy_bg_SOURCES = noisy_bg.cpp
 zero_output_SOURCES = zero_output.cpp
+test_daq_SOURCES = test_daq.cpp
 endif
 

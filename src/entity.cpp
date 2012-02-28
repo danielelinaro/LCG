@@ -59,7 +59,7 @@ double Entity::parameter(uint index) const
 
 bool Entity::isPost(const Entity *entity) const
 {
-        Logger(Debug, "--- Entity::isPost(Entity*) ---\n");
+        Logger(All, "--- Entity::isPost(Entity*) ---\n");
         for (int i=0; i<m_post.size(); i++) {
                 if (entity->id() == m_post[i]->id())
                         return true;
@@ -69,7 +69,7 @@ bool Entity::isPost(const Entity *entity) const
 
 void Entity::connect(Entity *entity)
 {
-        Logger(Debug, "--- Entity::connect(Entity*) ---\n");
+        Logger(All, "--- Entity::connect(Entity*) ---\n");
 
         if (entity == this) {
                 Logger(Critical, "Can't connect an entity to itself (entity #%d).\n", entity->id());
@@ -97,7 +97,7 @@ const std::vector<Entity*>& Entity::post() const
 
 void Entity::addPre(Entity *entity)
 {
-        Logger(Debug, "--- Entity::addPre(Entity*, double) ---\n");
+        Logger(All, "--- Entity::addPre(Entity*, double) ---\n");
         m_pre.push_back(entity);
         m_inputs.push_back(0);
         //m_inputs.reserve(m_inputs.size()+1);
@@ -105,7 +105,7 @@ void Entity::addPre(Entity *entity)
 
 void Entity::addPost(Entity *entity)
 {
-        Logger(Debug, "--- Entity::addPost(Entity*, double) ---\n");
+        Logger(All, "--- Entity::addPost(Entity*, double) ---\n");
         m_post.push_back(entity);
 }
 

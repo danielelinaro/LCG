@@ -4,6 +4,10 @@
 #include <vector>
 #include "types.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #if defined(__APPLE__)
 #define LIBNAME "libdynclamp.dylib"
 #elif defined(__linux__)

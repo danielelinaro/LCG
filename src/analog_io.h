@@ -9,9 +9,11 @@
 #include "types.h"
 #include "entity.h"
 
-#define RANGE 0
-
 namespace dynclamp {
+
+const unsigned int wideRange = 0;
+const unsigned int nonReferencedSingleEnded = AREF_COMMON;
+const unsigned int groundReferencedSingleEnded = AREF_GROUND;
 
 class ComediAnalogIO {
 public:
@@ -72,6 +74,7 @@ public:
         AnalogOutput(const char *deviceFile, uint outputSubdevice,
                      uint writeChannel, double outputConversionFactor,
                      uint id = GetId(), double dt = GetGlobalDt());
+        ~AnalogOutput();
         virtual void step();
         virtual double output() const;
 private:

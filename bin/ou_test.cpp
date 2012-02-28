@@ -30,7 +30,7 @@ int main()
         std::vector<Entity*> entities(N_ENT);
         entities[0] = new ASCIIRecorder("ou_test.out");
         for (i=1; i<N_ENT; i++) {
-                entities[i] = new OUcurrent(sigma, tau, i0, (double) i);
+                entities[i] = new OUcurrent(sigma, tau, i0, GetRandomSeed());
                 entities[i]->connect(entities[0]);
         }
 

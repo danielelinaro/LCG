@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 #include <sstream>
 #include "stimulus_generator.h"
+#include "generate_trial.h"
 
 dynclamp::Entity* StimulusFactory(dictionary& args)
 {
