@@ -29,6 +29,9 @@ namespace dynclamp
 LogLevel verbosity = Info;
 double globalT = 0.0;
 double globalDt = 1.0 / 20e3;
+#ifdef HAVE_LIBLXRT
+double globalTimeOffset = 0.0;
+#endif // HAVE_LIBLXRT
 
 void SetLoggingLevel(LogLevel level)
 {
@@ -63,17 +66,6 @@ uint GetId()
         static uint progressiveId = 0;
         progressiveId++;
         return progressiveId-1;
-}
-
-void SetGlobalDt(double dt)
-{
-        assert(dt > 0.0);
-        globalDt = dt;
-}
-
-double GetGlobalDt()
-{
-        return globalDt;
 }
 
 void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt)
@@ -223,6 +215,17 @@ void MakeFilename(char *filename, const char *extension)
         delete base;
 }
 
+void SetGlobalDt(double dt)
+{
+        assert(dt > 0.0);
+        globalDt = dt;
+}
+
+double GetGlobalDt()
+{
+        return globalDt;
+}
+
 double GetGlobalTime()
 {
         return globalT;
@@ -230,7 +233,11 @@ double GetGlobalTime()
 
 void IncreaseGlobalTime()
 {
+#ifdef HAVE_LIBLXRT
+        globalT = count2sec(rt_get_time()) - globalTimeOffset;
+#else
         globalT += globalDt;
+#endif
 }
 
 void IncreaseGlobalTime(double dt)
@@ -242,6 +249,19 @@ void ResetGlobalTime()
 {
         globalT = 0.0;
 }
+
+#ifdef HAVE_LIBLXRT
+void SetGlobalTimeOffset()
+{
+        globalTimeOffset = count2sec(rt_get_time());
+}
+
+double GetGlobalTimeOffset()
+{
+        return globalTimeOffset;
+}
+#endif // HAVE_LIBLXRT
+
 
 bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
 {

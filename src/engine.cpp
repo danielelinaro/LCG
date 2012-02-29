@@ -8,25 +8,19 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-namespace dynclamp {
-
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
-
-/** Convert internal count units to milliseconds */
-#define count2ms(t)     ((double) count2nano(t)*1e-6)
-/** Convert milliseconds to internal count units*/
-#define ms2count(t)     nano2count((t)*1e6)
-/** Convert internal count units to seconds */
-#define count2sec(t)     ((double) count2nano(t)*1e-9)
-/** Convert seconds to internal count units */
-#define sec2count(t)     nano2count((t)*1e9)
 
 #define PRIORITY        1           /* 0 is the maximum */
 #define STACK_SIZE      0           /* use default value */
 #define MSG_SIZE        0           /* use default value */
 #define DELAY           1           /* delay before starting the real-time loop (IN SECONDS) */
+#endif // HAVE_LIBLXRT
+
+namespace dynclamp {
+
+#ifdef HAVE_LIBLXRT
 
 void RTSimulation(const std::vector<Entity*>& entities, double tend)
 {
@@ -79,6 +73,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         else
                 Logger(Info, "Performed 1 iteration in the ``preamble''.\n");
 
+        ResetGlobalTime();
+        SetGlobalTimeOffset();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -104,11 +100,11 @@ stopRT:
 void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 {
         size_t i, n = entities.size();
-        ResetGlobalTime();
         double dt = GetGlobalDt();
         int nsteps = tend/dt;
         Logger(Debug, "tend = %e, dt = %e, nsteps = %d\n", tend, dt, nsteps);
         nsteps = 0;
+        ResetGlobalTime();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<n; i++)

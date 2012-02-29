@@ -88,18 +88,19 @@ uint Stimulus::stimulusLength() const
 
 bool Stimulus::hasNext() const
 {
-        return m_position < m_stimulusLength;
+        return m_position < m_stimulusLength-1;
 }
 
 double Stimulus::output() const
 {
-        return m_stimulus[m_position];
+        if (m_position < m_stimulusLength)
+                return m_stimulus[m_position];
+        return 0.0;
 }
 
 void Stimulus::step()
 {
-        if (hasNext())
-                m_position++;
+        m_position++;
 }
 
 bool Stimulus::hasMetadata(size_t *ndims) const
