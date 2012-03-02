@@ -91,7 +91,7 @@ int main()
                 delete entities[i];
 
 #else
-        Logger(Critical, "This program needs COMEDI.\n"):
+        Logger(Critical, "This program needs COMEDI.\n");
 #endif // HAVE_LIBCOMEDI
 
         return 0;
