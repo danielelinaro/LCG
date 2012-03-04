@@ -9,7 +9,7 @@ TimeLogger::TimeLogger(uint id, double dt)
 
 void TimeLogger::step()
 {
-#ifdef HAVE_LIBCOMEDI
+#ifdef HAVE_LIBLXRT
         m_time = count2sec(rt_get_time()) - GetGlobalTimeOffset();
 #else
         m_time = GetGlobalTime();

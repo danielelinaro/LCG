@@ -31,8 +31,8 @@ dynclamp::Entity* LIFNeuronFactory(dictionary& args)
 
 dynclamp::Entity* RealNeuronFactory(dictionary& args)
 {
-        uint inputSubdevice, outputSubdevice, readChannel, writeChannel, id;
-        std::string kernelFile, deviceFile;
+        uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, id;
+        std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0, dt;
 
         dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
@@ -49,10 +49,59 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "V0", &V0))
                 return NULL;
 
-        return new dynclamp::neurons::RealNeuron(kernelFile.c_str(), deviceFile.c_str(),
+
+        if (! dynclamp::CheckAndExtractValue(args, "inputRange", inputRangeStr)) {
+                inputRange = PLUS_MINUS_TEN;
+        }
+        else {
+                if (inputRangeStr.compare("PlusMinusTen") ||
+                    inputRangeStr.compare("[-10,+10]") ||
+                    inputRangeStr.compare("+-10")) {
+                        inputRange = PLUS_MINUS_TEN;
+                }
+                else if (inputRangeStr.compare("PlusMinusFive") ||
+                         inputRangeStr.compare("[-5,+5]") ||
+                         inputRangeStr.compare("+-5")) {
+                        inputRange = PLUS_MINUS_FIVE;
+                }
+                else if (inputRangeStr.compare("PlusMinusOne") ||
+                         inputRangeStr.compare("[-1,+1]") ||
+                         inputRangeStr.compare("+-1")) {
+                        inputRange = PLUS_MINUS_ONE;
+                }
+                else if (inputRangeStr.compare("PlusMinusZeroPointTwo") ||
+                         inputRangeStr.compare("[-0.2,+0.2]") ||
+                         inputRangeStr.compare("+-0.2")) {
+                        inputRange = PLUS_MINUS_ZERO_POINT_TWO;
+                }
+                else {
+                        dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", inputRangeStr.c_str());
+                        return NULL;
+                }
+        }
+
+        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+                reference = GRSE;
+        }
+        else {
+                if (referenceStr.compare("GRSE")) {
+                        reference = GRSE;
+                }
+                else if (referenceStr.compare("NRSE")) {
+                        reference = NRSE;
+                }
+                else {
+                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        return NULL;
+                }
+        }
+
+        return new dynclamp::neurons::RealNeuron(spikeThreshold, V0,
+                                                 kernelFile.c_str(), deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
-                                                 spikeThreshold, V0, id, dt);
+                                                 inputRange, reference,
+                                                 id, dt);
 }
 
 #endif
@@ -164,15 +213,16 @@ void ConductanceBasedNeuron::evolve()
 
 #ifdef HAVE_LIBCOMEDI
 
-RealNeuron::RealNeuron(const char *kernelFile,
-                       const char *deviceFile,
+RealNeuron::RealNeuron(double spikeThreshold, double V0,
+                       const char *kernelFile, const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
-                       double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
-                       double V0, uint id, double dt)
+                       double inputConversionFactor, double outputConversionFactor,
+                       uint inputRange, uint reference,
+                       uint id, double dt)
         : Neuron(V0, id, dt), m_aec(kernelFile),
-          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor)
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -185,18 +235,24 @@ RealNeuron::RealNeuron(const char *kernelFile,
 }
 
 
-RealNeuron::RealNeuron(const double *AECKernel, size_t kernelSize,
+RealNeuron::RealNeuron(double spikeThreshold, double V0,
+                       const double *AECKernel, size_t kernelSize,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
-                       double inputConversionFactor, double outputConversionFactor, double spikeThreshold,
-                       double V0, uint id, double dt)
+                       double inputConversionFactor, double outputConversionFactor,
+                       uint inputRange, uint reference,
+                       uint id, double dt)
         : Neuron(V0, id, dt), m_aec(AECKernel, kernelSize),
-          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor)
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
+}
+
+RealNeuron::~RealNeuron()
+{
 #ifdef DEBUG_REAL_NEURON
         close(m_fd);
 #endif
@@ -206,7 +262,8 @@ void RealNeuron::evolve()
 {
         // read current value of the membrane potential
         RN_VM_PREV = VM;
-        double Vr = m_input.read();
+        double Vr;
+        m_input.read(&Vr);
         VM = m_aec.compensate( Vr );
 
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)

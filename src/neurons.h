@@ -93,21 +93,24 @@ protected:
 
 class RealNeuron : public Neuron {
 public:
-        RealNeuron(const char *kernelFile,
-                   const char *deviceFile,
+        RealNeuron(double spikeThreshold, double V0,
+                   const char *kernelFile, const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   double spikeThreshold, double V0,
+                   uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
                    uint id = GetId(), double dt = GetGlobalDt());
 
-        RealNeuron(const double *AECKernel, size_t kernelSize,
+        RealNeuron(double spikeThreshold, double V0,
+                   const double *AECKernel, size_t kernelSize,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   double spikeThreshold, double V0,
+                   uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
                    uint id = GetId(), double dt = GetGlobalDt());
+
+        ~RealNeuron();
 
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
