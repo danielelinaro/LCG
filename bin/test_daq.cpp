@@ -26,6 +26,12 @@ int main()
         SetLoggingLevel(Debug);
         SetGlobalDt(1./20000);
 
+#ifdef HEKA
+        uint reference = GRSE;
+#else
+        uint reference = NRSE;
+#endif
+
 #ifdef USE_DELAY
         std::vector<Entity*> entities(10);
 #else
@@ -34,19 +40,19 @@ int main()
 
         try {
                 // AO0
-                entities[0] = new AnalogOutput("/dev/comedi0", 1, 0, 1.);
+                entities[0] = new AnalogOutput("/dev/comedi0", 1, 0, 1., reference);
                 // AO1
-                entities[1] = new AnalogOutput("/dev/comedi0", 1, 1, 1.);
+                entities[1] = new AnalogOutput("/dev/comedi0", 1, 1, 1., reference);
 #ifdef HEKA
                 // AI0
-                entities[2] = new AnalogInput("/dev/comedi0", 0, 0, 1.);
+                entities[2] = new AnalogInput("/dev/comedi0", 0, 0, 1., PLUS_MINUS_TEN, reference);
                 // AI1
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1.);
+                entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1., PLUS_MINUS_TEN, reference);
 #else
                 // AI2
-                entities[2] = new AnalogInput("/dev/comedi0", 0, 2, 1.);
+                entities[2] = new AnalogInput("/dev/comedi0", 0, 2, 1., PLUS_MINUS_TEN, reference);
                 // AI3
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 3, 1.);
+                entities[3] = new AnalogInput("/dev/comedi0", 0, 3, 1., PLUS_MINUS_TEN, reference);
 #endif // HEKA
 
                 entities[4] = new Stimulus("positive-step.stim");
