@@ -262,8 +262,7 @@ void RealNeuron::evolve()
 {
         // read current value of the membrane potential
         RN_VM_PREV = VM;
-        double Vr;
-        m_input.read(&Vr);
+        double Vr = m_input.read();
         VM = m_aec.compensate( Vr );
 
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)

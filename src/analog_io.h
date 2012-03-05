@@ -36,11 +36,8 @@ public:
         uint range() const;
         uint reference() const;
 
-        bool read(double *data);
-        bool write(double data);
-
 protected:
-        virtual bool openDevice();
+        bool openDevice();
 
 protected:
         char m_deviceFile[30];
@@ -62,7 +59,7 @@ public:
         ~ComediAnalogIOSoftCal();
 
 protected:
-        virtual bool openDevice();
+        bool readCalibration();
 
 protected:
         char *m_calibrationFile;
@@ -76,7 +73,7 @@ public:
                           uint range = PLUS_MINUS_TEN,
                           uint aref = GRSE);
         double inputConversionFactor() const;
-        bool read(double *data);
+        double read();
 private:
         double m_inputConversionFactor;
 };
@@ -88,7 +85,7 @@ public:
                            uint aref = GRSE);
         ~ComediAnalogOutput();
         double outputConversionFactor() const;
-        bool write(double data);
+        void write(double data);
 private:
         double m_outputConversionFactor;
 };
@@ -100,7 +97,7 @@ public:
                                  uint range = PLUS_MINUS_TEN,
                                  uint aref = GRSE);
         double inputConversionFactor() const;
-        bool read(double *data);
+        double read();
 private:
         comedi_polynomial_t m_converter;
         double m_inputConversionFactor;
@@ -113,7 +110,7 @@ public:
                                   uint aref = GRSE);
         ~ComediAnalogOutputSoftCal();
         double outputConversionFactor() const;
-        bool write(double data);
+        void write(double data);
 private:
         comedi_polynomial_t m_converter;
         double m_outputConversionFactor;
@@ -126,12 +123,11 @@ public:
                     uint range = PLUS_MINUS_TEN,
                     uint aref = GRSE,
                     uint id = GetId(), double dt = GetGlobalDt());
-        ~AnalogInput();
         virtual void step();
         virtual double output() const;
 private:
         double m_data;
-        ComediAnalogIO *m_input;
+        ComediAnalogInputSoftCal m_input;
 };
 
 class AnalogOutput : public Entity {
@@ -145,7 +141,7 @@ public:
         virtual double output() const;
 private:
         double m_data;
-        ComediAnalogIO *m_output;
+        ComediAnalogOutputSoftCal m_output;
 };
 
 } // namespace dynclamp

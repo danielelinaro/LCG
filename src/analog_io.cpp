@@ -102,7 +102,7 @@ ComediAnalogIO::ComediAnalogIO(const char *deviceFile, uint subdevice, uint chan
                                uint range, uint aref)
         : m_subdevice(subdevice), m_channel(channel), m_range(range), m_aref(aref)
 {
-        Logger(Info, "ComediAnalogIO::ComediAnalogIO()\n");
+        Logger(Debug, "ComediAnalogIO::ComediAnalogIO()\n");
         strncpy(m_deviceFile, deviceFile, 30);
         if (!openDevice())
                 throw "Unable to open communication with the DAQ board.";
@@ -110,13 +110,13 @@ ComediAnalogIO::ComediAnalogIO(const char *deviceFile, uint subdevice, uint chan
 
 ComediAnalogIO::~ComediAnalogIO()
 {
-        Logger(Info, "ComediAnalogIO::~ComediAnalogIO()\n");
+        Logger(Debug, "ComediAnalogIO::~ComediAnalogIO()\n");
         comedi_close(m_device);
 }
 
 bool ComediAnalogIO::openDevice()
 {
-        Logger(Info, "ComediAnalogIO::openDevice()\n");
+        Logger(Debug, "ComediAnalogIO::openDevice()\n");
         m_device = comedi_open(m_deviceFile);
         if(m_device == NULL) {
                 comedi_perror(m_deviceFile);
@@ -129,9 +129,6 @@ bool ComediAnalogIO::openDevice()
                         m_subdevice, m_channel, nranges, (nranges > 1 ? "s" : ""));
         */
 
-        // Here, we are using the first (and widest) range, which corresponds (at least on NI boards)
-        // to [-10,+10] volts. One can use the function comedi_find_range, to find the index of
-        // the range that will be enough.
         /* get physical data range for subdevice (min, max, phys. units) */
         m_dataRange = comedi_get_range(m_device, m_subdevice, m_channel, m_range);
         Logger(Debug, "Range for 0x%x (%s):\n\tmin = %g\n\tmax = %g\n", m_dataRange,
@@ -175,43 +172,34 @@ uint ComediAnalogIO::reference() const
         return m_aref;
 }
 
-bool ComediAnalogIO::read(double *data)
-{
-        return false;
-}
-
-bool ComediAnalogIO::write(double data)
-{
-        return false;
-}
-
 //~~~
 
 ComediAnalogIOSoftCal::ComediAnalogIOSoftCal(const char *deviceFile, uint subdevice, uint channel,
                                              uint range, uint aref)
         : ComediAnalogIO(deviceFile, subdevice, channel, range, aref)
 {
-        Logger(Info, "ComediAnalogIOSoftCal::ComediAnalogIOSoftCal()\n");
+        Logger(Debug, "ComediAnalogIOSoftCal::ComediAnalogIOSoftCal()\n");
+        if (!readCalibration())
+                throw "Unable to read the calibration of the DAQ board.";
 }
 
 ComediAnalogIOSoftCal::~ComediAnalogIOSoftCal()
 {
-        Logger(Info, "ComediAnalogIOSoftCal::~ComediAnalogIOSoftCal()\n");
+        Logger(Debug, "ComediAnalogIOSoftCal::~ComediAnalogIOSoftCal()\n");
         comedi_cleanup_calibration(m_calibration);
         delete m_calibrationFile;
 }
 
-bool ComediAnalogIOSoftCal::openDevice()
+bool ComediAnalogIOSoftCal::readCalibration()
 {
-        ComediAnalogIO::openDevice();
-        Logger(Info, "ComediAnalogIOSoftCal::openDevice()\n");
+        Logger(Debug, "ComediAnalogIOSoftCal::readCalibration()\n");
         m_calibrationFile = comedi_get_default_calibration_path(m_device);
         if (m_calibrationFile == NULL) {
                 Logger(Critical, "Unable to find a calibration file for [%s].\n", deviceFile());
                 return false;
         }
         else {
-                Logger(Info, "Using calibration file [%s].\n", m_calibrationFile);
+                Logger(Debug, "Using calibration file [%s].\n", m_calibrationFile);
         }
 
         m_calibration = comedi_parse_calibration_file(m_calibrationFile);
@@ -220,8 +208,9 @@ bool ComediAnalogIOSoftCal::openDevice()
                 return false;
         }
         else {
-                Logger(Info, "Successfully pased calibration file [%s].\n", m_calibrationFile);
+                Logger(Debug, "Successfully parsed calibration file [%s].\n", m_calibrationFile);
         }
+        return true;
 }
 
 //~~~
@@ -238,18 +227,16 @@ double ComediAnalogInput::inputConversionFactor() const
         return m_inputConversionFactor;
 }
 
-bool ComediAnalogInput::read(double *data)
+double ComediAnalogInput::read()
 {
         lsampl_t sample;
-        int flag = comedi_data_read(m_device, m_subdevice, m_channel, m_range, m_aref, &sample);
-        if (flag == 1) {
-                double dt = GetGlobalDt(), now = GetGlobalTime();
-                if (now > 1-dt/2 && now < 1+dt/2)
-                        Logger(Debug, "read: 0x%x\n", sample);
-                *data = comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
-                return true;
-        }
-        return false;
+        comedi_data_read(m_device, m_subdevice, m_channel, m_range, m_aref, &sample);
+        /*
+        double dt = GetGlobalDt(), now = GetGlobalTime();
+        if (now > 1-dt/2 && now < 1+dt/2)
+                Logger(Debug, "read: 0x%x\n", sample);
+        */
+        return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 
 //~~~
@@ -273,14 +260,15 @@ double ComediAnalogOutput::outputConversionFactor() const
 /**
  * Write the argument to the output of the DAQ board.
  */
-bool ComediAnalogOutput::write(double data)
+void ComediAnalogOutput::write(double data)
 {
-        lsampl_t sample; 
-        sample = comedi_from_phys(data*m_outputConversionFactor, m_dataRange, m_maxData);
+        lsampl_t sample = comedi_from_phys(data*m_outputConversionFactor, m_dataRange, m_maxData);
+        /*
         double dt = GetGlobalDt(), now = GetGlobalTime();
         if (now > 1-dt/2 && now < 1+dt/2)
                 Logger(Debug, "written: 0x%x\n", sample);
-        return comedi_data_write(m_device, m_subdevice, m_channel, m_range, m_aref, sample) == 1;
+        */
+        comedi_data_write(m_device, m_subdevice, m_channel, m_range, m_aref, sample);
 }
 
 //~~~
@@ -291,7 +279,7 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
         : ComediAnalogIOSoftCal(deviceFile, inputSubdevice, readChannel, range, aref),
           m_inputConversionFactor(inputConversionFactor)
 {
-        Logger(Info, "ComediAnalogInputSoftCal::ComediAnalogInputSoftCal()\n");
+        Logger(Debug, "ComediAnalogInputSoftCal::ComediAnalogInputSoftCal()\n");
         int flag = comedi_get_softcal_converter(m_subdevice, m_channel, m_range,
                         COMEDI_TO_PHYSICAL, m_calibration, &m_converter);
         if (flag != 0) {
@@ -305,15 +293,11 @@ double ComediAnalogInputSoftCal::inputConversionFactor() const
         return m_inputConversionFactor;
 }
 
-bool ComediAnalogInputSoftCal::read(double *data)
+double ComediAnalogInputSoftCal::read()
 {
         lsampl_t sample;
-        int flag = comedi_data_read(m_device, m_subdevice, m_channel, m_range, m_aref, &sample);
-        if (flag == 1) {
-                *data = comedi_to_physical(sample, &m_converter) * m_inputConversionFactor;
-                return true;
-        }
-        return false;
+        comedi_data_read(m_device, m_subdevice, m_channel, m_range, m_aref, &sample);
+        return comedi_to_physical(sample, &m_converter) * m_inputConversionFactor;
 }
 
 //~~~
@@ -324,7 +308,7 @@ ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal(const char *deviceFile, uin
         : ComediAnalogIOSoftCal(deviceFile, outputSubdevice, writeChannel, PLUS_MINUS_TEN, aref),
           m_outputConversionFactor(outputConversionFactor)
 {
-        Logger(Info, "ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal()\n");
+        Logger(Debug, "ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal()\n");
         int flag = comedi_get_softcal_converter(m_subdevice, m_channel, m_range,
                         COMEDI_FROM_PHYSICAL, m_calibration, &m_converter);
         if (flag != 0) {
@@ -346,10 +330,10 @@ double ComediAnalogOutputSoftCal::outputConversionFactor() const
 /**
  * Write the argument to the output of the DAQ board.
  */
-bool ComediAnalogOutputSoftCal::write(double data)
+void ComediAnalogOutputSoftCal::write(double data)
 {
-        return comedi_data_write(m_device, m_subdevice, m_channel, m_range, m_aref,
-                comedi_from_physical(data*m_outputConversionFactor, &m_converter)) == 1;
+        comedi_data_write(m_device, m_subdevice, m_channel, m_range, m_aref,
+                comedi_from_physical(data*m_outputConversionFactor, &m_converter));
 }
 
 //~~~
@@ -358,20 +342,13 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
                          uint range, uint aref,
                          uint id, double dt)
-        : Entity(id, dt), m_data(0.0)
-{
-          m_input = new ComediAnalogInputSoftCal(deviceFile,
-                inputSubdevice, readChannel, range, aref, inputConversionFactor);
-}
-
-AnalogInput::~AnalogInput()
-{
-        delete m_input;
-}
+        : Entity(id, dt), m_data(0.0),
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
+{}
 
 void AnalogInput::step()
 {
-        m_input->read(&m_data);
+        m_data = m_input.read();
 }
 
 double AnalogInput::output() const
@@ -384,16 +361,13 @@ double AnalogInput::output() const
 AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
                            uint id, double dt)
-        : Entity(id, dt)
-{
-          m_output = new ComediAnalogOutputSoftCal(deviceFile,
-                outputSubdevice, writeChannel, aref, outputConversionFactor);
-}
+        : Entity(id, dt),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+{}
 
 AnalogOutput::~AnalogOutput()
 {
-        m_output->write(0.0);
-        delete m_output;
+        m_output.write(0.0);
 }
 
 void AnalogOutput::step()
@@ -402,7 +376,7 @@ void AnalogOutput::step()
         m_data = 0.0;
         for (i=0; i<n; i++)
                 m_data += m_inputs[i];
-        m_output->write(m_data);
+        m_output.write(m_data);
 }
 
 double AnalogOutput::output() const

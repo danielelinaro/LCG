@@ -14,6 +14,7 @@
 #endif
 
 #define USE_DELAY
+#define HEKA
 
 using namespace dynclamp;
 using namespace dynclamp::generators;
@@ -23,8 +24,8 @@ int main()
 {
 #ifdef HAVE_LIBCOMEDI
 
-        SetLoggingLevel(Debug);
-        SetGlobalDt(1./20000);
+        //SetLoggingLevel(Debug);
+        SetGlobalDt(1./10000);
 
 #ifdef HEKA
         uint reference = GRSE;
