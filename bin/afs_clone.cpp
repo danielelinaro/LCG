@@ -108,10 +108,6 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
 void runStimulus(const std::string& stimfile)
 {
         Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
-        static int channel = 0;
-        char readChannel[3];
-        sprintf(readChannel, "%d", channel++);
-        Logger(Critical, "Reading from channel #%d.\n", channel-1);
 
 #ifdef HAVE_LIBCOMEDI
 
@@ -125,26 +121,44 @@ void runStimulus(const std::string& stimfile)
                 
                 parameters.clear();
                 parameters["deviceFile"] = "/dev/comedi0";
-                // AXON
-                //parameters["inputSubdevice"] = "0";
-                //parameters["readChannel"] = "2";
-                // HEKA
-                parameters["inputSubdevice"] = "7";
-                parameters["readChannel"] = readChannel;
-                // AXON
-                //parameters["inputConversionFactor"] = "20";
-                // HEKA
+                parameters["range"] = "[-10,+10]";
+                
+                // AXON specific parameters - start
+                /*
+                // AI2
+                parameters["inputSubdevice"] = "0";
+                parameters["readChannel"] = "2";
+                parameters["inputConversionFactor"] = "20";
+                parameters["reference"] = "NRSE";
+                */
+                // AXON specific parameters - end
+                
+                // HEKA specific parameters - start
+                // AI0
+                parameters["inputSubdevice"] = "0";
+                parameters["readChannel"] = "0";
                 parameters["inputConversionFactor"] = "1";
+                parameters["reference"] = "GRSE";
+                // HEKA specific parameters - end
+
                 entities.push_back( EntityFactory("AnalogInput", parameters) );
 
                 parameters.clear();
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["outputSubdevice"] = "1";
                 parameters["writeChannel"] = "1";
-                // AXON (400 pA/V)
-                //parameters["outputConversionFactor"] = "0.0025";
-                // HEKA (1 pA/mV)
-                parameters["outputConversionFactor"] = "0.001";
+
+                // HEKA specific parameters - start
+                /*
+                parameters["outputConversionFactor"] = "0.0025";        // (400 pA/V)
+                parameters["reference"] = "NRSE";
+                */
+
+                // HEKA specific parameters - start
+                parameters["outputConversionFactor"] = "0.001";         // (1 pA/mV)
+                parameters["reference"] = "GRSE";
+                // HEKA specific parameters - end
+
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
 
                 parameters.clear();
@@ -180,6 +194,7 @@ int main(int argc, char *argv[])
         int i, j, k;
 
         SetLoggingLevel(Info);
+        SetGlobalDt(1.0/10000);
 
         parseArgs(argc, argv, &opt);
 

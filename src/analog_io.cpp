@@ -27,24 +27,24 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 range = PLUS_MINUS_TEN;
         }
         else {
-                if (rangeStr.compare("PlusMinusTen") ||
-                    rangeStr.compare("[-10,+10]") ||
-                    rangeStr.compare("+-10")) {
+                if (rangeStr.compare("PlusMinusTen") == 0 ||
+                    rangeStr.compare("[-10,+10]") == 0 ||
+                    rangeStr.compare("+-10") == 0) {
                         range = PLUS_MINUS_TEN;
                 }
-                else if (rangeStr.compare("PlusMinusFive") ||
-                         rangeStr.compare("[-5,+5]") ||
-                         rangeStr.compare("+-5")) {
+                else if (rangeStr.compare("PlusMinusFive") == 0 ||
+                         rangeStr.compare("[-5,+5]") == 0 ||
+                         rangeStr.compare("+-5") == 0) {
                         range = PLUS_MINUS_FIVE;
                 }
-                else if (rangeStr.compare("PlusMinusOne") ||
-                         rangeStr.compare("[-1,+1]") ||
-                         rangeStr.compare("+-1")) {
+                else if (rangeStr.compare("PlusMinusOne") == 0 ||
+                         rangeStr.compare("[-1,+1]") == 0 ||
+                         rangeStr.compare("+-1") == 0) {
                         range = PLUS_MINUS_ONE;
                 }
-                else if (rangeStr.compare("PlusMinusZeroPointTwo") ||
-                         rangeStr.compare("[-0.2,+0.2]") ||
-                         rangeStr.compare("+-0.2")) {
+                else if (rangeStr.compare("PlusMinusZeroPointTwo") == 0 ||
+                         rangeStr.compare("[-0.2,+0.2]") == 0 ||
+                         rangeStr.compare("+-0.2") == 0) {
                         range = PLUS_MINUS_ZERO_POINT_TWO;
                 }
                 else {
@@ -57,10 +57,10 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 reference = GRSE;
         }
         else {
-                if (referenceStr.compare("GRSE")) {
+                if (referenceStr.compare("GRSE") == 0) {
                         reference = GRSE;
                 }
-                else if (referenceStr.compare("NRSE")) {
+                else if (referenceStr.compare("NRSE") == 0) {
                         reference = NRSE;
                 }
                 else {
@@ -75,8 +75,8 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
 
 dynclamp::Entity* AnalogOutputFactory(dictionary& args)
 {
-        uint outputSubdevice, writeChannel, aref, id;
-        std::string deviceFile;
+        uint outputSubdevice, writeChannel, reference, id;
+        std::string deviceFile, referenceStr;
         double outputConversionFactor, dt;
 
         dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
@@ -89,11 +89,24 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
                 return NULL;
         }
 
-        if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "reference", &aref))
-                aref = GRSE;
+        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+                reference = GRSE;
+        }
+        else {
+                if (referenceStr.compare("GRSE") == 0) {
+                        reference = GRSE;
+                }
+                else if (referenceStr.compare("NRSE") == 0) {
+                        reference = NRSE;
+                }
+                else {
+                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        return NULL;
+                }
+        }
 
         return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
-                        outputConversionFactor, aref, id, dt);
+                        outputConversionFactor, reference, id, dt);
 }
 
 namespace dynclamp {

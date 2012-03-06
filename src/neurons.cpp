@@ -54,24 +54,24 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 inputRange = PLUS_MINUS_TEN;
         }
         else {
-                if (inputRangeStr.compare("PlusMinusTen") ||
-                    inputRangeStr.compare("[-10,+10]") ||
-                    inputRangeStr.compare("+-10")) {
+                if (inputRangeStr.compare("PlusMinusTen") == 0 ||
+                    inputRangeStr.compare("[-10,+10]") == 0 ||
+                    inputRangeStr.compare("+-10") == 0) {
                         inputRange = PLUS_MINUS_TEN;
                 }
-                else if (inputRangeStr.compare("PlusMinusFive") ||
-                         inputRangeStr.compare("[-5,+5]") ||
-                         inputRangeStr.compare("+-5")) {
+                else if (inputRangeStr.compare("PlusMinusFive") == 0 ||
+                         inputRangeStr.compare("[-5,+5]") == 0 ||
+                         inputRangeStr.compare("+-5") == 0) {
                         inputRange = PLUS_MINUS_FIVE;
                 }
-                else if (inputRangeStr.compare("PlusMinusOne") ||
-                         inputRangeStr.compare("[-1,+1]") ||
-                         inputRangeStr.compare("+-1")) {
+                else if (inputRangeStr.compare("PlusMinusOne") == 0 ||
+                         inputRangeStr.compare("[-1,+1]") == 0 ||
+                         inputRangeStr.compare("+-1") == 0) {
                         inputRange = PLUS_MINUS_ONE;
                 }
-                else if (inputRangeStr.compare("PlusMinusZeroPointTwo") ||
-                         inputRangeStr.compare("[-0.2,+0.2]") ||
-                         inputRangeStr.compare("+-0.2")) {
+                else if (inputRangeStr.compare("PlusMinusZeroPointTwo") == 0 ||
+                         inputRangeStr.compare("[-0.2,+0.2]") == 0 ||
+                         inputRangeStr.compare("+-0.2") == 0) {
                         inputRange = PLUS_MINUS_ZERO_POINT_TWO;
                 }
                 else {
@@ -84,10 +84,10 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 reference = GRSE;
         }
         else {
-                if (referenceStr.compare("GRSE")) {
+                if (referenceStr.compare("GRSE") == 0) {
                         reference = GRSE;
                 }
-                else if (referenceStr.compare("NRSE")) {
+                else if (referenceStr.compare("NRSE") == 0) {
                         reference = NRSE;
                 }
                 else {

@@ -13,8 +13,8 @@
 #include "config.h"
 #endif
 
-#define USE_DELAY
 #define HEKA
+#define TWO_CHANNELS
 
 using namespace dynclamp;
 using namespace dynclamp::generators;
@@ -24,69 +24,59 @@ int main()
 {
 #ifdef HAVE_LIBCOMEDI
 
-        //SetLoggingLevel(Debug);
-        SetGlobalDt(1./10000);
+        SetGlobalDt(1./20000);
 
 #ifdef HEKA
         uint reference = GRSE;
 #else
         uint reference = NRSE;
-#endif
+#endif // HEKA
 
-#ifdef USE_DELAY
-        std::vector<Entity*> entities(10);
-#else
-        std::vector<Entity*> entities(8);
-#endif // USE_DELAY
+        std::vector<Entity*> entities;
 
         try {
                 // AO0
-                entities[0] = new AnalogOutput("/dev/comedi0", 1, 0, 1., reference);
-                // AO1
-                entities[1] = new AnalogOutput("/dev/comedi0", 1, 1, 1., reference);
+                entities.push_back( new AnalogOutput("/dev/comedi0", 1, 0, 1., reference) );
 #ifdef HEKA
                 // AI0
-                entities[2] = new AnalogInput("/dev/comedi0", 0, 0, 1., PLUS_MINUS_TEN, reference);
-                // AI1
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 1, 1., PLUS_MINUS_TEN, reference);
+                entities.push_back( new AnalogInput("/dev/comedi0", 0, 0, 1., PLUS_MINUS_TEN, reference) );
 #else
                 // AI2
-                entities[2] = new AnalogInput("/dev/comedi0", 0, 2, 1., PLUS_MINUS_TEN, reference);
-                // AI3
-                entities[3] = new AnalogInput("/dev/comedi0", 0, 3, 1., PLUS_MINUS_TEN, reference);
+                entities.push_back( new AnalogInput("/dev/comedi0", 0, 2, 1., PLUS_MINUS_TEN, reference) );
 #endif // HEKA
+                entities.push_back( new Stimulus("positive-step.stim") );
+                // connect analog output to analog input
+                Logger(Info, "Connecting the first analog output to the first analog input.\n");
+                entities[0]->connect(entities[1]);
+                // connect the stimulus to AO0
+                Logger(Info, "Connecting the stimulus to the first analog output.\n");
+                entities.back()->connect(entities[0]);
 
-                entities[4] = new Stimulus("positive-step.stim");
-                entities[5] = new Stimulus("negative-step.stim");
-
-                entities[6] = new TimeLogger();
-
-                entities[7] = new H5Recorder(false, "daq_test.h5");
-        
-                // connect positive stimulus to AO0
-                entities[4]->connect(entities[0]);
-                // connect negative stimulus to AO1
-                entities[5]->connect(entities[1]);
-
-#ifdef USE_DELAY
-                entities[8] = new Delay();
-                entities[9] = new Delay();
-
-                // connect entities to the recorder
-                entities[0]->connect(entities[7]);
-                entities[1]->connect(entities[7]);
-                entities[2]->connect(entities[8]);
-                entities[8]->connect(entities[7]);
-                entities[3]->connect(entities[9]);
-                entities[9]->connect(entities[7]);
-                entities[4]->connect(entities[7]);
-                entities[5]->connect(entities[7]);
-                entities[6]->connect(entities[7]);
+#ifdef TWO_CHANNELS
+                // AO1
+                entities.push_back( new AnalogOutput("/dev/comedi0", 1, 1, 1., reference) );
+#ifdef HEKA
+                // AI1
+                entities.push_back( new AnalogInput("/dev/comedi0", 0, 1, 1., PLUS_MINUS_TEN, reference) );
 #else
+                // AI3
+                entities.push_back( new AnalogInput("/dev/comedi0", 0, 3, 1., PLUS_MINUS_TEN, reference) );
+#endif // HEKA
+                // connect analog output to ananlog input
+                Logger(Info, "Connecting the second analog output to the second analog input.\n");
+                entities[3]->connect(entities[4]);
+                entities.push_back( new Stimulus("negative-step.stim") );
+                // connect the stimulus to AO1
+                Logger(Info, "Connecting the stimulus to the second analog output.\n");
+                entities.back()->connect(entities[2]);
+#endif // TWO_CHANNELS
+
+                entities.push_back( new TimeLogger() );
+                entities.push_back( new H5Recorder(false, "daq_test.h5") );
+        
                 // connect entities to the recorder
                 for (uint i=0; i<entities.size()-1; i++)
-                        entities[i]->connect(entities[entities.size()-1]);
-#endif // USE_DELAY
+                        entities[i]->connect(entities.back());
 
                 Simulate(entities, 2.0);
 
