@@ -19,7 +19,69 @@
 
 namespace dynclamp {
 
+double globalT;
+double globalDt = SetGlobalDt(1.0/20e3);
 #ifdef HAVE_LIBLXRT
+double realTimeDt;
+double globalTimeOffset = 0.0;
+#endif
+
+double SetGlobalDt(double dt)
+{
+        assert(dt > 0.0);
+        globalDt = dt;
+#ifdef HAVE_LIBLXRT
+        realTimeDt = count2sec(start_rt_timer(sec2count(dt)));
+        Logger(Info, "The real time period is %g ms (f = %g Hz).\n", realTimeDt, 1./realTimeDt);
+#endif
+        return globalDt;
+}
+
+double GetGlobalDt()
+{
+#ifndef HAVE_LIBLXRT
+        return globalDt;
+#else
+        return realTimeDt;
+#endif
+}
+
+double GetGlobalTime()
+{
+        return globalT;
+}
+
+void IncreaseGlobalTime()
+{
+#ifdef HAVE_LIBLXRT
+        //globalT = count2sec(rt_get_time()) - globalTimeOffset;
+        globalT += realTimeDt;
+#else
+        globalT += globalDt;
+#endif
+}
+
+void IncreaseGlobalTime(double dt)
+{
+        globalT += dt;
+}
+
+void ResetGlobalTime()
+{
+        globalT = 0.0;
+}
+
+#ifdef HAVE_LIBLXRT
+
+void SetGlobalTimeOffset()
+{
+        globalTimeOffset = count2sec(rt_get_time());
+}
+
+double GetGlobalTimeOffset()
+{
+        return globalTimeOffset;
+}
 
 void RTSimulation(const std::vector<Entity*>& entities, double tend)
 {
@@ -28,7 +90,6 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         RTIME currentTime, previousTime;
         int preambleIterations, flag, i;
         unsigned long taskName;
-        double t0, dt = GetGlobalDt();
         size_t nEntities = entities.size();
 
         Logger(Info, "\n>>>>> DYNAMIC CLAMP THREAD STARTED <<<<<\n\n");
@@ -45,9 +106,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         }
 
         Logger(Info, "Setting timer period.\n");
-        tickPeriod = start_rt_timer(sec2count(dt));
+        tickPeriod = start_rt_timer(sec2count(globalDt));
         
-        //SetGlobalDt(count2sec(tickPeriod));
         Logger(Info, "The period is %g ms (f = %g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
 
         Logger(Info, "Switching to hard real time.\n");

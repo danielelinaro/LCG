@@ -8,7 +8,9 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 
 Entity::Entity(uint id, double dt)
         : m_id(id), m_dt(dt), m_inputs(), m_pre(), m_post()
-{}
+{
+        Logger(Info, "dt = %g s (-> %g Hz)\n", GetGlobalDt(), 1.0/GetGlobalDt());
+}
 
 Entity::~Entity()
 {}

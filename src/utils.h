@@ -51,17 +51,6 @@ void Logger(LogLevel level, const char *fmt, ...);
 
 uint GetId();
 
-void ResetGlobalTime();
-void IncreaseGlobalTime();
-void IncreaseGlobalTime(double dt);
-double GetGlobalTime();
-void SetGlobalDt(double dt);
-double GetGlobalDt();
-#ifdef HAVE_LIBLXRT
-void SetGlobalTimeOffset();
-double GetGlobalTimeOffset();
-#endif // HAVE_LIBLXRT
-
 ullong GetRandomSeed();
 
 void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt);

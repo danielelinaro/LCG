@@ -22,16 +22,12 @@ using boost::property_tree::ptree;
 #include "events.h"
 #include "entity.h"
 #include "types.h"
+#include "engine.h"
 
 namespace dynclamp
 {
 
 LogLevel verbosity = Info;
-double globalT = 0.0;
-double globalDt = 1.0 / 20e3;
-#ifdef HAVE_LIBLXRT
-double globalTimeOffset = 0.0;
-#endif // HAVE_LIBLXRT
 
 void SetLoggingLevel(LogLevel level)
 {
@@ -214,54 +210,6 @@ void MakeFilename(char *filename, const char *extension)
 
         delete base;
 }
-
-void SetGlobalDt(double dt)
-{
-        assert(dt > 0.0);
-        globalDt = dt;
-}
-
-double GetGlobalDt()
-{
-        return globalDt;
-}
-
-double GetGlobalTime()
-{
-        return globalT;
-}
-
-void IncreaseGlobalTime()
-{
-#ifdef HAVE_LIBLXRT
-        globalT = count2sec(rt_get_time()) - globalTimeOffset;
-#else
-        globalT += globalDt;
-#endif
-}
-
-void IncreaseGlobalTime(double dt)
-{
-        globalT += dt;
-}
-
-void ResetGlobalTime()
-{
-        globalT = 0.0;
-}
-
-#ifdef HAVE_LIBLXRT
-void SetGlobalTimeOffset()
-{
-        globalTimeOffset = count2sec(rt_get_time());
-}
-
-double GetGlobalTimeOffset()
-{
-        return globalTimeOffset;
-}
-#endif // HAVE_LIBLXRT
-
 
 bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
 {

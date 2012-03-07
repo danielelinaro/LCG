@@ -4,6 +4,7 @@
 #include "types.h"
 #include "utils.h"
 #include "events.h"
+#include "engine.h"
 
 namespace dynclamp
 {

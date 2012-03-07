@@ -137,7 +137,7 @@ void runStimulus(const std::string& stimfile)
                 // AI0
                 parameters["inputSubdevice"] = "0";
                 parameters["readChannel"] = "0";
-                parameters["inputConversionFactor"] = "1";
+                parameters["inputConversionFactor"] = "100";
                 parameters["reference"] = "GRSE";
                 // HEKA specific parameters - end
 
@@ -148,11 +148,12 @@ void runStimulus(const std::string& stimfile)
                 parameters["outputSubdevice"] = "1";
                 parameters["writeChannel"] = "1";
 
-                // HEKA specific parameters - start
+                // AXON specific parameters - start
                 /*
                 parameters["outputConversionFactor"] = "0.0025";        // (400 pA/V)
                 parameters["reference"] = "NRSE";
                 */
+                // AXON specific parameters - end
 
                 // HEKA specific parameters - start
                 parameters["outputConversionFactor"] = "0.001";         // (1 pA/mV)
@@ -177,7 +178,7 @@ void runStimulus(const std::string& stimfile)
                 tend = dynamic_cast<generators::Stimulus*>(entities[3])->duration();
 
         } catch (const char *msg) {
-                Logger(Critical, "Error: %s.\n", msg);
+                Logger(Critical, "Error: %s\n", msg);
                 exit(1);
         }
 
@@ -194,7 +195,7 @@ int main(int argc, char *argv[])
         int i, j, k;
 
         SetLoggingLevel(Info);
-        SetGlobalDt(1.0/10000);
+        SetGlobalDt(1.0/20000);
 
         parseArgs(argc, argv, &opt);
 
