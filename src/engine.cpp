@@ -12,10 +12,9 @@
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
 
-#define PRIORITY        1           /* 0 is the maximum */
+#define PRIORITY        0           /* 0 is the maximum */
 #define STACK_SIZE      0           /* use default value */
 #define MSG_SIZE        0           /* use default value */
-#define DELAY           1           /* delay before starting the real-time loop (IN SECONDS) */
 #endif // HAVE_LIBLXRT
 
 namespace dynclamp {
@@ -47,31 +46,30 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         Logger(Info, "Setting timer period.\n");
         tickPeriod = start_rt_timer(sec2count(dt));
+        
+        //SetGlobalDt(count2sec(tickPeriod));
+        Logger(Info, "The period is %g ms (f = %g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
 
         Logger(Info, "Switching to hard real time.\n");
         rt_make_hard_real_time();
 
-        flag = rt_task_make_periodic_relative_ns(task, DELAY*1e9, dt*1e9);
+        flag = rt_task_make_periodic_relative_ns(task, count2nano(5*tickPeriod), count2nano(tickPeriod));
         if(flag != 0) {
                 Logger(Info, "Error while making the task periodic.\n");
                 goto stopRT;
         }
         
-        //SetGlobalDt(count2sec(tickPeriod));
-        Logger(Info, "The period is %g ms (f = %g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
-
         // some sort of preamble
-        previousTime = rt_get_time();
+        currentTime = rt_get_time();
         preambleIterations = 0;
-        while((currentTime = rt_get_time()) == previousTime) {
+        do {
                 previousTime = currentTime;
-                preambleIterations++;
                 rt_task_wait_period();
-        }
-        if (preambleIterations != 1)
-                Logger(Info, "Performed %d iterations in the ``preamble''.\n", preambleIterations);
-        else
-                Logger(Info, "Performed 1 iteration in the ``preamble''.\n");
+                currentTime = rt_get_time();
+                preambleIterations++;
+        } while(currentTime == previousTime);
+        Logger(Info, "Performed %d iteration%s in the ``preamble''.\n",
+                preambleIterations, (preambleIterations == 1 ? "" : "s"));
 
         ResetGlobalTime();
         SetGlobalTimeOffset();
