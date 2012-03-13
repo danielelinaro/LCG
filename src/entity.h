@@ -14,13 +14,10 @@ class Entity;
 class Entity
 {
 public:
-        Entity(uint id = GetId(), double dt = GetGlobalDt());
+        Entity(uint id = GetId());
         virtual ~Entity();
 
         uint id() const;
-
-        void setDt(double dt);
-        double dt() const;
 
         void setParameters(const array& parameters);
         void setParameter(double parameter, uint index);
@@ -58,7 +55,6 @@ private:
 
 protected:
         uint   m_id;
-        double m_dt;
 
         array  m_parameters;
         array  m_inputs;

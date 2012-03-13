@@ -2,8 +2,8 @@
 
 namespace dynclamp {
 
-DynamicalEntity::DynamicalEntity(uint id, double dt)
-        : Entity(id, dt)
+DynamicalEntity::DynamicalEntity(uint id)
+        : Entity(id)
 {}
 
 const array& DynamicalEntity::state() const

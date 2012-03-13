@@ -1,0 +1,16 @@
+<dynamicclamp>
+  <entities>
+    <frequencyclamp>
+      <frequency>50</frequency>
+      <baselineCurrent>250.0</baselineCurrent>
+      <tau>10</tau>
+      <gp>0.5</gp>
+      <gi>0.1</gi>
+      <gd>0</gd>
+    </frequencyclamp>
+  </entities>
+  <simulation>
+    <tend>10</tend>
+  </simulation>
+</dynamicclamp>
+    

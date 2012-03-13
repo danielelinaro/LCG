@@ -21,7 +21,7 @@ namespace synapses {
 
 class Synapse : public DynamicalEntity {
 public:
-	Synapse(double E, double weight, double delay, uint id = GetId(), double dt = GetGlobalDt());
+	Synapse(double E, double weight, double delay, uint id = GetId());
 	
         void setWeight(double weight);
         double g() const;
@@ -48,7 +48,7 @@ private:
 
 class ExponentialSynapse : public Synapse {
 public:
-	ExponentialSynapse(double E, double weight, double delay, double tau, uint id = GetId(), double dt = GetGlobalDt());
+	ExponentialSynapse(double E, double weight, double delay, double tau, uint id = GetId());
 protected:
 	virtual void handleSpike();
 	virtual void evolve();	
@@ -62,7 +62,7 @@ protected:
 
 class Exp2Synapse : public Synapse {
 public:
-	Exp2Synapse(double E, double weight, double delay, double tau[2], uint id = GetId(), double dt = GetGlobalDt());
+	Exp2Synapse(double E, double weight, double delay, double tau[2], uint id = GetId());
 protected:
 	virtual void handleSpike();
 	virtual void evolve();	
@@ -81,7 +81,7 @@ protected:
 
 class TMGSynapse : public Synapse {
 public:
-	TMGSynapse(double E, double weight, double delay, double U, double tau[3], uint id = GetId(), double dt = GetGlobalDt());
+	TMGSynapse(double E, double weight, double delay, double U, double tau[3], uint id = GetId());
 protected:
 	virtual void handleSpike();
 	virtual void evolve();	

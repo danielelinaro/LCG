@@ -12,10 +12,14 @@
 
 #include <sstream>
 
+#include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 using boost::property_tree::ptree;
 
 #include "utils.h"
@@ -64,16 +68,17 @@ uint GetId()
         return progressiveId-1;
 }
 
-void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt)
+uint GetIdAFromDictionary(dictionary& args)
 {
-        if (args.count("id") == 0)
-                *id = GetId();
-        else
-                *id = atoi(args["id"].c_str());
-        if (args.count("dt") == 0)
-                *dt = GetGlobalDt();
-        else
-                *dt = atof(args["dt"].c_str());
+        uint id;
+        if (args.count("id") == 0) {
+                id = GetId();
+        }
+        else {
+                std::stringstream ss(args["id"]);
+                ss >> id;
+        }
+        return id;
 }
 
 ullong GetRandomSeed()
@@ -211,29 +216,176 @@ void MakeFilename(char *filename, const char *extension)
         delete base;
 }
 
-bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities)
+bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 {
-        ptree pt;
-        std::string name, id;
-        int i;
+        double tend, iti, ibi;
+        std::string configfile, kernelfile, stimfile, stimdir;
+        uint nTrials, nBatches;
+        po::options_description description("Allowed options");
+        po::variables_map options;
+
         try {
-                read_xml(filename, pt);
-                i = 0;
-                BOOST_FOREACH(ptree::value_type &v,
-                              pt.get_child("dynamicclamp.entities")) {
-                        dictionary args;
-                        name = v.second.get<std::string>("name");
-                        id = v.second.get<std::string>("id");
-                        std::cerr << name << " " << id << std::endl;
-                        BOOST_FOREACH(ptree::value_type &vv,
-                                        v.second.get_child("parameters")) {
-                                std::cerr << vv.first << std::endl;
+                description.add_options()
+                        ("help,h", "print help message")
+                        ("version,v", "print version number")
+                        ("config-file,c", po::value<std::string>(&configfile), "specify configuration file")
+                        ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
+                        ("stimulus-file,s", po::value<std::string>(&stimfile), "specify stimulus file")
+                        ("stimulus-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located")
+                        ("time,t", po::value<double>(&tend), "specify the duration of the simulation (in seconds)")
+                        ("iti,i", po::value<double>(&iti), "specify inter-trial interval (in seconds)")
+                        ("ibi,I", po::value<double>(&ibi), "specify inter-batch interval (in seconds)")
+                        ("ntrials,n", po::value<uint>(&nTrials), "specify the number of trials (how many times a stimulus is repeated)")
+                        ("nbatches,N", po::value<uint>(&nBatches), "specify the number of trials (how many times a batch of stimuli is repeated)");
+
+                po::store(po::parse_command_line(argc, argv, description), options);
+                po::notify(options);    
+
+                if (options.count("help")) {
+                        std::cout << description << "\n";
+                        exit(0);
+                }
+
+                if (options.count("version")) {
+                        std::cout << fs::path(argv[0]).filename() << " version " << DYNCLAMP_VERSION << std::endl;
+                        exit(0);
+                }
+
+                if (options.count("config-file")) {
+                        if (!fs::exists(configfile)) {
+                                Logger(Critical, "Configuration file [%s] not found.\n", configfile.c_str());
+                                return false;
+                        }
+                        opt->configFile = configfile;
+                }
+
+                if (options.count("kernel-file")) {
+                        if (!fs::exists(kernelfile)) {
+                                Logger(Critical, "Kernel file [%s] not found.\n", kernelfile.c_str());
+                                return false;
+                        }
+                        opt->kernelFile = kernelfile;
+                }
+
+                if (options.count("stimulus-file")) {
+                        if (!fs::exists(stimfile)) {
+                                Logger(Critical, "Stimulus file [%s] not found.\n", stimfile.c_str());
+                                return false;
+                        }
+                        opt->stimulusFiles.push_back(stimfile);
+                }
+                else if (options.count("stimulus-dir")) {
+                        if (!fs::exists(stimdir)) {
+                                Logger(Critical, "Directory [%s] not found.\n", stimdir.c_str());
+                                return false;
+                        }
+                        for (fs::directory_iterator it(stimdir); it != fs::directory_iterator(); it++) {
+                                if (! fs::is_directory(it->status())) {
+                                        opt->stimulusFiles.push_back(it->path().string());
+                                }
                         }
                 }
-        } catch(std::exception e) {
-                Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
+
+                if (options.count("time"))
+                        opt->tend = tend;
+
+                if (options.count("iti"))
+                        opt->iti = (useconds_t) (iti * 1e6);
+
+                if (options.count("ibi"))
+                        opt->ibi = (useconds_t) (ibi * 1e6);
+
+                if (options.count("nTrials"))
+                        opt->nTrials = nTrials;
+
+                if (options.count("nBatches"))
+                        opt->nBatches = nBatches;
+        }
+        catch (std::exception e) {
+                Logger(Critical, "Missing argument or unknown option.\n");
                 return false;
         }
+
+        return true;
+}
+
+bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
+{
+        ptree pt;
+        uint id;
+        std::string name, conn;
+        std::map< uint, std::vector<uint> > connections;
+        std::map< uint, Entity* > ntts;
+
+        try {
+                read_xml(filename, pt);
+
+                /*** simulation time and time step ***/
+                try {
+                        *tend = pt.get<double>("dynamicclamp.simulation.tend");
+                } catch(std::exception e) {
+                        *tend = -1;
+                }
+
+                try {
+                        *dt = pt.get<double>("dynamicclamp.simulation.dt");
+                        SetGlobalDt(*dt);
+                } catch(std::exception e) {
+                        *dt = -1;
+                }
+
+                /*** entities ***/
+                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {
+                        dictionary args;
+                        name = ntt.second.get<std::string>("name");
+                        id = ntt.second.get<uint>("id");
+                        if (ntts.count(id) == 1) {
+                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
+                                entities.clear();
+                                return false;
+                        }
+                        args["id"] = ntt.second.get<std::string>("id");
+                        BOOST_FOREACH(ptree::value_type &pars, ntt.second.get_child("parameters")) {
+                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
+                                        args[pars.first] = std::string(pars.second.data());
+                        }
+                        try {
+                                conn = ntt.second.get<std::string>("connections");
+                                connections[id] = std::vector<uint>();
+                                size_t start=0, stop;
+                                int post;
+                                while ((stop = conn.find(",",start)) != conn.npos) {
+                                        std::stringstream ss(conn.substr(start,stop-start));
+                                        ss >> post;
+                                        connections[id].push_back(post);
+                                        start = stop+1;
+                                }
+                                std::stringstream ss(conn.substr(start,stop-start));
+                                ss >> post;
+                                connections[id].push_back(post);
+                        } catch(std::exception e) {
+                                Logger(Info, "No connections for entity #%d.\n", id);
+                        }
+                        entities.push_back(EntityFactory(name.c_str(), args));
+                        ntts[id] = entities.back();
+                }
+
+                /*** connections ***/
+                uint idPre, idPost;
+                for (int i=0; i<entities.size(); i++) {
+                        idPre = entities[i]->id();
+                        for (int j=0; j<connections[idPre].size(); j++) {
+                                idPost = connections[idPre][j];
+                                entities[i]->connect(ntts[idPost]);
+                        }
+                }
+
+        } catch(std::exception e) {
+                Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
+                entities.clear();
+                return false;
+        }
+
         return true;
 }
 

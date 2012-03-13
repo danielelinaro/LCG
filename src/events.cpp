@@ -30,7 +30,7 @@ void ProcessEvents()
 }
 
 Event::Event(EventType type, const Entity *sender)
-        : m_type(type), m_sender(sender)
+        : m_type(type), m_sender(sender), m_time(GetGlobalTime())
 {}
 
 EventType Event::type() const
@@ -41,6 +41,11 @@ EventType Event::type() const
 const Entity* Event::sender() const
 {
         return m_sender;
+}
+
+double Event::time() const
+{
+        return m_time;
 }
 
 SpikeEvent::SpikeEvent(const Entity *sender)

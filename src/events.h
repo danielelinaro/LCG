@@ -19,9 +19,12 @@ public:
         EventType type() const;
         const Entity* sender() const;
 
+        double time() const;
+
 private:
         EventType m_type;
         const Entity *m_sender;
+        double m_time;
 };
 
 class SpikeEvent : public Event

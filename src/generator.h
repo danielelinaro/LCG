@@ -9,8 +9,7 @@ namespace generators {
 
 class Generator : public Entity {
 public:
-        Generator(uint id = GetId(), double dt = GetGlobalDt())
-                : Entity(id, dt) {}
+        Generator(uint id = GetId()) : Entity(id) {}
         virtual ~Generator() {}
 
         virtual bool hasNext() const = 0;

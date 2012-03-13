@@ -6,21 +6,21 @@
 dynclamp::Entity* StimulusFactory(dictionary& args)
 {
         uint id;
-        double dt;
         std::string filename;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
                 return NULL;
-        return new dynclamp::generators::Stimulus(filename.c_str(), id, dt);
+        return new dynclamp::generators::Stimulus(filename.c_str(), id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
-        : Generator(id, dt), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
+Stimulus::Stimulus(const char *stimulusFile, uint id)
+        : Generator(id), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
 {
+        double dt = GetGlobalDt();
         int i, j, flag;
         double **metadata;
         struct stat buf;
@@ -32,10 +32,10 @@ Stimulus::Stimulus(const char *stimulusFile, uint id, double dt)
                 throw ss.str().c_str();
         }
 
-        m_parameters.push_back(1.0/m_dt);         // m_parameters[0] -> sampling rate
+        m_parameters.push_back(1.0/dt);         // m_parameters[0] -> sampling rate
 
         flag = generate_trial(stimulusFile, GetLoggingLevel() <= Debug,
-                              0, NULL, &m_stimulus, &m_stimulusLength, m_parameters[0], m_dt);
+                              0, NULL, &m_stimulus, &m_stimulusLength, m_parameters[0], dt);
 
         if (flag == -1) {
                 if (m_stimulus != NULL)
@@ -78,7 +78,7 @@ Stimulus::~Stimulus()
 
 double Stimulus::duration() const
 {
-        return stimulusLength() * dt();
+        return stimulusLength() * GetGlobalDt();
 }
 
 uint Stimulus::stimulusLength() const

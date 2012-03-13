@@ -28,6 +28,8 @@
 #define LIBNAME "libdynclamp.so"
 #endif
 
+#define DYNCLAMP_VERSION 0.1
+
 #define OK 0
 #define FILENAME_MAXLEN 30
 
@@ -41,6 +43,19 @@ typedef enum
         All = 0, Debug, Info, Critical
 } LogLevel;
 
+class CommandLineOptions {
+public:
+        CommandLineOptions() : tend(-1), iti(0), ibi(0), nTrials(0), nBatches(0),
+        configFile(""), kernelFile(""), stimulusFiles() {}
+
+public:
+        double tend;
+        useconds_t iti, ibi;
+        uint nTrials, nBatches;
+        std::string configFile, kernelFile;
+        std::vector<std::string> stimulusFiles;
+};
+
 void SetLoggingLevel(LogLevel level);
 LogLevel GetLoggingLevel();
 #ifdef NDEBUG
@@ -53,7 +68,7 @@ uint GetId();
 
 ullong GetRandomSeed();
 
-void GetIdAndDtFromDictionary(dictionary& args, uint *id, double *dt);
+uint GetIdFromDictionary(dictionary& args);
 void GetSeedFromDictionary(dictionary& args, ullong *seed);
 bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value);
 bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value);
@@ -66,7 +81,8 @@ bool CheckAndExtractUnsignedLongLong(dictionary& dict, const std::string& key, u
 bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 
-bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities);
+bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt);
+bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt);
 
 Entity* EntityFactory(const char *name, dictionary& args);
 

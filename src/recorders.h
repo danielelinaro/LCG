@@ -20,14 +20,14 @@ namespace recorders {
 
 class Recorder : public Entity {
 public:
-        Recorder(uint id = GetId(), double dt = GetGlobalDt());
+        Recorder(uint id = GetId());
         virtual double output() const;
 };
 
 class ASCIIRecorder : public Recorder {
 public:
-        ASCIIRecorder(const char *filename = NULL, uint id = GetId(), double dt = GetGlobalDt());
-        ASCIIRecorder(FILE *fid, uint id = GetId(), double dt = GetGlobalDt());
+        ASCIIRecorder(const char *filename = NULL, uint id = GetId());
+        ASCIIRecorder(FILE *fid, uint id = GetId());
         ~ASCIIRecorder();
 
         virtual void step();
@@ -52,7 +52,7 @@ private:
 
 class H5Recorder : public Recorder {
 public:
-        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId(), double dt = GetGlobalDt());
+        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();
 
         virtual void step();

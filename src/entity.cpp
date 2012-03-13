@@ -6,11 +6,9 @@ namespace dynclamp {
 
 extern ThreadSafeQueue<Event*> eventsQueue;
 
-Entity::Entity(uint id, double dt)
-        : m_id(id), m_dt(dt), m_inputs(), m_pre(), m_post()
-{
-        Logger(Info, "dt = %g s (-> %g Hz)\n", GetGlobalDt(), 1.0/GetGlobalDt());
-}
+Entity::Entity(uint id)
+        : m_id(id), m_inputs(), m_pre(), m_post()
+{}
 
 Entity::~Entity()
 {}
@@ -18,16 +16,6 @@ Entity::~Entity()
 uint Entity::id() const
 {
         return m_id;
-}
-
-void Entity::setDt(double dt)
-{
-        m_dt = dt;
-}
-
-double Entity::dt() const
-{
-        return m_dt;
 }
 
 void Entity::setParameters(const array& parameters)

@@ -18,8 +18,9 @@ namespace generators {
 
 class FrequencyClamp : public Generator {
 public:
-        FrequencyClamp(double frequency, double baselineCurrent, double tau, double gp, double gi = 0.0, double gd = 0.0,
-                       uint id = GetId(), double dt = GetGlobalDt());
+        FrequencyClamp(double frequency, double baselineCurrent, double tau,
+                       double gp, double gi = 0.0, double gd = 0.0,
+                       uint id = GetId());
         bool hasNext() const;
         void step();
         double output() const;

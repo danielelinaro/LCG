@@ -6,13 +6,13 @@
 dynclamp::Entity* PoissonFactory(dictionary& args)
 {
         uint id;
-        double rate, dt;
+        double rate;
         ullong seed;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
         dynclamp::GetSeedFromDictionary(args, &seed);
         if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate))
                 return NULL;
-        return new dynclamp::generators::Poisson(rate, seed, id, dt);
+        return new dynclamp::generators::Poisson(rate, seed, id);
 }
 
 namespace dynclamp {
@@ -21,8 +21,8 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 
 namespace generators {
 
-Poisson::Poisson(double rate, ullong seed, uint id, double dt)
-        : Generator(id, dt), m_rate(rate), m_random(seed), m_tNextSpike(0.0)
+Poisson::Poisson(double rate, ullong seed, uint id)
+        : Generator(id), m_rate(rate), m_random(seed), m_tNextSpike(0.0)
 {
         calculateTimeNextSpike();
 }

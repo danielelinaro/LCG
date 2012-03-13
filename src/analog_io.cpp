@@ -8,9 +8,9 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
 {
         uint inputSubdevice, readChannel, range, reference, id;
         std::string deviceFile, rangeStr, referenceStr;
-        double inputConversionFactor, dt;
+        double inputConversionFactor;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
@@ -70,16 +70,16 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
         }
 
         return new dynclamp::AnalogInput(deviceFile.c_str(), inputSubdevice, readChannel,
-                        inputConversionFactor, range, reference, id, dt);
+                        inputConversionFactor, range, reference, id);
 }
 
 dynclamp::Entity* AnalogOutputFactory(dictionary& args)
 {
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr;
-        double outputConversionFactor, dt;
+        double outputConversionFactor;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdAndDtFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
@@ -106,7 +106,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
         }
 
         return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
-                        outputConversionFactor, reference, id, dt);
+                        outputConversionFactor, reference, id);
 }
 
 namespace dynclamp {
@@ -244,11 +244,6 @@ double ComediAnalogInput::read()
 {
         lsampl_t sample;
         comedi_data_read(m_device, m_subdevice, m_channel, m_range, m_aref, &sample);
-        /*
-        double dt = GetGlobalDt(), now = GetGlobalTime();
-        if (now > 1-dt/2 && now < 1+dt/2)
-                Logger(Debug, "read: 0x%x\n", sample);
-        */
         return comedi_to_phys(sample, m_dataRange, m_maxData) * m_inputConversionFactor;
 }
 
@@ -276,11 +271,6 @@ double ComediAnalogOutput::outputConversionFactor() const
 void ComediAnalogOutput::write(double data)
 {
         lsampl_t sample = comedi_from_phys(data*m_outputConversionFactor, m_dataRange, m_maxData);
-        /*
-        double dt = GetGlobalDt(), now = GetGlobalTime();
-        if (now > 1-dt/2 && now < 1+dt/2)
-                Logger(Debug, "written: 0x%x\n", sample);
-        */
         comedi_data_write(m_device, m_subdevice, m_channel, m_range, m_aref, sample);
 }
 
@@ -354,8 +344,8 @@ void ComediAnalogOutputSoftCal::write(double data)
 AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
                          uint range, uint aref,
-                         uint id, double dt)
-        : Entity(id, dt), m_data(0.0),
+                         uint id)
+        : Entity(id), m_data(0.0),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
 {}
 
@@ -373,8 +363,8 @@ double AnalogInput::output() const
 
 AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
-                           uint id, double dt)
-        : Entity(id, dt),
+                           uint id)
+        : Entity(id),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
 {}
 

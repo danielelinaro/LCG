@@ -13,8 +13,8 @@ const double pi = 3.1415926536;
 
 class FakeNeuron : public dynclamp::neurons::Neuron {
 public:
-        FakeNeuron(double V0, double f, double A, uint id = GetId(), double dt = GetGlobalDt())
-                : Neuron(V0, id, dt), m_V0(V0), m_f(f), m_A(A) {}
+        FakeNeuron(double V0, double f, double A, uint id = GetId())
+                : Neuron(V0, id), m_V0(V0), m_f(f), m_A(A) {}
 protected:
         virtual void evolve() {
                 VM = m_V0 + m_A * sin(2*pi*m_f*GetGlobalTime());

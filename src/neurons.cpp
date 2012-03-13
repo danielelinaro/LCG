@@ -11,9 +11,9 @@
 dynclamp::Entity* LIFNeuronFactory(dictionary& args)
 {
         uint id;
-        double C, tau, tarp, Er, E0, Vth, Iext, dt;
+        double C, tau, tarp, Er, E0, Vth, Iext;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractDouble(args, "C", &C) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
@@ -24,7 +24,7 @@ dynclamp::Entity* LIFNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext))
                 return NULL;
 
-        return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id, dt);
+        return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
 }
 
 #ifdef HAVE_LIBCOMEDI
@@ -33,9 +33,9 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
 {
         uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
-        double inputConversionFactor, outputConversionFactor, spikeThreshold, V0, dt;
+        double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile) ||
              ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
@@ -100,8 +100,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                                                  kernelFile.c_str(), deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
-                                                 inputRange, reference,
-                                                 id, dt);
+                                                 inputRange, reference, id);
 }
 
 #endif
@@ -112,8 +111,8 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 
 namespace neurons {
 
-Neuron::Neuron(double Vm0, uint id, double dt)
-        : DynamicalEntity(id, dt)
+Neuron::Neuron(double Vm0, uint id)
+        : DynamicalEntity(id)
 {
         m_state.push_back(Vm0); // m_state[0] -> membrane potential
 }
@@ -135,9 +134,10 @@ void Neuron::emitSpike() const
 
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
                      double Er, double E0, double Vth, double Iext,
-                     uint id, double dt)
-        : Neuron(E0, id, dt), m_tPrevSpike(-1000.0)
+                     uint id)
+        : Neuron(E0, id), m_tPrevSpike(-1000.0)
 {
+        double dt = GetGlobalDt();
         m_parameters.push_back(C);
         m_parameters.push_back(tau);
         m_parameters.push_back(tarp);
@@ -145,8 +145,8 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         m_parameters.push_back(E0);
         m_parameters.push_back(Vth);
         m_parameters.push_back(Iext);
-        m_parameters.push_back(m_dt/LIF_TAU);   // parameters[7]
-        m_parameters.push_back(m_dt/LIF_C);     // parameters[8]
+        m_parameters.push_back(dt/LIF_TAU);   // parameters[7]
+        m_parameters.push_back(dt/LIF_C);     // parameters[8]
 }
 
 void LIFNeuron::evolve()
@@ -161,7 +161,7 @@ void LIFNeuron::evolve()
                 int i, nInputs = m_inputs.size();
                 for (i=0; i<nInputs; i++)
                         Iinj += m_inputs[i];
-                //VM = VM + m_dt/LIF_TAU * (LIF_E0 - VM) + m_dt/LIF_C * LIF_IEXT;
+                //VM = VM + dt/LIF_TAU * (LIF_E0 - VM) + dt/LIF_C * LIF_IEXT;
                 VM = VM + m_parameters[7] * (LIF_E0 - VM) + m_parameters[8] * Iinj;
         }
         if(VM > LIF_VTH) {
@@ -179,9 +179,11 @@ void LIFNeuron::evolve()
 
 ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, double Iext,
                                                double area, double spikeThreshold, double V0,
-                                               uint id, double dt)
-        : Neuron(V0, id, dt)
+                                               uint id)
+        : Neuron(V0, id)
 {
+        double dt = GetGlobalDt();
+
         m_state.push_back(V0);                  // m_state[1] -> previous membrane voltage (for spike detection)
 
         m_parameters.push_back(C);              // m_parameters[0] -> capacitance
@@ -191,7 +193,7 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
         m_parameters.push_back(area);           // m_parameters[4] -> area
         m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
         m_parameters.push_back(gl*10*area);     // m_parameters[6] -> leak conductance (in nS)
-        m_parameters.push_back(m_dt / (C*1e-5*area));   // m_parameters[7] -> coefficient
+        m_parameters.push_back(dt / (C*1e-5*area));   // m_parameters[7] -> coefficient
 }
 
 void ConductanceBasedNeuron::evolve()
@@ -218,9 +220,8 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       uint inputRange, uint reference,
-                       uint id, double dt)
-        : Neuron(V0, id, dt), m_aec(kernelFile),
+                       uint inputRange, uint reference, uint id)
+        : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
 {
@@ -241,9 +242,8 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       uint inputRange, uint reference,
-                       uint id, double dt)
-        : Neuron(V0, id, dt), m_aec(AECKernel, kernelSize),
+                       uint inputRange, uint reference, uint id)
+        : Neuron(V0, id), m_aec(AECKernel, kernelSize),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
 {

@@ -1,11 +1,10 @@
 
 Short term (and therefore relatively simple):
 
--) put timestap in Event.
--) comedi_data_read -> non-reference single ended (fixed?).
+-) implement a reset() method in all classes.
+-) add name in Entity? (also for data logging...)
 -) substitute Euler with exact solution in LIFNeuron::evolve.
 -) understand why EnqueueEvent cannot be found.
--) add name in Entity? (also for data logging...)
 -) fix shuffle function in randlib
 
 Long term (and therefore possibly complicated):

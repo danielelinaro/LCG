@@ -122,7 +122,7 @@ public:
                     uint readChannel, double inputConversionFactor,
                     uint range = PLUS_MINUS_TEN,
                     uint aref = GRSE,
-                    uint id = GetId(), double dt = GetGlobalDt());
+                    uint id = GetId());
         virtual void step();
         virtual double output() const;
 private:
@@ -135,7 +135,7 @@ public:
         AnalogOutput(const char *deviceFile, uint outputSubdevice,
                      uint writeChannel, double outputConversionFactor,
                      uint aref = GRSE,
-                     uint id = GetId(), double dt = GetGlobalDt());
+                     uint id = GetId());
         ~AnalogOutput();
         virtual void step();
         virtual double output() const;

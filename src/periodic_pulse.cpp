@@ -4,10 +4,10 @@
 dynclamp::Entity* PeriodicPulseFactory(dictionary& args)
 {
         uint id;
-        double frequency, duration, amplitude, dt;
+        double frequency, duration, amplitude;
         double probability, tau, gp, gi, gd;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency) ||
              ! dynclamp::CheckAndExtractDouble(args, "duration", &duration) ||
@@ -17,7 +17,7 @@ dynclamp::Entity* PeriodicPulseFactory(dictionary& args)
         }
 
         if ( ! dynclamp::CheckAndExtractDouble(args, "probability", &probability))
-                return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, id, dt);
+                return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, id);
 
         if ( ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
              ! dynclamp::CheckAndExtractDouble(args, "gp", &gp)) {
@@ -32,15 +32,15 @@ dynclamp::Entity* PeriodicPulseFactory(dictionary& args)
                 gd = 0.0;
 
         return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, 
-                        probability, tau, gp, gi, gd, id, dt);
+                        probability, tau, gp, gi, gd, id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, uint id, double dt)
-        : Generator(id,dt), m_output(0.0), m_amplitude(amplitude),
+PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, uint id)
+        : Generator(id), m_output(0.0), m_amplitude(amplitude),
           m_tPrevPulse(0.0), m_tNextPulse(1.0/frequency),
           m_tUpdate(1.0/frequency+duration+15e-3), m_tLastSpike(-15e-3),
           m_clamp(false), m_estimatedProbability(0.5), m_errp(0.0), m_erri(0.0), m_errd(0.0)
@@ -62,8 +62,8 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         
 PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, 
                              double probability, double tau, double gp, double gi, double gd,
-                             uint id, double dt)
-        : Generator(id,dt), m_output(0.0), m_amplitude(amplitude),
+                             uint id)
+        : Generator(id), m_output(0.0), m_amplitude(amplitude),
           m_tPrevPulse(0.0), m_tNextPulse(1.0/frequency),
           m_tUpdate(1.0/frequency+duration+15e-3), m_tLastSpike(-15e-3),
           m_clamp(true), m_estimatedProbability(0.5), m_errp(0.0), m_erri(0.0), m_errd(0.0)
@@ -134,7 +134,7 @@ double PeriodicPulse::output() const
 
 void PeriodicPulse::handleEvent(const Event* event)
 {
-        m_tLastSpike = GetGlobalTime();
+        m_tLastSpike = event->time();
 }
 
 double PeriodicPulse::frequency() const

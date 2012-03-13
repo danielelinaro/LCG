@@ -13,7 +13,7 @@ class DynamicalEntity;
 class DynamicalEntity : public Entity
 {
 public:
-        DynamicalEntity(uint id = GetId(), double dt = GetGlobalDt());
+        DynamicalEntity(uint id = GetId());
 
         const array& state() const;
 

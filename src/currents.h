@@ -34,7 +34,7 @@ namespace ionic_currents {
 
 class IonicCurrent : public DynamicalEntity {
 public:
-        IonicCurrent(double area, double gbar, double E, uint id = GetId(), double dt = GetGlobalDt());
+        IonicCurrent(double area, double gbar, double E, uint id = GetId());
         double output() const;
 protected:
         virtual void addPost(Entity *entity);
@@ -44,7 +44,7 @@ protected:
 
 class HHSodium : public IonicCurrent {
 public:
-        HHSodium(double area, double gbar = 0.12, double E = 50, uint id = GetId(), double dt = GetGlobalDt());
+        HHSodium(double area, double gbar = 0.12, double E = 50, uint id = GetId());
 
 	static double vtrap(double x, double y);
         static double alpham(double v);
@@ -58,7 +58,7 @@ protected:
 
 class HHPotassium : public IonicCurrent {
 public:
-        HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId(), double dt = GetGlobalDt());
+        HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId());
 
 	static double vtrap(double x, double y);
         static double alphan(double v);
@@ -70,13 +70,13 @@ protected:
 
 class NoisyIonicCurrent : public IonicCurrent {
 public:
-        NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id = GetId(), double dt = GetGlobalDt());
+        NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id = GetId());
 };
 
 class HHSodiumCN : public NoisyIonicCurrent {
 public:
         HHSodiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.12, double E = 50, double gamma = 10,
-                   uint id = GetId(), double dt = GetGlobalDt());
+                   uint id = GetId());
         ~HHSodiumCN();
 
 public:
@@ -93,7 +93,7 @@ private:
 class HHPotassiumCN : public NoisyIonicCurrent {
 public:
         HHPotassiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.036, double E = -77, double gamma = 10,
-                      uint id = GetId(), double dt = GetGlobalDt());
+                      uint id = GetId());
         ~HHPotassiumCN();
 
 public:

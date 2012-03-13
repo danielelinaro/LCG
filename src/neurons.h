@@ -38,7 +38,7 @@ namespace neurons {
 
 class Neuron : public DynamicalEntity {
 public:
-        Neuron(double Vm0, uint id = GetId(), double dt = GetGlobalDt());
+        Neuron(double Vm0, uint id = GetId());
         double Vm() const;
         virtual double output() const;
 protected:
@@ -59,7 +59,7 @@ public:
          */
         LIFNeuron(double C, double tau, double tarp,
                   double Er, double E0, double Vth, double Iext,
-                  uint id = GetId(), double dt = GetGlobalDt());
+                  uint id = GetId());
 
 protected:
         virtual void evolve();
@@ -81,7 +81,7 @@ public:
          */
         ConductanceBasedNeuron(double C, double gl, double El, double Iext,
                                double area, double spikeThreshold, double V0,
-                               uint id = GetId(), double dt = GetGlobalDt());
+                               uint id = GetId());
 protected:
         virtual void evolve();
 };
@@ -99,7 +99,7 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
-                   uint id = GetId(), double dt = GetGlobalDt());
+                   uint id = GetId());
 
         RealNeuron(double spikeThreshold, double V0,
                    const double *AECKernel, size_t kernelSize,
@@ -108,7 +108,7 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
-                   uint id = GetId(), double dt = GetGlobalDt());
+                   uint id = GetId());
 
         ~RealNeuron();
 

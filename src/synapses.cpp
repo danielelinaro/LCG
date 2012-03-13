@@ -5,35 +5,35 @@
 dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
 {
         uint id;
-        double E, weight, delay, tau, dt;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double E, weight, delay, tau;
+        id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
              ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau))
                 return NULL;
-        return new dynclamp::synapses::ExponentialSynapse(E, weight, delay, tau, id, dt);
+        return new dynclamp::synapses::ExponentialSynapse(E, weight, delay, tau, id);
 }
 
 dynclamp::Entity* Exp2SynapseFactory(dictionary& args)
 {        
         uint id;
-        double E, weight, delay, tau[2], dt;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double E, weight, delay, tau[2];
+        id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
              ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1]))
                 return NULL;
-        return new dynclamp::synapses::Exp2Synapse(E, weight, delay, tau, id, dt);
+        return new dynclamp::synapses::Exp2Synapse(E, weight, delay, tau, id);
 }
 
 dynclamp::Entity* TMGSynapseFactory(dictionary& args)
 {
         uint id;
-        double E, weight, delay, U, tau[3], dt;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double E, weight, delay, U, tau[3];
+        id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
              ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
@@ -42,15 +42,15 @@ dynclamp::Entity* TMGSynapseFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauFacil", &tau[2]))
                 return NULL;
-        return new dynclamp::synapses::TMGSynapse(E, weight, delay, U, tau, id, dt);
+        return new dynclamp::synapses::TMGSynapse(E, weight, delay, U, tau, id);
 }
 
 namespace dynclamp {
 
 namespace synapses {
 
-Synapse::Synapse(double E, double weight, double delay, uint id, double dt)
-        : DynamicalEntity(id, dt), m_tPrevSpike(-1000.0), m_neuron(NULL), m_spikeTimeouts()
+Synapse::Synapse(double E, double weight, double delay, uint id)
+        : DynamicalEntity(id), m_tPrevSpike(-1000.0), m_neuron(NULL), m_spikeTimeouts()
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
@@ -76,10 +76,8 @@ void Synapse::setWeight(double weight)
 
 void Synapse::handleEvent(const Event *event)
 {
-        if (event->type() == SPIKE) {
-                double t = GetGlobalTime();
-                m_spikeTimeouts.push_back(t + SYN_DELAY);
-        }
+        if (event->type() == SPIKE)
+                m_spikeTimeouts.push_back(event->time() + SYN_DELAY);
 }
 
 bool Synapse::processSpikes()
@@ -111,10 +109,10 @@ void Synapse::addPost(Entity *entity)
 //~~~
 
 ExponentialSynapse::ExponentialSynapse(double E, double weight, double delay, double tau,
-                                       uint id, double dt)
-        : Synapse(E, weight, delay, id, dt)
+                                       uint id)
+        : Synapse(E, weight, delay, id)
 {
-        m_parameters.push_back(exp(-m_dt/tau));   // m_parameters[3] -> decay coefficient
+        m_parameters.push_back(exp(-GetGlobalDt()/tau));   // m_parameters[3] -> decay coefficient
 }
 
 void ExponentialSynapse::evolve()
@@ -131,15 +129,16 @@ void ExponentialSynapse::handleSpike()
 //~~~
 
 Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
-                         uint id, double dt) :
-	Synapse(E, weight, delay, id, dt)
+                         uint id) :
+	Synapse(E, weight, delay, id)
 {
         m_state.push_back(0.0);         // m_state[1]
         m_state.push_back(0.0);         // m_state[2]
 
+        double dt = GetGlobalDt();
 	double tp = (tau[0]*tau[1])/(tau[1] - tau[0]) * log(tau[1]/tau[0]);
-        m_parameters.push_back(exp(-m_dt/tau[0]));        // m_parameters[3] -> first decay coefficient
-        m_parameters.push_back(exp(-m_dt/tau[1]));        // m_parameters[4] -> second decay coefficient
+        m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[3] -> first decay coefficient
+        m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[4] -> second decay coefficient
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
 }
 
@@ -162,8 +161,8 @@ void Exp2Synapse::handleSpike()
 //~~~
 
 TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double tau[3],
-                       uint id, double dt)
-        : Synapse(E, weight, delay, id, dt), m_t(0.0)
+                       uint id)
+        : Synapse(E, weight, delay, id), m_t(0.0)
 {
         // tau = {tau_1, tau_rec, tau_facil}
         m_state.push_back(0.0);         // m_state[1] -> y
@@ -172,7 +171,7 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
 
         m_parameters.push_back(U);      // m_parameters[3] -> U
         m_parameters.push_back(tau[2]); // m_parameters[4] -> tau_facil
-        m_parameters.push_back(exp(-m_dt/tau[0]));      // m_parameters[5] -> exp. decay
+        m_parameters.push_back(exp(-GetGlobalDt()/tau[0]));      // m_parameters[5] -> exp. decay
         m_parameters.push_back(1.0 / tau[0]);           // m_parameters[6] -> 1 / tau_1
         m_parameters.push_back(1.0 / tau[1]);           // m_parameters[7] -> 1 / tau_rec
         m_parameters.push_back(1.0 / tau[2]);           // m_parameters[8] -> 1 / tau_facil
@@ -182,7 +181,7 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
 void TMGSynapse::evolve()
 {
         if (! processSpikes()) {
-                m_t += m_dt;
+                m_t += GetGlobalDt();
 	        SYN_G = SYN_G * TMG_SYN_DECAY;
         }
 }

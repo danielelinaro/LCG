@@ -6,19 +6,26 @@
 
 namespace dynclamp {
 
-class Entity;
-
+double SetGlobalDt(double dt);
 void Simulate(const std::vector<Entity*>& entities, double tend);
 
-void ResetGlobalTime();
-void IncreaseGlobalTime();
-void IncreaseGlobalTime(double dt);
-double GetGlobalTime();
-double SetGlobalDt(double dt);
-double GetGlobalDt();
+extern double globalT;
+extern double globalDt;
+
+#define GetGlobalDt() globalDt
+#define GetGlobalTime() globalT
+#define IncreaseGlobalTime() (globalT += globalDt)
+#define ResetGlobalTime()  (globalT = 0.0)
+
 #ifdef HAVE_LIBLXRT
-void SetGlobalTimeOffset();
-double GetGlobalTimeOffset();
+extern double realTimeDt;
+extern double globalTimeOffset;
+#undef GetGlobalDt()
+#define GetGlobalDt() realtimeDt
+#undef IncreaseGlobalTime()
+#define IncreaseGlobalTime() (globalT += realTimeDt)
+#define SetGlobalTimeOffset() (globalTimeOffset = count2sec(rt_get_time()))
+#define GetGlobalTimeOffset() globalTimeOffset
 #endif // HAVE_LIBLXRT
 
 } // namespace dynclamp

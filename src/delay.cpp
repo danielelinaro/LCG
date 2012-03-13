@@ -4,21 +4,21 @@
 dynclamp::Entity* DelayFactory(dictionary& args)
 {
         uint id, nSamples;
-        double dt, delay;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double delay;
+        id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "nSamples", &nSamples)) {
                 if (dynclamp::CheckAndExtractDouble(args, "delay", &delay))
-                        return new dynclamp::Delay(delay, id, dt);
+                        return new dynclamp::Delay(delay, id);
                 else
                         return NULL;
         }
-        return new dynclamp::Delay(nSamples, id, dt);
+        return new dynclamp::Delay(nSamples, id);
 }
 
 namespace dynclamp {
 
-Delay::Delay(uint nSamples, uint id, double dt)
-        : Entity(id, dt), m_bufferPosition(0)
+Delay::Delay(uint nSamples, uint id)
+        : Entity(id), m_bufferPosition(0)
 {
         if (nSamples == 0)
                 throw "The number of delay samples must be greater than 0.";
@@ -27,8 +27,8 @@ Delay::Delay(uint nSamples, uint id, double dt)
         allocateAndInitialiseBuffer();
 }
 
-Delay::Delay(double delay, uint id, double dt)
-        : Entity(id, dt), m_bufferPosition(0)
+Delay::Delay(double delay, uint id)
+        : Entity(id), m_bufferPosition(0)
 {
         if (delay <= 0)
                 throw "The delay must be greater than 0.";

@@ -4,37 +4,37 @@
 dynclamp::Entity* HHSodiumFactory(dictionary& args)
 {
         uint id;
-        double area, gbar, E, dt;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double area, gbar, E;
+        id = dynclamp::GetIdFromDictionary(args);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
                 return NULL;
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.12;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
                 E = 50;
-        return new dynclamp::ionic_currents::HHSodium(area, gbar, E, id, dt);
+        return new dynclamp::ionic_currents::HHSodium(area, gbar, E, id);
 }
 
 dynclamp::Entity* HHPotassiumFactory(dictionary& args)
 {
         uint id;
-        double area, gbar, E, dt;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        double area, gbar, E;
+        id = dynclamp::GetIdFromDictionary(args);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
                 return NULL;
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.036;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
                 E = -77;
-        return new dynclamp::ionic_currents::HHPotassium(area, gbar, E, id, dt);
+        return new dynclamp::ionic_currents::HHPotassium(area, gbar, E, id);
 }
 
 dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
 {
         uint id;
-        double area, gbar, E, gamma, dt;
+        double area, gbar, E, gamma;
         ullong seed;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
         dynclamp::GetSeedFromDictionary(args, &seed);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
                 return NULL;
@@ -44,15 +44,15 @@ dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
                 E = 50;
         if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
                 gamma = 10;
-        return new dynclamp::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id, dt);
+        return new dynclamp::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id);
 }
 
 dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
 {
         uint id;
-        double area, gbar, E, gamma, dt;
+        double area, gbar, E, gamma;
         ullong seed;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
         dynclamp::GetSeedFromDictionary(args, &seed);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
                 return NULL;
@@ -62,15 +62,15 @@ dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
                 E = -77;
         if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
                 gamma = 10;
-        return new dynclamp::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id, dt);
+        return new dynclamp::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id);
 }
 
 namespace dynclamp {
 
 namespace ionic_currents {
 
-IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id, double dt)
-        : DynamicalEntity(id, dt), m_neuron(NULL)
+IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
+        : DynamicalEntity(id), m_neuron(NULL)
 {
         m_parameters.push_back(area);   // area -> m_parameters[0]
         m_parameters.push_back(gbar);   // gbar -> m_parameters[1]
@@ -102,8 +102,8 @@ void IonicCurrent::addPost(Entity *entity)
         
 //~~
 
-HHSodium::HHSodium(double area, double gbar, double E, uint id, double dt)
-        : IonicCurrent(area, gbar, E, id, dt)
+HHSodium::HHSodium(double area, double gbar, double E, uint id)
+        : IonicCurrent(area, gbar, E, id)
 {
         m_state.push_back(0);           // m
         m_state.push_back(0);           // h
@@ -133,7 +133,8 @@ double HHSodium::betah(double v) {
 
 void HHSodium::evolve()
 {
-        double v, am, bm, ah, bh, minf, hinf, taum, tauh;
+        double dt, v, am, bm, ah, bh, minf, hinf, taum, tauh;
+        dt = GetGlobalDt();
         v = m_neuron->output();
         am = alpham(v);
         bm = betam(v);
@@ -145,21 +146,21 @@ void HHSodium::evolve()
         hinf = ah * tauh;
 
         // Euler
-        HH_NA_M = HH_NA_M + m_dt * (minf - HH_NA_M) / (taum*1e-3);
-        HH_NA_H = HH_NA_H + m_dt * (hinf - HH_NA_H) / (tauh*1e-3);
+        HH_NA_M = HH_NA_M + dt * (minf - HH_NA_M) / (taum*1e-3);
+        HH_NA_H = HH_NA_H + dt * (hinf - HH_NA_H) / (tauh*1e-3);
 
         // Runge-Kutta 4
         /*
         double k1, k2, k3, k4;
-        k1 = m_dt * (minf-HH_NA_M)/(taum*1e-3);
-        k2 = m_dt * (minf-(HH_NA_M+0.5*k1))/(taum*1e-3);
-        k3 = m_dt * (minf-(HH_NA_M+0.5*k2))/(taum*1e-3);
-        k4 = m_dt * (minf-(HH_NA_M+k3))/(taum*1e-3);
+        k1 = dt * (minf-HH_NA_M)/(taum*1e-3);
+        k2 = dt * (minf-(HH_NA_M+0.5*k1))/(taum*1e-3);
+        k3 = dt * (minf-(HH_NA_M+0.5*k2))/(taum*1e-3);
+        k4 = dt * (minf-(HH_NA_M+k3))/(taum*1e-3);
         HH_NA_M = HH_NA_M + 0.1666666667 * (k1+2*k2+2*k3+k4);
-        k1 = m_dt * (hinf-HH_NA_H)/(tauh*1e-3);
-        k2 = m_dt * (hinf-(HH_NA_H+0.5*k1))/(tauh*1e-3);
-        k3 = m_dt * (hinf-(HH_NA_H+0.5*k2))/(tauh*1e-3);
-        k4 = m_dt * (hinf-(HH_NA_H+k3))/(tauh*1e-3);
+        k1 = dt * (hinf-HH_NA_H)/(tauh*1e-3);
+        k2 = dt * (hinf-(HH_NA_H+0.5*k1))/(tauh*1e-3);
+        k3 = dt * (hinf-(HH_NA_H+0.5*k2))/(tauh*1e-3);
+        k4 = dt * (hinf-(HH_NA_H+k3))/(tauh*1e-3);
         HH_NA_H = HH_NA_H + 0.1666666667 * (k1+2*k2+2*k3+k4);
         */
 
@@ -168,8 +169,8 @@ void HHSodium::evolve()
 
 //~~
 
-HHPotassium::HHPotassium(double area, double gbar, double E, uint id, double dt)
-        : IonicCurrent(area, gbar, E, id, dt)
+HHPotassium::HHPotassium(double area, double gbar, double E, uint id)
+        : IonicCurrent(area, gbar, E, id)
 {
         m_state.push_back(0);           // n
 }
@@ -190,9 +191,9 @@ double HHPotassium::betan(double v) {
 
 void HHPotassium::evolve()
 {
-        double v, dt, an, bn, ninf, taun;
-        v = m_neuron->output();
+        double dt, v, an, bn, ninf, taun;
         dt = GetGlobalDt();
+        v = m_neuron->output();
         an = alphan(v);
         bn = betan(v);
         taun = 1.0 / (an + bn);
@@ -204,10 +205,10 @@ void HHPotassium::evolve()
         // Runge-Kutta 4
         /*
         double k1, k2, k3, k4;
-        k1 = m_dt * (ninf-HH_K_N)/(taun*1e-3);
-        k2 = m_dt * (ninf-(HH_K_N+0.5*k1))/(taun*1e-3);
-        k3 = m_dt * (ninf-(HH_K_N+0.5*k2))/(taun*1e-3);
-        k4 = m_dt * (ninf-(HH_K_N+k3))/(taun*1e-3);
+        k1 = dt * (ninf-HH_K_N)/(taun*1e-3);
+        k2 = dt * (ninf-(HH_K_N+0.5*k1))/(taun*1e-3);
+        k3 = dt * (ninf-(HH_K_N+0.5*k2))/(taun*1e-3);
+        k4 = dt * (ninf-(HH_K_N+k3))/(taun*1e-3);
         HH_K_N = HH_K_N + 0.1666666667 * (k1+2*k2+2*k3+k4);
         */
 
@@ -216,8 +217,8 @@ void HHPotassium::evolve()
 
 //~~
 
-NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id, double dt)
-        : IonicCurrent(area, gbar, E, id, dt)
+NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id)
+        : IonicCurrent(area, gbar, E, id)
 {
         m_parameters.push_back(gamma);  // gamma -> m_parameters[3]
         m_parameters.push_back(ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA)));     // number of channels -> m_parameters[4]
@@ -227,8 +228,8 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
 
 //~~
 
-HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double gamma, uint id, double dt)
-        : NoisyIonicCurrent(area, gbar, E, gamma, id, dt),
+HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double gamma, uint id)
+        : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
         m_state.push_back(0.0);   // m
@@ -244,11 +245,12 @@ HHSodiumCN::~HHSodiumCN()
 
 void HHSodiumCN::evolve()
 {
-        double v, am, bm, ah, bh, m_inf, h_inf, tau_m, tau_h;
+        double dt, v, am, bm, ah, bh, m_inf, h_inf, tau_m, tau_h;
         double m3_inf, one_minus_m, one_minus_h, fraction;
         double tau_z[numberOfStates-1], var_z[numberOfStates-1], mu_z[numberOfStates-1], noise_z[numberOfStates-1];
 	uint i;
 	
+        dt = GetGlobalDt();
         v = m_neuron->output();
 
 	// m
@@ -287,13 +289,13 @@ void HHSodiumCN::evolve()
 	var_z[6] = (1.0/NIC_NCHANNELS) * m3_inf*h_inf * one_minus_m*one_minus_m*one_minus_m*one_minus_h;	
 
 	for(i=0; i<numberOfStates-1; i++) {
-		mu_z[i] = exp(-m_dt/tau_z[i]);
+		mu_z[i] = exp(-dt/tau_z[i]);
 		noise_z[i] = sqrt(var_z[i]*(1-mu_z[i]*mu_z[i])) * m_rand->random();
 	}
 	
 	/* forward Euler for m and h (they are deterministic) */
-	HH_NA_CN_M = HH_NA_CN_M + m_dt * (m_inf - HH_NA_CN_M) / tau_m;
-	HH_NA_CN_H = HH_NA_CN_H + m_dt * (h_inf - HH_NA_CN_H) / tau_h;
+	HH_NA_CN_M = HH_NA_CN_M + dt * (m_inf - HH_NA_CN_M) / tau_m;
+	HH_NA_CN_H = HH_NA_CN_H + dt * (h_inf - HH_NA_CN_H) / tau_h;
 	
 	IC_FRACTION = HH_NA_CN_M*HH_NA_CN_M*HH_NA_CN_M*HH_NA_CN_H;
 	for(i=0; i<numberOfStates-1; i++) {
@@ -309,8 +311,8 @@ void HHSodiumCN::evolve()
 
 //~~
 
-HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, double gamma, uint id, double dt)
-        : NoisyIonicCurrent(area, gbar, E, gamma, id, dt),
+HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, double gamma, uint id)
+        : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
         m_state.push_back(0.0);   // n
@@ -325,11 +327,12 @@ HHPotassiumCN::~HHPotassiumCN()
 
 void HHPotassiumCN::evolve()
 {
-        double v, an, bn, n_inf, tau_n;
+        double dt, v, an, bn, n_inf, tau_n;
         double n4_inf, one_minus_n, fraction;
         double tau_z[numberOfStates-1], var_z[numberOfStates-1], mu_z[numberOfStates-1], noise_z[numberOfStates-1];
 	int i;
 	
+        dt = GetGlobalDt();
         v = m_neuron->output();
 
 	an = HHPotassium::alphan(v);
@@ -346,12 +349,12 @@ void HHPotassiumCN::evolve()
 	
 	for(i=0; i<numberOfStates-1; i++) {
 		tau_z[i] = tau_n/(i+1);
-		mu_z[i] = exp(-m_dt/tau_z[i]);
+		mu_z[i] = exp(-dt/tau_z[i]);
 		noise_z[i] = sqrt(var_z[i]*(1-mu_z[i]*mu_z[i])) * m_rand->random();
 	}
 
 	/* forward Euler for n (it is deterministic) */
-        HH_K_CN_N = HH_K_CN_N + m_dt * (n_inf - HH_K_CN_N)/tau_n;
+        HH_K_CN_N = HH_K_CN_N + dt * (n_inf - HH_K_CN_N)/tau_n;
 
 	/* noisy terms */
 	IC_FRACTION = HH_K_CN_N*HH_K_CN_N*HH_K_CN_N*HH_K_CN_N;

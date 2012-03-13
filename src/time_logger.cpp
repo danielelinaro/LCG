@@ -3,8 +3,8 @@
 
 namespace dynclamp {
 
-TimeLogger::TimeLogger(uint id, double dt)
-        : Entity(id, dt), m_time(0.0)
+TimeLogger::TimeLogger(uint id)
+        : Entity(id), m_time(0.0)
 {}
 
 void TimeLogger::step()

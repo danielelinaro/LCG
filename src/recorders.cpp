@@ -4,26 +4,24 @@
 dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
 {
         uint id;
-        double dt;
         std::string filename;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::ASCIIRecorder((const char *) NULL, id, dt);
-        return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id, dt);
+                return new dynclamp::recorders::ASCIIRecorder((const char *) NULL, id);
+        return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id);
 }
 
 dynclamp::Entity* H5RecorderFactory(dictionary& args)
 {       
         uint id;
-        double dt;
         std::string filename;
         bool compress;
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        dynclamp::GetIdFromDictionary(args);
         if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
                 return NULL;
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::H5Recorder(compress, NULL, id, dt);
-        return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id, dt);
+                return new dynclamp::recorders::H5Recorder(compress, NULL, id);
+        return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id);
 
 }
 
@@ -31,8 +29,7 @@ namespace dynclamp {
 
 namespace recorders {
 
-Recorder::Recorder(uint id, double dt)
-        : Entity(id, dt)
+Recorder::Recorder(uint id) : Entity(id)
 {}
 
 double Recorder::output() const
@@ -40,8 +37,8 @@ double Recorder::output() const
         return 0.0;
 }
 
-ASCIIRecorder::ASCIIRecorder(const char *filename, uint id, double dt)
-        : Recorder(id, dt)
+ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
+        : Recorder(id)
 {
         char fname[FILENAME_MAXLEN];
         if (filename == NULL)
@@ -58,8 +55,8 @@ ASCIIRecorder::ASCIIRecorder(const char *filename, uint id, double dt)
         m_closeFile = true;
 }
 
-ASCIIRecorder::ASCIIRecorder(FILE *fid, uint id, double dt)
-        : Recorder(id, dt), m_fid(fid), m_closeFile(false)
+ASCIIRecorder::ASCIIRecorder(FILE *fid, uint id)
+        : Recorder(id), m_fid(fid), m_closeFile(false)
 {}
 
 ASCIIRecorder::~ASCIIRecorder()
@@ -86,8 +83,8 @@ const uint    H5Recorder::numberOfChunks = 20;
 const hsize_t H5Recorder::bufferSize     = 20480;    // This MUST be equal to chunkSize times numberOfChunks.
 const double  H5Recorder::fillValue      = 0.0;
 
-H5Recorder::H5Recorder(bool compress, const char *filename, uint id, double dt)
-        : Recorder(id, dt),
+H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
+        : Recorder(id),
           m_data(), m_numberOfInputs(0),
           m_bufferPosition(0), m_numberOfBuffers(2),
           m_mutex(), m_cv(), m_threadRun(true),
@@ -488,6 +485,7 @@ int H5Recorder::checkCompression()
         
 bool H5Recorder::writeMiscellanea()
 {
+        double dt = GetGlobalDt();
         herr_t status;
         hid_t dataspace, cparms, dataset, aid, attr;
         hsize_t dims = 0, chunk = 1;
@@ -548,7 +546,7 @@ bool H5Recorder::writeMiscellanea()
                 return false;
         }
 
-        status = H5Awrite(attr, H5T_IEEE_F64LE, &m_dt);
+        status = H5Awrite(attr, H5T_IEEE_F64LE, &dt);
 
         H5Aclose(attr);
         H5Sclose(aid);
@@ -568,13 +566,14 @@ void H5Recorder::close()
 {
         Logger(All, "--- H5Recorder::close() ---\n");
         Logger(All, "Closing file.\n");
+        double dt = GetGlobalDt();
         if (m_fid != -1) {
 
                 hid_t dataset = H5Dopen2(m_fid, "/Misc/Simulation_properties", H5P_DEFAULT);
                 if (dataset >= 0) {
                         hid_t aid = H5Screate(H5S_SCALAR);
                         hid_t attr = H5Acreate2(dataset, "tend", H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
-                        double tend = GetGlobalTime() - m_dt;
+                        double tend = GetGlobalTime() - dt;
                         H5Awrite(attr, H5T_IEEE_F64LE, &tend);
                         H5Aclose(attr);
                         H5Sclose(aid);

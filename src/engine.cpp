@@ -37,51 +37,7 @@ double SetGlobalDt(double dt)
         return globalDt;
 }
 
-double GetGlobalDt()
-{
-#ifndef HAVE_LIBLXRT
-        return globalDt;
-#else
-        return realTimeDt;
-#endif
-}
-
-double GetGlobalTime()
-{
-        return globalT;
-}
-
-void IncreaseGlobalTime()
-{
 #ifdef HAVE_LIBLXRT
-        //globalT = count2sec(rt_get_time()) - globalTimeOffset;
-        globalT += realTimeDt;
-#else
-        globalT += globalDt;
-#endif
-}
-
-void IncreaseGlobalTime(double dt)
-{
-        globalT += dt;
-}
-
-void ResetGlobalTime()
-{
-        globalT = 0.0;
-}
-
-#ifdef HAVE_LIBLXRT
-
-void SetGlobalTimeOffset()
-{
-        globalTimeOffset = count2sec(rt_get_time());
-}
-
-double GetGlobalTimeOffset()
-{
-        return globalTimeOffset;
-}
 
 void RTSimulation(const std::vector<Entity*>& entities, double tend)
 {

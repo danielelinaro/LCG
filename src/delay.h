@@ -8,8 +8,8 @@ namespace dynclamp {
 
 class Delay : public Entity {
 public:
-        Delay(uint nSamples = 1, uint id = GetId(), double dt = GetGlobalDt());
-        Delay(double delay, uint id = GetId(), double dt = GetGlobalDt());
+        Delay(uint nSamples = 1, uint id = GetId());
+        Delay(double delay, uint id = GetId());
         virtual ~Delay();
 
         virtual void step();

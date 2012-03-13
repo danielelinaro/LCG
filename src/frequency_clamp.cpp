@@ -4,9 +4,9 @@
 dynclamp::Entity* FrequencyClampFactory(dictionary& args)
 {        
         uint id;
-        double frequency, baselineCurrent, tau, gp, gi, gd, dt;
+        double frequency, baselineCurrent, tau, gp, gi, gd;
 
-        dynclamp::GetIdAndDtFromDictionary(args, &id, &dt);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency) ||
              ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baselineCurrent) ||
@@ -22,7 +22,7 @@ dynclamp::Entity* FrequencyClampFactory(dictionary& args)
         if ( ! dynclamp::CheckAndExtractDouble(args, "gd", &gd))
                 gd = 0.0;
 
-        return new dynclamp::generators::FrequencyClamp(frequency, baselineCurrent, tau, gp, gi, gd, id, dt);
+        return new dynclamp::generators::FrequencyClamp(frequency, baselineCurrent, tau, gp, gi, gd, id);
 
 }
 
@@ -31,8 +31,8 @@ namespace dynclamp {
 namespace generators {
 
 FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double tau,
-                double gp, double gi, double gd, uint id, double dt)
-        : Generator(id, dt), m_estimatedFrequency(0.0), m_tPrevSpike(0.0),
+                double gp, double gi, double gd, uint id)
+        : Generator(id), m_estimatedFrequency(0.0), m_tPrevSpike(0.0),
           m_errp(frequency), m_erri(0.0), m_errd(0.0), m_errorpPrev(0.0),
           m_current(baselineCurrent)
 {
@@ -59,7 +59,7 @@ double FrequencyClamp::output() const
 
 void FrequencyClamp::handleEvent(const Event *event)
 {
-        double now = GetGlobalTime();
+        double now = event->time();
         if (m_tPrevSpike > 0) {
                 double isi, weight;
                 isi = now - m_tPrevSpike;

@@ -13,7 +13,7 @@ namespace generators {
 
 class Poisson : public Generator {
 public:
-        Poisson(double rate, ullong seed = SEED, uint id = GetId(), double dt = GetGlobalDt());
+        Poisson(double rate, ullong seed = SEED, uint id = GetId());
         virtual bool hasNext() const;
         virtual double output() const;
         virtual void step();

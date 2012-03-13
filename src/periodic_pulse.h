@@ -19,10 +19,10 @@ namespace generators {
 
 class PeriodicPulse : public Generator {
 public:
-        PeriodicPulse(double frequency, double duration, double amplitude, uint id = GetId(), double dt = GetGlobalDt());
+        PeriodicPulse(double frequency, double duration, double amplitude, uint id = GetId());
         PeriodicPulse(double frequency, double duration, double amplitude, double probability,
                       double tau, double gp, double gi = 0.0, double gd = 0.0,
-                      uint id = GetId(), double dt = GetGlobalDt());
+                      uint id = GetId());
 
         virtual bool hasNext() const;
 

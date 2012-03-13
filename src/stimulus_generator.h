@@ -11,7 +11,7 @@ namespace generators {
 
 class Stimulus : public Generator {
 public:
-        Stimulus(const char *filename, uint id = GetId(), double dt = GetGlobalDt());
+        Stimulus(const char *filename, uint id = GetId());
         virtual ~Stimulus();
 
         uint stimulusLength() const;
