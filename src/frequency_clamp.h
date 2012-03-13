@@ -22,6 +22,7 @@ public:
                        double gp, double gi = 0.0, double gd = 0.0,
                        uint id = GetId());
         bool hasNext() const;
+        virtual void initialise();
         void step();
         double output() const;
         void handleEvent(const Event *event);

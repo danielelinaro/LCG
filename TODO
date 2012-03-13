@@ -1,8 +1,8 @@
 
 Short term (and therefore relatively simple):
 
--) implement a reset() method in all classes.
--) add name in Entity? (also for data logging...)
+-) add a setFilename method in stimulus.
+-) add name in Entity? (also for data logging...).
 -) substitute Euler with exact solution in LIFNeuron::evolve.
 -) understand why EnqueueEvent cannot be found.
 -) fix shuffle function in randlib

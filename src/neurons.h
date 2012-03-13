@@ -39,10 +39,14 @@ namespace neurons {
 class Neuron : public DynamicalEntity {
 public:
         Neuron(double Vm0, uint id = GetId());
+        virtual void initialise();
         double Vm() const;
+        double Vm0() const;
         virtual double output() const;
 protected:
         void emitSpike() const;
+private:
+        double m_Vm0;
 };
 
 class LIFNeuron : public Neuron {
@@ -60,6 +64,7 @@ public:
         LIFNeuron(double C, double tau, double tarp,
                   double Er, double E0, double Vth, double Iext,
                   uint id = GetId());
+        virtual void initialise();
 
 protected:
         virtual void evolve();
@@ -111,6 +116,9 @@ public:
                    uint id = GetId());
 
         ~RealNeuron();
+
+        virtual void initialise();
+
 
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;

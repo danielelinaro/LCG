@@ -79,6 +79,11 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         m_state.push_back(0);           // fraction of open channels -> m_state[0]
 }
 
+void IonicCurrent::initialise()
+{
+        IC_FRACTION = 0.0;
+}
+
 double IonicCurrent::output() const
 {
         ////        (1)      * ( nS / cm^2 ) *            mV               * (    cm^2     )
@@ -107,6 +112,12 @@ HHSodium::HHSodium(double area, double gbar, double E, uint id)
 {
         m_state.push_back(0);           // m
         m_state.push_back(0);           // h
+}
+
+void HHSodium::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
 }
 
 double HHSodium::vtrap(double x, double y) {
@@ -175,6 +186,12 @@ HHPotassium::HHPotassium(double area, double gbar, double E, uint id)
         m_state.push_back(0);           // n
 }
 
+void HHPotassium::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+}
+
 double HHPotassium::vtrap(double x, double y) {
         if (fabs(x/y) < 1e-6)
 	        return y*(1. - x/y/2.);
@@ -226,6 +243,12 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
         Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
 }
 
+void NoisyIonicCurrent::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+}
+
 //~~
 
 HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double gamma, uint id)
@@ -241,6 +264,14 @@ HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double g
 HHSodiumCN::~HHSodiumCN()
 {
         delete m_rand;
+}
+
+void HHSodiumCN::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+        for (uint i=0; i<numberOfStates; i++)
+                m_z[i] = 0.0;
 }
 
 void HHSodiumCN::evolve()
@@ -323,6 +354,14 @@ HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, do
 HHPotassiumCN::~HHPotassiumCN()
 {
         delete m_rand;
+}
+
+void HHPotassiumCN::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+        for (uint i=0; i<numberOfStates; i++)
+                m_z[i] = 0.0;
 }
 
 void HHPotassiumCN::evolve()

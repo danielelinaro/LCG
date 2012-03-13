@@ -84,6 +84,7 @@ public:
                            uint writeChannel, double outputConversionFactor,
                            uint aref = GRSE);
         ~ComediAnalogOutput();
+        void initialise();
         double outputConversionFactor() const;
         void write(double data);
 private:
@@ -109,6 +110,7 @@ public:
                                   uint writeChannel, double outputConversionFactor,
                                   uint aref = GRSE);
         ~ComediAnalogOutputSoftCal();
+        void initialise();
         double outputConversionFactor() const;
         void write(double data);
 private:
@@ -123,6 +125,7 @@ public:
                     uint range = PLUS_MINUS_TEN,
                     uint aref = GRSE,
                     uint id = GetId());
+        virtual void initialise();
         virtual void step();
         virtual double output() const;
 private:
@@ -137,6 +140,7 @@ public:
                      uint aref = GRSE,
                      uint id = GetId());
         ~AnalogOutput();
+        virtual void initialise();
         virtual void step();
         virtual double output() const;
 private:

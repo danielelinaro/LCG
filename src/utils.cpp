@@ -68,7 +68,7 @@ uint GetId()
         return progressiveId-1;
 }
 
-uint GetIdAFromDictionary(dictionary& args)
+uint GetIdFromDictionary(dictionary& args)
 {
         uint id;
         if (args.count("id") == 0) {
@@ -220,7 +220,6 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 {
         double tend, iti, ibi;
         std::string configfile, kernelfile, stimfile, stimdir;
-        uint nTrials, nBatches;
         po::options_description description("Allowed options");
         po::variables_map options;
 
@@ -233,10 +232,10 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                         ("stimulus-file,s", po::value<std::string>(&stimfile), "specify stimulus file")
                         ("stimulus-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located")
                         ("time,t", po::value<double>(&tend), "specify the duration of the simulation (in seconds)")
-                        ("iti,i", po::value<double>(&iti), "specify inter-trial interval (in seconds)")
-                        ("ibi,I", po::value<double>(&ibi), "specify inter-batch interval (in seconds)")
-                        ("ntrials,n", po::value<uint>(&nTrials), "specify the number of trials (how many times a stimulus is repeated)")
-                        ("nbatches,N", po::value<uint>(&nBatches), "specify the number of trials (how many times a batch of stimuli is repeated)");
+                        ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (in seconds)")
+                        ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (in seconds)")
+                        ("ntrials,n", po::value<uint>(&opt->nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
+                        ("nbatches,N", po::value<uint>(&opt->nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)");
 
                 po::store(po::parse_command_line(argc, argv, description), options);
                 po::notify(options);    
@@ -295,11 +294,6 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 if (options.count("ibi"))
                         opt->ibi = (useconds_t) (ibi * 1e6);
 
-                if (options.count("nTrials"))
-                        opt->nTrials = nTrials;
-
-                if (options.count("nBatches"))
-                        opt->nBatches = nBatches;
         }
         catch (std::exception e) {
                 Logger(Critical, "Missing argument or unknown option.\n");

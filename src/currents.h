@@ -35,6 +35,7 @@ namespace ionic_currents {
 class IonicCurrent : public DynamicalEntity {
 public:
         IonicCurrent(double area, double gbar, double E, uint id = GetId());
+        virtual void initialise();
         double output() const;
 protected:
         virtual void addPost(Entity *entity);
@@ -45,6 +46,8 @@ protected:
 class HHSodium : public IonicCurrent {
 public:
         HHSodium(double area, double gbar = 0.12, double E = 50, uint id = GetId());
+
+        virtual void initialise();
 
 	static double vtrap(double x, double y);
         static double alpham(double v);
@@ -60,6 +63,8 @@ class HHPotassium : public IonicCurrent {
 public:
         HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId());
 
+        virtual void initialise();
+
 	static double vtrap(double x, double y);
         static double alphan(double v);
         static double betan(double v);
@@ -71,6 +76,7 @@ protected:
 class NoisyIonicCurrent : public IonicCurrent {
 public:
         NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id = GetId());
+        virtual void initialise();
 };
 
 class HHSodiumCN : public NoisyIonicCurrent {
@@ -78,6 +84,7 @@ public:
         HHSodiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.12, double E = 50, double gamma = 10,
                    uint id = GetId());
         ~HHSodiumCN();
+        virtual void initialise();
 
 public:
         static const uint numberOfStates = 8;
@@ -95,6 +102,7 @@ public:
         HHPotassiumCN(double area, ullong seed = GetRandomSeed(), double gbar = 0.036, double E = -77, double gamma = 10,
                       uint id = GetId());
         ~HHPotassiumCN();
+        virtual void initialise();
 
 public:
         static const uint numberOfStates = 5;

@@ -27,11 +27,17 @@ public:
 class ASCIIRecorder : public Recorder {
 public:
         ASCIIRecorder(const char *filename = NULL, uint id = GetId());
-        ASCIIRecorder(FILE *fid, uint id = GetId());
         ~ASCIIRecorder();
-
+        virtual void initialise();
         virtual void step();
+
 private:
+        void openFile();
+        void closeFile();
+
+private:
+        bool m_makeFilename;
+        char m_filename[FILENAME_MAXLEN];
         FILE *m_fid;
         bool m_closeFile;
 };
@@ -54,7 +60,7 @@ class H5Recorder : public Recorder {
 public:
         H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();
-
+        virtual void initialise();
         virtual void step();
 
 public:
@@ -69,20 +75,23 @@ protected:
         virtual void addPre(Entity *entity);
 
 private:
-        int isCompressionAvailable() const;
-        int open(const char *filename, bool compress);
-        void close();
+        int  isCompressionAvailable() const;
+        int  openFile();
+        void closeFile();
+        void startWriterThread();
+        void stopWriterThread();
         void buffersWriter();
         bool writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims);
         bool writeMiscellanea();
         bool createGroups();
-        int checkCompression();
+        int  checkCompression();
+        void allocateForEntity(Entity *entity);
 
 private:
         // the handle of the file
         hid_t m_fid;
         // whether compression is turned on or off
-        bool m_compressed;
+        bool m_compress;
         // dataset creation property list
         hid_t m_datasetPropertiesList;
         // the data
@@ -91,6 +100,11 @@ private:
         std::deque<uint> m_dataQueue;
         // number of inputs
         uint m_numberOfInputs;
+
+        // the name of the file
+        char m_filename[FILENAME_MAXLEN];
+        // tells whether the filename should be generated from the timestamp
+        bool m_makeFilename;
 
         // position in the buffer
         uint m_bufferPosition;

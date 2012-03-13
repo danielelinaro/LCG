@@ -13,6 +13,8 @@
 #define PP_GI           m_parameters[7]
 #define PP_GD           m_parameters[8]
 
+#define PP_INTERVAL     15e-3
+
 namespace dynclamp {
 
 namespace generators {
@@ -23,6 +25,8 @@ public:
         PeriodicPulse(double frequency, double duration, double amplitude, double probability,
                       double tau, double gp, double gi = 0.0, double gd = 0.0,
                       uint id = GetId());
+
+        virtual void initialise();
 
         virtual bool hasNext() const;
 

@@ -1,7 +1,9 @@
 #include <stdio.h>
+#include <vector>
 #include "utils.h"
 #include "ou.h"
 #include "recorders.h"
+#include "engine.h"
 
 using namespace dynclamp;
 using namespace dynclamp::recorders;
@@ -10,6 +12,8 @@ using namespace dynclamp::recorders;
 
 int main()
 {
+        SetLoggingLevel(Debug);
+
         int i;
         double t;
         double tend = 0.25;
@@ -17,26 +21,17 @@ int main()
         double tau = 10e-3;
         double i0 = 250;
         bool compress = false;
-        Entity *entities[N_ENT];
+        std::vector<Entity*> entities(N_ENT);
+
         entities[0] = new H5Recorder(compress, "h5rec_test.h5");
         for (i=1; i<N_ENT; i++) {
                 entities[i] = new OUcurrent(sigma, tau, i0, (double) i);
                 entities[i]->connect(entities[0]);
         }
 
-        try {
-                while((t=GetGlobalTime()) <= tend) {
-                        for (i=0; i<N_ENT; i++)
-                                entities[i]->readAndStoreInputs();
-                        IncreaseGlobalTime();
-                        for (i=0; i<N_ENT; i++)
-                                entities[i]->step();
-                }
-        } catch (const char *msg) {
-                fprintf(stderr, "ERROR: %s\n", msg);
-        }
+        Simulate(entities, tend);
 
-        for (i=0; i<N_ENT; i++)
+        for (i=0; i<entities.size(); i++)
                 delete entities[i];
 
         return 0;

@@ -12,11 +12,12 @@ public:
         Delay(double delay, uint id = GetId());
         virtual ~Delay();
 
+        virtual void initialise();
         virtual void step();
         virtual double output() const;
 
 private:
-        void allocateAndInitialiseBuffer();
+        void allocateBuffer();
 
 private:
         uint m_bufferLength;

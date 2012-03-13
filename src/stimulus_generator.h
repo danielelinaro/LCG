@@ -14,6 +14,8 @@ public:
         Stimulus(const char *filename, uint id = GetId());
         virtual ~Stimulus();
 
+        virtual void initialise();
+
         uint stimulusLength() const;
         virtual bool hasNext() const;
 

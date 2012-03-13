@@ -5,7 +5,8 @@
 #include "utils.h"
 #include "randlib.h"
 #include "generator.h"
-//#include "generate_trial.h"
+
+#define POISSON_RATE m_parameters[0]
 
 namespace dynclamp {
 
@@ -14,6 +15,7 @@ namespace generators {
 class Poisson : public Generator {
 public:
         Poisson(double rate, ullong seed = SEED, uint id = GetId());
+        virtual void initialise();
         virtual bool hasNext() const;
         virtual double output() const;
         virtual void step();
@@ -23,7 +25,6 @@ private:
         void calculateTimeNextSpike();
 
 private:
-        double m_rate;
         UniformRandom m_random;
         double m_tNextSpike;
 };

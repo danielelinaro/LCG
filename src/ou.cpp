@@ -37,18 +37,22 @@ namespace dynclamp {
 OU::OU(double sigma, double tau, double eta0, ullong seed, uint id)
         : DynamicalEntity(id), m_randn(0, 1, seed)
 {
-        double dt = GetGlobalDt();
         // See the paper [Gillespie, 1994, PRE] for explanation of the meaning of parameters
         // and of the method of solution.
         m_parameters.push_back(sigma);  // m_parameters[0] -> sigma
         m_parameters.push_back(tau);    // m_parameters[1] -> tau
         m_parameters.push_back(eta0);   // m_parameters[2] -> eta0
-        m_parameters.push_back(2*OU_SIGMA*OU_SIGMA/OU_TAU);     // m_parameters[3] -> diffusion constant
-        m_parameters.push_back(exp(-dt/OU_TAU));              // m_parameters[4] -> mu
-        m_parameters.push_back(sqrt(OU_CONST*OU_TAU/2 * (1-OU_MU*OU_MU)));        // m_parameters[5] -> coefficient
+        m_parameters.push_back(2*OU_SIGMA*OU_SIGMA/OU_TAU);                     // m_parameters[3] -> diffusion constant
+        m_parameters.push_back(exp(-GetGlobalDt()/OU_TAU));                     // m_parameters[4] -> mu
+        m_parameters.push_back(sqrt(OU_CONST*OU_TAU/2 * (1-OU_MU*OU_MU)));      // m_parameters[5] -> coefficient
 
         m_state.push_back(eta0);
 } 
+
+void OU::initialise()
+{
+        OU_ETA = OU_ETA0;
+}
 
 void OU::evolve()
 {

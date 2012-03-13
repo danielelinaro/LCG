@@ -39,6 +39,8 @@ public:
 
         virtual double output() const = 0;
 
+        virtual void initialise() = 0;
+
         virtual void handleEvent(const Event *event);
 
         virtual void emitEvent(Event *event) const;

@@ -18,9 +18,8 @@ namespace dynclamp {
 namespace generators {
 
 Stimulus::Stimulus(const char *stimulusFile, uint id)
-        : Generator(id), m_stimulus(NULL), m_stimulusLength(0), m_position(0)
+        : Generator(id), m_stimulus(NULL), m_stimulusLength(0)
 {
-        double dt = GetGlobalDt();
         int i, j, flag;
         double **metadata;
         struct stat buf;
@@ -32,10 +31,11 @@ Stimulus::Stimulus(const char *stimulusFile, uint id)
                 throw ss.str().c_str();
         }
 
-        m_parameters.push_back(1.0/dt);         // m_parameters[0] -> sampling rate
+        m_parameters.push_back(1.0/GetGlobalDt());         // m_parameters[0] -> sampling rate
 
         flag = generate_trial(stimulusFile, GetLoggingLevel() <= Debug,
-                              0, NULL, &m_stimulus, &m_stimulusLength, m_parameters[0], dt);
+                              0, NULL, &m_stimulus, &m_stimulusLength,
+                              m_parameters[0], GetGlobalDt());
 
         if (flag == -1) {
                 if (m_stimulus != NULL)
@@ -75,6 +75,10 @@ Stimulus::~Stimulus()
         }
 }
 
+void Stimulus::initialise()
+{
+        m_position = 0;
+}
 
 double Stimulus::duration() const
 {

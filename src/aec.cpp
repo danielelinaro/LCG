@@ -5,7 +5,6 @@
 namespace dynclamp {
 
 AEC::AEC(const char *kernelFile)
-        : m_length(0), m_pos(0)
 {
         FILE *fid;
         double tmp;
@@ -16,6 +15,7 @@ AEC::AEC(const char *kernelFile)
                 throw "Unable to open kernel file.";
         }
 
+        m_length = 0;
         while (fscanf(fid, "%le\n", &tmp) != EOF)
                 m_length++;
         fclose(fid);
@@ -31,7 +31,7 @@ AEC::AEC(const char *kernelFile)
 }
 
 AEC::AEC(const double *kernel, size_t kernelSize)
-        : m_length(kernelSize), m_pos(0)
+        : m_length(kernelSize)
 {
         m_kernel = new double[m_length];
         m_current = new double[m_length];
@@ -45,6 +45,14 @@ AEC::~AEC()
 {
         delete m_kernel;
         delete m_current;
+}
+
+void AEC::initialise()
+{
+        for (int i=0; i<m_length; i++) {
+                m_current[i] = 0.0;
+        }
+        m_pos = 0;
 }
 
 void AEC::pushBack(double I)

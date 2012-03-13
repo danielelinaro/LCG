@@ -133,6 +133,8 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
+        for (uint i=0; i<entities.size(); i++)
+                entities[i]->initialise();
 #ifdef HAVE_LIBLXRT
         boost::thread thrd(RTSimulation, entities, tend);
 #else

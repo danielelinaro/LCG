@@ -260,6 +260,11 @@ ComediAnalogOutput::~ComediAnalogOutput()
         write(0.0);
 }
 
+ComediAnalogOutput::initialise()
+{
+        write(0.0);
+}
+
 double ComediAnalogOutput::outputConversionFactor() const
 {
         return m_outputConversionFactor;
@@ -325,6 +330,11 @@ ComediAnalogOutputSoftCal::~ComediAnalogOutputSoftCal()
         write(0.0);
 }
 
+ComediAnalogOutputSoftCal::initialise()
+{
+        write(0.0);
+}
+
 double ComediAnalogOutputSoftCal::outputConversionFactor() const
 {
         return m_outputConversionFactor;
@@ -345,9 +355,14 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
                          uint range, uint aref,
                          uint id)
-        : Entity(id), m_data(0.0),
+        : Entity(id),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
 {}
+
+void AnalogInput::initialise()
+{
+        m_data = 0.0;
+}
 
 void AnalogInput::step()
 {
@@ -369,6 +384,11 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
 {}
 
 AnalogOutput::~AnalogOutput()
+{
+        m_output.write(0.0);
+}
+
+void AnalogOutput::initialise()
 {
         m_output.write(0.0);
 }

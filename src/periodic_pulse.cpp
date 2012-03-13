@@ -40,10 +40,7 @@ namespace dynclamp {
 namespace generators {
 
 PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, uint id)
-        : Generator(id), m_output(0.0), m_amplitude(amplitude),
-          m_tPrevPulse(0.0), m_tNextPulse(1.0/frequency),
-          m_tUpdate(1.0/frequency+duration+15e-3), m_tLastSpike(-15e-3),
-          m_clamp(false), m_estimatedProbability(0.5), m_errp(0.0), m_erri(0.0), m_errd(0.0)
+        : Generator(id), m_clamp(false)
 {
         if (frequency <= 0)
                 throw "Periodic pulse: stimulation frequency must be greater than 0";
@@ -63,10 +60,7 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
 PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, 
                              double probability, double tau, double gp, double gi, double gd,
                              uint id)
-        : Generator(id), m_output(0.0), m_amplitude(amplitude),
-          m_tPrevPulse(0.0), m_tNextPulse(1.0/frequency),
-          m_tUpdate(1.0/frequency+duration+15e-3), m_tLastSpike(-15e-3),
-          m_clamp(true), m_estimatedProbability(0.5), m_errp(0.0), m_erri(0.0), m_errd(0.0)
+        : Generator(id), m_clamp(true)
 {
         if (frequency <= 0)
                 throw "Periodic pulse: stimulation frequency must be greater than 0";
@@ -88,6 +82,18 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         Logger(Debug, "---\nPeriodicPulse:\n\tClamp prob: %g\n\tTau: %g\n\tgp: %g\n\tgi: %g\n\tgd = %g\n---\n",
                 PP_PROB, PP_TAU, PP_GP, PP_GI, PP_GD);
         Logger(Debug, "m_parameters.size() = %d\n", m_parameters.size());
+}
+
+void PeriodicPulse::initialise()
+{
+        m_output = 0.0;
+        m_amplitude = PP_AMPLITUDE;
+        m_tPrevPulse = 0.0;
+        m_tNextPulse = 1.0 / PP_FREQUENCY;
+        m_tUpdate = 1.0 / PP_FREQUENCY + PP_DURATION + PP_INTERVAL;
+        m_tLastSpike = -PP_INTERVAL;
+        m_estimatedProbability = 0.5;
+        m_errp = m_erri = m_errd = 0.0;
 }
 
 bool PeriodicPulse::hasNext() const

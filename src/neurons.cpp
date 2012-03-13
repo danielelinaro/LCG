@@ -112,14 +112,24 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 namespace neurons {
 
 Neuron::Neuron(double Vm0, uint id)
-        : DynamicalEntity(id)
+        : DynamicalEntity(id), m_Vm0(Vm0)
 {
         m_state.push_back(Vm0); // m_state[0] -> membrane potential
+}
+
+void Neuron::initialise()
+{
+        VM = m_Vm0;
 }
 
 double Neuron::Vm() const
 {
         return VM;
+}
+
+double Neuron::Vm0() const
+{
+        return m_Vm0;
 }
 
 double Neuron::output() const
@@ -135,7 +145,7 @@ void Neuron::emitSpike() const
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
                      double Er, double E0, double Vth, double Iext,
                      uint id)
-        : Neuron(E0, id), m_tPrevSpike(-1000.0)
+        : Neuron(E0, id)
 {
         double dt = GetGlobalDt();
         m_parameters.push_back(C);
@@ -147,6 +157,12 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         m_parameters.push_back(Iext);
         m_parameters.push_back(dt/LIF_TAU);   // parameters[7]
         m_parameters.push_back(dt/LIF_C);     // parameters[8]
+}
+
+void LIFNeuron::initialise()
+{
+        Neuron::initialise();
+        m_tPrevSpike = -1000.0;
 }
 
 void LIFNeuron::evolve()
@@ -182,8 +198,6 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
                                                uint id)
         : Neuron(V0, id)
 {
-        double dt = GetGlobalDt();
-
         m_state.push_back(V0);                  // m_state[1] -> previous membrane voltage (for spike detection)
 
         m_parameters.push_back(C);              // m_parameters[0] -> capacitance
@@ -193,7 +207,7 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
         m_parameters.push_back(area);           // m_parameters[4] -> area
         m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
         m_parameters.push_back(gl*10*area);     // m_parameters[6] -> leak conductance (in nS)
-        m_parameters.push_back(dt / (C*1e-5*area));   // m_parameters[7] -> coefficient
+        m_parameters.push_back(GetGlobalDt() / (C*1e-5*area));   // m_parameters[7] -> coefficient
 }
 
 void ConductanceBasedNeuron::evolve()
@@ -256,6 +270,13 @@ RealNeuron::~RealNeuron()
 #ifdef DEBUG_REAL_NEURON
         close(m_fd);
 #endif
+}
+
+void RealNeuron::initialise()
+{
+        Neuron::initialise();
+        m_output.initialise();
+        m_aec.initialise();
 }
         
 void RealNeuron::evolve()

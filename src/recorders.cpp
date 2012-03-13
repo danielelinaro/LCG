@@ -38,31 +38,45 @@ double Recorder::output() const
 }
 
 ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
-        : Recorder(id)
+        : Recorder(id), m_closeFile(false)
 {
-        char fname[FILENAME_MAXLEN];
-        if (filename == NULL)
-                MakeFilename(fname, "dat");
-        else
-                strncpy(fname, filename, FILENAME_MAXLEN);
+        if (filename == NULL) {
+                m_makeFilename = true;
+        }
+        else {
+                m_makeFilename = false;
+                strncpy(m_filename, filename, FILENAME_MAXLEN);
+        }
+}
 
-        m_fid = fopen(fname, "w");
+ASCIIRecorder::~ASCIIRecorder()
+{
+        closeFile();
+}
+
+void ASCIIRecorder::closeFile()
+{
+        if (m_closeFile)
+                fclose(m_fid);
+}
+
+void ASCIIRecorder::openFile()
+{
+        m_fid = fopen(m_filename, "w");
         if (m_fid == NULL) {
                 char msg[100];
-                sprintf(msg, "Unable to open %s.\n", filename); 
+                sprintf(msg, "Unable to open %s.\n", m_filename); 
                 throw msg;
         }
         m_closeFile = true;
 }
 
-ASCIIRecorder::ASCIIRecorder(FILE *fid, uint id)
-        : Recorder(id), m_fid(fid), m_closeFile(false)
-{}
-
-ASCIIRecorder::~ASCIIRecorder()
-{
-        if (m_closeFile)
-                fclose(m_fid);
+void ASCIIRecorder::initialise()
+{       
+        closeFile();
+        if (m_makeFilename)
+                MakeFilename(m_filename, "dat");
+        openFile();
 }
 
 void ASCIIRecorder::step()
@@ -84,30 +98,83 @@ const hsize_t H5Recorder::bufferSize     = 20480;    // This MUST be equal to ch
 const double  H5Recorder::fillValue      = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
-        : Recorder(id),
+        : Recorder(id), m_fid(-1),
           m_data(), m_numberOfInputs(0),
-          m_bufferPosition(0), m_numberOfBuffers(2),
-          m_mutex(), m_cv(), m_threadRun(true),
-          m_dataspaces(), m_datasets(),
-          m_offset(0), m_datasetSize(0)
+          m_threadRun(false), m_numberOfBuffers(2),
+          m_mutex(), m_cv(), 
+          m_groups(), m_dataspaces(), m_datasets()
 {
-        char fname[FILENAME_MAXLEN];
-        if (filename == NULL)
-                MakeFilename(fname, "h5");
-        else
-                strncpy(fname, filename, FILENAME_MAXLEN);
+        if (filename == NULL) {
+                m_makeFilename = true;
+        }
+        else {
+                m_makeFilename = false;
+                strncpy(m_filename, filename, FILENAME_MAXLEN);
+        }
 
-        if (open(fname, compress) != 0)
-                throw "Unable to open H5 file.";
+        if (compress && isCompressionAvailable() == OK)
+                m_compress = true;
+        else
+                m_compress = false;
 
         m_bufferLengths = new hsize_t[m_numberOfBuffers];
-        m_bufferInUse = m_numberOfBuffers-1;
-        m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
 }
 
 H5Recorder::~H5Recorder()
 {
-        Logger(Debug, "H5Recorder::~H5Recorder() >> Terminating writer thread.\n");
+        stopWriterThread();
+        closeFile();
+        uint i, j;
+        for (i=0; i<m_numberOfInputs; i++) {
+                for(j=0; j<m_numberOfBuffers; j++)
+                        delete m_data[i][j];
+                delete m_data[i];
+        }
+        delete m_bufferLengths;
+}
+
+void H5Recorder::initialise()
+{
+        stopWriterThread();
+        closeFile();
+
+        if (m_makeFilename)
+                MakeFilename(m_filename, "h5");
+
+        m_bufferInUse = m_numberOfBuffers-1;
+        m_bufferPosition = 0;
+        m_offset = 0;
+        m_datasetSize = 0;
+        m_groups.clear();
+        m_dataspaces.clear();
+        m_datasets.clear();
+
+        if (openFile() != OK)
+                throw "Unable to open H5 file.";
+        else
+                Logger(Debug, "Successfully opened file [%s].\n", m_filename);
+
+        for (uint i=0; i<m_pre.size(); i++)
+                allocateForEntity(m_pre[i]);
+
+        startWriterThread();
+}
+
+void H5Recorder::startWriterThread()
+{
+        if (m_threadRun)
+                return;
+        m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
+        m_threadRun = true;
+}
+
+
+void H5Recorder::stopWriterThread()
+{
+        if (!m_threadRun)
+                return;
+
+        Logger(Debug, "H5Recorder::stopWriterThread() >> Terminating writer thread.\n");
         {
                 boost::unique_lock<boost::mutex> lock(m_mutex);
                 Logger(Debug, "H5Recorder::~H5Recorder() >> buffer position = %d.\n", m_bufferPosition);
@@ -119,15 +186,7 @@ H5Recorder::~H5Recorder()
         m_threadRun = false;
         m_cv.notify_all();
         m_writerThread.join();
-        Logger(Debug, "H5Recorder::~H5Recorder() >> Writer thread has terminated.\n");
-        close();
-        uint i, j;
-        for (i=0; i<m_numberOfInputs; i++) {
-                for(j=0; j<m_numberOfBuffers; j++)
-                        delete m_data[i][j];
-                delete m_data[i];
-        }
-        delete m_bufferLengths;
+        Logger(Debug, "H5Recorder::stopWriterThread() >> Writer thread has terminated.\n");
 }
 
 void H5Recorder::step()
@@ -245,38 +304,25 @@ void H5Recorder::buffersWriter()
         Logger(All, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
 }
 
-void H5Recorder::addPre(Entity *entity)
+void H5Recorder::allocateForEntity(Entity *entity)
 {
-        Entity::addPre(entity);
-
-        Logger(All, "--- H5Recorder::addPre(Entity*, double) ---\n");
-
-        hid_t cparms;
-
-        m_numberOfInputs++;
-        uint k = m_numberOfInputs-1;
-        double **buffer = new double*[m_numberOfBuffers];
-        for (uint i=0; i<m_numberOfBuffers; i++)
-                buffer[i] = new double[bufferSize];
-        m_data.push_back(buffer);
-
         herr_t status;
 
         // the name of the dataset
         char datasetName[DATASET_NAME_LEN];
-        sprintf(datasetName, "/Data/Entity-%04d", m_numberOfInputs, entity->id());
+        sprintf(datasetName, "/Data/Entity-%04d", entity->id());
 
         // create the dataspace with unlimited dimensions
-        m_dataspaces.push_back(H5Screate_simple(rank, &bufferSize, &unlimitedSize));
-        if (m_dataspaces[k] < 0)
+        hid_t dspace = H5Screate_simple(rank, &bufferSize, &unlimitedSize);
+        if (dspace < 0)
                 throw "Unable to create dataspace.";
         else
-                Logger(All, "Dataspace created\n");
+                Logger(All, "Dataspace created.\n");
 
         // modify dataset creation properties, i.e. enable chunking.
-        cparms = H5Pcreate(H5P_DATASET_CREATE);
+        hid_t cparms = H5Pcreate(H5P_DATASET_CREATE);
         if (cparms < 0) {
-                H5Sclose(m_dataspaces[k]);
+                H5Sclose(dspace);
                 throw "Unable to create dataset properties.";
         }
         else {
@@ -285,7 +331,7 @@ void H5Recorder::addPre(Entity *entity)
 
         status = H5Pset_chunk(cparms, rank, &chunkSize);
         if (status < 0) {
-                H5Sclose(m_dataspaces[k]);
+                H5Sclose(dspace);
                 H5Pclose(cparms);
                 throw "Unable to set chunking.";
         }
@@ -295,7 +341,7 @@ void H5Recorder::addPre(Entity *entity)
 
         status = H5Pset_fill_value(cparms, H5T_IEEE_F64LE, &fillValue);
         if (status < 0) {
-                H5Sclose(m_dataspaces[k]);
+                H5Sclose(dspace);
                 H5Pclose(cparms);
                 throw "Unable to set fill value.";
         }
@@ -304,11 +350,11 @@ void H5Recorder::addPre(Entity *entity)
         }
 
         // create a new dataset within the file using cparms creation properties.
-        m_datasets.push_back(H5Dcreate2(m_fid, datasetName,
-                                        H5T_IEEE_F64LE, m_dataspaces[k],
-                                        H5P_DEFAULT, cparms, H5P_DEFAULT));
-        if (m_datasets[k] < 0) {
-                H5Sclose(m_dataspaces[k]);
+        hid_t dset = H5Dcreate2(m_fid, datasetName,
+                                H5T_IEEE_F64LE, dspace,
+                                H5P_DEFAULT, cparms, H5P_DEFAULT);
+        if (dset < 0) {
+                H5Sclose(dspace);
                 H5Pclose(cparms);
                 throw "Unable to create a dataset.";
         }
@@ -317,6 +363,9 @@ void H5Recorder::addPre(Entity *entity)
         }
 
         H5Pclose(cparms);
+
+        m_datasets.push_back(dset);
+        m_dataspaces.push_back(dspace);
 
         // save parameters
         size_t npars = entity->numberOfParameters();
@@ -341,6 +390,19 @@ void H5Recorder::addPre(Entity *entity)
                         Logger(Critical, "Unable to write metadata for entity #%d.\n", entity->id());
                 delete dims;
         }
+}
+
+void H5Recorder::addPre(Entity *entity)
+{
+        Entity::addPre(entity);
+
+        Logger(All, "--- H5Recorder::addPre(Entity*, double) ---\n");
+
+        m_numberOfInputs++;
+        double **buffer = new double*[m_numberOfBuffers];
+        for (uint i=0; i<m_numberOfBuffers; i++)
+                buffer[i] = new double[bufferSize];
+        m_data.push_back(buffer);
 }
 
 bool H5Recorder::writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims)
@@ -413,17 +475,12 @@ int H5Recorder::isCompressionAvailable() const
         return OK;
 }
 
-int H5Recorder::open(const char *filename, bool compress)
+int H5Recorder::openFile()
 {
-        Logger(All, "--- H5Recorder::open(const char*, bool) ---\n");
-        Logger(All, "Opening file %s.\n", filename);
+        Logger(All, "--- H5Recorder::openFile() ---\n");
+        Logger(All, "Opening file %s.\n", m_filename);
 
-        if(!compress || isCompressionAvailable() != OK)
-                m_compressed = false;
-        else
-                m_compressed = true;
-
-        m_fid = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        m_fid = H5Fcreate(m_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         if(m_fid < 0)
                 return H5_FILE_OPEN_ERROR;
 
@@ -464,7 +521,7 @@ bool H5Recorder::createGroups()
 
 int H5Recorder::checkCompression()
 {
-        if(m_compressed) {
+        if(m_compress) {
                 // Create the dataset creation property list and add the shuffle
                 // filter and the gzip compression filter.
                 // The order in which the filters are added here is significant -
@@ -562,9 +619,9 @@ bool H5Recorder::writeMiscellanea()
         return true;
 }
 
-void H5Recorder::close()
+void H5Recorder::closeFile()
 {
-        Logger(All, "--- H5Recorder::close() ---\n");
+        Logger(All, "--- H5Recorder::closeFile() ---\n");
         Logger(All, "Closing file.\n");
         double dt = GetGlobalDt();
         if (m_fid != -1) {
@@ -580,7 +637,7 @@ void H5Recorder::close()
                         H5Dclose(dataset);
                 }
 
-                if(m_compressed)
+                if(m_compress)
                         H5Pclose(m_datasetPropertiesList);
 
                 for (uint i=0; i<m_numberOfInputs; i++) {

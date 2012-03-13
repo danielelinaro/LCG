@@ -39,7 +39,22 @@ int main(int argc, char *argv[])
         }
 
         SetGlobalDt(dt);
-        Simulate(entities,tend);
+
+        Logger(Info, "Number of batches: %d.\n", opt.nBatches);
+        Logger(Info, "Number of trials: %d.\n", opt.nTrials);
+        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
+        Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
+
+        for (int i=0; i<opt.nBatches; i++) {
+                for (int j=0; j<opt.nTrials; j++) {
+                        ResetGlobalTime();
+                        Simulate(entities,tend);
+                        if (j != opt.nTrials-1)
+                                usleep(opt.iti);
+                }
+                if (i != opt.nBatches-1)
+                        usleep(opt.ibi);
+        }
 
         for (int i=0; i<entities.size(); i++)
                 delete entities[i];

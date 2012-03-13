@@ -27,6 +27,7 @@ class OU : public DynamicalEntity
 public:
         OU(double sigma, double tau, double eta0, ullong seed = SEED,
            uint id = GetId());
+        virtual void initialise();
 protected:
         virtual void evolve();
 private:

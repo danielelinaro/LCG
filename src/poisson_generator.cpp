@@ -22,7 +22,12 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 namespace generators {
 
 Poisson::Poisson(double rate, ullong seed, uint id)
-        : Generator(id), m_rate(rate), m_random(seed), m_tNextSpike(0.0)
+        : Generator(id), m_random(seed)
+{
+        m_parameters.push_back(rate);
+}
+
+void Poisson::initialise()
 {
         calculateTimeNextSpike();
 }
@@ -47,7 +52,7 @@ void Poisson::step()
 
 void Poisson::calculateTimeNextSpike()
 {
-        m_tNextSpike += (- log(m_random.doub()) / m_rate);
+        m_tNextSpike += (- log(m_random.doub()) / POISSON_RATE);
         Logger(Debug, "%e\n", m_tNextSpike);
 }
 

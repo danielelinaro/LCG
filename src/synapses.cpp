@@ -50,12 +50,18 @@ namespace dynclamp {
 namespace synapses {
 
 Synapse::Synapse(double E, double weight, double delay, uint id)
-        : DynamicalEntity(id), m_tPrevSpike(-1000.0), m_neuron(NULL), m_spikeTimeouts()
+        : DynamicalEntity(id), m_neuron(NULL), m_spikeTimeouts()
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
         m_parameters.push_back(weight); // m_parameters[1] -> weight
         m_parameters.push_back(delay);  // m_parameters[2] -> delay
+}
+
+void Synapse::initialise()
+{
+        m_tPrevSpike = -1000.0;
+        SYN_G = 0.0;
 }
 
 double Synapse::output() const
@@ -142,6 +148,13 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
 }
 
+void Exp2Synapse::initialise()
+{
+        Synapse::initialise();
+        m_state[1] = 0.0;
+        m_state[2] = 0.0;
+}
+
 void Exp2Synapse::evolve()
 {
         if (! processSpikes()) {
@@ -162,7 +175,7 @@ void Exp2Synapse::handleSpike()
 
 TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double tau[3],
                        uint id)
-        : Synapse(E, weight, delay, id), m_t(0.0)
+        : Synapse(E, weight, delay, id)
 {
         // tau = {tau_1, tau_rec, tau_facil}
         m_state.push_back(0.0);         // m_state[1] -> y
@@ -178,28 +191,35 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[9] -> coeff.
 }
 
+void TMGSynapse::initialise()
+{
+        Synapse::initialise();
+        m_state[1] = 0.0;
+        m_state[2] = 0.0;
+        m_state[3] = TMG_SYN_U;
+}
+
 void TMGSynapse::evolve()
 {
-        if (! processSpikes()) {
-                m_t += GetGlobalDt();
+        if (! processSpikes())
 	        SYN_G = SYN_G * TMG_SYN_DECAY;
-        }
 }
 	
 void TMGSynapse::handleSpike()
 {
+        double now = GetGlobalTime();
         // first calculate z at event, based on prior y and z
-        m_state[2] = m_state[2] * exp(-(m_t - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_REC);
-        m_state[2] += (m_state[1] * (exp(-(m_t - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_1) -
-        	       exp(-(m_t - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_REC)) * TMG_SYN_COEFF);
+        m_state[2] = m_state[2] * exp(-(now - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_REC);
+        m_state[2] += (m_state[1] * (exp(-(now - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_1) -
+        	       exp(-(now - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_REC)) * TMG_SYN_COEFF);
 
         // then calculate y at event
-        m_state[1] = m_state[1] * exp(-(m_t - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_1);
+        m_state[1] = m_state[1] * exp(-(now - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_1);
         double x = 1. - m_state[1] - m_state[2];
         	
         // calculate u at event
         if (TMG_SYN_TAU_FACIL > 0.) {
-        	m_state[3] = m_state[3] * exp(-(m_t - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_FACIL);
+        	m_state[3] = m_state[3] * exp(-(now - m_tPrevSpike) * TMG_SYN_ONE_OVER_TAU_FACIL);
         	m_state[3] += TMG_SYN_U * (1. - m_state[3]);
         }
         else {
@@ -210,7 +230,7 @@ void TMGSynapse::handleSpike()
         SYN_G += SYN_W * xu;
         m_state[1] += xu;
         
-        m_tPrevSpike = m_t;
+        m_tPrevSpike = now;
 }
 
 } // namespace synapses

@@ -32,9 +32,7 @@ namespace generators {
 
 FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double tau,
                 double gp, double gi, double gd, uint id)
-        : Generator(id), m_estimatedFrequency(0.0), m_tPrevSpike(0.0),
-          m_errp(frequency), m_erri(0.0), m_errd(0.0), m_errorpPrev(0.0),
-          m_current(baselineCurrent)
+        : Generator(id)
 {
         m_parameters.push_back(frequency);      // m_parameters[0] -> frequency
         m_parameters.push_back(baselineCurrent);// m_parameters[1] -> baseline current
@@ -47,6 +45,17 @@ FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double 
 bool FrequencyClamp::hasNext() const
 {
         return true;
+}
+
+void FrequencyClamp::initialise()
+{
+        m_estimatedFrequency = 0.0;
+        m_tPrevSpike = 0.0;
+        m_errp = FC_F;
+        m_erri = 0.0;
+        m_errd = 0.0;
+        m_errorpPrev = 0.0;
+        m_current = FC_BASELINE;
 }
 
 void FrequencyClamp::step()
