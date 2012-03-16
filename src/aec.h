@@ -7,11 +7,11 @@ namespace dynclamp {
 
 class AEC {
 public:
-        AEC(const char *kernelFile);
+        AEC(const char *kernelFile = NULL);
         AEC(const double *kernel, size_t kernelSize);
         ~AEC();
 
-        void initialise();
+        virtual void initialise();
 
         void pushBack(double I);
         double compensate(double V) const;

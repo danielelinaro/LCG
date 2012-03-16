@@ -37,8 +37,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
 
         id = dynclamp::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile) ||
-             ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
@@ -49,6 +48,9 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "V0", &V0))
                 return NULL;
 
+
+        if (! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile))
+                kernelFile = "";
 
         if (! dynclamp::CheckAndExtractValue(args, "inputRange", inputRangeStr)) {
                 inputRange = PLUS_MINUS_TEN;
@@ -97,9 +99,10 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
         }
 
         return new dynclamp::neurons::RealNeuron(spikeThreshold, V0,
-                                                 kernelFile.c_str(), deviceFile.c_str(),
+                                                 deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
+                                                 (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()),
                                                  inputRange, reference, id);
 }
 
@@ -230,10 +233,11 @@ void ConductanceBasedNeuron::evolve()
 #ifdef HAVE_LIBCOMEDI
 
 RealNeuron::RealNeuron(double spikeThreshold, double V0,
-                       const char *kernelFile, const char *deviceFile,
+                       const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
+                       const char *kernelFile,
                        uint inputRange, uint reference, uint id)
         : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
@@ -243,8 +247,8 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
         m_parameters.push_back(spikeThreshold);
 #ifdef DEBUG_REAL_NEURON
         char fname[FILENAME_MAXLEN];
-        MakeFilename(fname,".bin");
-        m_fd = open(fname, O_WRONLY);
+        MakeFilename(fname,"bin");
+        m_fd = open(fname, O_WRONLY | O_CREAT, 0644);
         m_bufpos = 0;
 #endif
 }
@@ -284,7 +288,7 @@ void RealNeuron::evolve()
         // read current value of the membrane potential
         RN_VM_PREV = VM;
         double Vr = m_input.read();
-        VM = m_aec.compensate( Vr );
+        VM = m_aec.compensate(Vr);
 
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();

@@ -18,12 +18,12 @@ extern double globalDt;
 #define ResetGlobalTime()  (globalT = 0.0)
 
 #ifdef HAVE_LIBLXRT
-extern double realTimeDt;
+extern double realtimeDt;
 extern double globalTimeOffset;
-#undef GetGlobalDt()
+#undef GetGlobalDt
 #define GetGlobalDt() realtimeDt
-#undef IncreaseGlobalTime()
-#define IncreaseGlobalTime() (globalT += realTimeDt)
+#undef IncreaseGlobalTime
+#define IncreaseGlobalTime() (globalT += realtimeDt)
 #define SetGlobalTimeOffset() (globalTimeOffset = count2sec(rt_get_time()))
 #define GetGlobalTimeOffset() globalTimeOffset
 #endif // HAVE_LIBLXRT

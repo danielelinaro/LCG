@@ -6,6 +6,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -84,10 +85,13 @@ uint GetIdFromDictionary(dictionary& args)
 ullong GetRandomSeed()
 {
         ullong seed;
-        int fd = open("/dev/random",O_RDONLY);
+        int fd = open("/dev/urandom",O_RDONLY);
         if (fd == -1)
                 return time(NULL);
-        read(fd, (void *) &seed, sizeof(ullong));
+        if (read(fd, (void *) &seed, sizeof(ullong)) != sizeof(ullong))
+                seed = time(NULL);
+        if (close(fd) != 0)
+                perror("Error while closing /dev/urandom: ");
         return seed;
 }
 
@@ -192,7 +196,6 @@ void MakeFilename(char *filename, const char *extension)
         struct tm * timeInfo;
         int extensionLen, cnt;
         char *base;
-        struct stat s;
 
         extensionLen = strlen(extension);
 
@@ -208,7 +211,7 @@ void MakeFilename(char *filename, const char *extension)
         sprintf(filename, "%s.%s", base, extension);
 
         cnt = 1;
-        while (stat(filename, &s) == 0) {
+        while (fs::exists(filename)) {
                 sprintf(filename, "%s-%02d.%s", base, cnt, extension);
                 cnt++;
         }

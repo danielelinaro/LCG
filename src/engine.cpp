@@ -22,7 +22,7 @@ namespace dynclamp {
 double globalT;
 double globalDt = SetGlobalDt(1.0/20e3);
 #ifdef HAVE_LIBLXRT
-double realTimeDt;
+double realtimeDt;
 double globalTimeOffset = 0.0;
 #endif
 
@@ -31,8 +31,8 @@ double SetGlobalDt(double dt)
         assert(dt > 0.0);
         globalDt = dt;
 #ifdef HAVE_LIBLXRT
-        realTimeDt = count2sec(start_rt_timer(sec2count(dt)));
-        Logger(Info, "The real time period is %g ms (f = %g Hz).\n", realTimeDt, 1./realTimeDt);
+        realtimeDt = count2sec(start_rt_timer(sec2count(dt)));
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", realtimeDt, 1./realtimeDt);
 #endif
         return globalDt;
 }

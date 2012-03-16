@@ -55,7 +55,7 @@ uint i,j, return_code;
  T      = how_long_lasts_trial(parsed_data, nlines);
  if (T <= 0) { error("Zero trial duration !", verbose);  return -1; }
  sprintf(mytext, "Total time: %.2f s @ %.1f Hz", T, srate); msg(mytext, verbose);
- N      = (uint) ceill(T * srate);
+ N      = (uint) ceill(T * srate) + nlines - 1;
  (*output) = (double *) calloc(N, sizeof(double));   // Please note: "c"-alloc is indeed required here!
  if ((*output) == NULL) { error("Unable to allocate memory for <output> !", verbose);  return -1; } 
 
@@ -71,7 +71,7 @@ uint i,j, return_code;
  
   if (parsed_data[current_line][CODE] > 0) {
   Ni = (uint) ceill(parsed_data[current_line][DURATION] * srate);
-  if (((*index)+Ni) > N) { error("Out of range in <output> !", verbose);  return -1; } 
+  if (((*index)+Ni) > N) { fprintf(stderr, "%d > %d\n", (*index)+Ni, N); error("Out of range in <output> !", verbose);  return -1; } 
   return_code = simple_waveform(parsed_data[current_line], (*output), index, Ni, srate, dt, verbose); 
   if (return_code == -1) { error("simple_waveform returned -1", verbose); return -1;}
   current_line++;

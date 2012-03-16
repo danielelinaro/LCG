@@ -79,7 +79,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
         std::string deviceFile, referenceStr;
         double outputConversionFactor;
 
-        id = dynclamp::GetIdAndDtFromDictionary(args);
+        id = dynclamp::GetIdFromDictionary(args);
 
         if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
@@ -260,7 +260,7 @@ ComediAnalogOutput::~ComediAnalogOutput()
         write(0.0);
 }
 
-ComediAnalogOutput::initialise()
+void ComediAnalogOutput::initialise()
 {
         write(0.0);
 }
@@ -330,7 +330,7 @@ ComediAnalogOutputSoftCal::~ComediAnalogOutputSoftCal()
         write(0.0);
 }
 
-ComediAnalogOutputSoftCal::initialise()
+void ComediAnalogOutputSoftCal::initialise()
 {
         write(0.0);
 }

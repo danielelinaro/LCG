@@ -43,7 +43,7 @@ struct options {
 
 void parseArgs(int argc, char *argv[], options *opt);
 bool parseConfigFile(const std::string& configfile, options *opt);
-void runTrial(options *opt, const std::string kernelfile = "");
+void runTrial(options *opt);
 
 bool parseConfigFile(const std::string& configfile, options *opt)
 {
@@ -86,7 +86,7 @@ void parseArgs(int argc, char *argv[], options *opt)
                 description.add_options()
                         ("help,h", "print help message")
                         ("version,v", "print version number")
-                        ("config-file,c", po::value<std::string>(&configfile)->default_value("noisy_bg.xml"), "specify configuration file")
+                        ("config-file,c", po::value<std::string>(&configfile)->default_value("freq_clamp.xml"), "specify configuration file")
                         ("time,t", po::value<double>(&tend), "specify the duration of the simulation (in seconds)")
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
@@ -123,11 +123,18 @@ void parseArgs(int argc, char *argv[], options *opt)
                 }
 
 #ifdef HAVE_LIBCOMEDI
-                if (!options.count("kernel-file") || !fs::exists(kernelfile)) {
-                        std::cout << "Kernel file not specified or not found. Aborting...\n";
-                        exit(1);
+                if (options.count("kernel-file")) {
+                        if (!fs::exists(kernelfile)) {
+                                std::cerr << "Kernel file [" << kernelfile << "] not found. Aborting...\n";
+                                exit(1);
+                        }
+                        else {
+                                opt->kernelFile = kernelfile;
+                        }
                 }
-                opt->kernelFile = kernelfile;
+                else {
+                        opt->kernelFile = "";
+                }
 #endif
 
                 opt->iti = (useconds_t) (iti * 1e6);
@@ -142,7 +149,7 @@ void parseArgs(int argc, char *argv[], options *opt)
 
 }
 
-void runTrial(options *opt, const std::string kernelfile)
+void runTrial(options *opt)
 {
         std::vector<Entity*> entities(3);
         dictionary parameters;
@@ -156,7 +163,8 @@ void runTrial(options *opt, const std::string kernelfile)
                 // entity[1]
                 parameters.clear();
 #ifdef HAVE_LIBCOMEDI
-                parameters["kernelFile"] = kernelfile;
+                if (opt->kernelFile.compare("") != 0)
+                        parameters["kernelFile"] = opt->kernelFile;
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
@@ -240,11 +248,7 @@ int main(int argc, char *argv[])
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.nTrials; j++) {
                         ResetGlobalTime();
-#ifdef HAVE_LIBCOMEDI
-                        runTrial(&opt, opt.kernelFile);
-#else
                         runTrial(&opt);
-#endif
                         if (j != opt.nTrials-1)
                                 usleep(opt.iti);
                 }

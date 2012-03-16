@@ -79,7 +79,7 @@ void FrequencyClamp::handleEvent(const Event *event)
                 m_errd = m_errp - m_errorpPrev;
                 m_errorpPrev = m_errp;
                 m_current = FC_BASELINE + FC_GP*m_errp + FC_GI*m_erri + FC_GD*m_errd;
-                Logger(Debug, "%g %g %g\n", now, m_current, m_estimatedFrequency);
+                Logger(Info, "%g %g %g\n", now, m_current, m_estimatedFrequency);
         }
         m_tPrevSpike = now;
 }

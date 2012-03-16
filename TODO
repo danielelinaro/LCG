@@ -1,6 +1,7 @@
 
 Short term (and therefore relatively simple):
 
+-) add the possibility to specify the sampling frequency also in noisy_bg and freq_clamp.
 -) add a setFilename method in stimulus.
 -) add name in Entity? (also for data logging...).
 -) substitute Euler with exact solution in LIFNeuron::evolve.

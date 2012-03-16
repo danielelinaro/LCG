@@ -99,10 +99,11 @@ protected:
 class RealNeuron : public Neuron {
 public:
         RealNeuron(double spikeThreshold, double V0,
-                   const char *kernelFile, const char *deviceFile,
+                   const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
+                   const char *kernelFile = NULL,
                    uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
                    uint id = GetId());
 

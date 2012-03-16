@@ -6,28 +6,37 @@ namespace dynclamp {
 
 AEC::AEC(const char *kernelFile)
 {
-        FILE *fid;
-        double tmp;
-
-        fid = fopen(kernelFile, "r");
-        if (fid == NULL) {
-                Logger(Critical, "%s: no such file.\n", kernelFile);
-                throw "Unable to open kernel file.";
+        if (kernelFile == NULL) {
+                m_length = 1;
+                m_kernel = new double[m_length];
+                m_current = new double[m_length];
+                m_kernel[0] = 0.0;
+                m_current[0] = 0.0;
         }
-
-        m_length = 0;
-        while (fscanf(fid, "%le\n", &tmp) != EOF)
-                m_length++;
-        fclose(fid);
-
-        fid = fopen(kernelFile, "r");
-        m_kernel = new double[m_length];
-        m_current = new double[m_length];
-        for (int i=0; i<m_length; i++) {
-                fscanf(fid, "%le\n", &m_kernel[i]);
-                m_current[i] = 0.0;
+        else {
+                FILE *fid;
+                double tmp;
+        
+                fid = fopen(kernelFile, "r");
+                if (fid == NULL) {
+                        Logger(Critical, "%s: no such file.\n", kernelFile);
+                        throw "Unable to open kernel file.";
+                }
+        
+                m_length = 0;
+                while (fscanf(fid, "%le\n", &tmp) != EOF)
+                        m_length++;
+                fclose(fid);
+        
+                fid = fopen(kernelFile, "r");
+                m_kernel = new double[m_length];
+                m_current = new double[m_length];
+                for (int i=0; i<m_length; i++) {
+                        fscanf(fid, "%le\n", &m_kernel[i]);
+                        m_current[i] = 0.0;
+                }
+                fclose(fid);
         }
-        fclose(fid);
 }
 
 AEC::AEC(const double *kernel, size_t kernelSize)

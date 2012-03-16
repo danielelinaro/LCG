@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define RANDOMDEVICE	"/dev/random"
+#define RANDOMDEVICE	"/dev/urandom"
 #define BUFSIZE			8192
 
 typedef unsigned long long ullong;

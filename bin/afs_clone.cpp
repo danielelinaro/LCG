@@ -33,12 +33,13 @@ using namespace dynclamp;
 struct AFSoptions {
         useconds_t iti, ibi;
         uint nTrials, nBatches;
+        double dt;
         std::vector<std::string> stimulusFiles;
 };
 
 void parseArgs(int argc, char *argv[], AFSoptions *opt)
 {
-        double iti, ibi;
+        double iti, ibi, freq;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
         std::string caption(AFS_BANNER "\nAllowed options");
@@ -53,6 +54,7 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
+                        ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency")
                         ("stimfile,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
                         ("stimdir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
 
@@ -69,7 +71,12 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
                         exit(0);
                 }
 
-                if(options.count("stimfile")) {
+                if (freq <= 0) {
+                        std::cerr << "The sampling frequency must be positive.\n";
+                        exit(1);
+                }
+
+                if (options.count("stimfile")) {
                         if (!fs::exists(stimfile)) {
                                 std::cout << "Stimulus file \"" << stimfile << "\" not found. Aborting...\n";
                                 exit(1);
@@ -93,6 +100,7 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
                         exit(1);
                 }
 
+                opt->dt = 1.0 / freq;
                 opt->iti = (useconds_t) (iti * 1e6);
                 opt->ibi = (useconds_t) (ibi * 1e6);
                 opt->nTrials = nTrials;
@@ -195,9 +203,8 @@ int main(int argc, char *argv[])
         int i, j, k;
 
         SetLoggingLevel(Info);
-        SetGlobalDt(1.0/20000);
-
         parseArgs(argc, argv, &opt);
+        SetGlobalDt(opt.dt);
 
         Logger(Info, AFS_BANNER);
         Logger(Info, "Number of batches: %d.\n", opt.nBatches);
