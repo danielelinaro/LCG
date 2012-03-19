@@ -61,7 +61,12 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                         opt->ou[i].tau = v.second.get<std::string>("tau");
                         opt->ou[i].E = v.second.get<std::string>("E");
                         opt->ou[i].G0 = v.second.get<std::string>("G0");
-                        opt->ou[i].seed = v.second.get<std::string>("seed");
+                        try {
+                                opt->ou[i].seed = v.second.get<std::string>("seed");
+                        } catch(...) {
+                                Logger(Info, "Using random seed.\n");
+                                opt->ou[i].seed = GetRandomSeed();
+                        }
                         if (++i == 2)
                                 break;
                 }
@@ -179,12 +184,29 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
 #ifdef HAVE_LIBCOMEDI
                 parameters["kernelFile"] = kernelfile;
                 parameters["deviceFile"] = "/dev/comedi0";
+                
+                // HEKA specific parameters - start
+                parameters["inputSubdevice"] = "0";
+                parameters["outputSubdevice"] = "1";
+                parameters["readChannel"] = "0";
+                parameters["writeChannel"] = "1";
+                parameters["inputConversionFactor"] = "100";
+                parameters["outputConversionFactor"] = "0.001";         // (1 pA/mV)
+                parameters["reference"] = "GRSE";
+                // HEKA specific parameters - end
+
+                // AXON specific parameters - start
+                /*
                 parameters["inputSubdevice"] = "0";
                 parameters["outputSubdevice"] = "1";
                 parameters["readChannel"] = "2";
                 parameters["writeChannel"] = "1";
                 parameters["inputConversionFactor"] = "20";
                 parameters["outputConversionFactor"] = "0.0025";
+                parameters["reference"] = "NRSE";
+                */
+                // AXON specific parameters - end
+                
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
                 entities[1] = EntityFactory("RealNeuron", parameters);

@@ -31,9 +31,13 @@ double SetGlobalDt(double dt)
         assert(dt > 0.0);
         globalDt = dt;
 #ifdef HAVE_LIBLXRT
-        realtimeDt = count2sec(start_rt_timer(sec2count(dt)));
+        RTIME period = start_rt_timer(sec2count(dt));
+        realtimeDt = count2sec(period);
         Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", realtimeDt, 1./realtimeDt);
-#endif
+#ifndef NO_STOP_RT_TIMER
+        stop_rt_timer();
+#endif // NO_STOP_RT_TIMER
+#endif // HAVE_LIBLXRT
         return globalDt;
 }
 
@@ -50,8 +54,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         Logger(Info, "\n>>>>> DYNAMIC CLAMP THREAD STARTED <<<<<\n\n");
 
+#ifndef NO_STOP_RT_TIMER
         Logger(Info, "Setting periodic mode.\n");
         rt_set_periodic_mode();
+#endif
 
         Logger(Info, "Initialising task.\n");
         taskName = nam2num("hybrid_simulator");
@@ -100,8 +106,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         }
 
 stopRT:
+#ifndef NO_STOP_RT_TIMER
         Logger(Info, "Stopping the timer.\n");
         stop_rt_timer();
+#endif
 
         Logger(Info, "Deleting the task.\n");
         rt_task_delete(task);

@@ -18,6 +18,7 @@ extern double globalDt;
 #define ResetGlobalTime()  (globalT = 0.0)
 
 #ifdef HAVE_LIBLXRT
+#define NO_STOP_RT_TIMER
 extern double realtimeDt;
 extern double globalTimeOffset;
 #undef GetGlobalDt
