@@ -154,6 +154,7 @@ extern "C" {
 #endif
 
 dynclamp::Entity* LIFNeuronFactory(dictionary& args);
+dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args);
 #ifdef HAVE_LIBCOMEDI
 dynclamp::Entity* RealNeuronFactory(dictionary& args);
 #endif

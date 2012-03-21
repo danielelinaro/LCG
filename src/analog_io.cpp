@@ -18,8 +18,7 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor)) {
                 dynclamp::Logger(dynclamp::Debug, "AnalogInputFactory: missing parameter.\n");
                 dictionary::iterator it;
-                for (it = args.begin(); it != args.end(); it++)
-                        dynclamp::Logger(dynclamp::Debug, "%s -> %s\n", (*it).first.c_str(), (*it).second.c_str());
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
                 return NULL;
         }
 
@@ -49,6 +48,7 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", rangeStr.c_str());
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
                         return NULL;
                 }
         }
@@ -65,6 +65,7 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
                         return NULL;
                 }
         }
@@ -85,7 +86,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
              ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor)) {
-                dynclamp::Logger(dynclamp::Debug, "AnalogOutputFactory: missing parameter.\n");
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an analog output.\n");
                 return NULL;
         }
 
@@ -101,6 +102,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog output.\n");
                         return NULL;
                 }
         }

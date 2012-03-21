@@ -6,8 +6,10 @@ dynclamp::Entity* HHSodiumFactory(dictionary& args)
         uint id;
         double area, gbar, E;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH sodium current.\n");
                 return NULL;
+        }
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.12;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
@@ -20,8 +22,10 @@ dynclamp::Entity* HHPotassiumFactory(dictionary& args)
         uint id;
         double area, gbar, E;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH potassium current.\n");
                 return NULL;
+        }
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.036;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
@@ -36,8 +40,10 @@ dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
         dynclamp::GetSeedFromDictionary(args, &seed);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy sodium current.\n");
                 return NULL;
+        }
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.12;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
@@ -54,8 +60,10 @@ dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
         dynclamp::GetSeedFromDictionary(args, &seed);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area))
+        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy potassium current.\n");
                 return NULL;
+        }
         if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.036;
         if (!dynclamp::CheckAndExtractDouble(args, "E", &E))

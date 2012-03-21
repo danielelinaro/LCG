@@ -64,6 +64,7 @@ LogLevel GetLoggingLevel();
 void Logger(LogLevel level, const char *fmt, ...);
 #endif
 
+void ResetIds();
 uint GetId();
 
 ullong GetRandomSeed();

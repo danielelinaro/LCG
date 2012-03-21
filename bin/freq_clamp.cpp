@@ -22,6 +22,32 @@
 #include "config.h"
 #endif
 
+#define HEKA
+//#define AXON
+
+#if defined(HEKA) && defined(AXON)
+#error Only one of HEKA or AXON should be defined.
+#endif
+
+#define INSUBDEV "0"
+#define OUTSUBDEV "1"
+#define WRITECHAN "1"
+#if defined(HEKA)
+// HEKA specific parameters - start
+#define READCHAN "0"
+#define INFACT   "100"
+#define OUTFACT  "0.001"
+#define REF      "GRSE"
+#elif defined(AXON)
+// AXON specific parameters - start
+#define READCHAN "2"
+#define INFACT   "20"
+#define OUTFACT  "0.0025"
+#define REF      "NRSE"
+#else
+#error One of HEKA or AXON should be defined.
+#endif
+
 #define FREQUENCY_CLAMP_VERSION 0.1
 #define FREQUENCY_CLAMP_BANNER \
         "\n\tFrequency clamp\n" \
@@ -157,31 +183,26 @@ void runTrial(options *opt)
 
         try {
                 // entity[0]
+                parameters["id"] = "0";
                 parameters["compress"] = "false";
                 entities[0] = EntityFactory("H5Recorder", parameters);
                 
                 // entity[1]
                 parameters.clear();
+                parameters["id"] = "1";
 #ifdef HAVE_LIBCOMEDI
                 if (opt->kernelFile.compare("") != 0)
                         parameters["kernelFile"] = opt->kernelFile;
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
-                parameters["inputSubdevice"] = "0";
-                parameters["outputSubdevice"] = "1";
-#ifdef AXON
-                parameters["readChannel"] = "2";                // AI2
-                parameters["writeChannel"] = "1";               // A01
-                parameters["inputConversionFactor"] = "20";
-                parameters["outputConversionFactor"] = "0.0025";
-#else
-                parameters["readChannel"] = "0";                // AI0
-                parameters["writeChannel"] = "1";               // A01
-                parameters["inputConversionFactor"] = "100";
-                parameters["outputConversionFactor"] = "0.001";
-
-#endif
+                parameters["inputSubdevice"] = INSUBDEV;
+                parameters["outputSubdevice"] = OUTSUBDEV;
+                parameters["readChannel"] = READCHAN;
+                parameters["writeChannel"] = WRITECHAN;
+                parameters["inputConversionFactor"] = INFACT;
+                parameters["outputConversionFactor"] = OUTFACT;
+                parameters["reference"] = REF;
                 entities[1] = EntityFactory("RealNeuron", parameters);
 #else
                 parameters["C"] = "0.08";
@@ -195,6 +216,8 @@ void runTrial(options *opt)
 #endif
 
                 // entity[2]
+                parameters.clear();
+                parameters["id"] = "2";
                 parameters["frequency"] = opt->frequency;
                 parameters["baselineCurrent"] = opt->baselineCurrent;
                 parameters["tau"] = opt->tau;

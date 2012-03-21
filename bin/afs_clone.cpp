@@ -18,6 +18,32 @@
 #include "config.h"
 #endif
 
+#define HEKA
+//#define AXON
+
+#if defined(HEKA) && defined(AXON)
+#error Only one of HEKA or AXON should be defined.
+#endif
+
+#define INSUBDEV "0"
+#define OUTSUBDEV "1"
+#define WRITECHAN "1"
+#if defined(HEKA)
+// HEKA specific parameters - start
+#define READCHAN "0"
+#define INFACT   "100"
+#define OUTFACT  "0.001"
+#define REF      "GRSE"
+#elif defined(AXON)
+// AXON specific parameters - start
+#define READCHAN "2"
+#define INFACT   "20"
+#define OUTFACT  "0.0025"
+#define REF      "NRSE"
+#else
+#error One of HEKA or AXON should be defined.
+#endif
+ 
 #define AFS_CLONE_VERSION 0.1
 #define AFS_BANNER \
         "\n\tArbitrary Function Stimulator (AFS)\n" \
@@ -124,53 +150,32 @@ void runStimulus(const std::string& stimfile)
         double tend;
 
         try {
+                parameters["id"] = "0";
                 parameters["compress"] = "false";
                 entities.push_back( EntityFactory("H5Recorder", parameters) );
                 
                 parameters.clear();
+                parameters["id"] = "1";
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["range"] = "[-10,+10]";
-                
-                // AXON specific parameters - start
-                /*
-                // AI2
-                parameters["inputSubdevice"] = "0";
-                parameters["readChannel"] = "2";
-                parameters["inputConversionFactor"] = "20";
-                parameters["reference"] = "NRSE";
-                */
-                // AXON specific parameters - end
-                
-                // HEKA specific parameters - start
-                // AI0
-                parameters["inputSubdevice"] = "0";
-                parameters["readChannel"] = "0";
-                parameters["inputConversionFactor"] = "100";
-                parameters["reference"] = "GRSE";
-                // HEKA specific parameters - end
-
+        
+                parameters["inputSubdevice"] = INSUBDEV;
+                parameters["readChannel"] = READCHAN;
+                parameters["inputConversionFactor"] = INFACT;
+                parameters["reference"] = REF;
                 entities.push_back( EntityFactory("AnalogInput", parameters) );
 
                 parameters.clear();
+                parameters["id"] = "2";
                 parameters["deviceFile"] = "/dev/comedi0";
-                parameters["outputSubdevice"] = "1";
-                parameters["writeChannel"] = "1";
-
-                // AXON specific parameters - start
-                /*
-                parameters["outputConversionFactor"] = "0.0025";        // (400 pA/V)
-                parameters["reference"] = "NRSE";
-                */
-                // AXON specific parameters - end
-
-                // HEKA specific parameters - start
-                parameters["outputConversionFactor"] = "0.001";         // (1 pA/mV)
-                parameters["reference"] = "GRSE";
-                // HEKA specific parameters - end
-
+                parameters["outputSubdevice"] = OUTSUBDEV;
+                parameters["writeChannel"] = WRITECHAN;
+                parameters["outputConversionFactor"] = OUTFACT;
+                parameters["reference"] = REF;
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
 
                 parameters.clear();
+                parameters["id"] = "3";
                 parameters["filename"] = stimfile;
                 entities.push_back( EntityFactory("Stimulus", parameters) );
 

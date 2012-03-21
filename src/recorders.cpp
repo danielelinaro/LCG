@@ -16,7 +16,7 @@ dynclamp::Entity* H5RecorderFactory(dictionary& args)
         uint id;
         std::string filename;
         bool compress;
-        dynclamp::GetIdFromDictionary(args);
+        id = dynclamp::GetIdFromDictionary(args);
         if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
                 return NULL;
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))

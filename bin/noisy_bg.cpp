@@ -21,6 +21,32 @@
 #include "config.h"
 #endif
 
+#define HEKA
+//#define AXON
+
+#if defined(HEKA) && defined(AXON)
+#error Only one of HEKA or AXON should be defined.
+#endif
+
+#define INSUBDEV "0"
+#define OUTSUBDEV "1"
+#define WRITECHAN "1"
+#if defined(HEKA)
+// HEKA specific parameters - start
+#define READCHAN "0"
+#define INFACT   "100"
+#define OUTFACT  "0.001"
+#define REF      "GRSE"
+#elif defined(AXON)
+// AXON specific parameters - start
+#define READCHAN "2"
+#define INFACT   "20"
+#define OUTFACT  "0.0025"
+#define REF      "NRSE"
+#else
+#error One of HEKA or AXON should be defined.
+#endif
+
 #define NOISY_BG_CLONE_VERSION 0.1
 #define NOISY_BG_BANNER \
         "\n\tArbitrary Function Stimulator with noisy background\n" \
@@ -176,37 +202,23 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
 
         try {
                 // entity[0]
+                parameters["id"] = "0";
                 parameters["compress"] = "false";
                 entities[0] = EntityFactory("H5Recorder", parameters);
                 
                 // entity[1]
                 parameters.clear();
+                parameters["id"] = "1";
 #ifdef HAVE_LIBCOMEDI
                 parameters["kernelFile"] = kernelfile;
                 parameters["deviceFile"] = "/dev/comedi0";
-                
-                // HEKA specific parameters - start
-                parameters["inputSubdevice"] = "0";
-                parameters["outputSubdevice"] = "1";
-                parameters["readChannel"] = "0";
-                parameters["writeChannel"] = "1";
-                parameters["inputConversionFactor"] = "100";
-                parameters["outputConversionFactor"] = "0.001";         // (1 pA/mV)
-                parameters["reference"] = "GRSE";
-                // HEKA specific parameters - end
-
-                // AXON specific parameters - start
-                /*
-                parameters["inputSubdevice"] = "0";
-                parameters["outputSubdevice"] = "1";
-                parameters["readChannel"] = "2";
-                parameters["writeChannel"] = "1";
-                parameters["inputConversionFactor"] = "20";
-                parameters["outputConversionFactor"] = "0.0025";
-                parameters["reference"] = "NRSE";
-                */
-                // AXON specific parameters - end
-                
+                parameters["inputSubdevice"] = INSUBDEV;
+                parameters["outputSubdevice"] = OUTSUBDEV;
+                parameters["readChannel"] = READCHAN;
+                parameters["writeChannel"] = WRITECHAN;
+                parameters["inputConversionFactor"] = INFACT;
+                parameters["outputConversionFactor"] = OUTFACT;
+                parameters["reference"] = REF;
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
                 entities[1] = EntityFactory("RealNeuron", parameters);
@@ -223,12 +235,16 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
 
                 // entity[2]
                 parameters.clear();
+                parameters["id"] = "2";
                 parameters["filename"] = stimfile;
                 entities[2] = EntityFactory("Stimulus", parameters);
 
                 // entity[3] & entity[4]
                 for (i=0; i<2; i++) {
+                        std::stringstream ss;
+                        ss << 3+i;
                         parameters.clear();
+                        parameters["id"] = ss.str();
                         parameters["sigma"] = opt[i].sigma;
                         parameters["tau"] = opt[i].tau;
                         parameters["E"] = opt[i].E;

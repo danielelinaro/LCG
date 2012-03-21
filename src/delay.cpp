@@ -7,10 +7,13 @@ dynclamp::Entity* DelayFactory(dictionary& args)
         double delay;
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "nSamples", &nSamples)) {
-                if (dynclamp::CheckAndExtractDouble(args, "delay", &delay))
+                if (dynclamp::CheckAndExtractDouble(args, "delay", &delay)) {
                         return new dynclamp::Delay(delay, id);
-                else
+                }
+                else {
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build a delay.\n");
                         return NULL;
+                }
         }
         return new dynclamp::Delay(nSamples, id);
 }

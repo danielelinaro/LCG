@@ -21,10 +21,31 @@ dynclamp::Entity* LIFNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "Er", &Er) ||
              ! dynclamp::CheckAndExtractDouble(args, "E0", &E0) ||
              ! dynclamp::CheckAndExtractDouble(args, "Vth", &Vth) ||
-             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext))
+             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a LIF neuron.");
                 return NULL;
+        }
 
         return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
+}
+
+dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args)
+{
+        uint id;
+        double C, gl, El, Iext, area, spikeThreshold, V0;
+        id = dynclamp::GetIdFromDictionary(args);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "C", &C) ||
+             ! dynclamp::CheckAndExtractDouble(args, "gl", &gl) ||
+             ! dynclamp::CheckAndExtractDouble(args, "El", &El) ||
+             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext) ||
+             ! dynclamp::CheckAndExtractDouble(args, "area", &area) ||
+             ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
+             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance based neuron.");
+                return NULL;
+        }
+
+        return new dynclamp::neurons::ConductanceBasedNeuron(C, gl, El, Iext, area, spikeThreshold, V0, id);
 }
 
 #ifdef HAVE_LIBCOMEDI
@@ -45,8 +66,10 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
              ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
              ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
-             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0))
+             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
                 return NULL;
+        }
 
 
         if (! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile))
@@ -78,6 +101,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", inputRangeStr.c_str());
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
                         return NULL;
                 }
         }
@@ -94,6 +118,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
                         return NULL;
                 }
         }

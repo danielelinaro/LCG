@@ -33,6 +33,7 @@ namespace dynclamp
 {
 
 LogLevel verbosity = Info;
+uint progressiveId = -1;
 
 void SetLoggingLevel(LogLevel level)
 {
@@ -62,11 +63,15 @@ void Logger(LogLevel level, const char *fmt, ...)
 }
 #endif
 
+void ResetIds()
+{
+        progressiveId = -1;
+}
+
 uint GetId()
 {
-        static uint progressiveId = 0;
         progressiveId++;
-        return progressiveId-1;
+        return progressiveId;
 }
 
 uint GetIdFromDictionary(dictionary& args)
