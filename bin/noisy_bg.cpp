@@ -90,8 +90,10 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                         try {
                                 opt->ou[i].seed = v.second.get<std::string>("seed");
                         } catch(...) {
-                                Logger(Info, "Using random seed.\n");
-                                opt->ou[i].seed = GetRandomSeed();
+                                std::stringstream ss;
+                                ss << GetRandomSeed();
+                                opt->ou[i].seed = ss.str();
+                                Logger(Info, "Using random seed %s.\n", opt->ou[i].seed.c_str());
                         }
                         if (++i == 2)
                                 break;

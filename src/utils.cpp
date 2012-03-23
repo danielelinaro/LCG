@@ -91,10 +91,17 @@ ullong GetRandomSeed()
 {
         ullong seed;
         int fd = open("/dev/urandom",O_RDONLY);
-        if (fd == -1)
+        if (fd == -1) {
+                Logger(Info, "seed = time(NULL)\n");
                 return time(NULL);
-        if (read(fd, (void *) &seed, sizeof(ullong)) != sizeof(ullong))
+        }
+        if (read(fd, (void *) &seed, sizeof(ullong)) != sizeof(ullong)) {
                 seed = time(NULL);
+                Logger(Info, "seed = time(NULL)\n");
+        }
+        else {
+                Logger(Info, "seed = 0x%x\n", seed);
+        }
         if (close(fd) != 0)
                 perror("Error while closing /dev/urandom: ");
         return seed;

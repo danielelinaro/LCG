@@ -10,7 +10,7 @@
 #include <comedilib.h>
 #include "analog_io.h"
 #include "aec.h"
-#define DEBUG_REAL_NEURON
+//#define DEBUG_REAL_NEURON
 #endif // HAVE_LIBCOMEDI
 #endif // HAVE_CONFIG_H
 
