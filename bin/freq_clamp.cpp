@@ -63,6 +63,7 @@ struct options {
         double tend;
         useconds_t iti, ibi;
         uint nTrials, nBatches;
+        double dt;
         std::string kernelFile;
         std::string frequency, baselineCurrent, tau, gp, gi, gd;
 };
@@ -100,7 +101,7 @@ bool parseConfigFile(const std::string& configfile, options *opt)
 void parseArgs(int argc, char *argv[], options *opt)
 {
 
-        double tend, iti, ibi;
+        double tend, iti, ibi, freq;
         uint nTrials, nBatches;
         std::string configfile, kernelfile;
         po::options_description description(
@@ -117,7 +118,8 @@ void parseArgs(int argc, char *argv[], options *opt)
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
-                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)");
+                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
+                        ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency");
 #ifdef HAVE_LIBCOMEDI
                 description.add_options()("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file");
 #endif
@@ -133,6 +135,11 @@ void parseArgs(int argc, char *argv[], options *opt)
                 if (options.count("version")) {
                         std::cout << fs::path(argv[0]).filename() << " version " << FREQUENCY_CLAMP_VERSION << std::endl;
                         exit(0);
+                }
+
+                if (freq <= 0) {
+                        std::cerr << "The sampling frequency must be positive.\n";
+                        exit(1);
                 }
 
                 if (!fs::exists(configfile) || !parseConfigFile(configfile,opt)) {
@@ -163,6 +170,7 @@ void parseArgs(int argc, char *argv[], options *opt)
                 }
 #endif
 
+                opt->dt = 1.0 / freq;
                 opt->iti = (useconds_t) (iti * 1e6);
                 opt->ibi = (useconds_t) (ibi * 1e6);
                 opt->nTrials = nTrials;
@@ -261,6 +269,7 @@ int main(int argc, char *argv[])
         SetLoggingLevel(Info);
 
         parseArgs(argc, argv, &opt);
+        SetGlobalDt(opt.dt);
 
         Logger(Info, FREQUENCY_CLAMP_BANNER);
         Logger(Info, "Number of batches: %d.\n", opt.nBatches);
