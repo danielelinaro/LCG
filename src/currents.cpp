@@ -39,7 +39,7 @@ dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
         double area, gbar, E, gamma;
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
-        dynclamp::GetSeedFromDictionary(args, &seed);
+        seed = dynclamp::GetSeedFromDictionary(args);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy sodium current.\n");
                 return NULL;
@@ -59,7 +59,7 @@ dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
         double area, gbar, E, gamma;
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
-        dynclamp::GetSeedFromDictionary(args, &seed);
+        seed = dynclamp::GetSeedFromDictionary(args);
         if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy potassium current.\n");
                 return NULL;

@@ -9,7 +9,7 @@ dynclamp::Entity* OUcurrentFactory(dictionary& args)
         ullong seed;
         double sigma, tau, I0;
         id = dynclamp::GetIdFromDictionary(args);
-        dynclamp::GetSeedFromDictionary(args, &seed);
+        seed = dynclamp::GetSeedFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "sigma", &sigma) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
              ! dynclamp::CheckAndExtractDouble(args, "I0", &I0))
@@ -23,7 +23,7 @@ dynclamp::Entity* OUconductanceFactory(dictionary& args)
         ullong seed;
         double sigma, tau, E, G0;
         id = dynclamp::GetIdFromDictionary(args);
-        dynclamp::GetSeedFromDictionary(args, &seed);
+        seed = dynclamp::GetSeedFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "sigma", &sigma) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
              ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
@@ -45,6 +45,7 @@ OU::OU(double sigma, double tau, double eta0, ullong seed, uint id)
         m_parameters.push_back(2*OU_SIGMA*OU_SIGMA/OU_TAU);                     // m_parameters[3] -> diffusion constant
         m_parameters.push_back(exp(-GetGlobalDt()/OU_TAU));                     // m_parameters[4] -> mu
         m_parameters.push_back(sqrt(OU_CONST*OU_TAU/2 * (1-OU_MU*OU_MU)));      // m_parameters[5] -> coefficient
+        m_parameters.push_back((double) seed);
 
         m_state.push_back(eta0);
 } 

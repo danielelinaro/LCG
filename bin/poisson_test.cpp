@@ -1,5 +1,6 @@
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include "utils.h"
 #include "poisson_generator.h"
@@ -12,6 +13,7 @@ using namespace dynclamp::generators;
 struct options {
         double rate;    // (Hz)
         int nEvents;    // number of events to generate
+        ullong seed;    // seed for the random number generator
 };
 
 void PrintHelp(const char *msg = NULL) {
@@ -30,8 +32,9 @@ void ParseArgs(int argc, char *argv[], struct options *opt)
         // default values
         opt->rate = 1000;
         opt->nEvents = 1000;
+        opt->seed = time(NULL);
 
-        while((c = getopt(argc, argv, "n:r:h")) != -1) {
+        while((c = getopt(argc, argv, "n:r:s:h")) != -1) {
                 switch(c) {
                 case 'n':
                         n = atoi(optarg);
@@ -46,6 +49,9 @@ void ParseArgs(int argc, char *argv[], struct options *opt)
                                 opt->rate = f;
                         else
                                 PrintHelp("The rate must be positive.");
+                        break;
+                case 's':
+                        opt->seed = atoll(optarg);
                         break;
                 case 'h':
                         PrintHelp();
@@ -67,7 +73,7 @@ int main(int argc, char *argv[])
         double t, tend = (double) opt.nEvents / opt.rate;
         double taus[2] = {0.1e-3,1e-3};
         Entity *entities[2];
-        entities[0] = new Poisson(opt.rate);
+        entities[0] = new Poisson(opt.rate, opt.seed);
         entities[1] = new Exp2Synapse(0.0, 1.0, 0.0, taus);
         entities[0]->connect(entities[1]);
         Synapse *synapse = dynamic_cast<Synapse*>(entities[1]);

@@ -68,9 +68,9 @@ void ResetIds();
 uint GetId();
 
 ullong GetRandomSeed();
-
 uint GetIdFromDictionary(dictionary& args);
-void GetSeedFromDictionary(dictionary& args, ullong *seed);
+ullong GetSeedFromDictionary(dictionary& args);
+
 bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value);
 bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value);
 bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value);

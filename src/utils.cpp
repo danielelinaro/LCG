@@ -92,27 +92,29 @@ ullong GetRandomSeed()
         ullong seed;
         int fd = open("/dev/urandom",O_RDONLY);
         if (fd == -1) {
-                Logger(Info, "seed = time(NULL)\n");
-                return time(NULL);
+                seed = time(NULL);
+                Logger(Info, "seed = time(NULL) = 0x%llx.\n", seed);
+                goto endGetRandomSeed;
         }
         if (read(fd, (void *) &seed, sizeof(ullong)) != sizeof(ullong)) {
                 seed = time(NULL);
-                Logger(Info, "seed = time(NULL)\n");
+                Logger(Info, "seed = time(NULL) = 0x%llx.\n", seed);
         }
         else {
-                Logger(Info, "seed = 0x%x\n", seed);
+                Logger(Info, "seed = 0x%llx\n", seed);
         }
         if (close(fd) != 0)
                 perror("Error while closing /dev/urandom: ");
+endGetRandomSeed:
         return seed;
 }
 
-void GetSeedFromDictionary(dictionary& args, ullong *seed)
+ullong GetSeedFromDictionary(dictionary& args)
 {
         ullong s;
         if (args.count("seed") == 0 || (s = atoll(args["seed"].c_str())) == -1)
                 s = GetRandomSeed();
-        *seed = s;
+        return s;
 }
 
 bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value)

@@ -13,8 +13,9 @@
 #define OU_CONST m_parameters[3]
 #define OU_MU    m_parameters[4]
 #define OU_COEFF m_parameters[5]
+#define OU_SEED  m_parameters[6]
 
-#define OU_E     m_parameters[6]
+#define OU_E     m_parameters[7]
 
 namespace dynclamp {
 
@@ -25,7 +26,7 @@ class Neuron;
 class OU : public DynamicalEntity
 {
 public:
-        OU(double sigma, double tau, double eta0, ullong seed = SEED,
+        OU(double sigma, double tau, double eta0, ullong seed,
            uint id = GetId());
         virtual void initialise();
 protected:
@@ -38,7 +39,7 @@ private:
 class OUcurrent : public OU
 {
 public:
-        OUcurrent(double sigma, double tau, double I0, ullong seed = SEED,
+        OUcurrent(double sigma, double tau, double I0, ullong seed,
                   uint id = GetId());
         virtual double output() const;
 };
@@ -46,7 +47,7 @@ public:
 class OUconductance : public OU
 {
 public:
-        OUconductance(double sigma, double tau, double E, double G0, ullong seed = SEED,
+        OUconductance(double sigma, double tau, double E, double G0, ullong seed,
                       uint id = GetId());
         virtual double output() const;
 protected:

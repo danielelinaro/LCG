@@ -9,7 +9,7 @@ dynclamp::Entity* PoissonFactory(dictionary& args)
         double rate;
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
-        dynclamp::GetSeedFromDictionary(args, &seed);
+        seed = dynclamp::GetSeedFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate))
                 return NULL;
         return new dynclamp::generators::Poisson(rate, seed, id);

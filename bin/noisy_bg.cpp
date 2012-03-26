@@ -94,7 +94,7 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                                 std::stringstream ss;
                                 ss << GetRandomSeed();
                                 opt->ou[i].seed = ss.str();
-                                Logger(Info, "Using random seed %s.\n", opt->ou[i].seed.c_str());
+                                Logger(Info, "Using random seed 0x%s.\n", opt->ou[i].seed.c_str());
                         }
                         if (++i == 2)
                                 break;

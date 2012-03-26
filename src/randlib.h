@@ -1,7 +1,6 @@
 #ifndef RANDLIB
 #define RANDLIB
 
-#include <time.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,8 +24,8 @@ class UniformRandom {
 private:
 	ullong u,v,w; 
 public:
-	UniformRandom(ullong j) : v(4101842887655102017LL), w(1) { 
-		u = j ^ v; int64(); 
+	UniformRandom(ullong seed) : v(4101842887655102017LL), w(1) { 
+		u = seed ^ v; int64(); 
 		v = u; int64(); 
 		w = v; int64(); 
 	} 
@@ -55,7 +54,7 @@ private:
 	double mu,sig;
 	double storedval;
 public:
-	NormalRandom(double mmu, double ssig, ullong seed = 5061983) 
+	NormalRandom(double mmu, double ssig, ullong seed) 
 	: UniformRandom(seed), mu(mmu), sig(ssig), storedval(0.) {} 
 	
 	double random() { 
@@ -80,8 +79,8 @@ public:
 class PoissonRandom : UniformRandom {
 public:
 	/** Constructor arguments are lambda and a random sequence seed. */ 
-	PoissonRandom(double llambda, ullong i = time(NULL)) :
-		UniformRandom(i), lambda(llambda), lambold(-1.) {
+	PoissonRandom(double llambda, ullong seed) :
+		UniformRandom(seed), lambda(llambda), lambold(-1.) {
 		for (int i=0; i<1024; i++)
 			logfact[i] = -1.; 
 	}
