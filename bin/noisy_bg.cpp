@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -91,10 +92,7 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                         try {
                                 opt->ou[i].seed = v.second.get<std::string>("seed");
                         } catch(...) {
-                                std::stringstream ss;
-                                ss << GetRandomSeed();
-                                opt->ou[i].seed = ss.str();
-                                Logger(Info, "Using random seed 0x%s.\n", opt->ou[i].seed.c_str());
+                                opt->ou[i].seed = "-1";
                         }
                         if (++i == 2)
                                 break;
@@ -259,7 +257,14 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                         parameters["tau"] = opt[i].tau;
                         parameters["E"] = opt[i].E;
                         parameters["G0"] = opt[i].G0;
-                        parameters["seed"] = opt[i].seed;
+                        if (opt[i].seed.compare("-1") != 0) {
+                                parameters["seed"] = opt[i].seed;
+                        }
+                        else {
+                                std::stringstream ss;
+                                ss << GetRandomSeed();
+                                parameters["seed"] = ss.str();
+                        }
                         entities[3+i] = EntityFactory("OUconductance", parameters);
                 }
                 

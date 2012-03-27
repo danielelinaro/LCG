@@ -16,13 +16,15 @@
 
 #define VM       m_state[0]
 
-#define LIF_C    m_parameters[0]
-#define LIF_TAU  m_parameters[1]
-#define LIF_TARP m_parameters[2]
-#define LIF_ER   m_parameters[3]
-#define LIF_E0   m_parameters[4]
-#define LIF_VTH  m_parameters[5]
-#define LIF_IEXT m_parameters[6]
+#define LIF_C      m_parameters[0]
+#define LIF_TAU    m_parameters[1]
+#define LIF_TARP   m_parameters[2]
+#define LIF_ER     m_parameters[3]
+#define LIF_E0     m_parameters[4]
+#define LIF_VTH    m_parameters[5]
+#define LIF_IEXT   m_parameters[6]
+#define LIF_LAMBDA m_parameters[7]
+#define LIF_RL     m_parameters[8]
 //#define LIF_ARTIFICIAL_SPIKE
 
 #define CBN_VM_PREV             m_state[1]

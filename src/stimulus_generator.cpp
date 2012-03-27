@@ -1,7 +1,9 @@
-#include <sys/stat.h>
 #include <sstream>
+#include <boost/filesystem.hpp>
 #include "stimulus_generator.h"
 #include "generate_trial.h"
+
+namespace fs = boost::filesystem;
 
 dynclamp::Entity* StimulusFactory(dictionary& args)
 {
@@ -9,7 +11,7 @@ dynclamp::Entity* StimulusFactory(dictionary& args)
         std::string filename;
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return NULL;
+                return new dynclamp::generators::Stimulus(id);
         return new dynclamp::generators::Stimulus(filename.c_str(), id);
 }
 
@@ -17,43 +19,72 @@ namespace dynclamp {
 
 namespace generators {
 
+Stimulus::Stimulus(uint id)
+        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
+{}
+
 Stimulus::Stimulus(const char *stimulusFile, uint id)
-        : Generator(id), m_stimulus(NULL), m_stimulusLength(0)
+        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
 {
+        setFilename(stimulusFile);
+}
+
+Stimulus::~Stimulus()
+{
+        freeMemory();
+}
+
+void Stimulus::initialise()
+{
+        m_position = 0;
+}
+
+bool Stimulus::setFilename(const char *filename)
+{
+        bool retval = true;
         int i, j, flag;
         double **metadata;
-        struct stat buf;
 
-        // check for file existence
-        if (stat(stimulusFile, &buf) != 0) {
-                std::stringstream ss;
-                ss << stimulusFile << ": no such file.";
-                throw ss.str().c_str();
+        if (!fs::exists(filename)) {
+                Logger(Critical, "%s: no such file.\n", filename);
+                return false;
         }
+        strncpy(m_filename, filename, FILENAME_MAXLEN);
 
-        m_parameters.push_back(1.0/GetGlobalDt());         // m_parameters[0] -> sampling rate
+        freeMemory();
 
-        flag = generate_trial(stimulusFile, GetLoggingLevel() <= Debug,
+        flag = generate_trial(m_filename, GetLoggingLevel() <= Debug,
                               0, NULL, &m_stimulus, &m_stimulusLength,
-                              m_parameters[0], GetGlobalDt());
+                              1.0/GetGlobalDt(), GetGlobalDt());
 
         if (flag == -1) {
                 if (m_stimulus != NULL)
                         free(m_stimulus);
-                throw "Error in <generate_trial>";
+                Logger(Critical, "Error in <generate_trial>\n");
+                return false;
         }
 
         metadata = new double*[MAXROWS];
-        if (metadata == NULL)
-                throw "Unable to allocate memory for <parsed_data> !";
+        if (metadata == NULL) {
+                Logger(Critical, "Unable to allocate memory for <parsed_data>.\n");
+                return false;
+        }
         for (i=0; i<MAXROWS; i++)  { 
                 metadata[i] = new double[MAXCOLS];
-                if (metadata[i] == NULL)
-                        throw "Unable to allocate memory for <parsed_data> !";
+                if (metadata[i] == NULL) {
+                        Logger(Critical, "Unable to allocate memory for <parsed_data>.\n");
+                        for (j=0; j<i; i++)
+                                delete metadata[j];
+                        delete metadata;
+                        return false;
+                }
         }
         
-        if (readmatrix(stimulusFile, metadata, &m_stimulusRows, &m_stimulusCols) == -1)
-                throw "Unable to parse file.";
+        if (readmatrix(m_filename, metadata, &m_stimulusRows, &m_stimulusCols) == -1) {
+                Logger(Critical, "Unable to parse file [%s].\n", m_filename);
+                retval = false;
+                goto endSetFilename;
+        }
 
         m_stimulusMetadata = new double[m_stimulusRows * m_stimulusCols];
         for (i=0; i<m_stimulusRows; i++) {
@@ -62,22 +93,14 @@ Stimulus::Stimulus(const char *stimulusFile, uint id)
                         Logger(Debug, "%7.1lf ", m_stimulusMetadata[i*m_stimulusCols + j]);
                 }
                 Logger(Debug, "\n");
+        }
+
+endSetFilename:
+        for (i=0; i<MAXROWS; i++)
                 delete metadata[i];
-        }
         delete metadata;
-}
 
-Stimulus::~Stimulus()
-{
-        if (m_stimulus != NULL) {
-                delete m_stimulus;
-                delete m_stimulusMetadata;
-        }
-}
-
-void Stimulus::initialise()
-{
-        m_position = 0;
+        return retval;
 }
 
 double Stimulus::duration() const
@@ -119,6 +142,16 @@ const double* Stimulus::metadata(size_t *dims, char *label) const
         dims[0] = m_stimulusRows;
         dims[1] = m_stimulusCols;
         return m_stimulusMetadata;
+}
+
+void Stimulus::freeMemory()
+{
+        if (m_stimulus != NULL) {
+                delete m_stimulus;
+                delete m_stimulusMetadata;
+                m_stimulus = NULL;
+                m_stimulusMetadata = NULL;
+        }
 }
 
 } // namespace generators

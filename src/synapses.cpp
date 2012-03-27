@@ -10,8 +10,10 @@ dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
              ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau))
+             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an exponential synapse.\n");
                 return NULL;
+        }
         return new dynclamp::synapses::ExponentialSynapse(E, weight, delay, tau, id);
 }
 
@@ -24,8 +26,10 @@ dynclamp::Entity* Exp2SynapseFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1]))
+             ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1])) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a biexponential synapse.\n");
                 return NULL;
+        }
         return new dynclamp::synapses::Exp2Synapse(E, weight, delay, tau, id);
 }
 
@@ -40,8 +44,10 @@ dynclamp::Entity* TMGSynapseFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "U", &U) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau1", &tau[0]) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauFacil", &tau[2]))
+             ! dynclamp::CheckAndExtractDouble(args, "tauFacil", &tau[2])) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a Tsodyks-Markram synapse.\n");
                 return NULL;
+        }
         return new dynclamp::synapses::TMGSynapse(E, weight, delay, U, tau, id);
 }
 

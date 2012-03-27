@@ -31,12 +31,12 @@ double SetGlobalDt(double dt)
         assert(dt > 0.0);
         globalDt = dt;
 #ifdef HAVE_LIBLXRT
-        Logger(Info, "Starting RT timer.\n");
+        Logger(Debug, "Starting RT timer.\n");
         RTIME period = start_rt_timer(sec2count(dt));
         realtimeDt = count2sec(period);
-        Logger(Info, "The real time period is %g ms (f = %g Hz).\n", realtimeDt, 1./realtimeDt);
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", realtimeDt, 1./realtimeDt);
 #ifndef NO_STOP_RT_TIMER
-        Logger(Info, "Stopping RT timer.\n");
+        Logger(Debug, "Stopping RT timer.\n");
         stop_rt_timer();
 #endif // NO_STOP_RT_TIMER
 #endif // HAVE_LIBLXRT
@@ -65,7 +65,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         taskName = nam2num("hybrid_simulator");
         task = rt_task_init(taskName, RT_SCHED_HIGHEST_PRIORITY+1, STACK_SIZE, MSG_SIZE);
         if(task == NULL) {
-                Logger(Info, "Error: cannot initialise real-time task.\n");
+                Logger(Critical, "Error: cannot initialise real-time task.\n");
                 return;
         }
 
@@ -80,7 +80,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         Logger(Info, "Making the task periodic.\n");
         flag = rt_task_make_periodic_relative_ns(task, count2nano(5*tickPeriod), count2nano(tickPeriod));
         if(flag != 0) {
-                Logger(Info, "Error while making the task periodic.\n");
+                Logger(Critical, "Error while making the task periodic.\n");
                 goto stopRT;
         }
         
@@ -93,7 +93,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 currentTime = rt_get_time();
                 preambleIterations++;
         } while(currentTime == previousTime);
-        Logger(Info, "Performed %d iteration%s in the ``preamble''.\n",
+        Logger(Debug, "Performed %d iteration%s in the ``preamble''.\n",
                 preambleIterations, (preambleIterations == 1 ? "" : "s"));
 
         ResetGlobalTime();

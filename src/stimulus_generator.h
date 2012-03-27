@@ -11,9 +11,11 @@ namespace generators {
 
 class Stimulus : public Generator {
 public:
+        Stimulus(uint id = GetId());
         Stimulus(const char *filename, uint id = GetId());
         virtual ~Stimulus();
 
+        bool setFilename(const char *filename);
         virtual void initialise();
 
         uint stimulusLength() const;
@@ -28,6 +30,11 @@ public:
         double duration() const;
 
 private:
+        void freeMemory();
+
+private:
+        char m_filename[FILENAME_MAXLEN];
+
         double *m_stimulus;
         uint m_stimulusLength;
         uint m_position;

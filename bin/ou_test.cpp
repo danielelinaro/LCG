@@ -1,4 +1,6 @@
 #include <vector>
+#include <string>
+#include <sstream>
 #include "utils.h"
 #include "ou.h"
 #include "recorders.h"
@@ -14,13 +16,21 @@ int main()
 {
         int i;
         double tend = 5;
-        double sigma = 50;
-        double tau = 10e-3;
-        double i0 = 250;
+        dictionary params;
         std::vector<Entity*> entities(N_ENT);
-        entities[0] = new H5Recorder(false, "ou_test.h5");
+        params["compress"] = "false";
+        params["filename"] = "ou_test.h5";
+        entities[0] = EntityFactory("H5Recorder", params);
         for (i=1; i<N_ENT; i++) {
-                entities[i] = new OUcurrent(sigma, tau, i0, GetRandomSeed());
+                std::stringstream ss;
+                ss << GetRandomSeed();
+                params.clear();
+                params["sigma"] = "50";
+                params["tau"] = "0.01";
+                params["I0"] = "250";
+                params["seed"] = ss.str();
+                params["interval"] = "1,4";
+                entities[i] = EntityFactory("OUcurrent", params);
                 entities[i]->connect(entities[0]);
         }
         Simulate(entities, tend);

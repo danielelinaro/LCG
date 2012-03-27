@@ -32,29 +32,29 @@
 	<reference>NRSE</reference>
 	-->
       </parameters>
-      <connectedTo>0,2</connectedTo>
+      <connections>0,2</connections>
     </entity>
 
     <entity>
       <name>PeriodicPulse</name>
       <id>2</id>
       <parameters>
-	<frequency>1</frequency>
-	<duration>0.01</duration>
-	<amplitude>100</amplitude>
-	<probabiliy>0.5</probability>
-	<tau>1</tau>
-	<gp>0.1</gp>
-	<gi>0.05</gi>
-	<gd>0.01</gd>
+	<frequency>5</frequency>
+	<duration>0.04</duration>
+	<amplitude>300</amplitude>
+	<probability>0.5</probability>
+	<tau>3</tau>
+	<gp>10</gp>
+	<gi>3</gi>
+	<gd>1</gd>
       </parameters>
-      <connectedTo>0,1</connectedTo>
+      <connections>0,1</connections>
     </entity>
 
   </entities>
 
   <simulation>
-    <tend>10</tend>
+    <tend>30</tend>
   </simulation>
 
 </dynamicclamp>

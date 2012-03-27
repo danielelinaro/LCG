@@ -31,7 +31,7 @@
 #define DYNCLAMP_VERSION 0.1
 
 #define OK 0
-#define FILENAME_MAXLEN 30
+#define FILENAME_MAXLEN 1024
 
 namespace dynclamp
 {
@@ -45,11 +45,11 @@ typedef enum
 
 class CommandLineOptions {
 public:
-        CommandLineOptions() : tend(-1), iti(0), ibi(0), nTrials(0), nBatches(0),
+        CommandLineOptions() : tend(-1), dt(0), iti(0), ibi(0), nTrials(0), nBatches(0),
         configFile(""), kernelFile(""), stimulusFiles() {}
 
 public:
-        double tend;
+        double tend, dt;
         useconds_t iti, ibi;
         uint nTrials, nBatches;
         std::string configFile, kernelFile;

@@ -93,15 +93,16 @@ ullong GetRandomSeed()
         int fd = open("/dev/urandom",O_RDONLY);
         if (fd == -1) {
                 seed = time(NULL);
-                Logger(Info, "seed = time(NULL) = 0x%llx.\n", seed);
+                Logger(Debug, "seed = time(NULL) = 0x%llx.\n", seed);
                 goto endGetRandomSeed;
         }
         if (read(fd, (void *) &seed, sizeof(ullong)) != sizeof(ullong)) {
                 seed = time(NULL);
-                Logger(Info, "seed = time(NULL) = 0x%llx.\n", seed);
+                Logger(Debug, "seed = time(NULL) = 0x%llx.\n", seed);
         }
         else {
-                Logger(Info, "seed = 0x%llx\n", seed);
+                seed &= 0xffffffff;
+                Logger(Debug, "seed = 0x%llx\n", seed);
         }
         if (close(fd) != 0)
                 perror("Error while closing /dev/urandom: ");
@@ -235,7 +236,7 @@ void MakeFilename(char *filename, const char *extension)
 
 bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 {
-        double tend, iti, ibi;
+        double tend, iti, ibi, freq;
         std::string configfile, kernelfile, stimfile, stimdir;
         po::options_description description("Allowed options");
         po::variables_map options;
@@ -246,11 +247,12 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                         ("version,v", "print version number")
                         ("config-file,c", po::value<std::string>(&configfile), "specify configuration file")
                         ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
-                        ("stimulus-file,s", po::value<std::string>(&stimfile), "specify stimulus file")
+                        ("stimulus-file,f", po::value<std::string>(&stimfile), "specify stimulus file")
                         ("stimulus-dir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located")
                         ("time,t", po::value<double>(&tend), "specify the duration of the simulation (in seconds)")
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (in seconds)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (in seconds)")
+                        ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency (in Hertz)")
                         ("ntrials,n", po::value<uint>(&opt->nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&opt->nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)");
 
@@ -259,13 +261,19 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 
                 if (options.count("help")) {
                         std::cout << description << "\n";
-                        exit(0);
+                        return false;
                 }
 
                 if (options.count("version")) {
-                        std::cout << fs::path(argv[0]).filename() << " version " << DYNCLAMP_VERSION << std::endl;
-                        exit(0);
+                        Logger(All, "%s version %d\n", fs::path(argv[0]).filename().c_str(), DYNCLAMP_VERSION);
+                        return false;
                 }
+
+                if (freq <= 0) {
+                        Logger(Critical, "The sampling frequency must be positive.\n");
+                        return false;
+                }
+                opt->dt = 1.0 / freq;
 
                 if (options.count("config-file")) {
                         if (!fs::exists(configfile)) {
@@ -334,15 +342,20 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                 /*** simulation time and time step ***/
                 try {
                         *tend = pt.get<double>("dynamicclamp.simulation.tend");
-                } catch(std::exception e) {
+                } catch(...) {
                         *tend = -1;
                 }
 
                 try {
                         *dt = pt.get<double>("dynamicclamp.simulation.dt");
                         SetGlobalDt(*dt);
-                } catch(std::exception e) {
+                } catch(...) {
                         *dt = -1;
+                        try {
+                                *dt = 1.0 / pt.get<double>("dynamicclamp.simulation.rate");
+                        } catch(...) {
+                                Logger(Critical, "dt = %g sec.\n", *dt);
+                        }
                 }
 
                 /*** entities ***/

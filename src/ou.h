@@ -5,7 +5,8 @@
 #include "dynamical_entity.h"
 #include "randlib.h"
 
-#define OU_ETA   m_state[0]
+#define OU_ETA       m_state[0]
+#define OU_ETA_AUX   m_state[1]
 
 #define OU_SIGMA m_parameters[0]
 #define OU_TAU   m_parameters[1]
@@ -14,8 +15,10 @@
 #define OU_MU    m_parameters[4]
 #define OU_COEFF m_parameters[5]
 #define OU_SEED  m_parameters[6]
+#define OU_START m_parameters[7]
+#define OU_STOP  m_parameters[8]
 
-#define OU_E     m_parameters[7]
+#define OU_E     m_parameters[9]
 
 namespace dynclamp {
 
@@ -23,11 +26,13 @@ namespace neurons {
 class Neuron;
 }
 
+double largeInterval[2] = {0, 365*24*60*60};
+
 class OU : public DynamicalEntity
 {
 public:
         OU(double sigma, double tau, double eta0, ullong seed,
-           uint id = GetId());
+           double *interval = largeInterval, uint id = GetId());
         virtual void initialise();
 protected:
         virtual void evolve();
@@ -40,7 +45,7 @@ class OUcurrent : public OU
 {
 public:
         OUcurrent(double sigma, double tau, double I0, ullong seed,
-                  uint id = GetId());
+                  double *interval = largeInterval, uint id = GetId());
         virtual double output() const;
 };
 
@@ -48,7 +53,7 @@ class OUconductance : public OU
 {
 public:
         OUconductance(double sigma, double tau, double E, double G0, ullong seed,
-                      uint id = GetId());
+                      double *interval = largeInterval, uint id = GetId());
         virtual double output() const;
 protected:
         virtual void addPost(Entity *entity);

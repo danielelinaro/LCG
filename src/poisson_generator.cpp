@@ -10,8 +10,10 @@ dynclamp::Entity* PoissonFactory(dictionary& args)
         ullong seed;
         id = dynclamp::GetIdFromDictionary(args);
         seed = dynclamp::GetSeedFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate))
+        if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a Poisson generator.\n");
                 return NULL;
+        }
         return new dynclamp::generators::Poisson(rate, seed, id);
 }
 

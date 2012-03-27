@@ -77,9 +77,9 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         m_parameters.push_back(gi);             // m_parameters[7] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[8] -> derivative gain
 
-        Logger(Debug, "---\nPeriodicPulse:\n\tFrequency: %g\n\tAmplitude: %g\n\tDuration: %g\n\tPeriod: %g\n---\n",
+        Logger(Info, "---\nPeriodicPulse:\n\tFrequency: %g Hz\n\tAmplitude: %g pA\n\tDuration: %g sec\n\tPeriod: %g sec\n---\n",
                         PP_FREQUENCY, PP_AMPLITUDE, PP_DURATION, PP_PERIOD);
-        Logger(Debug, "---\nPeriodicPulse:\n\tClamp prob: %g\n\tTau: %g\n\tgp: %g\n\tgi: %g\n\tgd = %g\n---\n",
+        Logger(Info, "---\nPeriodicPulse:\n\tClamp prob: %g\n\tTau: %g sec\n\tgp: %g\n\tgi: %g\n\tgd = %g\n---\n",
                 PP_PROB, PP_TAU, PP_GP, PP_GI, PP_GD);
         Logger(Debug, "m_parameters.size() = %d\n", m_parameters.size());
 }
@@ -117,10 +117,13 @@ void PeriodicPulse::step()
                 }
         }
         if (m_clamp && now >= m_tUpdate) {
-                double weight;
+                double weight, delay;
                 int s = 0;
-                if ((now - m_tLastSpike) < 15e-3)
+                delay = m_tLastSpike - (now-PP_DURATION);
+                if (delay > 0 && delay < 40e-3) {
                         s = 1;
+                        Logger(Debug, "The last stimulation (@ t = %g sec) elicited a spike @ t = %g sec.\n", now-PP_DURATION, m_tLastSpike);
+                }
                 weight = exp(-PP_PERIOD/PP_TAU);
                 m_estimatedProbability = (1-weight)*s + weight*m_estimatedProbability;
                 m_errp = PP_PROB - m_estimatedProbability;
@@ -141,6 +144,7 @@ double PeriodicPulse::output() const
 void PeriodicPulse::handleEvent(const Event* event)
 {
         m_tLastSpike = event->time();
+        Logger(Debug, "Last spike was @ t = %g sec.\n", m_tLastSpike);
 }
 
 double PeriodicPulse::frequency() const

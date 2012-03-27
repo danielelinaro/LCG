@@ -183,8 +183,8 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         m_parameters.push_back(E0);
         m_parameters.push_back(Vth);
         m_parameters.push_back(Iext);
-        m_parameters.push_back(dt/LIF_TAU);   // parameters[7]
-        m_parameters.push_back(dt/LIF_C);     // parameters[8]
+        m_parameters.push_back(-1.0/LIF_TAU); // parameters[7] -> lambda
+        m_parameters.push_back(LIF_TAU/LIF_C);// parameters[8] -> Rl
 }
 
 void LIFNeuron::initialise()
@@ -201,12 +201,12 @@ void LIFNeuron::evolve()
                 VM = LIF_ER;
         }
         else {
-                double Iinj = LIF_IEXT;
-                int i, nInputs = m_inputs.size();
-                for (i=0; i<nInputs; i++)
+                double Iinj = LIF_IEXT, Vinf;
+                int nInputs = m_inputs.size();
+                for (int i=0; i<nInputs; i++)
                         Iinj += m_inputs[i];
-                //VM = VM + dt/LIF_TAU * (LIF_E0 - VM) + dt/LIF_C * LIF_IEXT;
-                VM = VM + m_parameters[7] * (LIF_E0 - VM) + m_parameters[8] * Iinj;
+                Vinf = LIF_RL*Iinj + LIF_E0;
+                VM = Vinf - (Vinf - VM) * exp(LIF_LAMBDA * GetGlobalDt());
         }
         if(VM > LIF_VTH) {
 #ifdef LIF_ARTIFICIAL_SPIKE

@@ -1,5 +1,6 @@
 #include "entity.h"
 #include "utils.h"
+#include "stimulus_generator.h"
 
 using namespace dynclamp;
 
@@ -8,12 +9,14 @@ int main(int argc, char *argv[])
         CommandLineOptions opt;
         double tend, dt;
         std::vector<Entity*> entities;
+        dynclamp::generators::Stimulus *stimulus;
 
         if (!ParseCommandLineOptions(argc, argv, &opt)) {
                 Logger(Critical, "Error while parsing command line arguments.\n"
                                  "Type \"hybrid_simulator -h\" for information on how to use this program.\n");
                 exit(1);
         }
+        SetGlobalDt(opt.dt);
 
         if (opt.configFile.compare("") == 0) {
                 Logger(Critical, "No configuration file specified. Aborting...\n");
@@ -40,22 +43,50 @@ int main(int argc, char *argv[])
 
         SetGlobalDt(dt);
 
-        Logger(Info, "Number of batches: %d.\n", opt.nBatches);
         Logger(Info, "Number of trials: %d.\n", opt.nTrials);
         Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
-        Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
-        for (int i=0; i<opt.nBatches; i++) {
-                for (int j=0; j<opt.nTrials; j++) {
+        if (opt.stimulusFiles.size() > 0) {
+                for (int i=0; i<entities.size(); i++) {
+                        if ((stimulus = dynamic_cast<dynclamp::generators::Stimulus*>(entities[i])) != NULL)
+                                break;
+                }
+
+                if (stimulus == NULL) {
+                        Logger(Critical, "You need to have at least on Stimulus in your configuration file if you specify a stimulus file. Aborting.\n");
+                        goto endMain;
+                }
+
+                Logger(Info, "Number of batches: %d.\n", opt.nBatches);
+                Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
+
+                for (int i=0; i<opt.nBatches; i++) {
+                        for (int j=0; j<opt.stimulusFiles.size(); j++) {
+                                stimulus->setFilename(opt.stimulusFiles[j].c_str());
+                                for (int k=0; k<opt.nTrials; k++) {
+                                        ResetGlobalTime();
+                                        Simulate(entities,tend);
+                                        if (k != opt.nTrials-1)
+                                                usleep(opt.iti);
+                                }
+                                if (j != opt.stimulusFiles.size()-1)
+                                        usleep(opt.iti);
+                        }
+                        if (i != opt.nBatches-1)
+                                usleep(opt.ibi);
+                }
+
+        }
+        else {
+                for (int i=0; i<opt.nTrials; i++) {
                         ResetGlobalTime();
                         Simulate(entities,tend);
-                        if (j != opt.nTrials-1)
+                        if (i != opt.nTrials-1)
                                 usleep(opt.iti);
                 }
-                if (i != opt.nBatches-1)
-                        usleep(opt.ibi);
         }
 
+endMain:
         for (int i=0; i<entities.size(); i++)
                 delete entities[i];
 

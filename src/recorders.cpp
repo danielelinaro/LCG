@@ -17,8 +17,10 @@ dynclamp::Entity* H5RecorderFactory(dictionary& args)
         std::string filename;
         bool compress;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
+        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build an H5 recorder.\n");
                 return NULL;
+        }
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
                 return new dynclamp::recorders::H5Recorder(compress, NULL, id);
         return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id);
