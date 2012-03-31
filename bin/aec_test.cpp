@@ -1,5 +1,5 @@
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
 #include "aec.h"
 
 #define KERNEL_FILE   "aec_test.k"
@@ -62,6 +62,7 @@ int main()
         AEC aec(kernel, KERNEL_LENGTH);
 #endif
 
+        aec.initialise();
         for (i=0; i<DATA_LENGTH; i++) {
                 fscanf(I_fid, "%le\n", &I);
                 fscanf(Vr_fid, "%le\n", &Vr);

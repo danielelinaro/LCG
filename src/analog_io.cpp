@@ -237,6 +237,11 @@ ComediAnalogInput::ComediAnalogInput(const char *deviceFile, uint inputSubdevice
           m_inputConversionFactor(inputConversionFactor)
 {}
 
+void ComediAnalogInput::initialise()
+{
+        m_data = read();
+}
+
 double ComediAnalogInput::inputConversionFactor() const
 {
         return m_inputConversionFactor;
@@ -296,6 +301,11 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
                 Logger(Critical, "Unable to get converter for sw-calibrated device.\n");
                 throw "Error in comedi_get_softcal_converter()";
         }
+}
+
+void ComediAnalogInputSoftCal::initialise()
+{
+        m_data = read();
 }
 
 double ComediAnalogInputSoftCal::inputConversionFactor() const
@@ -363,7 +373,8 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
 
 void AnalogInput::initialise()
 {
-        m_data = 0.0;
+        m_input.initialise();
+        m_data = m_input.read();
 }
 
 void AnalogInput::step()
@@ -392,6 +403,7 @@ AnalogOutput::~AnalogOutput()
 
 void AnalogOutput::initialise()
 {
+        m_output.initialise();
         m_output.write(0.0);
 }
 

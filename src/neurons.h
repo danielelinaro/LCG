@@ -6,11 +6,13 @@
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
 #include "analog_io.h"
 #include "aec.h"
 #define DEBUG_REAL_NEURON
+//#define TRIM_CURRENT
 #endif // HAVE_LIBCOMEDI
 #endif // HAVE_CONFIG_H
 
@@ -97,6 +99,12 @@ protected:
 
 #define RN_VM_PREV                  m_state[1]
 #define RN_SPIKE_THRESH             m_parameters[0]
+#ifdef DEBUG_REAL_NEURON
+#define RN_BUFLEN 60000         // 1 second @ 20 kHz
+#endif
+#ifdef TRIM_CURRENT
+#define MAX_INJECTED_CURRENT 2000
+#endif
 
 class RealNeuron : public Neuron {
 public:
@@ -135,7 +143,6 @@ private:
         AEC m_aec;
 
 #ifdef DEBUG_REAL_NEURON
-#define RN_BUFLEN 60000         // 1 second @ 20 kHz
         int m_fd;
         uint m_bufpos;
         double m_buffer[RN_BUFLEN];

@@ -37,6 +37,7 @@ AEC::AEC(const char *kernelFile)
                 }
                 fclose(fid);
         }
+        Logger(Debug, "The kernel has %d samples.\n", m_length);
 }
 
 AEC::AEC(const double *kernel, size_t kernelSize)

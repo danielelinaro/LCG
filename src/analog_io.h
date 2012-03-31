@@ -72,6 +72,7 @@ public:
                           uint readChannel, double inputConversionFactor,
                           uint range = PLUS_MINUS_TEN,
                           uint aref = GRSE);
+        void initialise();
         double inputConversionFactor() const;
         double read();
 private:
@@ -97,6 +98,7 @@ public:
                                  uint readChannel, double inputConversionFactor,
                                  uint range = PLUS_MINUS_TEN,
                                  uint aref = GRSE);
+        void initialise();
         double inputConversionFactor() const;
         double read();
 private:

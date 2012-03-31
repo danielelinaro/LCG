@@ -304,12 +304,29 @@ RealNeuron::~RealNeuron()
 void RealNeuron::initialise()
 {
         Neuron::initialise();
+        m_input.initialise();
         m_output.initialise();
         m_aec.initialise();
+        VM = m_input.read();
 }
         
 void RealNeuron::evolve()
 {
+        // inject the total input current into the neuron
+        double Iinj = 0.0;
+        size_t nInputs = m_inputs.size();
+        for (uint i=0; i<nInputs; i++) {
+                Iinj += m_inputs[i];
+        }
+#ifdef TRIM_CURRENT
+        if (fabs(Iinj) > MAX_INJECTED_CURRENT) {
+                Logger(Critical, "%e %e %e %e\n", GetGlobalTime(), VM, Vr, Iinj);
+                Iinj = MAX_INJECTED_CURRENT * fabs(Iinj)/Iinj;
+        }
+#endif
+        m_output.write(Iinj);
+        m_aec.pushBack(Iinj);
+
         // read current value of the membrane potential
         RN_VM_PREV = VM;
         double Vr = m_input.read();
@@ -318,20 +335,6 @@ void RealNeuron::evolve()
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
-        // inject the total input current into the neuron
-        double Iinj = 0.0;
-        size_t nInputs = m_inputs.size();
-        for (uint i=0; i<nInputs; i++) {
-                Iinj += m_inputs[i];
-        }
-        /*
-        if (fabs(Iinj) > 2000) {
-                Logger(Critical, "%e %e %e %e\n", GetGlobalTime(), VM, Vr, Iinj);
-                Iinj = 2000 * fabs(Iinj)/Iinj;
-        }
-        */
-        m_output.write(Iinj);
-        m_aec.pushBack(Iinj);
 #ifdef DEBUG_REAL_NEURON
         m_buffer[m_bufpos] = Vr;
         m_buffer[m_bufpos+1] = VM;
