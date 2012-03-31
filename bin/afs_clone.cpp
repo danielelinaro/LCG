@@ -181,8 +181,8 @@ void runStimulus(const std::string& stimfile)
 
                 Logger(Debug, "Connecting the analog input to the recorder.\n");
                 entities[1]->connect(entities[0]);
-                Logger(Debug, "Connecting the analog output to the recorder.\n");
-                entities[2]->connect(entities[0]);
+                //Logger(Debug, "Connecting the analog output to the recorder.\n");
+                //entities[2]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the recorder.\n");
                 entities[3]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");

@@ -46,7 +46,7 @@ public:
 
 private:
         double m_output, m_amplitude;
-        double m_tPrevPulse, m_tNextPulse, m_tUpdate, m_tLastSpike;
+        double m_tLastPulse, m_tNextPulse, m_tUpdate, m_tLastSpike;
         bool   m_clamp;
         double m_estimatedProbability;
         double m_errp, m_erri, m_errd, m_errpPrev;

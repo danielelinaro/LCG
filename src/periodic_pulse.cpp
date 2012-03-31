@@ -88,7 +88,7 @@ void PeriodicPulse::initialise()
 {
         m_output = 0.0;
         m_amplitude = PP_AMPLITUDE;
-        m_tPrevPulse = 0.0;
+        m_tLastPulse = 0.0;
         m_tNextPulse = 1.0 / PP_FREQUENCY;
         m_tUpdate = 1.0 / PP_FREQUENCY + PP_DURATION + PP_INTERVAL;
         m_tLastSpike = -PP_INTERVAL;
@@ -108,7 +108,7 @@ void PeriodicPulse::step()
                 if (m_output == 0.0) {
                         Logger(Debug, "Turning output ON @ t = %g s.\n", now);
                         m_output = m_amplitude;
-                        m_tPrevPulse = m_tNextPulse;
+                        m_tLastPulse = m_tNextPulse;
                 }
                 else if (now >= m_tNextPulse+PP_DURATION) {
                         Logger(Debug, "Turning output OFF @ t = %g s.\n", now);
@@ -117,12 +117,11 @@ void PeriodicPulse::step()
                 }
         }
         if (m_clamp && now >= m_tUpdate) {
-                double weight, delay;
                 int s = 0;
-                delay = m_tLastSpike - (now-PP_DURATION);
-                if (delay > 0 && delay < 40e-3) {
+                double weight;
+                if (m_tLastSpike > m_tLastPulse) {
                         s = 1;
-                        Logger(Debug, "The last stimulation (@ t = %g sec) elicited a spike @ t = %g sec.\n", now-PP_DURATION, m_tLastSpike);
+                        Logger(Debug, "The last stimulation (@ t = %g sec) elicited a spike @ t = %g sec.\n", m_tLastPulse, m_tLastSpike);
                 }
                 weight = exp(-PP_PERIOD/PP_TAU);
                 m_estimatedProbability = (1-weight)*s + weight*m_estimatedProbability;

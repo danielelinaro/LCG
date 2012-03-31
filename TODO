@@ -1,6 +1,7 @@
 
 Short term (and therefore relatively simple):
 
+-) add the possibility to specify spike latency in PeriodicPulse.
 -) add name in Entity? (also for data logging...).
 -) understand why EnqueueEvent cannot be found.
 

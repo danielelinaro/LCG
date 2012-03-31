@@ -60,7 +60,7 @@ using boost::property_tree::ptree;
 using namespace dynclamp;
 
 struct OUoptions {
-        std::string sigma, tau, E, G0, seed;
+        std::string sigma, tau, E, G0, interval, seed;
 };
 
 struct options {
@@ -89,6 +89,11 @@ bool parseConfigFile(const std::string& configfile, options *opt)
                         opt->ou[i].tau = v.second.get<std::string>("tau");
                         opt->ou[i].E = v.second.get<std::string>("E");
                         opt->ou[i].G0 = v.second.get<std::string>("G0");
+                        try {
+                                opt->ou[i].interval = v.second.get<std::string>("interval");
+                        } catch(...) {
+                                opt->ou[i].interval = "0,86400";
+                        }
                         try {
                                 opt->ou[i].seed = v.second.get<std::string>("seed");
                         } catch(...) {
@@ -257,6 +262,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                         parameters["tau"] = opt[i].tau;
                         parameters["E"] = opt[i].E;
                         parameters["G0"] = opt[i].G0;
+                        parameters["interval"] = opt[i].interval;
                         if (opt[i].seed.compare("-1") != 0) {
                                 parameters["seed"] = opt[i].seed;
                         }
