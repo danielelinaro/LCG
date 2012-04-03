@@ -115,7 +115,8 @@ uint Stimulus::stimulusLength() const
 
 bool Stimulus::hasNext() const
 {
-        return m_position < m_stimulusLength-1;
+        //return m_position < m_stimulusLength-1;
+        return true;
 }
 
 double Stimulus::output() const

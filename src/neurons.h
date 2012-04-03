@@ -138,8 +138,8 @@ protected:
         virtual void evolve();
 
 private:
-        ComediAnalogInput  m_input;
-        ComediAnalogOutput m_output;
+        ComediAnalogInputSoftCal  m_input;
+        ComediAnalogOutputSoftCal m_output;
         AEC m_aec;
 
 #ifdef DEBUG_REAL_NEURON

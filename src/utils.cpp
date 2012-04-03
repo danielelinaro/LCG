@@ -378,15 +378,18 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                                 connections[id] = std::vector<uint>();
                                 size_t start=0, stop;
                                 int post;
+                                Logger(Info, "Entity #%d is connected to entities", id);
                                 while ((stop = conn.find(",",start)) != conn.npos) {
                                         std::stringstream ss(conn.substr(start,stop-start));
                                         ss >> post;
                                         connections[id].push_back(post);
                                         start = stop+1;
+                                        Logger(Info, " #%d", post);
                                 }
                                 std::stringstream ss(conn.substr(start,stop-start));
                                 ss >> post;
                                 connections[id].push_back(post);
+                                Logger(Info, " #%d.\n", post);
                         } catch(std::exception e) {
                                 Logger(Info, "No connections for entity #%d.\n", id);
                         }
@@ -401,6 +404,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         for (int j=0; j<connections[idPre].size(); j++) {
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
+                                Logger(Info, "Connecting entity #%d to entity #%d.\n", i, idPost);
                         }
                 }
 

@@ -16,7 +16,6 @@ int main(int argc, char *argv[])
                                  "Type \"hybrid_simulator -h\" for information on how to use this program.\n");
                 exit(1);
         }
-        SetGlobalDt(opt.dt);
 
         if (opt.configFile.compare("") == 0) {
                 Logger(Critical, "No configuration file specified. Aborting...\n");
@@ -30,12 +29,12 @@ int main(int argc, char *argv[])
 
         Logger(Info, "opt.tend = %g sec.\n", opt.tend);
         if (opt.tend != -1)
+                // the duration specified in the command line has precedence over the one in the configuration file
                 tend = opt.tend;
-        if (tend == -1) {
-                Logger(Critical, "The duration of the simulation was not specified. Aborting...\n");
-                exit(1);
-        }
 
+        if (opt.dt != -1)
+                // the timestep specified in the command line has precedence over the one in the configuration file
+                dt = opt.dt;
         if (dt == -1) {
                 dt = 1.0 / 20000;
                 Logger(Info, "Using default timestep (%g sec -> %g Hz).\n", dt, 1.0/dt);
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
                 }
 
                 if (stimulus == NULL) {
-                        Logger(Critical, "You need to have at least on Stimulus in your configuration file if you specify a stimulus file. Aborting.\n");
+                        Logger(Critical, "You need to have at least one Stimulus in your configuration file if you specify a stimulus file. Aborting.\n");
                         goto endMain;
                 }
 
@@ -65,7 +64,7 @@ int main(int argc, char *argv[])
                                 stimulus->setFilename(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
                                         ResetGlobalTime();
-                                        Simulate(entities,tend);
+                                        Simulate(entities,stimulus->duration());
                                         if (k != opt.nTrials-1)
                                                 usleep(opt.iti);
                                 }
@@ -78,6 +77,10 @@ int main(int argc, char *argv[])
 
         }
         else {
+                if (tend == -1) {
+                        Logger(Critical, "The duration of the simulation was not specified. Aborting...\n");
+                        exit(1);
+                }
                 for (int i=0; i<opt.nTrials; i++) {
                         ResetGlobalTime();
                         Simulate(entities,tend);

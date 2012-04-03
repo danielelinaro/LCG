@@ -239,7 +239,7 @@ ComediAnalogInput::ComediAnalogInput(const char *deviceFile, uint inputSubdevice
 
 void ComediAnalogInput::initialise()
 {
-        m_data = read();
+        read();
 }
 
 double ComediAnalogInput::inputConversionFactor() const
@@ -305,7 +305,7 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
 
 void ComediAnalogInputSoftCal::initialise()
 {
-        m_data = read();
+        read();
 }
 
 double ComediAnalogInputSoftCal::inputConversionFactor() const

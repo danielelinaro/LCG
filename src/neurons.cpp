@@ -257,6 +257,17 @@ void ConductanceBasedNeuron::evolve()
 
 #ifdef HAVE_LIBCOMEDI
 
+#define REPLAY_TEST
+
+#ifdef REPLAY_TEST
+//#include "Vr_kernel.h"
+#include "Vr_online.h"
+//#include "Vr_online_shifted.h"
+uint replayPos = 0;
+#endif
+
+#define VR m_state[2]
+
 RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
@@ -278,7 +289,6 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
 #endif
 }
 
-
 RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        const double *AECKernel, size_t kernelSize,
                        const char *deviceFile,
@@ -291,6 +301,7 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
+        m_state.push_back(V0);
         m_parameters.push_back(spikeThreshold);
 }
 
@@ -307,14 +318,22 @@ void RealNeuron::initialise()
         m_input.initialise();
         m_output.initialise();
         m_aec.initialise();
-        VM = m_input.read();
+#ifdef REPLAY_TEST
+        VR = Vreplay[replayPos++];
+#else
+        VR = m_input.read();
+#endif
 }
         
 void RealNeuron::evolve()
 {
-        // inject the total input current into the neuron
-        double Iinj = 0.0;
-        size_t nInputs = m_inputs.size();
+        double Iinj;
+        size_t nInputs;
+
+        /*** CURRENT ***/
+
+        Iinj = 0.0;
+        nInputs = m_inputs.size();
         for (uint i=0; i<nInputs; i++) {
                 Iinj += m_inputs[i];
         }
@@ -324,24 +343,38 @@ void RealNeuron::evolve()
                 Iinj = MAX_INJECTED_CURRENT * fabs(Iinj)/Iinj;
         }
 #endif
+#ifndef REPLAY_TEST
+        // inject the total input current into the neuron
         m_output.write(Iinj);
+#endif
+        // store the injected current into the buffer of the AEC
         m_aec.pushBack(Iinj);
 
-        // read current value of the membrane potential
+        /*** VOLTAGE ***/
+
+        // set previous value of the membrane potential
         RN_VM_PREV = VM;
-        double Vr = m_input.read();
-        VM = m_aec.compensate(Vr);
+        // compensate the recorded voltage
+        VM = m_aec.compensate(VR);
+#ifdef REPLAY_TEST
+        VR = Vreplay[replayPos++];
+#else
+        // read current value of the membrane potential
+        VR = m_input.read();
+#endif
 
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
 #ifdef DEBUG_REAL_NEURON
-        m_buffer[m_bufpos] = Vr;
+        m_buffer[m_bufpos] = VR;
         m_buffer[m_bufpos+1] = VM;
         m_buffer[m_bufpos+2] = Iinj;
         m_bufpos = (m_bufpos+3) % RN_BUFLEN;
-        if (m_bufpos == 0)
+        if (m_bufpos == 0) {
+                Logger(Info, "Buffer full @ t = %g sec.\n", GetGlobalTime());
                 write(m_fd, (const void *) m_buffer, RN_BUFLEN*sizeof(double));
+        }
 #endif
 }
 

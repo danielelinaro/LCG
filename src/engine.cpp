@@ -92,12 +92,14 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 rt_task_wait_period();
                 currentTime = rt_get_time();
                 preambleIterations++;
-        } while(currentTime == previousTime);
+        } while (currentTime == previousTime);
         Logger(Debug, "Performed %d iteration%s in the ``preamble''.\n",
                 preambleIterations, (preambleIterations == 1 ? "" : "s"));
 
-        ResetGlobalTime();
         SetGlobalTimeOffset();
+        ResetGlobalTime();
+        for (uint i=0; i<entities.size(); i++)
+                entities[i]->initialise();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -130,6 +132,8 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
         Logger(Debug, "tend = %e, dt = %e, nsteps = %d\n", tend, dt, nsteps);
         nsteps = 0;
         ResetGlobalTime();
+        for (uint i=0; i<entities.size(); i++)
+                entities[i]->initialise();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<n; i++)
@@ -144,8 +148,6 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
-        for (uint i=0; i<entities.size(); i++)
-                entities[i]->initialise();
 #ifdef HAVE_LIBLXRT
         boost::thread thrd(RTSimulation, entities, tend);
 #else
