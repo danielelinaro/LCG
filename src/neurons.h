@@ -11,8 +11,6 @@
 #include <comedilib.h>
 #include "analog_io.h"
 #include "aec.h"
-#define DEBUG_REAL_NEURON
-//#define TRIM_CURRENT
 #endif // HAVE_LIBCOMEDI
 #endif // HAVE_CONFIG_H
 
@@ -97,14 +95,8 @@ protected:
 
 #ifdef HAVE_LIBCOMEDI
 
-#define RN_VM_PREV                  m_state[1]
-#define RN_SPIKE_THRESH             m_parameters[0]
-#ifdef DEBUG_REAL_NEURON
-#define RN_BUFLEN 60000         // 1 second @ 20 kHz
-#endif
-#ifdef TRIM_CURRENT
-#define MAX_INJECTED_CURRENT 2000
-#endif
+#define RN_VM_PREV              m_state[1]
+#define RN_SPIKE_THRESH         m_parameters[0]
 
 class RealNeuron : public Neuron {
 public:
@@ -113,40 +105,35 @@ public:
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   const char *kernelFile = NULL,
-                   uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
-                   uint id = GetId());
+                   uint inputRange, uint reference, uint voltageDelaySteps,
+                   const char *kernelFile = NULL, uint id = GetId());
 
         RealNeuron(double spikeThreshold, double V0,
-                   const double *AECKernel, size_t kernelSize,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   uint inputRange = PLUS_MINUS_TEN, uint reference = GRSE,
-                   uint id = GetId());
+                   uint inputRange, uint reference, uint voltageDelaySteps,
+                   const double *AECKernel, size_t kernelSize, uint id = GetId());
 
         ~RealNeuron();
 
         virtual void initialise();
 
-
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
+
+        uint voltageDelaySteps() const;
 
 protected:
         virtual void evolve();
 
 private:
+        AEC m_aec;
         ComediAnalogInputSoftCal  m_input;
         ComediAnalogOutputSoftCal m_output;
-        AEC m_aec;
-
-#ifdef DEBUG_REAL_NEURON
-        int m_fd;
-        uint m_bufpos;
-        double m_buffer[RN_BUFLEN];
-#endif
+        uint m_delaySteps;
+        double *m_VrDelay;
 };
 #endif // HAVE_LIBCOMEDI
 

@@ -108,6 +108,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 for (i=0; i<nEntities; i++)
                         entities[i]->step();
                 rt_task_wait_period();
+                //Logger(Info, "%g\n", GetGlobalTime());
         }
 
 stopRT:

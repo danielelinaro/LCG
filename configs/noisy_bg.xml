@@ -11,7 +11,8 @@
       <id>1</id>
       <parameters>
 	<spikeThreshold>-20</spikeThreshold>
-	<V0>-57</V0>
+	<V0>-65</V0>
+        <delay>2</delay>
 	<kernelFile>kernel.dat</kernelFile>
 	<deviceFile>/dev/comedi0</deviceFile>
 	<inputSubdevice>0</inputSubdevice>

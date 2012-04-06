@@ -158,7 +158,6 @@ void runStimulus(const std::string& stimfile)
                 parameters["id"] = "1";
                 parameters["deviceFile"] = "/dev/comedi0";
                 parameters["range"] = "[-10,+10]";
-        
                 parameters["inputSubdevice"] = INSUBDEV;
                 parameters["readChannel"] = READCHAN;
                 parameters["inputConversionFactor"] = INFACT;

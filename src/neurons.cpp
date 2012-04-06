@@ -3,11 +3,6 @@
 #include "thread_safe_queue.h"
 #include "utils.h"
 
-#ifdef DEBUG_REAL_NEURON
-#include <unistd.h>
-#include <fcntl.h>
-#endif
-
 dynclamp::Entity* LIFNeuronFactory(dictionary& args)
 {
         uint id;
@@ -52,7 +47,7 @@ dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args)
 
 dynclamp::Entity* RealNeuronFactory(dictionary& args)
 {
-        uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, id;
+        uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, delaySteps, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
 
@@ -65,6 +60,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
              ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
              ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
+             ! dynclamp::CheckAndExtractUnsignedInteger(args, "delay", &delaySteps) ||
              ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
              ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
@@ -127,8 +123,8 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                                                  deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
-                                                 (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()),
-                                                 inputRange, reference, id);
+                                                 inputRange, reference, delaySteps,
+                                                 (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()), id);
 }
 
 #endif
@@ -257,59 +253,44 @@ void ConductanceBasedNeuron::evolve()
 
 #ifdef HAVE_LIBCOMEDI
 
-#define REPLAY_TEST
-
-#ifdef REPLAY_TEST
-//#include "Vr_kernel.h"
-#include "Vr_online.h"
-//#include "Vr_online_shifted.h"
-uint replayPos = 0;
-#endif
-
-#define VR m_state[2]
-
 RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       const char *kernelFile,
-                       uint inputRange, uint reference, uint id)
+                       uint inputRange, uint reference, uint voltageDelaySteps,
+                       const char *kernelFile, uint id)
         : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
-#ifdef DEBUG_REAL_NEURON
-        char fname[FILENAME_MAXLEN];
-        MakeFilename(fname,"bin");
-        m_fd = open(fname, O_WRONLY | O_CREAT, 0644);
-        m_bufpos = 0;
-#endif
+        m_parameters.push_back((double) m_delaySteps);
 }
 
 RealNeuron::RealNeuron(double spikeThreshold, double V0,
-                       const double *AECKernel, size_t kernelSize,
                        const char *deviceFile,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       uint inputRange, uint reference, uint id)
+                       uint inputRange, uint reference, uint voltageDelaySteps,
+                       const double *AECKernel, size_t kernelSize, uint id)
         : Neuron(V0, id), m_aec(AECKernel, kernelSize),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference)
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
-        m_state.push_back(V0);
         m_parameters.push_back(spikeThreshold);
+        m_parameters.push_back((double) m_delaySteps);
 }
 
 RealNeuron::~RealNeuron()
 {
-#ifdef DEBUG_REAL_NEURON
-        close(m_fd);
-#endif
+        if (m_VrDelay != NULL)
+                delete m_VrDelay;
 }
 
 void RealNeuron::initialise()
@@ -318,64 +299,60 @@ void RealNeuron::initialise()
         m_input.initialise();
         m_output.initialise();
         m_aec.initialise();
-#ifdef REPLAY_TEST
-        VR = Vreplay[replayPos++];
-#else
-        VR = m_input.read();
-#endif
+
+        if (m_VrDelay != NULL)
+                delete m_VrDelay;
+
+        if (m_delaySteps > 0)
+                m_VrDelay = new double[(int) m_delaySteps];
+
+        double Vr = m_input.read();
+        for (int i=0; i<m_delaySteps; i++)
+                m_VrDelay[i] = Vr;
+        VM = m_aec.compensate(m_VrDelay[0]);
+
+        m_aec.pushBack(0.0);
 }
         
+uint RealNeuron::voltageDelaySteps() const
+{
+        return m_delaySteps;
+}
+
 void RealNeuron::evolve()
 {
-        double Iinj;
-        size_t nInputs;
-
-        /*** CURRENT ***/
-
-        Iinj = 0.0;
-        nInputs = m_inputs.size();
-        for (uint i=0; i<nInputs; i++) {
-                Iinj += m_inputs[i];
-        }
-#ifdef TRIM_CURRENT
-        if (fabs(Iinj) > MAX_INJECTED_CURRENT) {
-                Logger(Critical, "%e %e %e %e\n", GetGlobalTime(), VM, Vr, Iinj);
-                Iinj = MAX_INJECTED_CURRENT * fabs(Iinj)/Iinj;
-        }
-#endif
-#ifndef REPLAY_TEST
-        // inject the total input current into the neuron
-        m_output.write(Iinj);
-#endif
-        // store the injected current into the buffer of the AEC
-        m_aec.pushBack(Iinj);
+        int i;
 
         /*** VOLTAGE ***/
 
+        // read current value of the membrane potential
+        double Vr = m_input.read();
         // set previous value of the membrane potential
         RN_VM_PREV = VM;
         // compensate the recorded voltage
-        VM = m_aec.compensate(VR);
-#ifdef REPLAY_TEST
-        VR = Vreplay[replayPos++];
-#else
-        // read current value of the membrane potential
-        VR = m_input.read();
-#endif
+        if (m_delaySteps == 0) {
+                VM = m_aec.compensate(Vr);
+        }
+        else {
+                VM = m_aec.compensate(m_VrDelay[0]);
+                for (i=0; i<m_delaySteps-1; i++)
+                        m_VrDelay[i] = m_VrDelay[i+1];
+                m_VrDelay[m_delaySteps-1] = Vr;
+        }
 
         if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
                 emitSpike();
 
-#ifdef DEBUG_REAL_NEURON
-        m_buffer[m_bufpos] = VR;
-        m_buffer[m_bufpos+1] = VM;
-        m_buffer[m_bufpos+2] = Iinj;
-        m_bufpos = (m_bufpos+3) % RN_BUFLEN;
-        if (m_bufpos == 0) {
-                Logger(Info, "Buffer full @ t = %g sec.\n", GetGlobalTime());
-                write(m_fd, (const void *) m_buffer, RN_BUFLEN*sizeof(double));
-        }
-#endif
+        /*** CURRENT ***/
+
+        double Iinj = 0.0;
+        size_t nInputs = m_inputs.size();
+        for (i=0; i<nInputs; i++)
+                Iinj += m_inputs[i];
+        // inject the total input current into the neuron
+        m_output.write(Iinj);
+        // store the injected current into the buffer of the AEC
+        m_aec.pushBack(Iinj);
 }
 
 bool RealNeuron::hasMetadata(size_t *ndims) const

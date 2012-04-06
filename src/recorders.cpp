@@ -166,8 +166,8 @@ void H5Recorder::startWriterThread()
 {
         if (m_threadRun)
                 return;
-        m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
         m_threadRun = true;
+        m_writerThread = boost::thread(&H5Recorder::buffersWriter, this); 
 }
 
 
@@ -200,12 +200,12 @@ void H5Recorder::step()
         {
                 boost::unique_lock<boost::mutex> lock(m_mutex);
                 while (m_dataQueue.size() == m_numberOfBuffers) {
-                        Logger(All, "Main thread: the data queue is full.\n");
+                        Logger(Debug, "Main thread: the data queue is full.\n");
                         m_cv.wait(lock);
                 }
                 m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
                 m_bufferLengths[m_bufferInUse] = 0;
-                Logger(Debug, "         H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
+                Logger(Debug, "H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
 
         for (uint i=0; i<m_numberOfInputs; i++)
@@ -214,23 +214,29 @@ void H5Recorder::step()
         m_bufferPosition = (m_bufferPosition+1) % bufferSize;
 
         if (m_bufferPosition == 0) {
-                Logger(Debug, "         H5Recorder::step() >> Buffer #%d is full (it contains %d elements).\n",
+                Logger(Debug, "H5Recorder::step() >> Buffer #%d is full (it contains %d elements).\n",
                                 m_bufferInUse, m_bufferLengths[m_bufferInUse]);
                 {
+                        Logger(Debug, "H5Recorder::step() >> Trying to acquire the mutex on the data queue.\n");
                         boost::unique_lock<boost::mutex> lock(m_mutex);
+                        Logger(Debug, "H5Recorder::step() >> Acquired the mutex on the data queue.\n");
                         m_dataQueue.push_back(m_bufferInUse);
                 }
                 m_cv.notify_all();
+                Logger(Debug, "H5Recorder::step() >> Released the mutex and notified all.\n");
         }
 }
 
 void H5Recorder::buffersWriter()
 {
+        Logger(Debug, "H5Recorder::buffersWriter >> Started.\n");
         while (m_threadRun || m_dataQueue.size() != 0) {
                 {
                         boost::unique_lock<boost::mutex> lock(m_mutex);
-                        while (m_dataQueue.size() == 0)
+                        while (m_dataQueue.size() == 0) {
+                                Logger(Debug, "H5Recorder::buffersWriter >> The data queue is empty.\n");
                                 m_cv.wait(lock);
+                        }
                 }
                 uint bufferToSave = m_dataQueue.front();
                 Logger(Debug, "H5Recorder::buffersWriter() >> Acquired lock: will save data in buffer #%d.\n", bufferToSave);
@@ -294,7 +300,7 @@ void H5Recorder::buffersWriter()
                         }
                         H5Sclose(filespace);
                         m_offset = m_datasetSize;
-                        Logger(All, "H5Recorder::buffersWriter() >> Finished writing data.\n");
+                        Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                 }
 
                 {
@@ -303,7 +309,7 @@ void H5Recorder::buffersWriter()
                 }
                 m_cv.notify_all();
         }
-        Logger(All, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
+        Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
 }
 
 void H5Recorder::allocateForEntity(Entity *entity)

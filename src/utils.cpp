@@ -252,7 +252,7 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                         ("time,t", po::value<double>(&tend), "specify the duration of the simulation (in seconds)")
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (in seconds)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (in seconds)")
-                        ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency (in Hertz)")
+                        ("frequency,F", po::value<double>(&freq), "specify the sampling frequency (in Hertz)")
                         ("ntrials,n", po::value<uint>(&opt->nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&opt->nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)");
 
@@ -269,11 +269,16 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                         return false;
                 }
 
-                if (freq <= 0) {
-                        Logger(Critical, "The sampling frequency must be positive.\n");
-                        return false;
+                if (options.count("frequency")) {
+                        if (freq <= 0) {
+                                Logger(Critical, "The sampling frequency must be positive.\n");
+                                return false;
+                        }
+                        opt->dt = 1.0 / freq;
                 }
-                opt->dt = 1.0 / freq;
+                else {
+                        opt->dt = -1.0;
+                }
 
                 if (options.count("config-file")) {
                         if (!fs::exists(configfile)) {

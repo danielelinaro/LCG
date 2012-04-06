@@ -13,7 +13,6 @@
 	<spikeThreshold>-20</spikeThreshold>
 	<V0>-65</V0>
         <delay>2</delay>
-	<kernelFile>kernel.dat</kernelFile>
 	<deviceFile>/dev/comedi0</deviceFile>
 	<inputSubdevice>0</inputSubdevice>
 	<outputSubdevice>1</outputSubdevice>
@@ -33,29 +32,19 @@
 	<reference>NRSE</reference>
 	-->
       </parameters>
-      <connections>0,2</connections>
+      <connections>0</connections>
     </entity>
 
     <entity>
-      <name>PeriodicPulse</name>
+      <name>Stimulus</name>
       <id>2</id>
-      <parameters>
-	<frequency>5</frequency>
-	<duration>0.04</duration>
-	<amplitude>300</amplitude>
-	<probability>0.5</probability>
-	<tau>3</tau>
-	<gp>10</gp>
-	<gi>3</gi>
-	<gd>1</gd>
-      </parameters>
+      <parameters></parameters>
       <connections>0,1</connections>
     </entity>
-
   </entities>
 
   <simulation>
-    <tend>30</tend>
+    <rate>20000</rate>
   </simulation>
 
 </dynamicclamp>
