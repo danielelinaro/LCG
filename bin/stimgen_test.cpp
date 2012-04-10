@@ -18,11 +18,11 @@ int main(int argc, char *argv[])
         }
 
         std::vector<Entity*> entities(2);
-        entities[0] = new Stimulus(argv[1]);
+        entities[0] = new CurrentStimulus(argv[1]);
         entities[1] = new H5Recorder(false, "stimulus.h5");
         entities[0]->connect(entities[1]);
 
-        Simulate(entities, dynamic_cast<Stimulus*>(entities[0])->duration());
+        Simulate(entities, dynamic_cast<CurrentStimulus*>(entities[0])->duration());
 
         delete entities[0];
         delete entities[1];

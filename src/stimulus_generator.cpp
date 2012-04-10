@@ -5,14 +5,29 @@
 
 namespace fs = boost::filesystem;
 
-dynclamp::Entity* StimulusFactory(dictionary& args)
+dynclamp::Entity* CurrentStimulusFactory(dictionary& args)
 {
         uint id;
         std::string filename;
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::generators::Stimulus(id);
-        return new dynclamp::generators::Stimulus(filename.c_str(), id);
+                return new dynclamp::generators::ConductanceStimulus(id);
+        return new dynclamp::generators::CurrentStimulus(filename.c_str(), id);
+}
+
+dynclamp::Entity* ConductanceStimulusFactory(dictionary& args)
+{
+        uint id;
+        double E;
+        std::string filename;
+        id = dynclamp::GetIdFromDictionary(args);
+        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance stimulus.\n");
+                return NULL;
+        }
+        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return new dynclamp::generators::ConductanceStimulus(E, id);
+        return new dynclamp::generators::ConductanceStimulus(filename.c_str(), E, id);
 }
 
 namespace dynclamp {
@@ -119,13 +134,6 @@ bool Stimulus::hasNext() const
         return true;
 }
 
-double Stimulus::output() const
-{
-        if (m_position < m_stimulusLength)
-                return m_stimulus[m_position];
-        return 0.0;
-}
-
 void Stimulus::step()
 {
         m_position++;
@@ -154,6 +162,55 @@ void Stimulus::freeMemory()
                 m_stimulusMetadata = NULL;
         }
 }
+
+//~~~
+
+CurrentStimulus::CurrentStimulus(uint id) : Stimulus(id)
+{}
+
+CurrentStimulus::CurrentStimulus(const char *filename, uint id) : Stimulus(filename, id)
+{}
+
+double CurrentStimulus::output() const
+{
+        if (m_position < m_stimulusLength)
+                return m_stimulus[m_position];
+        return 0.0;
+}
+
+//~~~
+
+ConductanceStimulus::ConductanceStimulus(double E, uint id) : Stimulus(id)
+{
+        m_parameters.push_back(E);
+}
+
+ConductanceStimulus::ConductanceStimulus(const char *filename, double E, uint id) : Stimulus(filename, id)
+{
+        m_parameters.push_back(E);
+}
+
+double ConductanceStimulus::output() const
+{
+        if (m_position < m_stimulusLength)
+                return m_stimulus[m_position] * (STIM_E - m_neuron->output());
+        return 0.0;
+}
+
+void ConductanceStimulus::addPost(Entity *entity)
+{
+        Logger(Debug, "ConductanceStimulus::addPost(Entity*)\n");
+        Entity::addPost(entity);
+        neurons::Neuron *n = dynamic_cast<neurons::Neuron*>(entity);
+        if (n != NULL) {
+                Logger(Debug, "Connected to a neuron (id #%d).\n", entity->id());
+                m_neuron = n;
+        }
+        else {
+                Logger(Debug, "Entity #%d is not a neuron.\n", entity->id());
+        }
+}
+
 
 } // namespace generators
 

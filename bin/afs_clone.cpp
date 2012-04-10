@@ -176,7 +176,7 @@ void runStimulus(const std::string& stimfile)
                 parameters.clear();
                 parameters["id"] = "3";
                 parameters["filename"] = stimfile;
-                entities.push_back( EntityFactory("Stimulus", parameters) );
+                entities.push_back( EntityFactory("CurrentStimulus", parameters) );
 
                 Logger(Debug, "Connecting the analog input to the recorder.\n");
                 entities[1]->connect(entities[0]);
@@ -187,7 +187,7 @@ void runStimulus(const std::string& stimfile)
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");
                 entities[3]->connect(entities[2]);
 
-                tend = dynamic_cast<generators::Stimulus*>(entities[3])->duration();
+                tend = dynamic_cast<generators::CurrentStimulus*>(entities[3])->duration();
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);

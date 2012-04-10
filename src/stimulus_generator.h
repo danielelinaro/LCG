@@ -4,6 +4,9 @@
 #include "types.h"
 #include "utils.h"
 #include "generator.h"
+#include "neurons.h"
+
+#define STIM_E  m_parameters[0]
 
 namespace dynclamp {
 
@@ -22,7 +25,6 @@ public:
         virtual bool hasNext() const;
 
         virtual void step();
-        virtual double output() const;
 
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
@@ -32,7 +34,7 @@ public:
 private:
         void freeMemory();
 
-private:
+protected:
         char m_filename[FILENAME_MAXLEN];
 
         double *m_stimulus;
@@ -41,6 +43,25 @@ private:
 
         double *m_stimulusMetadata;
         size_t m_stimulusRows, m_stimulusCols;
+};
+
+
+class CurrentStimulus : public Stimulus {
+public:
+        CurrentStimulus(uint id = GetId());
+        CurrentStimulus(const char *filename, uint id = GetId());
+        virtual double output() const;
+};
+
+class ConductanceStimulus : public Stimulus {
+public:
+        ConductanceStimulus(double Erev, uint id = GetId());
+        ConductanceStimulus(const char *filename, double Erev, uint id = GetId());
+        virtual double output() const;
+protected:
+        virtual void addPost(Entity *entity);
+private:
+        neurons::Neuron *m_neuron;
 };
 
 } // namespace generators
@@ -54,7 +75,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* StimulusFactory(dictionary& args);
+dynclamp::Entity* CurrentStimulusFactory(dictionary& args);
+dynclamp::Entity* ConductanceStimulusFactory(dictionary& args);
 	
 #ifdef __cplusplus
 }

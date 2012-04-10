@@ -250,7 +250,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                 parameters.clear();
                 parameters["id"] = "2";
                 parameters["filename"] = stimfile;
-                entities[2] = EntityFactory("Stimulus", parameters);
+                entities[2] = EntityFactory("CurrentStimulus", parameters);
 
                 // entity[3] & entity[4]
                 for (i=0; i<2; i++) {
@@ -289,7 +289,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                 for (i=2; i<entities.size(); i++)
                         entities[i]->connect(entities[1]);
 
-                tend = dynamic_cast<generators::Stimulus*>(entities[2])->duration();
+                tend = dynamic_cast<generators::CurrentStimulus*>(entities[2])->duration();
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s.\n", msg);

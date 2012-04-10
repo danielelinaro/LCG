@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
         CommandLineOptions opt;
         double tend, dt;
         std::vector<Entity*> entities;
-        dynclamp::generators::Stimulus *stimulus;
+        dynclamp::generators::CurrentStimulus *stimulus;
 
         if (!ParseCommandLineOptions(argc, argv, &opt)) {
                 Logger(Critical, "Error while parsing command line arguments.\n"
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 
         if (opt.stimulusFiles.size() > 0) {
                 for (int i=0; i<entities.size(); i++) {
-                        if ((stimulus = dynamic_cast<dynclamp::generators::Stimulus*>(entities[i])) != NULL)
+                        if ((stimulus = dynamic_cast<dynclamp::generators::CurrentStimulus*>(entities[i])) != NULL)
                                 break;
                 }
 
