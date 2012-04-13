@@ -29,9 +29,10 @@
 #error Only one of HEKA or AXON should be defined.
 #endif
 
-#define INSUBDEV "0"
+#define INSUBDEV  "0"
 #define OUTSUBDEV "1"
 #define WRITECHAN "1"
+#define DELAY     "2"
 #if defined(HEKA)
 // HEKA specific parameters - start
 #define READCHAN "0"
@@ -232,6 +233,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
                 parameters["inputConversionFactor"] = INFACT;
                 parameters["outputConversionFactor"] = OUTFACT;
                 parameters["reference"] = REF;
+                parameters["delay"] = DELAY;
                 parameters["spikeThreshold"] = "-20";
                 parameters["V0"] = "-57";
                 entities[1] = EntityFactory("RealNeuron", parameters);

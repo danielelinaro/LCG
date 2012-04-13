@@ -17,7 +17,7 @@ dynclamp::Entity* LIFNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "E0", &E0) ||
              ! dynclamp::CheckAndExtractDouble(args, "Vth", &Vth) ||
              ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a LIF neuron.");
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a LIF neuron.\n");
                 return NULL;
         }
 
@@ -36,7 +36,7 @@ dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractDouble(args, "area", &area) ||
              ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
              ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance based neuron.");
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance based neuron.\n");
                 return NULL;
         }
 
@@ -63,7 +63,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "delay", &delaySteps) ||
              ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
              ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
                 return NULL;
         }
 
@@ -97,7 +97,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", inputRangeStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
                         return NULL;
                 }
         }
@@ -114,7 +114,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
                 else {
                         dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.");
+                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
                         return NULL;
                 }
         }
