@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "entity.h"
 #include "utils.h"
 #include "stimulus_generator.h"

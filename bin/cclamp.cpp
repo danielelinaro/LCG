@@ -179,6 +179,16 @@ void runStimulus(const std::string& stimfile)
                 parameters["filename"] = stimfile;
                 entities.push_back( EntityFactory("Waveform", parameters) );
 
+                parameters.clear();
+                parameters["id"] = "4";
+                parameters["deviceFile"] = "/dev/comedi0";
+                parameters["range"] = "[-10,+10]";
+                parameters["inputSubdevice"] = INSUBDEV;
+                parameters["readChannel"] = "1";
+                parameters["inputConversionFactor"] = "1000";
+                parameters["reference"] = REF;
+                entities.push_back( EntityFactory("AnalogInput", parameters) );
+
                 Logger(Debug, "Connecting the analog input to the recorder.\n");
                 entities[1]->connect(entities[0]);
                 //Logger(Debug, "Connecting the analog output to the recorder.\n");
@@ -187,6 +197,8 @@ void runStimulus(const std::string& stimfile)
                 entities[3]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");
                 entities[3]->connect(entities[2]);
+                Logger(Debug, "Connecting the second analog input to the recorder.\n");
+                entities[4]->connect(entities[0]);
 
                 tend = dynamic_cast<generators::Waveform*>(entities[3])->duration();
 

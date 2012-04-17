@@ -30,7 +30,7 @@ namespace generators {
 
 FrequencyClamp::FrequencyClamp(double baselineCurrent, double tau,
                 double gp, double gi, double gd, uint id)
-        : Generator(id), m_constantFrequency(false)
+        : Generator(id), m_constantFrequency(false), m_generator(NULL)
 {
         m_parameters.push_back(baselineCurrent);// m_parameters[0] -> baseline current
         m_parameters.push_back(tau);            // m_parameters[1] -> time constant
@@ -41,7 +41,7 @@ FrequencyClamp::FrequencyClamp(double baselineCurrent, double tau,
 
 FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double tau,
                 double gp, double gi, double gd, uint id)
-        : Generator(id), m_constantFrequency(true)
+        : Generator(id), m_constantFrequency(true), m_generator(NULL)
 {
         m_parameters.push_back(baselineCurrent);// m_parameters[0] -> baseline current
         m_parameters.push_back(tau);            // m_parameters[1] -> time constant
@@ -49,6 +49,19 @@ FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double 
         m_parameters.push_back(gi);             // m_parameters[3] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[4] -> derivative gain
         m_parameters.push_back(frequency);      // m_parameters[5] -> frequency
+}
+
+void FrequencyClamp::addPre(Entity *entity)
+{
+        Entity::addPre(entity);
+        Generator *g = dynamic_cast<Generator*>(entity);
+        if (g != NULL) {
+                Logger(Debug, "A generator has been connected (id #%d).\n", entity->id());
+                m_generator = g;
+        }
+        else {
+                Logger(Debug, "Entity #%d is not a generator.\n", entity->id());
+        }
 }
 
 bool FrequencyClamp::hasNext() const
@@ -60,10 +73,7 @@ void FrequencyClamp::initialise()
 {
         m_estimatedFrequency = 0.0;
         m_tPrevSpike = 0.0;
-        if (m_constantFrequency)
-                m_errp = FC_F;
-        else
-                m_errp = 0.0;
+        m_errp = 0.0;
         m_erri = 0.0;
         m_errd = 0.0;
         m_errorpPrev = 0.0;
@@ -90,12 +100,12 @@ void FrequencyClamp::handleEvent(const Event *event)
                         m_errp = FC_F - m_estimatedFrequency;
                 else
                         // a waveform generator must be connected to this entity
-                        m_errp = m_inputs[0] - m_estimatedFrequency;
+                        m_errp = m_generator->output() - m_estimatedFrequency;
                 m_erri += m_errp;
                 m_errd = m_errp - m_errorpPrev;
                 m_errorpPrev = m_errp;
                 m_current = FC_BASELINE + FC_GP*m_errp + FC_GI*m_erri + FC_GD*m_errd;
-                Logger(Info, "%g %g %g\n", now, m_current, m_estimatedFrequency);
+                Logger(Info, "%g %g %g %g\n", now, m_errp, m_current, m_estimatedFrequency);
         }
         m_tPrevSpike = now;
 }

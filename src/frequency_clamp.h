@@ -30,8 +30,12 @@ public:
         double output() const;
         void handleEvent(const Event *event);
 
+protected:
+        virtual void addPre(Entity *entity);
+
 private:
         bool m_constantFrequency;
+        Generator *m_generator;
         double m_estimatedFrequency, m_tPrevSpike;
         double m_errp, m_erri, m_errd, m_errorpPrev;
         double m_current;
