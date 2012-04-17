@@ -1,0 +1,62 @@
+#!/bin/sh
+
+#
+# Action potential shape protocol
+# Author: Daniele Linaro, April 2012
+#
+
+print_help()
+{
+    echo
+    echo "Action potential shape protocol."
+    echo
+    echo "Usage : $0 [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -a   specify amplitude of the stimulation in pA (default 1000)"
+    echo "   -n   specify number of repetitions (default 30)"
+    echo "   -i   specify interval between repetitions in seconds (default 2)"
+    echo
+}
+
+reps=30
+amplitude=1000
+interval=2
+while getopts ":a:n:i:h" opt ; do
+    case $opt in
+	a)
+	    amplitude=$OPTARG
+	    ;;
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type $0 -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ x$PROTOCOLS_PATH == x ] ; then
+    origstimfile=$HOME/protocols/spike/ap.stim
+else
+    origstimfile=$PROTOCOLS_PATH/spike/ap.stim
+fi
+
+stimfile=/tmp/ap.stim
+
+cat $origstimfile | sed 's/500/'$amplitude'/' > $stimfile
+kernel_protocol
+afs_clone -f $stimfile -n $reps -i $interval
+rm $stimfile
+

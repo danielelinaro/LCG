@@ -1,0 +1,68 @@
+#!/bin/sh
+
+#
+# f-I protocol
+# Author: Daniele Linaro, April 2012
+#
+
+print_help()
+{
+    echo
+    echo "f-I protocol"
+    echo
+    echo "Usage : $0 -d stimulus_directory [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -d   specify the directory where stimulus files are located"
+    echo "   -n   specify number of batches (default 2)"
+    echo "   -i   specify interval between individual trials in seconds (default 15)"
+    echo "   -I   specify interval between batches of trials in seconds (default 15)"
+    echo
+}
+
+trial_interval=15
+batch_interval=15
+reps=2
+stimdir=
+while getopts ":d:n:i:I:h" opt ; do
+    case $opt in
+	d)
+	    if [ ! -d $OPTARG ] ; then
+		echo "$OPTARG: no such directory."
+		exit 1
+	    fi
+	    stimdir=$OPTARG
+	    ;;
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    trial_interval=$OPTARG
+	    ;;
+	I)
+	    batch_interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type $0 -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ x$stimdir == x ] ; then
+    print_help
+    exit 0
+fi
+
+kernel_protocol
+afs_clone -d $stimdir -i $trial_interval -I $batch_interval -N $reps
+mv *.h5 $stimdir
+mv *_kernel.dat $stimdir
+

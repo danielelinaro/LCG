@@ -1,0 +1,53 @@
+#!/bin/sh
+
+#
+# Time constant computation protocol
+# Author: Daniele Linaro, April 2012
+#
+
+print_help()
+{
+    echo
+    echo "Time constant computation protocol"
+    echo
+    echo "Usage : $0 [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -n   specify number of repetitions (default 50)"
+    echo "   -i   specify interval between repetitions in seconds (default 0.5)"
+    echo
+}
+
+reps=50
+interval=0.5
+while getopts ":a:n:i:h" opt ; do
+    case $opt in
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type $0 -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ x$PROTOCOLS_PATH == x ] ; then
+    stimfile=$HOME/protocols/tau/tau.stim
+else
+    stimfile=$PROTOCOLS_PATH/tau/tau.stim
+fi
+
+kernel_protocol
+afs_clone -f $stimfile -n $reps -i $interval
+

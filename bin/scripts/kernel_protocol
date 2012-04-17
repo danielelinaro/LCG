@@ -1,0 +1,51 @@
+#!/bin/sh
+
+#
+# Electrode kernel computation
+# Author: Daniele Linaro, April 2012
+#
+
+print_help()
+{
+    echo
+    echo "Electrode kernel computation"
+    echo
+    echo "Usage : $0 [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -d   specify the duration of the white noise stimulation in seconds (default 10)"
+    echo
+}
+
+duration=10
+while getopts ":d:h" opt ; do
+    case $opt in
+	d)
+	    duration=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type $0 -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ x$PROTOCOLS_PATH == x ] ; then
+    origstimfile=$HOME/protocols/white_noise/white_noise_short.stim
+else
+    origstimfile=$PROTOCOLS_PATH/white_noise/white_noise_short.stim
+fi
+
+stimfile=/tmp/white_noise.stim
+
+cat $origstimfile | sed 's/^10/'$duration'/' > $stimfile
+afs_clone -f $stimfile
+extract_kernels.py .
+rm $stimfile

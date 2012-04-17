@@ -1,0 +1,66 @@
+#!/bin/sh
+
+#
+# V-I protocol
+# Author: Daniele Linaro, April 2012
+#
+
+print_help()
+{
+    echo
+    echo "V-I protocol"
+    echo
+    echo "Usage : $0 [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -d   specify the directory where stimulus files are located"
+    echo "   -n   specify number of batches (default 2)"
+    echo "   -i   specify interval between individual trials in seconds (default 10)"
+    echo "   -I   specify interval between batches of trials in seconds (default 10)"
+    echo
+}
+
+trial_interval=10
+batch_interval=10
+reps=2
+
+if [ x$PROTOCOLS_PATH == x ] ; then
+    stimdir=$HOME/protocols/vi
+else
+    stimdir=$PROTOCOLS_PATH/protocols/vi
+fi
+
+while getopts ":d:n:i:I:h" opt ; do
+    case $opt in
+	d)
+	    if [ ! -d $OPTARG ] ; then
+		echo "$OPTARG: no such directory."
+		exit 1
+	    fi
+	    stimdir=$OPTARG
+	    ;;
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    trial_interval=$OPTARG
+	    ;;
+	I)
+	    batch_interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type $0 -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+kernel_protocol
+afs_clone -d $stimdir -i $trial_interval -I $batch_interval -N $reps

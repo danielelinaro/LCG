@@ -33,7 +33,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile
 		stimgen/Makefile
 		src/Makefile
-		bin/Makefile])
+		bin/Makefile
+		bin/scripts/Makefile])
 
 # required functions and types
 AC_CHECK_FUNCS([floor pow sqrt])

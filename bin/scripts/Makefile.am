@@ -1,0 +1,1 @@
+bin_SCRIPTS = ap_protocol fi_protocol fi_protocol_noisy kernel_protocol tau_protocol vi_protocol
