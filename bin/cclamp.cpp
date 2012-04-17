@@ -44,31 +44,32 @@
 #error One of HEKA or AXON should be defined.
 #endif
  
-#define AFS_CLONE_VERSION 0.1
-#define AFS_BANNER \
-        "\n\tArbitrary Function Stimulator (AFS)\n" \
+#define CCLAMP_VERSION 0.1
+#define CC_BANNER \
+        "\n\tCommand-line current clamp\n" \
         "\nAuthor: Daniele Linaro (daniele@tnb.ua.ac.be)\n" \
-        "\nThis program has some of the basic functionalities provided by the AFS developed\n" \
-        "by Mike Wijnants at the Theoretical Neurobiology lab in Antwerp.\n"
+        "\nThis program has some of the basic functionalities provided by the\n" \
+        "arbitrary function stimulator  developed by Mike Wijnants at the\n" \
+        "Theoretical Neurobiology lab in Antwerp.\n"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using namespace dynclamp;
 
-struct AFSoptions {
+struct CCoptions {
         useconds_t iti, ibi;
         uint nTrials, nBatches;
         double dt;
         std::vector<std::string> stimulusFiles;
 };
 
-void parseArgs(int argc, char *argv[], AFSoptions *opt)
+void parseArgs(int argc, char *argv[], CCoptions *opt)
 {
         double iti, ibi, freq;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
-        std::string caption(AFS_BANNER "\nAllowed options");
+        std::string caption(CC_BANNER "\nAllowed options");
         po::options_description description(caption);
         po::variables_map options;
 
@@ -93,7 +94,7 @@ void parseArgs(int argc, char *argv[], AFSoptions *opt)
                 }
 
                 if (options.count("version")) {
-                        std::cout << fs::path(argv[0]).filename() << " version " << AFS_CLONE_VERSION << std::endl;
+                        std::cout << fs::path(argv[0]).filename() << " version " << CCLAMP_VERSION << std::endl;
                         exit(0);
                 }
 
@@ -203,14 +204,14 @@ void runStimulus(const std::string& stimfile)
 
 int main(int argc, char *argv[])
 {
-        AFSoptions opt;
+        CCoptions opt;
         int i, j, k;
 
         SetLoggingLevel(Info);
         parseArgs(argc, argv, &opt);
         SetGlobalDt(opt.dt);
 
-        Logger(Info, AFS_BANNER);
+        Logger(Info, CC_BANNER);
         Logger(Info, "Number of batches: %d.\n", opt.nBatches);
         Logger(Info, "Number of trials: %d.\n", opt.nTrials);
         Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);

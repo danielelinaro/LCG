@@ -63,4 +63,4 @@ while getopts ":d:n:i:I:h" opt ; do
 done
 
 kernel_protocol
-afs_clone -d $stimdir -i $trial_interval -I $batch_interval -N $reps
+cclamp -d $stimdir -i $trial_interval -I $batch_interval -N $reps

@@ -78,7 +78,7 @@ fi
 kernelfile=kernel.dat
 kernel_protocol
 ln -s *_kernel.dat $kernelfile
-$afs -d $stimdir -k $kernelfile -c $configfile -i $trial_interval -I $batch_interval -N $reps
+noisy_bg -d $stimdir -k $kernelfile -c $configfile -i $trial_interval -I $batch_interval -N $reps
 mv *.h5 $stimdir
 mv *_kernel.dat $stimdir
 cp $configfile $stimdir

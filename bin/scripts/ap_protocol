@@ -57,6 +57,6 @@ stimfile=/tmp/ap.stim
 
 cat $origstimfile | sed 's/500/'$amplitude'/' > $stimfile
 kernel_protocol
-afs_clone -f $stimfile -n $reps -i $interval
+cclamp -f $stimfile -n $reps -i $interval
 rm $stimfile
 

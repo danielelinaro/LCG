@@ -1,12 +1,12 @@
 LDADD = ../stimgen/libstimgen.la ../src/libdynclamp.la
 AM_CPPFLAGS = -I../stimgen -I../src -I.
-bin_PROGRAMS = afs_clone noisy_bg zero_output freq_clamp test_daq hybrid_simulator
-afs_clone_SOURCES = afs_clone.cpp
+bin_PROGRAMS = cclamp noisy_bg zero_output freq_clamp test_daq dclamp
+cclamp_SOURCES = cclamp.cpp
 noisy_bg_SOURCES = noisy_bg.cpp
 zero_output_SOURCES = zero_output.cpp
 freq_clamp_SOURCES = freq_clamp.cpp
 test_daq_SOURCES = test_daq.cpp
-hybrid_simulator_SOURCES = hybrid_simulator.cpp
+dclamp_SOURCES = dclamp.cpp
 if EXAMPLES
 noinst_PROGRAMS = ou_test syn_test lif_test stimgen_test poisson_test h5rec_test aec_test dynamic_load_test small_network autapse pp_test cbn_test currents_test freq_clamp_test
 ou_test_SOURCES = ou_test.cpp

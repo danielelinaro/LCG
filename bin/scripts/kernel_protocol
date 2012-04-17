@@ -46,6 +46,6 @@ fi
 stimfile=/tmp/white_noise.stim
 
 cat $origstimfile | sed 's/^10/'$duration'/' > $stimfile
-afs_clone -f $stimfile
+cclamp -f $stimfile
 extract_kernels.py .
 rm $stimfile

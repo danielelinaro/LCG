@@ -49,5 +49,5 @@ else
 fi
 
 kernel_protocol
-afs_clone -f $stimfile -n $reps -i $interval
+cclamp -f $stimfile -n $reps -i $interval
 
