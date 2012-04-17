@@ -10,7 +10,7 @@ print_help()
     echo
     echo "Time constant computation protocol"
     echo
-    echo "Usage : $0 [options <value>]"
+    echo "Usage : `basename $0` [options <value>]"
     echo
     echo "where options are:"
     echo
@@ -36,7 +36,7 @@ while getopts ":a:n:i:h" opt ; do
 	    ;;
 	\?)
 	    echo "Invalid option: -$OPTARG."
-	    echo "Type $0 -h for help."
+	    echo "Type `basename $0` -h for help."
 	    exit 1
 	    ;;
     esac

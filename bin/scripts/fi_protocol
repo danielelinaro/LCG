@@ -10,7 +10,7 @@ print_help()
     echo
     echo "f-I protocol"
     echo
-    echo "Usage : $0 -d stimulus_directory [options <value>]"
+    echo "Usage : `basename $0` -d stimulus_directory [options <value>]"
     echo
     echo "where options are:"
     echo
@@ -50,7 +50,7 @@ while getopts ":d:n:i:I:h" opt ; do
 	    ;;
 	\?)
 	    echo "Invalid option: -$OPTARG."
-	    echo "Type $0 -h for help."
+	    echo "Type `basename $0` -h for help."
 	    exit 1
 	    ;;
     esac

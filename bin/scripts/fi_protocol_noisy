@@ -10,7 +10,7 @@ print_help()
     echo
     echo "f-I protocol with noisy background synaptic activity"
     echo
-    echo "Usage : $0 -c config_file -d stimulus_directory [options <value>]"
+    echo "Usage : `basename $0` -c config_file -d stimulus_directory [options <value>]"
     echo
     echo "where options are:"
     echo
@@ -59,7 +59,7 @@ while getopts ":c:d:n:i:I:h" opt ; do
 	    ;;
 	\?)
 	    echo "Invalid option: -$OPTARG."
-	    echo "Type $0 -h for help."
+	    echo "Type `basename $0` -h for help."
 	    exit 1
 	    ;;
     esac
