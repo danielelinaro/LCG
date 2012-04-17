@@ -25,7 +25,7 @@ int main()
         //entities[2] = new HHPotassium(area);
         entities[1] = new HHSodiumCN(area, 5061983);
         entities[2] = new HHPotassiumCN(area, 7051983);
-        entities[3] = new CurrentStimulus("ou.stim");
+        entities[3] = new Waveform("ou.stim");
         entities[4] = new FrequencyClamp(80, 60, 1./80, 0.1, 0.1, 0.1);
         entities[5] = new H5Recorder(false, "freq_clamp.h5");
 

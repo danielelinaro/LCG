@@ -8,19 +8,17 @@ dynclamp::Entity* FrequencyClampFactory(dictionary& args)
 
         id = dynclamp::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency) ||
-             ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baselineCurrent) ||
+        if ( ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baselineCurrent) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
-             ! dynclamp::CheckAndExtractDouble(args, "gp", &gp)) {
+             ! dynclamp::CheckAndExtractDouble(args, "gp", &gp) ||
+             ! dynclamp::CheckAndExtractDouble(args, "gi", &gi) ||
+             ! dynclamp::CheckAndExtractDouble(args, "gd", &gd)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build FrequencyClamp.\n");
                 return NULL;
         }
 
-        if ( ! dynclamp::CheckAndExtractDouble(args, "gi", &gi))
-                gi = 0.0;
-        
-        if ( ! dynclamp::CheckAndExtractDouble(args, "gd", &gd))
-                gd = 0.0;
+        if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency))
+                return new dynclamp::generators::FrequencyClamp(baselineCurrent, tau, gp, gi, gd, id);
 
         return new dynclamp::generators::FrequencyClamp(frequency, baselineCurrent, tau, gp, gi, gd, id);
 
@@ -30,16 +28,27 @@ namespace dynclamp {
 
 namespace generators {
 
+FrequencyClamp::FrequencyClamp(double baselineCurrent, double tau,
+                double gp, double gi, double gd, uint id)
+        : Generator(id), m_constantFrequency(false)
+{
+        m_parameters.push_back(baselineCurrent);// m_parameters[0] -> baseline current
+        m_parameters.push_back(tau);            // m_parameters[1] -> time constant
+        m_parameters.push_back(gp);             // m_parameters[2] -> proportional gain
+        m_parameters.push_back(gi);             // m_parameters[3] -> integral gain
+        m_parameters.push_back(gd);             // m_parameters[4] -> derivative gain
+}
+
 FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double tau,
                 double gp, double gi, double gd, uint id)
-        : Generator(id)
+        : Generator(id), m_constantFrequency(true)
 {
-        m_parameters.push_back(frequency);      // m_parameters[0] -> frequency
-        m_parameters.push_back(baselineCurrent);// m_parameters[1] -> baseline current
-        m_parameters.push_back(tau);            // m_parameters[2] -> time constant
-        m_parameters.push_back(gp);             // m_parameters[3] -> proportional gain
-        m_parameters.push_back(gi);             // m_parameters[4] -> integral gain
-        m_parameters.push_back(gd);             // m_parameters[5] -> derivative gain
+        m_parameters.push_back(baselineCurrent);// m_parameters[0] -> baseline current
+        m_parameters.push_back(tau);            // m_parameters[1] -> time constant
+        m_parameters.push_back(gp);             // m_parameters[2] -> proportional gain
+        m_parameters.push_back(gi);             // m_parameters[3] -> integral gain
+        m_parameters.push_back(gd);             // m_parameters[4] -> derivative gain
+        m_parameters.push_back(frequency);      // m_parameters[5] -> frequency
 }
 
 bool FrequencyClamp::hasNext() const
@@ -51,7 +60,10 @@ void FrequencyClamp::initialise()
 {
         m_estimatedFrequency = 0.0;
         m_tPrevSpike = 0.0;
-        m_errp = FC_F;
+        if (m_constantFrequency)
+                m_errp = FC_F;
+        else
+                m_errp = 0.0;
         m_erri = 0.0;
         m_errd = 0.0;
         m_errorpPrev = 0.0;
@@ -74,7 +86,11 @@ void FrequencyClamp::handleEvent(const Event *event)
                 isi = now - m_tPrevSpike;
                 weight = exp(-isi/FC_TAU);
                 m_estimatedFrequency = (1-weight)/isi + weight*m_estimatedFrequency;
-                m_errp = FC_F - m_estimatedFrequency;
+                if (m_constantFrequency)
+                        m_errp = FC_F - m_estimatedFrequency;
+                else
+                        // a waveform generator must be connected to this entity
+                        m_errp = m_inputs[0] - m_estimatedFrequency;
                 m_erri += m_errp;
                 m_errd = m_errp - m_errorpPrev;
                 m_errorpPrev = m_errp;

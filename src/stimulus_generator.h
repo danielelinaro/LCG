@@ -6,17 +6,15 @@
 #include "generator.h"
 #include "neurons.h"
 
-#define STIM_E  m_parameters[0]
-
 namespace dynclamp {
 
 namespace generators {
 
-class Stimulus : public Generator {
+class Waveform : public Generator {
 public:
-        Stimulus(uint id = GetId());
-        Stimulus(const char *filename, uint id = GetId());
-        virtual ~Stimulus();
+        Waveform(uint id = GetId());
+        Waveform(const char *filename, uint id = GetId());
+        virtual ~Waveform();
 
         bool setFilename(const char *filename);
         virtual void initialise();
@@ -25,6 +23,8 @@ public:
         virtual bool hasNext() const;
 
         virtual void step();
+
+        virtual double output() const;
 
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
@@ -45,25 +45,6 @@ protected:
         size_t m_stimulusRows, m_stimulusCols;
 };
 
-
-class CurrentStimulus : public Stimulus {
-public:
-        CurrentStimulus(uint id = GetId());
-        CurrentStimulus(const char *filename, uint id = GetId());
-        virtual double output() const;
-};
-
-class ConductanceStimulus : public Stimulus {
-public:
-        ConductanceStimulus(double Erev, uint id = GetId());
-        ConductanceStimulus(const char *filename, double Erev, uint id = GetId());
-        virtual double output() const;
-protected:
-        virtual void addPost(Entity *entity);
-private:
-        neurons::Neuron *m_neuron;
-};
-
 } // namespace generators
 
 } // namespace dynclamp
@@ -75,8 +56,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* CurrentStimulusFactory(dictionary& args);
-dynclamp::Entity* ConductanceStimulusFactory(dictionary& args);
+dynclamp::Entity* WaveformFactory(dictionary& args);
 	
 #ifdef __cplusplus
 }

@@ -44,7 +44,7 @@ int main()
 
                 parameters.clear();
                 parameters["filename"] = "example.stim";
-                entities.push_back( EntityFactory("CurrentStimulus", parameters) );
+                entities.push_back( EntityFactory("Waveform", parameters) );
 
                 Logger(Info, "Connecting the analog input to the recorder.\n");
                 entities[1]->connect(entities[0]);
@@ -55,7 +55,7 @@ int main()
                 Logger(Info, "Connecting the stimulus to the analog output.\n");
                 entities[3]->connect(entities[2]);
 
-                tend = dynamic_cast<CurrentStimulus*>(entities[3])->duration();
+                tend = dynamic_cast<Waveform*>(entities[3])->duration();
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s.\n", msg);

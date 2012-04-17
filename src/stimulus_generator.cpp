@@ -5,56 +5,41 @@
 
 namespace fs = boost::filesystem;
 
-dynclamp::Entity* CurrentStimulusFactory(dictionary& args)
+dynclamp::Entity* WaveformFactory(dictionary& args)
 {
         uint id;
         std::string filename;
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::generators::ConductanceStimulus(id);
-        return new dynclamp::generators::CurrentStimulus(filename.c_str(), id);
-}
-
-dynclamp::Entity* ConductanceStimulusFactory(dictionary& args)
-{
-        uint id;
-        double E;
-        std::string filename;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance stimulus.\n");
-                return NULL;
-        }
-        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::generators::ConductanceStimulus(E, id);
-        return new dynclamp::generators::ConductanceStimulus(filename.c_str(), E, id);
+                return new dynclamp::generators::Waveform(id);
+        return new dynclamp::generators::Waveform(filename.c_str(), id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-Stimulus::Stimulus(uint id)
+Waveform::Waveform(uint id)
         : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
 {}
 
-Stimulus::Stimulus(const char *stimulusFile, uint id)
+Waveform::Waveform(const char *stimulusFile, uint id)
         : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
 {
         setFilename(stimulusFile);
 }
 
-Stimulus::~Stimulus()
+Waveform::~Waveform()
 {
         freeMemory();
 }
 
-void Stimulus::initialise()
+void Waveform::initialise()
 {
         m_position = 0;
 }
 
-bool Stimulus::setFilename(const char *filename)
+bool Waveform::setFilename(const char *filename)
 {
         bool retval = true;
         int i, j, flag;
@@ -118,34 +103,34 @@ endSetFilename:
         return retval;
 }
 
-double Stimulus::duration() const
+double Waveform::duration() const
 {
         return stimulusLength() * GetGlobalDt();
 }
 
-uint Stimulus::stimulusLength() const
+uint Waveform::stimulusLength() const
 {
         return m_stimulusLength;
 }
 
-bool Stimulus::hasNext() const
+bool Waveform::hasNext() const
 {
         //return m_position < m_stimulusLength-1;
         return true;
 }
 
-void Stimulus::step()
+void Waveform::step()
 {
         m_position++;
 }
 
-bool Stimulus::hasMetadata(size_t *ndims) const
+bool Waveform::hasMetadata(size_t *ndims) const
 {
         *ndims = 2;
         return true;
 }
 
-const double* Stimulus::metadata(size_t *dims, char *label) const
+const double* Waveform::metadata(size_t *dims, char *label) const
 {
         sprintf(label, "Stimulus_Matrix");
         dims[0] = m_stimulusRows;
@@ -153,7 +138,7 @@ const double* Stimulus::metadata(size_t *dims, char *label) const
         return m_stimulusMetadata;
 }
 
-void Stimulus::freeMemory()
+void Waveform::freeMemory()
 {
         if (m_stimulus != NULL) {
                 delete m_stimulus;
@@ -163,54 +148,12 @@ void Stimulus::freeMemory()
         }
 }
 
-//~~~
-
-CurrentStimulus::CurrentStimulus(uint id) : Stimulus(id)
-{}
-
-CurrentStimulus::CurrentStimulus(const char *filename, uint id) : Stimulus(filename, id)
-{}
-
-double CurrentStimulus::output() const
+double Waveform::output() const
 {
         if (m_position < m_stimulusLength)
                 return m_stimulus[m_position];
         return 0.0;
 }
-
-//~~~
-
-ConductanceStimulus::ConductanceStimulus(double E, uint id) : Stimulus(id)
-{
-        m_parameters.push_back(E);
-}
-
-ConductanceStimulus::ConductanceStimulus(const char *filename, double E, uint id) : Stimulus(filename, id)
-{
-        m_parameters.push_back(E);
-}
-
-double ConductanceStimulus::output() const
-{
-        if (m_position < m_stimulusLength)
-                return m_stimulus[m_position] * (STIM_E - m_neuron->output());
-        return 0.0;
-}
-
-void ConductanceStimulus::addPost(Entity *entity)
-{
-        Logger(Debug, "ConductanceStimulus::addPost(Entity*)\n");
-        Entity::addPost(entity);
-        neurons::Neuron *n = dynamic_cast<neurons::Neuron*>(entity);
-        if (n != NULL) {
-                Logger(Debug, "Connected to a neuron (id #%d).\n", entity->id());
-                m_neuron = n;
-        }
-        else {
-                Logger(Debug, "Entity #%d is not a neuron.\n", entity->id());
-        }
-}
-
 
 } // namespace generators
 

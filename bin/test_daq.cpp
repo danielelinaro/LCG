@@ -44,7 +44,7 @@ int main()
                 // AI2
                 entities.push_back( new AnalogInput("/dev/comedi0", 0, 2, 1., PLUS_MINUS_TEN, reference) );
 #endif // HEKA
-                entities.push_back( new CurrentStimulus("positive-step.stim") );
+                entities.push_back( new Waveform("positive-step.stim") );
                 // connect analog output to analog input
                 Logger(Info, "Connecting the first analog output to the first analog input.\n");
                 entities[0]->connect(entities[1]);
@@ -65,7 +65,7 @@ int main()
                 // connect analog output to ananlog input
                 Logger(Info, "Connecting the second analog output to the second analog input.\n");
                 entities[3]->connect(entities[4]);
-                entities.push_back( new CurrentStimulus("negative-step.stim") );
+                entities.push_back( new Waveform("negative-step.stim") );
                 // connect the stimulus to AO1
                 Logger(Info, "Connecting the stimulus to the second analog output.\n");
                 entities.back()->connect(entities[2]);

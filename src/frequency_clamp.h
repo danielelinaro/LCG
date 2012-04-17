@@ -5,12 +5,12 @@
 #include "entity.h"
 #include "utils.h"
 
-#define FC_F            m_parameters[0]
-#define FC_BASELINE     m_parameters[1]
-#define FC_TAU          m_parameters[2]
-#define FC_GP           m_parameters[3]
-#define FC_GI           m_parameters[4]
-#define FC_GD           m_parameters[5]
+#define FC_BASELINE     m_parameters[0]
+#define FC_TAU          m_parameters[1]
+#define FC_GP           m_parameters[2]
+#define FC_GI           m_parameters[3]
+#define FC_GD           m_parameters[4]
+#define FC_F            m_parameters[5]
 
 namespace dynclamp {
 
@@ -18,8 +18,11 @@ namespace generators {
 
 class FrequencyClamp : public Generator {
 public:
+        FrequencyClamp(double baselineCurrent, double tau,
+                       double gp, double gi, double gd,
+                       uint id = GetId());
         FrequencyClamp(double frequency, double baselineCurrent, double tau,
-                       double gp, double gi = 0.0, double gd = 0.0,
+                       double gp, double gi, double gd,
                        uint id = GetId());
         bool hasNext() const;
         virtual void initialise();
@@ -28,6 +31,7 @@ public:
         void handleEvent(const Event *event);
 
 private:
+        bool m_constantFrequency;
         double m_estimatedFrequency, m_tPrevSpike;
         double m_errp, m_erri, m_errd, m_errorpPrev;
         double m_current;
