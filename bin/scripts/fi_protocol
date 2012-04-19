@@ -56,7 +56,7 @@ while getopts ":d:n:i:I:h" opt ; do
     esac
 done
 
-if [ x$stimdir == x ] ; then
+if [ -z "${stimdir:-}" ] ; then
     print_help
     exit 0
 fi

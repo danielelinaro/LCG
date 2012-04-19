@@ -93,9 +93,16 @@ case "$host_os" in
                 ;;
         linux*)
 		EXTENSION="so"
-                AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found: won't compile data acquisition code."])
-                AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found: the code won't run in real-time mode."])
+                AC_CHECK_LIB([comedi], [comedi_open], [],
+                             [echo "Comedi not found: won't compile data acquisition code."])
+                AC_CHECK_LIB([lxrt], [rt_set_periodic_mode],
+                             [],
+                             [echo "RTAI not found."])
+                AC_CHECK_LIB([rt], [pthread_create],
+                             [],
+                             [echo "RT-Linux not found."])
                 ;;
+#[if test "$with_rt" == "yes" ; then echo "Can't build if RT-Linux is present, too." ; exit ; fi ; with_rtai=yes],
 esac
 AC_SUBST([EXTENSION])
 		

@@ -48,9 +48,10 @@
 #define CC_BANNER \
         "\n\tCommand-line current clamp\n" \
         "\nAuthor: Daniele Linaro (daniele@tnb.ua.ac.be)\n" \
-        "\nThis program has some of the basic functionalities provided by the\n" \
-        "arbitrary function stimulator  developed by Mike Wijnants at the\n" \
-        "Theoretical Neurobiology lab in Antwerp.\n"
+        "\nThis program provides the basic functionalities of the original\n" \
+        "Arbitrary Function Stimulator developed by Mike Wijnants at the\n" \
+        "Theoretical Neurobiology and Neuroengineering Laboratory at the\n" \
+        "University of Antwerp.\n\n"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -142,7 +143,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
 
 void runStimulus(const std::string& stimfile)
 {
-        Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
+        Logger(Info, "\nProcessing stimulus file [%s].\n\n", stimfile.c_str());
 
 #ifdef HAVE_LIBCOMEDI
 
@@ -179,6 +180,7 @@ void runStimulus(const std::string& stimfile)
                 parameters["filename"] = stimfile;
                 entities.push_back( EntityFactory("Waveform", parameters) );
 
+                /*
                 parameters.clear();
                 parameters["id"] = "4";
                 parameters["deviceFile"] = "/dev/comedi0";
@@ -188,6 +190,7 @@ void runStimulus(const std::string& stimfile)
                 parameters["inputConversionFactor"] = "1000";
                 parameters["reference"] = REF;
                 entities.push_back( EntityFactory("AnalogInput", parameters) );
+                */
 
                 Logger(Debug, "Connecting the analog input to the recorder.\n");
                 entities[1]->connect(entities[0]);
@@ -197,8 +200,8 @@ void runStimulus(const std::string& stimfile)
                 entities[3]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");
                 entities[3]->connect(entities[2]);
-                Logger(Debug, "Connecting the second analog input to the recorder.\n");
-                entities[4]->connect(entities[0]);
+                //Logger(Debug, "Connecting the second analog input to the recorder.\n");
+                //entities[4]->connect(entities[0]);
 
                 tend = dynamic_cast<generators::Waveform*>(entities[3])->duration();
 

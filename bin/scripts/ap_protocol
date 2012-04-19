@@ -47,7 +47,7 @@ while getopts ":a:n:i:h" opt ; do
     esac
 done
 
-if [ x$PROTOCOLS_PATH == x ] ; then
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
     origstimfile=$HOME/protocols/spike/ap.stim
 else
     origstimfile=$PROTOCOLS_PATH/spike/ap.stim

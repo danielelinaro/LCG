@@ -65,12 +65,12 @@ while getopts ":c:d:n:i:I:h" opt ; do
     esac
 done
 
-if [ x$configfile == x ] ; then
+if [ -z "${configfile:-}" ] ; then
     print_help
     exit 0
 fi
 
-if [ x$stimdir == x ] ; then
+if [ -z "${stimdir:-}" ] ; then
     print_help
     exit 0
 fi

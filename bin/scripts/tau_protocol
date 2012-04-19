@@ -42,7 +42,7 @@ while getopts ":a:n:i:h" opt ; do
     esac
 done
 
-if [ x$PROTOCOLS_PATH == x ] ; then
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
     stimfile=$HOME/protocols/tau/tau.stim
 else
     stimfile=$PROTOCOLS_PATH/tau/tau.stim

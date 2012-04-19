@@ -7,6 +7,8 @@ using namespace dynclamp;
 
 int main(int argc, char *argv[])
 {
+        SetLoggingLevel(Info);
+
         CommandLineOptions opt;
         double tend, dt;
         std::vector<Entity*> entities;

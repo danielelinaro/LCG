@@ -26,10 +26,10 @@ trial_interval=10
 batch_interval=10
 reps=2
 
-if [ x$PROTOCOLS_PATH == x ] ; then
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
     stimdir=$HOME/protocols/vi
 else
-    stimdir=$PROTOCOLS_PATH/protocols/vi
+    stimdir=$PROTOCOLS_PATH/vi
 fi
 
 while getopts ":d:n:i:I:h" opt ; do

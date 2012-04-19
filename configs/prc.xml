@@ -27,7 +27,6 @@
       <connections>0,4</connections>
     </entity>
 
-    <!-- Stimulus current -->
     <entity>
       <name>Waveform</name>
       <id>2</id>
@@ -35,7 +34,6 @@
       <connections>0,1</connections>
     </entity>
 
-    <!-- Frequency waveform -->
     <entity>
       <name>Waveform</name>
       <id>3</id>
