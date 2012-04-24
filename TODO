@@ -1,8 +1,9 @@
 
 Short term (and therefore relatively simple):
 
+-) configuration file for cclamp.
 -) add the possibility to specify spike latency in PeriodicPulse.
--) add name in Entity? (also for data logging...).
+-) add name in Entity (also for data logging...).
 -) understand why EnqueueEvent cannot be found.
 
 Long term (and therefore possibly complicated):

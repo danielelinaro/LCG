@@ -52,5 +52,9 @@ SpikeEvent::SpikeEvent(const Entity *sender)
         : Event(SPIKE, sender)
 {}
 
+TriggerEvent::TriggerEvent(const Entity *sender)
+        : Event(TRIGGER, sender)
+{}
+
 } // namespace dynclamp
 

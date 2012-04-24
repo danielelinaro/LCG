@@ -8,7 +8,7 @@ namespace dynclamp {
 class Entity;
 
 typedef enum _event_type {
-        SPIKE = 0
+        SPIKE = 0, TRIGGER
 } EventType;
 
 class Event
@@ -31,6 +31,12 @@ class SpikeEvent : public Event
 {
 public:
         SpikeEvent(const Entity *sender);
+};
+
+class TriggerEvent : public Event
+{
+public:
+        TriggerEvent(const Entity *sender);
 };
 
 void EnqueueEvent(const Event *event);

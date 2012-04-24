@@ -24,7 +24,7 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0,4</connections>
+      <connections>0,4,5</connections>
     </entity>
 
     <entity>
@@ -38,18 +38,26 @@
       <name>Waveform</name>
       <id>3</id>
       <parameters><filename>frequency.stim</filename></parameters>
-      <connections>0,4</connections>
+      <connections>0,5</connections>
     </entity>
 
     <entity>
-      <name>FrequencyClamp</name>
+      <name>FrequencyEstimator</name>
       <id>4</id>
       <parameters>
-	<baselineCurrent>0</baselineCurrent>
 	<tau>3</tau>
-	<gp>10</gp>
-	<gi>3</gi>
-	<gd>1</gd>
+      </parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>PID</name>
+      <id>5</id>
+      <parameters>
+	<baselineCurrent>0</baselineCurrent>
+	<gp>6</gp>
+	<gi>0.5</gi>
+	<gd>0</gd>
       </parameters>
       <connections>0,1</connections>
     </entity>

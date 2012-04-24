@@ -85,17 +85,21 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         m_parameters.push_back(E);      // E -> m_parameters[2]
 
         m_state.push_back(0);           // fraction of open channels -> m_state[0]
+
+        Logger(Info, "Area = %g\n", IC_AREA);
 }
 
 void IonicCurrent::initialise()
 {
         IC_FRACTION = 0.0;
+        Logger(Info, "Area = %g\n", IC_AREA);
 }
 
 double IonicCurrent::output() const
 {
         ////        (1)      * ( nS / cm^2 ) *            mV               * (    cm^2     )
         //return IC_FRACTION * 1e9 * IC_GBAR * (IC_E - m_neuron->output()) * IC_AREA * 1e-8; // (pA)
+        Logger(Debug, "Area = %g\n", IC_AREA);
         return IC_FRACTION * 10 * IC_GBAR * (IC_E - m_neuron->output()) * IC_AREA; // (pA)
 }
 
@@ -253,6 +257,7 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
 
 void NoisyIonicCurrent::initialise()
 {
+        IonicCurrent::initialise();
         for (uint i=0; i<m_state.size(); i++)
                 m_state[i] = 0.0;
 }
@@ -263,6 +268,7 @@ HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double g
         : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
+        m_parameters.push_back(seed); // seed -> m_parameters[4]
         m_state.push_back(0.0);   // m
         m_state.push_back(0.0);   // h
         for (uint i=0; i<numberOfStates; i++)
@@ -276,8 +282,7 @@ HHSodiumCN::~HHSodiumCN()
 
 void HHSodiumCN::initialise()
 {
-        for (uint i=0; i<m_state.size(); i++)
-                m_state[i] = 0.0;
+        NoisyIonicCurrent::initialise();
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
 }
@@ -332,6 +337,20 @@ void HHSodiumCN::evolve()
 		noise_z[i] = sqrt(var_z[i]*(1-mu_z[i]*mu_z[i])) * m_rand->random();
 	}
 	
+        Logger(Debug, "Tau:\t");
+        for(i=0; i<numberOfStates-1; i++)
+                Logger(Debug, " %15.6e", tau_z[i]);
+        Logger(Debug, "\nVar:\t");
+        for(i=0; i<numberOfStates-1; i++)
+                Logger(Debug, " %15.6e", var_z[i]);
+        Logger(Debug, "\nMu:\t");
+        for(i=0; i<numberOfStates-1; i++)
+                Logger(Debug, " %15.6e", mu_z[i]);
+        Logger(Debug, "\nNoise:\t");
+        for(i=0; i<numberOfStates-1; i++)
+                Logger(Debug, " %15.6e", noise_z[i]);
+        Logger(Debug, "\n");
+
 	/* forward Euler for m and h (they are deterministic) */
 	HH_NA_CN_M = HH_NA_CN_M + dt * (m_inf - HH_NA_CN_M) / tau_m;
 	HH_NA_CN_H = HH_NA_CN_H + dt * (h_inf - HH_NA_CN_H) / tau_h;
@@ -346,6 +365,8 @@ void HHSodiumCN::evolve()
 		IC_FRACTION = 0;
 	else if(IC_FRACTION > 1)
 		IC_FRACTION = 1;
+
+        Logger(Debug, "%15.6e %15.6e %15.6e\n", HH_NA_CN_M, HH_NA_CN_H, IC_FRACTION);
 }
 
 //~~
@@ -354,6 +375,7 @@ HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, do
         : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
+        m_parameters.push_back(seed); // seed -> m_parameters[4]
         m_state.push_back(0.0);   // n
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
@@ -366,8 +388,7 @@ HHPotassiumCN::~HHPotassiumCN()
 
 void HHPotassiumCN::initialise()
 {
-        for (uint i=0; i<m_state.size(); i++)
-                m_state[i] = 0.0;
+        NoisyIonicCurrent::initialise();
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
 }
