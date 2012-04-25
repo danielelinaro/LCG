@@ -66,5 +66,10 @@ void FrequencyEstimator::handleEvent(const Event *event)
         }
 }
 
+void FrequencyEstimator::emitTrigger() const
+{
+        emitEvent(new TriggerEvent(this));
+}
+
 } // namespace dynclamp
 

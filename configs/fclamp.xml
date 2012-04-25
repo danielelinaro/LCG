@@ -24,7 +24,7 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0,4,5</connections>
+      <connections>0,4</connections>
     </entity>
 
     <entity>

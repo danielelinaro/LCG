@@ -38,7 +38,7 @@ int main()
         // neuron to frequency estimator
         entities[0]->connect(entities[5]);
         // neuron to PID
-        entities[0]->connect(entities[6]);
+        //entities[0]->connect(entities[6]);
 
         // sodium current to neuron
         entities[1]->connect(entities[0]);

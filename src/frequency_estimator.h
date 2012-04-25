@@ -17,6 +17,8 @@ public:
         virtual void step();
         virtual double output() const;
         virtual void handleEvent(const Event *event);
+protected:
+        void emitTrigger() const;
 private:
         double m_tPrevSpike;
         double m_frequency;
