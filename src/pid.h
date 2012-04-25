@@ -18,11 +18,7 @@ public:
         virtual void initialise();
         virtual void step();
         void handleEvent(const Event *event);
-//protected:
-//        virtual void addPre(Entity *entity);
 private:
-        //int m_idx[2];
-        //int m_cnt;
         double m_output;
         double m_erri;
         double m_errpPrev;

@@ -24,6 +24,8 @@ private:
         double m_frequency;
 };
 
+} // namespace dynclamp
+
 /***
  *   FACTORY METHODS
  ***/
@@ -36,8 +38,6 @@ dynclamp::Entity* FrequencyEstimatorFactory(dictionary& args);
 #ifdef __cplusplus
 }
 #endif
-
-} // namespace dynclamp
 
 #endif
 
