@@ -21,7 +21,7 @@ dynclamp::Entity* PIDFactory(dictionary& args)
 namespace dynclamp {
 
 PID::PID(double baseline, double gp, double gi, double gd, uint id)
-        : Entity(id), m_cnt(0)
+        : Entity(id)
 {
         m_parameters.push_back(baseline);
         m_parameters.push_back(gp);
@@ -47,9 +47,8 @@ void PID::step()
 void PID::handleEvent(const Event *event)
 {
         if (event->type() == SPIKE || event->type() == TRIGGER) {
-                Logger(Debug, "Using inputs #%d and #%d to compute the error.\n", m_idx[0], m_idx[1]);
                 double errp, errd;
-                errp = m_inputs[m_idx[0]] - m_inputs[m_idx[1]];
+                errp = m_inputs[0] - m_inputs[1];
                 m_erri += errp;
                 errd = errp - m_errpPrev;
                 m_errpPrev = errp;
@@ -58,6 +57,7 @@ void PID::handleEvent(const Event *event)
         }
 }
 
+/*
 void PID::addPre(Entity *entity)
 {
         Entity::addPre(entity);
@@ -67,6 +67,7 @@ void PID::addPre(Entity *entity)
                 m_cnt = (m_cnt + 1) % 2;
         }
 }
+*/
 
 } // namespace dynclamp
 

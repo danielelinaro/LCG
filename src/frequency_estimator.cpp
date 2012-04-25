@@ -60,6 +60,7 @@ void FrequencyEstimator::handleEvent(const Event *event)
                         isi = now - m_tPrevSpike;
                         weight = exp(-isi/FE_TAU);
                         m_frequency = (1-weight)/isi + weight*m_frequency;
+                        emitTrigger();
                         Logger(Debug, "Estimated frequency: %g\n", m_frequency);
                 }
                 m_tPrevSpike = now;
