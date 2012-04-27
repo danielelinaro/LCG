@@ -300,6 +300,7 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
+        ResetGlobalTime();
 #if defined(HAVE_LIBLXRT)
         boost::thread thrd(RTSimulation, entities, tend);
 #elif defined(HAVE_LIBRT)
