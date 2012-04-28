@@ -89,14 +89,18 @@ AC_ARG_WITH([examples],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 
-if test `expr match $host_os 'linux'` -eq 5 ; then
+with_comedi=no
+if test `expr $host_os : 'linux'` -eq 5 ; then
         AC_CHECK_LIB([comedi], [comedi_open], [],[echo "Comedi not found: won't compile data acquisition code."])
-        AM_CONDITIONAL([ANALOG_IO],[test "$ac_cv_lib_comedi_comedi_open" = "yes"])
+        if test "$ac_cv_lib_comedi_comedi_open" = "yes" ; then
+                with_comedi=yes
+        fi
         AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found, checking for RT-Linux support."])
         if test "$ac_cv_lib_lxrt_rt_set_periodic_mode" = "no" ; then
                 AC_CHECK_LIB([rt], [pthread_create], [], [echo "RT-Linux not found, the system won't run in real-time."])
         fi
 fi
+AM_CONDITIONAL([ANALOG_IO],[test "$with_comedi" = "yes"])
 		
 AC_OUTPUT
 
