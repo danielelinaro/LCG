@@ -87,26 +87,16 @@ AC_SUBST([LIB_TAG])
 AC_ARG_WITH([examples],
 	    [AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
-AM_CONDITIONAL([EXAMPLES],[test "$with_examples" == "yes"])
+AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 
-case "$host_os" in
-        darwin*)
-                EXTENSION="dylib"
-                ;;
-        linux*)
-		EXTENSION="so"
-                AC_CHECK_LIB([comedi], [comedi_open], [],
-                             [echo "Comedi not found: won't compile data acquisition code."])
-                AC_CHECK_LIB([lxrt], [rt_set_periodic_mode],
-                             [],
-                             [echo "RTAI not found."])
-                AC_CHECK_LIB([rt], [pthread_create],
-                             [],
-                             [echo "RT-Linux not found."])
-                ;;
-#[if test "$with_rt" == "yes" ; then echo "Can't build if RT-Linux is present, too." ; exit ; fi ; with_rtai=yes],
-esac
-AC_SUBST([EXTENSION])
+if test `expr match $host_os 'linux'` -eq 5 ; then
+        AC_CHECK_LIB([comedi], [comedi_open], [],[echo "Comedi not found: won't compile data acquisition code."])
+        AM_CONDITIONAL([ANALOG_IO],[test "$ac_cv_lib_comedi_comedi_open" = "yes"])
+        AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found, checking for RT-Linux support."])
+        if test "$ac_cv_lib_lxrt_rt_set_periodic_mode" = "no" ; then
+                AC_CHECK_LIB([rt], [pthread_create], [], [echo "RT-Linux not found, the system won't run in real-time."])
+        fi
+fi
 		
 AC_OUTPUT
 
