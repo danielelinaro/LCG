@@ -143,6 +143,7 @@ public:
                      uint id = GetId());
         ~AnalogOutput();
         virtual void initialise();
+        virtual void terminate();
         virtual void step();
         virtual double output() const;
 private:

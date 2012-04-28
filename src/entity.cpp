@@ -11,7 +11,9 @@ Entity::Entity(uint id)
 {}
 
 Entity::~Entity()
-{}
+{
+        terminate();
+}
 
 uint Entity::id() const
 {
@@ -74,6 +76,9 @@ void Entity::connect(Entity *entity)
         addPost(entity);
         entity->addPre(this);
 }
+
+void Entity::terminate()
+{}
 
 const std::vector<Entity*>& Entity::pre() const
 {

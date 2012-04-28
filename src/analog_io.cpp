@@ -398,6 +398,11 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
 
 AnalogOutput::~AnalogOutput()
 {
+        terminate();
+}
+
+void AnalogOutput::terminate()
+{
         m_output.write(0.0);
 }
 

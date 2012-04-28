@@ -25,9 +25,11 @@ public:
         const array& parameters() const;
         double parameter(uint index) const;
 
-        // connect this entity TO the one passed as a parameter,
-        // i.e., this entity will be an input of the one passed
-        // as a parameter.
+        /**
+         * Connects this entity to the one passed as a parameter,
+         * i.e., this entity will be an input of the one passed
+         * as a parameter.
+         */
         void connect(Entity* entity);
 
         const std::vector<Entity*>& pre() const;
@@ -40,6 +42,8 @@ public:
         virtual double output() const = 0;
 
         virtual void initialise() = 0;
+
+        virtual void terminate();
 
         virtual void handleEvent(const Event *event);
 

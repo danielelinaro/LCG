@@ -16,7 +16,8 @@ uint Ni;                             // Partial duration [points].
 uint N;                              // Size of the output waveform (i.e. N = T / dt).
 FILE *fp;
 
-uint  cols, nlines, current_line;
+size_t cols, nlines;
+uint  current_line;
 uint i,j, return_code;
 
  //--------------------------------------------------------------------------------------

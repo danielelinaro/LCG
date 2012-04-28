@@ -112,7 +112,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         SetGlobalTimeOffset();
         ResetGlobalTime();
-        for (uint i=0; i<entities.size(); i++)
+        for (i=0; i<nEntities; i++)
                 entities[i]->initialise();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
@@ -124,6 +124,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 rt_task_wait_period();
                 //Logger(Info, "%g\n", GetGlobalTime());
         }
+        for (i=0; i<nEntities; i++)
+                entities[i]->terminate();
 
 stopRT:
 #ifndef NO_STOP_RT_TIMER
@@ -214,7 +216,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         ResetGlobalTime();
 
         // Initialise all entities
-        for (uint i=0; i<entities.size(); i++)
+        for (i=0; i<nEntities; i++)
                 entities[i]->initialise();
         Logger(Info, "Initialised all entities.\n");
         
@@ -261,6 +263,9 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 	        next.tv_nsec += interval.tv_nsec;
 	        tsnorm(&next);
         }
+        for (i=0; i<nEntities; i++)
+                entities[i]->terminate();
+
 	flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag == 0) {
                 Logger(Info, "Elapsed time: %g seconds.\n",
@@ -278,22 +283,21 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
 void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 {
-        size_t i, n = entities.size();
+        int i, nEntities = entities.size();
         double dt = GetGlobalDt();
-        int nsteps = tend/dt;
-        Logger(Debug, "tend = %e, dt = %e, nsteps = %d\n", tend, dt, nsteps);
-        nsteps = 0;
         ResetGlobalTime();
-        for (uint i=0; i<entities.size(); i++)
+        for (i=0; i<nEntities; i++)
                 entities[i]->initialise();
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
-                for (i=0; i<n; i++)
+                for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
                 IncreaseGlobalTime();
-                for (i=0; i<n; i++)
+                for (i=0; i<nEntities; i++)
                         entities[i]->step();
         }
+        for (i=0; i<nEntities; i++)
+                entities[i]->terminate();
 }
 
 #endif // HAVE_LIBLXRT
@@ -301,11 +305,13 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
         ResetGlobalTime();
-#if defined(HAVE_LIBLXRT)
-        boost::thread thrd(RTSimulation, entities, tend);
-#elif defined(HAVE_LIBRT)
+
+#ifdef HAVE_LIBRT
         if (!CheckPrivileges())
                 return;
+#endif
+
+#ifdef REAL_TIME_ENGINE
         boost::thread thrd(RTSimulation, entities, tend);
 #else
         boost::thread thrd(NonRTSimulation, entities, tend);
