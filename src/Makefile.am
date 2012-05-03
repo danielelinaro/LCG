@@ -4,7 +4,7 @@ libdynclamp_la_SOURCES = randlib.cpp utils.cpp entity.cpp dynamical_entity.cpp o
 libdynclamp_la_LDFLAGS = -version-info ${LIB_VER}
 include_HEADERS = types.h randlib.h utils.h entity.h dynamical_entity.h ou.h synapses.h events.h thread_safe_queue.h neurons.h stimulus_generator.h poisson_generator.h recorders.h aec.h engine.h periodic_pulse.h currents.h frequency_clamp.h delay.h time_logger.h conductance_stimulus.h trigger.h pid.h frequency_estimator.h
 if ANALOG_IO
-libdynclamp_la_SOURCES += analog_io.cpp
-include_HEADERS += analog_io.h
+libdynclamp_la_SOURCES += comedi_io.cpp analog_io.cpp
+include_HEADERS += comedi_io.h analog_io.h
 endif
 
