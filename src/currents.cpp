@@ -89,10 +89,11 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         Logger(Info, "Area = %g\n", IC_AREA);
 }
 
-void IonicCurrent::initialise()
+bool IonicCurrent::initialise()
 {
         IC_FRACTION = 0.0;
         Logger(Info, "Area = %g\n", IC_AREA);
+        return true;
 }
 
 double IonicCurrent::output() const
@@ -126,10 +127,11 @@ HHSodium::HHSodium(double area, double gbar, double E, uint id)
         m_state.push_back(0);           // h
 }
 
-void HHSodium::initialise()
+bool HHSodium::initialise()
 {
         for (uint i=0; i<m_state.size(); i++)
                 m_state[i] = 0.0;
+        return true;
 }
 
 double HHSodium::vtrap(double x, double y) {
@@ -198,10 +200,11 @@ HHPotassium::HHPotassium(double area, double gbar, double E, uint id)
         m_state.push_back(0);           // n
 }
 
-void HHPotassium::initialise()
+bool HHPotassium::initialise()
 {
         for (uint i=0; i<m_state.size(); i++)
                 m_state[i] = 0.0;
+        return true;
 }
 
 double HHPotassium::vtrap(double x, double y) {
@@ -255,11 +258,13 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
         Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
 }
 
-void NoisyIonicCurrent::initialise()
+bool NoisyIonicCurrent::initialise()
 {
-        IonicCurrent::initialise();
+        if (! IonicCurrent::initialise())
+                return false;
         for (uint i=0; i<m_state.size(); i++)
                 m_state[i] = 0.0;
+        return true;
 }
 
 //~~
@@ -280,11 +285,13 @@ HHSodiumCN::~HHSodiumCN()
         delete m_rand;
 }
 
-void HHSodiumCN::initialise()
+bool HHSodiumCN::initialise()
 {
-        NoisyIonicCurrent::initialise();
+        if (! NoisyIonicCurrent::initialise())
+                return false;
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
+        return true;
 }
 
 void HHSodiumCN::evolve()
@@ -386,11 +393,13 @@ HHPotassiumCN::~HHPotassiumCN()
         delete m_rand;
 }
 
-void HHPotassiumCN::initialise()
+bool HHPotassiumCN::initialise()
 {
-        NoisyIonicCurrent::initialise();
+        if (! NoisyIonicCurrent::initialise())
+                return false;
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
+        return true;
 }
 
 void HHPotassiumCN::evolve()

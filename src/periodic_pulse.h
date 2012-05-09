@@ -26,7 +26,7 @@ public:
                       double tau, double gp, double gi = 0.0, double gd = 0.0,
                       uint id = GetId());
 
-        virtual void initialise();
+        virtual bool initialise();
 
         virtual bool hasNext() const;
 

@@ -50,11 +50,12 @@ void Delay::allocateBuffer()
         m_buffer = new double[m_bufferLength];
 }
 
-void Delay::initialise()
+bool Delay::initialise()
 {
         m_bufferPosition = 0;
         for (uint i=0; i<m_bufferLength; i++)
                 m_buffer[i] = 0.0;
+        return true;
 }
 
 void Delay::step()

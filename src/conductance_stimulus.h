@@ -16,7 +16,7 @@ namespace generators {
 class ConductanceStimulus : public Generator {
 public:
         ConductanceStimulus(double Erev, uint id = GetId());
-        virtual void initialise();
+        virtual bool initialise();
         virtual bool hasNext() const;
         virtual void step();
         virtual double output() const;

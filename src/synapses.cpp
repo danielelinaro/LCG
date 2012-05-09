@@ -64,10 +64,11 @@ Synapse::Synapse(double E, double weight, double delay, uint id)
         m_parameters.push_back(delay);  // m_parameters[2] -> delay
 }
 
-void Synapse::initialise()
+bool Synapse::initialise()
 {
         m_tPrevSpike = -1000.0;
         SYN_G = 0.0;
+        return true;
 }
 
 double Synapse::output() const
@@ -127,6 +128,11 @@ ExponentialSynapse::ExponentialSynapse(double E, double weight, double delay, do
         m_parameters.push_back(exp(-GetGlobalDt()/tau));   // m_parameters[3] -> decay coefficient
 }
 
+bool ExponentialSynapse::initialise()
+{
+        return Synapse::initialise();
+}
+
 void ExponentialSynapse::evolve()
 {
         if (! processSpikes())
@@ -154,11 +160,13 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
 }
 
-void Exp2Synapse::initialise()
+bool Exp2Synapse::initialise()
 {
-        Synapse::initialise();
+        if (! Synapse::initialise())
+                return false;
         m_state[1] = 0.0;
         m_state[2] = 0.0;
+        return true;
 }
 
 void Exp2Synapse::evolve()
@@ -197,12 +205,14 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[9] -> coeff.
 }
 
-void TMGSynapse::initialise()
+bool TMGSynapse::initialise()
 {
-        Synapse::initialise();
+        if (! Synapse::initialise())
+                return false;
         m_state[1] = 0.0;
         m_state[2] = 0.0;
         m_state[3] = TMG_SYN_U;
+        return true;
 }
 
 void TMGSynapse::evolve()

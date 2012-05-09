@@ -18,7 +18,7 @@ public:
                     uint range = PLUS_MINUS_TEN,
                     uint aref = GRSE,
                     uint id = GetId());
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
         virtual double output() const;
 private:
@@ -33,7 +33,7 @@ public:
                      uint aref = GRSE,
                      uint id = GetId());
         ~AnalogOutput();
-        virtual void initialise();
+        virtual bool initialise();
         virtual void terminate();
         virtual void step();
         virtual double output() const;

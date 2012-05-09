@@ -11,7 +11,7 @@ public:
         AEC(const double *kernel, size_t kernelSize);
         ~AEC();
 
-        virtual void initialise();
+        virtual bool initialise();
 
         void pushBack(double I);
         double compensate(double V) const;

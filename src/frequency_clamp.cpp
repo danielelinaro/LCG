@@ -69,7 +69,7 @@ bool FrequencyClamp::hasNext() const
         return true;
 }
 
-void FrequencyClamp::initialise()
+bool FrequencyClamp::initialise()
 {
         m_estimatedFrequency = 0.0;
         m_tPrevSpike = 0.0;
@@ -78,6 +78,7 @@ void FrequencyClamp::initialise()
         m_errd = 0.0;
         m_errorpPrev = 0.0;
         m_current = FC_BASELINE;
+        return true;
 }
 
 void FrequencyClamp::step()

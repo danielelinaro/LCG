@@ -41,7 +41,7 @@ public:
 
         virtual double output() const = 0;
 
-        virtual void initialise() = 0;
+        virtual bool initialise() = 0;
 
         virtual void terminate();
 

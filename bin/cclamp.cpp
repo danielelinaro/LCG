@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <sstream>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -184,33 +185,53 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                 
                 parameters.clear();
                 parameters["id"] = "1";
-                parameters["deviceFile"] = pt.get<std::string>("AnalogInput0.device");
-                parameters["range"] = pt.get<std::string>("AnalogInput0.range");
-                parameters["inputSubdevice"] = pt.get<std::string>("AnalogInput0.subdevice");
-                parameters["readChannel"] = pt.get<std::string>("AnalogInput0.channel");
-                parameters["inputConversionFactor"] = pt.get<std::string>("AnalogInput0.conversionFactor");
-                parameters["reference"] = pt.get<std::string>("AnalogInput0.reference");
-                entities.push_back( EntityFactory("AnalogInput", parameters) );
+                entities.push_back( EntityFactory("Waveform", parameters) );
 
+                int cnt = 0;
+                while (true) {
+                        std::stringstream id;
+                        id << entities.back()->id() + 1;
+                        parameters.clear();
+                        parameters["id"] = id.str();
+                        try {
+                                char str[64];
+                                sprintf(str, "AnalogInput%d.device", cnt);
+                                parameters["deviceFile"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.range", cnt);
+                                parameters["range"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.subdevice", cnt);
+                                parameters["inputSubdevice"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.channel", cnt);
+                                parameters["readChannel"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.conversionFactor", cnt);
+                                parameters["inputConversionFactor"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.reference", cnt);
+                                parameters["reference"] = pt.get<std::string>(str);
+                        } catch(...) {
+                                break;
+                        }
+                        entities.push_back( EntityFactory("AnalogInput", parameters) );
+                        cnt++;
+                }
+
+                std::stringstream id;
+                id << entities.back()->id() + 1;
                 parameters.clear();
-                parameters["id"] = "2";
+                parameters["id"] = id.str();
                 parameters["deviceFile"] = pt.get<std::string>("AnalogOutput0.device");
                 parameters["outputSubdevice"] = pt.get<std::string>("AnalogOutput0.subdevice");
                 parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
                 parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
                 parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
+
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
-
-                parameters.clear();
-                parameters["id"] = "3";
-                entities.push_back( EntityFactory("Waveform", parameters) );
-
-                Logger(Debug, "Connecting the analog input to the recorder.\n");
-                entities[1]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the recorder.\n");
-                entities[3]->connect(entities[0]);
+                entities[1]->connect(entities[0]);
                 Logger(Debug, "Connecting the stimulus to the analog output.\n");
-                entities[3]->connect(entities[2]);
+                entities[1]->connect(entities.back());
+                Logger(Debug, "Connecting the analog inputs to the recorder.\n");
+                for (int i=2; i<entities.size()-1; i++)
+                        entities[i]->connect(entities[0]);
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);

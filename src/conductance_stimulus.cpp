@@ -21,9 +21,10 @@ ConductanceStimulus::ConductanceStimulus(double E, uint id) : Generator(id)
         m_parameters.push_back(E);
 }
 
-void ConductanceStimulus::initialise()
+bool ConductanceStimulus::initialise()
 {
         m_output = 0;
+        return true;
 }
 
 bool ConductanceStimulus::hasNext() const

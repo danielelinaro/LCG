@@ -12,7 +12,7 @@ namespace dynclamp {
 class TimeLogger : public Entity {
 public:
         TimeLogger(uint id = GetId());
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
         virtual double output() const;
 private:

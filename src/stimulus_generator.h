@@ -4,7 +4,6 @@
 #include "types.h"
 #include "utils.h"
 #include "generator.h"
-#include "neurons.h"
 
 namespace dynclamp {
 
@@ -17,7 +16,7 @@ public:
         virtual ~Waveform();
 
         bool setFilename(const char *filename);
-        virtual void initialise();
+        virtual bool initialise();
 
         uint stimulusLength() const;
         virtual bool hasNext() const;

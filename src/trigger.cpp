@@ -35,9 +35,10 @@ PeriodicTrigger::PeriodicTrigger(double frequency, uint id)
         m_parameters.push_back(frequency);
 }
 
-void PeriodicTrigger::initialise()
+bool PeriodicTrigger::initialise()
 {
         m_tNextTrigger = m_period;
+        return true;
 }
 
 void PeriodicTrigger::step()

@@ -12,7 +12,7 @@ public:
         Delay(double delay, uint id = GetId());
         virtual ~Delay();
 
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
         virtual double output() const;
 

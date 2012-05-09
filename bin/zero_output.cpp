@@ -83,14 +83,14 @@ int main(int argc, char *argv[])
                 for (int ch=0; ch<nChannels; ch++) {
                         Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
                                         deviceFile.c_str(), subdevice, ch);
-                        dynclamp::ComediAnalogOutput output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
+                        dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
                         output.write(0.0);
                 }
         }
         else {
                 Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
                                 deviceFile.c_str(), subdevice, channel);
-                dynclamp::ComediAnalogOutput output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
+                dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
                 output.write(0.0);
         }
 

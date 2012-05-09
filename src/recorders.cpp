@@ -73,12 +73,13 @@ void ASCIIRecorder::openFile()
         m_closeFile = true;
 }
 
-void ASCIIRecorder::initialise()
+bool ASCIIRecorder::initialise()
 {       
         closeFile();
         if (m_makeFilename)
                 MakeFilename(m_filename, "dat");
         openFile();
+        return true;
 }
 
 void ASCIIRecorder::step()
@@ -135,7 +136,7 @@ H5Recorder::~H5Recorder()
         delete m_bufferLengths;
 }
 
-void H5Recorder::initialise()
+bool H5Recorder::initialise()
 {
         stopWriterThread();
         closeFile();
@@ -152,7 +153,7 @@ void H5Recorder::initialise()
         m_datasets.clear();
 
         if (openFile() != OK)
-                throw "Unable to open H5 file.";
+                return false;
         else
                 Logger(Debug, "Successfully opened file [%s].\n", m_filename);
 
@@ -160,6 +161,8 @@ void H5Recorder::initialise()
                 allocateForEntity(m_pre[i]);
 
         startWriterThread();
+        
+        return true;
 }
 
 void H5Recorder::startWriterThread()

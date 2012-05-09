@@ -29,9 +29,10 @@ Poisson::Poisson(double rate, ullong seed, uint id)
         m_parameters.push_back(rate);
 }
 
-void Poisson::initialise()
+bool Poisson::initialise()
 {
         calculateTimeNextSpike();
+        return true;
 }
 
 bool Poisson::hasNext() const

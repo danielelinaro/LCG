@@ -25,7 +25,7 @@ public:
         double period() const;
         void setPeriod(double period);
 
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
 private:
         double m_tNextTrigger, m_period;

@@ -120,10 +120,12 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
 {}
 
-void AnalogInput::initialise()
+bool AnalogInput::initialise()
 {
-        m_input.initialise();
+        if (! m_input.initialise())
+                return false;
         m_data = m_input.read();
+        return true;
 }
 
 void AnalogInput::step()
@@ -155,10 +157,12 @@ void AnalogOutput::terminate()
         m_output.write(0.0);
 }
 
-void AnalogOutput::initialise()
+bool AnalogOutput::initialise()
 {
-        m_output.initialise();
+        if (! m_output.initialise())
+                return false;
         m_output.write(0.0);
+        return true;
 }
 
 void AnalogOutput::step()

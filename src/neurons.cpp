@@ -141,9 +141,10 @@ Neuron::Neuron(double Vm0, uint id)
         m_state.push_back(Vm0); // m_state[0] -> membrane potential
 }
 
-void Neuron::initialise()
+bool Neuron::initialise()
 {
         VM = m_Vm0;
+        return true;
 }
 
 double Neuron::Vm() const
@@ -183,10 +184,12 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         m_parameters.push_back(LIF_TAU/LIF_C);// parameters[8] -> Rl
 }
 
-void LIFNeuron::initialise()
+bool LIFNeuron::initialise()
 {
-        Neuron::initialise();
+        if (! Neuron::initialise())
+                return false;
         m_tPrevSpike = -1000.0;
+        return true;
 }
 
 void LIFNeuron::evolve()
@@ -293,12 +296,13 @@ RealNeuron::~RealNeuron()
                 delete m_VrDelay;
 }
 
-void RealNeuron::initialise()
+bool RealNeuron::initialise()
 {
-        Neuron::initialise();
-        m_input.initialise();
-        m_output.initialise();
-        m_aec.initialise();
+        if (! Neuron::initialise()  ||
+            ! m_input.initialise()  ||
+            ! m_output.initialise() ||
+            ! m_aec.initialise())
+                return false;
 
         if (m_VrDelay != NULL)
                 delete m_VrDelay;
@@ -312,6 +316,8 @@ void RealNeuron::initialise()
         VM = m_aec.compensate(m_VrDelay[0]);
 
         m_aec.pushBack(0.0);
+
+        return true;
 }
         
 uint RealNeuron::voltageDelaySteps() const

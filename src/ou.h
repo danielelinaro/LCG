@@ -33,7 +33,7 @@ class OU : public DynamicalEntity
 public:
         OU(double sigma, double tau, double eta0, ullong seed,
            double *interval = largeInterval, uint id = GetId());
-        virtual void initialise();
+        virtual bool initialise();
 protected:
         virtual void evolve();
 private:

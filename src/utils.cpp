@@ -29,6 +29,13 @@ using boost::property_tree::ptree;
 #include "types.h"
 #include "engine.h"
 
+/* colors */
+#define ESC ''
+#define RED "[31m"
+#define GREEN "[32m"
+#define YELLOW "[33m"
+#define NORMAL "[00m"
+
 namespace dynclamp
 {
 
@@ -57,7 +64,16 @@ void Logger(LogLevel level, const char *fmt, ...)
 	if (level >= verbosity) {
 		va_list argp;
 		va_start(argp, fmt);
+                switch (level) {
+                case Critical:
+                        fprintf(stderr, "%c%s", ESC, RED);
+                        break;
+                case Important:
+                        fprintf(stderr, "%c%s", ESC, YELLOW);
+                        break;
+                }
 		vfprintf(stderr, fmt, argp);
+                fprintf(stderr, "%c%s", ESC, NORMAL);
 		va_end(argp);
 	}
 }

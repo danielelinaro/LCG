@@ -28,7 +28,7 @@ class ASCIIRecorder : public Recorder {
 public:
         ASCIIRecorder(const char *filename = NULL, uint id = GetId());
         ~ASCIIRecorder();
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
 
 private:
@@ -60,7 +60,7 @@ class H5Recorder : public Recorder {
 public:
         H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
 
 public:

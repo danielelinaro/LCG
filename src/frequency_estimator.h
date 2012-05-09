@@ -13,7 +13,7 @@ public:
         FrequencyEstimator(double tau, uint id = GetId());
         void setTau(double tau);
         double tau() const;
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
         virtual double output() const;
         virtual void handleEvent(const Event *event);

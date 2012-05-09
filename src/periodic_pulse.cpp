@@ -84,7 +84,7 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         Logger(Debug, "m_parameters.size() = %d\n", m_parameters.size());
 }
 
-void PeriodicPulse::initialise()
+bool PeriodicPulse::initialise()
 {
         m_output = 0.0;
         m_amplitude = PP_AMPLITUDE;
@@ -94,6 +94,7 @@ void PeriodicPulse::initialise()
         m_tLastSpike = -PP_INTERVAL;
         m_estimatedProbability = 0.5;
         m_errp = m_erri = m_errd = 0.0;
+        return true;
 }
 
 bool PeriodicPulse::hasNext() const

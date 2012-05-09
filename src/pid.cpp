@@ -1,6 +1,4 @@
 #include "pid.h"
-#include "neurons.h"
-#include "trigger.h"
 
 dynclamp::Entity* PIDFactory(dictionary& args)
 {
@@ -35,11 +33,12 @@ double PID::output() const
         return m_output;
 }
 
-void PID::initialise()
+bool PID::initialise()
 {
         m_output = PID_BASELINE;
         m_erri = 0.0;
         m_errpPrev = 0.0;
+        return true;
 }
 
 void PID::step()

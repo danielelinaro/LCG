@@ -57,12 +57,13 @@ AEC::~AEC()
         delete m_current;
 }
 
-void AEC::initialise()
+bool AEC::initialise()
 {
         for (int i=0; i<m_length; i++) {
                 m_current[i] = 0.0;
         }
         m_pos = 0;
+        return true;
 }
 
 void AEC::pushBack(double I)

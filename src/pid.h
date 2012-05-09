@@ -15,7 +15,7 @@ class PID : public Entity {
 public:
         PID(double baseline, double gp, double gi, double gd = 0.0, uint id = GetId());
         virtual double output() const;
-        virtual void initialise();
+        virtual bool initialise();
         virtual void step();
         void handleEvent(const Event *event);
 private:

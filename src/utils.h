@@ -40,7 +40,7 @@ class Entity;
 
 typedef enum
 {
-        All = 0, Debug, Info, Critical
+        All = 0, Debug, Info, Important, Critical
 } LogLevel;
 
 class CommandLineOptions {

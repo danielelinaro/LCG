@@ -34,9 +34,10 @@ Waveform::~Waveform()
         freeMemory();
 }
 
-void Waveform::initialise()
+bool Waveform::initialise()
 {
         m_position = 0;
+        return true;
 }
 
 bool Waveform::setFilename(const char *filename)

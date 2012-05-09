@@ -7,9 +7,10 @@ TimeLogger::TimeLogger(uint id)
         : Entity(id)
 {}
 
-void TimeLogger::initialise()
+bool TimeLogger::initialise()
 {
         m_time = 0.0;
+        return true;
 }
 
 void TimeLogger::step()

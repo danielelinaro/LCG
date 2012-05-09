@@ -103,10 +103,11 @@ OU::OU(double sigma, double tau, double eta0, ullong seed, double interval[2], u
         m_state.push_back(0.0);         // m_state[1] -> auxiliary variable
 } 
 
-void OU::initialise()
+bool OU::initialise()
 {
         OU_ETA = 0.0;
         OU_ETA_AUX = OU_ETA0;
+        return true;
 }
 
 void OU::evolve()

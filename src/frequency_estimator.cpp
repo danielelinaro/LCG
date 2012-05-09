@@ -37,10 +37,11 @@ double FrequencyEstimator::tau() const
         return FE_TAU;
 }
 
-void FrequencyEstimator::initialise()
+bool FrequencyEstimator::initialise()
 {
         m_tPrevSpike = 0.0;
         m_frequency = 0.0;
+        return true;
 }
 
 void FrequencyEstimator::step()
