@@ -56,5 +56,9 @@ TriggerEvent::TriggerEvent(const Entity *sender)
         : Event(TRIGGER, sender)
 {}
 
+ResetEvent::ResetEvent(const Entity *sender)
+        : Event(RESET, sender)
+{}
+
 } // namespace dynclamp
 

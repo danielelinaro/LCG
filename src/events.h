@@ -8,7 +8,7 @@ namespace dynclamp {
 class Entity;
 
 typedef enum _event_type {
-        SPIKE = 0, TRIGGER
+        SPIKE = 0, TRIGGER, RESET
 } EventType;
 
 class Event
@@ -37,6 +37,12 @@ class TriggerEvent : public Event
 {
 public:
         TriggerEvent(const Entity *sender);
+};
+
+class ResetEvent : public Event
+{
+public:
+        ResetEvent(const Entity *sender);
 };
 
 void EnqueueEvent(const Event *event);
