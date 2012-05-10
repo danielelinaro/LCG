@@ -18,6 +18,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -212,9 +213,9 @@ bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value)
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
                 return false;
-        if (str.compare("true") == 0 || str.compare("TRUE") == 0 || str.compare("True") == 0)
+        if (boost::iequals(str, "true"))
                 *value = true;
-        else if (str.compare("false") == 0 || str.compare("FALSE") == 0 || str.compare("False") == 0)
+        else if (boost::iequals(str, "false"))
                 *value = false;
         else
                 return false;

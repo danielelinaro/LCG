@@ -50,6 +50,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
         uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, delaySteps, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
+        bool adaptiveThreshold;
 
         id = dynclamp::GetIdFromDictionary(args);
 
@@ -119,11 +120,14 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
         }
 
+        if (! dynclamp::CheckAndExtractBool(args, "adaptiveThreshold", &adaptiveThreshold))
+                adaptiveThreshold = false;
+
         return new dynclamp::neurons::RealNeuron(spikeThreshold, V0,
                                                  deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
-                                                 inputRange, reference, delaySteps,
+                                                 inputRange, reference, delaySteps, adaptiveThreshold,
                                                  (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()), id);
 }
 
@@ -261,12 +265,12 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       uint inputRange, uint reference, uint voltageDelaySteps,
+                       uint inputRange, uint reference, uint voltageDelaySteps, bool adaptiveThreshold,
                        const char *kernelFile, uint id)
         : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL)
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -279,11 +283,12 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
                        uint inputRange, uint reference, uint voltageDelaySteps,
-                       const double *AECKernel, size_t kernelSize, uint id)
+                       const double *AECKernel, size_t kernelSize,
+                       bool adaptiveThreshold, uint id)
         : Neuron(V0, id), m_aec(AECKernel, kernelSize),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL)
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -317,6 +322,10 @@ bool RealNeuron::initialise()
 
         m_aec.pushBack(0.0);
 
+        m_Vth = RN_SPIKE_THRESH;
+        m_Vmin = -80;
+        m_Vmax = RN_SPIKE_THRESH + 20;
+
         return true;
 }
         
@@ -346,8 +355,23 @@ void RealNeuron::evolve()
                 m_VrDelay[m_delaySteps-1] = Vr;
         }
 
-        if (VM >= RN_SPIKE_THRESH && RN_VM_PREV < RN_SPIKE_THRESH)
+        if (VM >= m_Vth && RN_VM_PREV < m_Vth) {
                 emitSpike();
+                if (m_adaptiveThreshold) {
+                        m_Vmin = VM;
+                        m_Vmax = VM;
+                }
+        }
+
+        if (m_adaptiveThreshold) {
+                if (VM < m_Vmin) {
+                        m_Vmin = VM;
+                }
+                else if (VM > m_Vmax) {
+                        m_Vmax = VM;
+                        m_Vth = m_Vmax - 0.15 * (m_Vmax - m_Vmin);
+                }
+        }
 
         /*** CURRENT ***/
 

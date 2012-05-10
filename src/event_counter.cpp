@@ -42,6 +42,7 @@ void EventCounter::handleEvent(const Event *event)
         case SPIKE:
                 m_count++;
                 if (m_count == m_maxCount) {
+                        Logger(Debug, "Received %d spikes at typedef = %g sec.\n", m_maxCount, GetGlobalTime());
                         emitEvent(new TriggerEvent(this));
                         reset();
                 }

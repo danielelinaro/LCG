@@ -106,7 +106,7 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange, uint reference, uint voltageDelaySteps,
-                   const char *kernelFile = NULL, uint id = GetId());
+                   bool adaptiveThreshold = false, const char *kernelFile = NULL, uint id = GetId());
 
         RealNeuron(double spikeThreshold, double V0,
                    const char *deviceFile,
@@ -114,7 +114,8 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange, uint reference, uint voltageDelaySteps,
-                   const double *AECKernel, size_t kernelSize, uint id = GetId());
+                   const double *AECKernel, size_t kernelSize,
+                   bool adaptiveThreshold = false, uint id = GetId());
 
         ~RealNeuron();
 
@@ -134,6 +135,10 @@ private:
         ComediAnalogOutputSoftCal m_output;
         uint m_delaySteps;
         double *m_VrDelay;
+
+        // adaptive threshold variables
+        bool m_adaptiveThreshold;
+        double m_Vmax, m_Vmin, m_Vth;
 };
 #endif // HAVE_LIBCOMEDI
 
