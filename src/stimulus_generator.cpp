@@ -2,31 +2,32 @@
 #include <boost/filesystem.hpp>
 #include "stimulus_generator.h"
 #include "generate_trial.h"
-
+#include "events.h"
 namespace fs = boost::filesystem;
 
 dynclamp::Entity* WaveformFactory(dictionary& args)
 {
         uint id;
+        bool triggered;
         std::string filename;
         id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::generators::Waveform(id);
-        return new dynclamp::generators::Waveform(filename.c_str(), id);
+        if (!dynclamp::CheckAndExtractBool(args, "triggered", &triggered))
+            triggered = false;
+        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+            return new dynclamp::generators::Waveform(NULL, triggered, id);
+        return new dynclamp::generators::Waveform(filename.c_str(), triggered, id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-Waveform::Waveform(uint id)
-        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
-{}
-
-Waveform::Waveform(const char *stimulusFile, uint id)
-        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL), m_stimulusLength(0)
+Waveform::Waveform(const char *stimulusFile, bool triggered, uint id)
+        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL),
+          m_stimulusLength(0), m_triggered(triggered)
 {
-        setFilename(stimulusFile);
+        if (stimulusFile != NULL)
+            setFilename(stimulusFile);
 }
 
 Waveform::~Waveform()
@@ -36,8 +37,14 @@ Waveform::~Waveform()
 
 bool Waveform::initialise()
 {
+    if (!m_triggered) {
         m_position = 0;
-        return true;
+    }
+    else {
+        m_position = m_stimulusLength + 1;
+        Logger(Info, "Waveform is waiting for events.\n");
+    }
+    return true;
 }
 
 bool Waveform::setFilename(const char *filename)
@@ -116,7 +123,6 @@ uint Waveform::stimulusLength() const
 
 bool Waveform::hasNext() const
 {
-        //return m_position < m_stimulusLength-1;
         return true;
 }
 
@@ -149,11 +155,35 @@ void Waveform::freeMemory()
         }
 }
 
-double Waveform::output() const
+/**
+ * Note: a RESET event is sent when the waveform ends.
+ */
+double Waveform::output() const 
 {
         if (m_position < m_stimulusLength)
                 return m_stimulus[m_position];
+        if (m_position == m_stimulusLength)
+            emitEvent(new ResetEvent(this));
         return 0.0;
+}
+
+void Waveform::handleEvent(const Event *event)
+{
+        switch(event->type()) {
+        case TRIGGER:
+                if (m_triggered && m_position >= m_stimulusLength){
+                    Logger(Debug, "Waveform: triggered by event.\n");
+                    reset();
+                }
+                break;
+        default:
+                Logger(Important, "Waveform: unknown event type.\n");
+        }
+}
+
+void Waveform::reset()
+{
+    m_position = 0;
 }
 
 } // namespace generators

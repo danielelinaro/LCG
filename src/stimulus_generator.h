@@ -1,6 +1,7 @@
 #ifndef STIMULUS_GENERATOR_H
 #define STIMULUS_GENERATOR_H
 
+#include "entity.h"
 #include "types.h"
 #include "utils.h"
 #include "generator.h"
@@ -11,8 +12,7 @@ namespace generators {
 
 class Waveform : public Generator {
 public:
-        Waveform(uint id = GetId());
-        Waveform(const char *filename, uint id = GetId());
+        Waveform(const char *filename = NULL, bool triggered = false, uint id = GetId());
         virtual ~Waveform();
 
         bool setFilename(const char *filename);
@@ -23,8 +23,8 @@ public:
 
         virtual void step();
 
-        virtual double output() const;
-
+        virtual double output() const; 
+        virtual void handleEvent(const Event *event);
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
 
@@ -34,12 +34,15 @@ private:
         void freeMemory();
 
 protected:
+        virtual void reset();
+
+protected:
         char m_filename[FILENAME_MAXLEN];
 
         double *m_stimulus;
         uint m_stimulusLength;
         uint m_position;
-
+        bool m_triggered;
         double *m_stimulusMetadata;
         size_t m_stimulusRows, m_stimulusCols;
 };
