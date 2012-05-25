@@ -1,0 +1,58 @@
+#!/bin/sh
+
+#
+# Stability protocol for the computation of time constant and input resistance
+# Author: Daniele Linaro, May 2012
+#
+
+print_help()
+{
+    echo
+    echo "Stability protocol"
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -n   specify number of repetitions (default 10)"
+    echo "   -i   specify interval between repetitions in seconds (default 0.5)"
+    echo
+}
+
+reps=10
+interval=0.5
+while getopts ":a:n:i:h" opt ; do
+    case $opt in
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
+    stimfile=$HOME/protocols/stability/stability.stim
+else
+    stimfile=$PROTOCOLS_PATH/stability/stability.stim
+fi
+
+kernel_protocol
+cclamp -f $stimfile -n $reps -i $interval
+
+if [ -d stability ] ; then
+    mv *.h5 stability
+    mv *_kernel.dat stability
+fi
+

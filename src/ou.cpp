@@ -58,6 +58,7 @@ dynclamp::Entity* OUconductanceFactory(dictionary& args)
                 dynclamp::Logger(dynclamp::Critical, "Unable to build a OUconductance.\n");
                 return NULL;
         }
+        dynclamp::Logger(dynclamp::Debug, "G0 = %g sigma = %g tau = %g E = %g\n", G0, sigma, tau, E);
         if (dynclamp::CheckAndExtractValue(args, "interval", intervalStr)) {
                 size_t stop = intervalStr.find(",",0);
                 if (stop == intervalStr.npos) {
@@ -65,14 +66,9 @@ dynclamp::Entity* OUconductanceFactory(dictionary& args)
                                         "(which should be composed of two comma-separated values.\n");
                         return NULL;
                 }
-                {
-                        std::stringstream ss(intervalStr.substr(0,stop));
-                        ss >> interval[0];
-                }
-                {
-                        std::stringstream ss(intervalStr.substr(stop+1));
-                        ss >> interval[1];
-                }
+                std::stringstream ss0(intervalStr.substr(0,stop)), ss1(intervalStr.substr(stop+1));
+                ss0 >> interval[0];
+                ss1 >> interval[1];
                 dynclamp::Logger(dynclamp::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
         }
         else {

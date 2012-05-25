@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
         if (!ParseCommandLineOptions(argc, argv, &opt)) {
                 Logger(Critical, "Error while parsing command line arguments.\n"
-                                 "Type \"hybrid_simulator -h\" for information on how to use this program.\n");
+                                 "Type \"dclamp -h\" for information on how to use this program.\n");
                 exit(1);
         }
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 
-        Logger(Info, "opt.tend = %g sec.\n", opt.tend);
+        Logger(Debug, "opt.tend = %g sec.\n", opt.tend);
         if (opt.tend != -1)
                 // the duration specified in the command line has precedence over the one in the configuration file
                 tend = opt.tend;

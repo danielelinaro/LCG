@@ -376,7 +376,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         try {
                                 *dt = 1.0 / pt.get<double>("dynamicclamp.simulation.rate");
                         } catch(...) {
-                                Logger(Critical, "dt = %g sec.\n", *dt);
+                                Logger(Info, "dt = %g sec.\n", *dt);
                         }
                 }
 
@@ -400,20 +400,20 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                                 connections[id] = std::vector<uint>();
                                 size_t start=0, stop;
                                 int post;
-                                Logger(Info, "Entity #%d is connected to entities", id);
+                                Logger(Debug, "Entity #%d is connected to entities", id);
                                 while ((stop = conn.find(",",start)) != conn.npos) {
                                         std::stringstream ss(conn.substr(start,stop-start));
                                         ss >> post;
                                         connections[id].push_back(post);
                                         start = stop+1;
-                                        Logger(Info, " #%d", post);
+                                        Logger(Debug, " #%d", post);
                                 }
                                 std::stringstream ss(conn.substr(start,stop-start));
                                 ss >> post;
                                 connections[id].push_back(post);
-                                Logger(Info, " #%d.\n", post);
+                                Logger(Debug, " #%d.\n", post);
                         } catch(std::exception e) {
-                                Logger(Info, "No connections for entity #%d.\n", id);
+                                Logger(Debug, "No connections for entity #%d.\n", id);
                         }
                         entities.push_back(EntityFactory(name.c_str(), args));
                         ntts[id] = entities.back();
@@ -426,7 +426,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         for (int j=0; j<connections[idPre].size(); j++) {
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
-                                Logger(Info, "Connecting entity #%d to entity #%d.\n", i, idPost);
+                                Logger(Debug, "Connecting entity #%d to entity #%d.\n", i, idPost);
                         }
                 }
 
