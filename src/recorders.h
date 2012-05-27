@@ -81,11 +81,13 @@ private:
         void startWriterThread();
         void stopWriterThread();
         void buffersWriter();
-        bool writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims);
         bool writeMiscellanea();
         bool createGroups();
         int  checkCompression();
         void allocateForEntity(Entity *entity);
+        bool writeArrayAttribute(hid_t dataset, const std::string& attrName,
+                                 const double *data, const hsize_t *dims, int ndims);
+        bool writeStringAttribute(hid_t dataset, const std::string& attrName, const std::string& attrValue);
 
 private:
         // the handle of the file

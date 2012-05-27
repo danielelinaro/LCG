@@ -1,4 +1,5 @@
 #include "trigger.h"
+#include "engine.h"
 
 dynclamp::Entity* PeriodicTriggerFactory(dictionary& args)
 {
@@ -15,7 +16,9 @@ dynclamp::Entity* PeriodicTriggerFactory(dictionary& args)
 namespace dynclamp {
 
 Trigger::Trigger(uint id) : Entity(id)
-{}
+{
+        setName("Trigger");
+}
 
 double Trigger::output() const
 {

@@ -2,6 +2,7 @@
 #include "events.h"
 #include "thread_safe_queue.h"
 #include "poisson_generator.h"
+#include "engine.h"
 
 dynclamp::Entity* PoissonFactory(dictionary& args)
 {
@@ -27,6 +28,7 @@ Poisson::Poisson(double rate, ullong seed, uint id)
         : Generator(id), m_random(seed)
 {
         m_parameters.push_back(rate);
+        setName("PoissonGenerator");
 }
 
 bool Poisson::initialise()

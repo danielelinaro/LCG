@@ -5,6 +5,7 @@
 #include "ou.h"
 #include "synapses.h"
 #include "neurons.h"
+#include "engine.h"
 
 using namespace dynclamp;
 using namespace dynclamp::synapses;

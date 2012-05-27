@@ -7,6 +7,7 @@
 
 #ifdef HAVE_LIBCOMEDI
 
+#include <string>
 #include "comedi_io.h"
 
 namespace dynclamp {
@@ -17,6 +18,7 @@ public:
                     uint readChannel, double inputConversionFactor,
                     uint range = PLUS_MINUS_TEN,
                     uint aref = GRSE,
+                    const std::string& units = "mV",
                     uint id = GetId());
         virtual bool initialise();
         virtual void step();
@@ -31,6 +33,7 @@ public:
         AnalogOutput(const char *deviceFile, uint outputSubdevice,
                      uint writeChannel, double outputConversionFactor,
                      uint aref = GRSE,
+                    const std::string& units = "pA",
                      uint id = GetId());
         ~AnalogOutput();
         virtual bool initialise();

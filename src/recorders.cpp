@@ -1,5 +1,6 @@
 #include <string.h>
 #include "recorders.h"
+#include "engine.h"
 
 dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
 {
@@ -32,7 +33,9 @@ namespace dynclamp {
 namespace recorders {
 
 Recorder::Recorder(uint id) : Entity(id)
-{}
+{
+        setName("Recorder");
+}
 
 double Recorder::output() const
 {
@@ -49,6 +52,7 @@ ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
                 m_makeFilename = false;
                 strncpy(m_filename, filename, FILENAME_MAXLEN);
         }
+        setName("ASCIIRecorder");
 }
 
 ASCIIRecorder::~ASCIIRecorder()
@@ -121,6 +125,7 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
                 m_compress = false;
 
         m_bufferLengths = new hsize_t[m_numberOfBuffers];
+        setName("H5Recorder");
 }
 
 H5Recorder::~H5Recorder()
@@ -379,13 +384,12 @@ void H5Recorder::allocateForEntity(Entity *entity)
         m_dataspaces.push_back(dspace);
 
         // save parameters
-        size_t npars = entity->numberOfParameters();
+        hsize_t npars = entity->numberOfParameters();
         if (npars > 0) {
                 double *pars = new double[npars];
                 for (uint i=0; i<npars; i++)
                         pars[i] = entity->parameter(i);
-                sprintf(datasetName, "/Parameters/Entity-%04d", entity->id());
-                if (!writeData(datasetName, pars, &npars, 1))
+                if (!writeArrayAttribute(dset, "Parameters", pars, &npars, 1))
                         Logger(Critical, "Unable to save parameters for entity #%d.\n", entity->id());
                 delete pars;
         }
@@ -393,14 +397,21 @@ void H5Recorder::allocateForEntity(Entity *entity)
         // save metadata
         size_t ndims;
         if (entity->hasMetadata(&ndims)) {
-                char label[LABEL_LEN];
+                char label[LABEL_LEN+9] = "Metadata-";
                 size_t *dims = new size_t[ndims];
-                const double *metadata = entity->metadata(dims, label);
-                sprintf(datasetName, "/Metadata/Entity-%04d-%s", entity->id(), label);
-                if (!writeData(datasetName, metadata, dims, ndims))
+                hsize_t *hdims = new hsize_t[ndims];
+                const double *metadata = entity->metadata(dims, label+9);
+                for (int i=0; i<ndims; i++)
+                        hdims[i] = dims[i];
+                if (!writeArrayAttribute(dset, label, metadata, hdims, (int) ndims))
                         Logger(Critical, "Unable to write metadata for entity #%d.\n", entity->id());
+                delete hdims;
                 delete dims;
         }
+        
+        // save attributes
+        writeStringAttribute(dset, "Name", entity->name());
+        writeStringAttribute(dset, "Units", entity->units());
 }
 
 void H5Recorder::addPre(Entity *entity)
@@ -416,39 +427,116 @@ void H5Recorder::addPre(Entity *entity)
         m_data.push_back(buffer);
 }
 
-bool H5Recorder::writeData(const char *datasetName, const double *data, const size_t *dims, size_t ndims)
+bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
+                                     const double *data, const hsize_t *dims, int ndims)
 {
+        hid_t dspace, attr;
         herr_t status;
-        hid_t dataspace, dataset;
-        hsize_t *hdims;
-
-        hdims = new hsize_t[ndims];
-        for (int i=0; i<ndims; i++)
-                hdims[i] = (hsize_t) dims[i];
-        dataspace = H5Screate_simple(ndims, hdims, NULL);
-        if (dataspace < 0) {
-                delete hdims;
+        bool retval = true;
+        
+        dspace = H5Screate(H5S_SIMPLE);
+        if (dspace < 0) {
+                Logger(Critical, "Error in H5Screate.\n");
                 return false;
         }
 
-        dataset = H5Dcreate2(m_fid, datasetName, H5T_IEEE_F64LE, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (dataset < 0) {
-                H5Sclose(dataspace);
-                delete hdims;
+        status = H5Sset_extent_simple(dspace, ndims, dims, NULL);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Sset_extent_simple.\n");
+                H5Sclose(dspace);
                 return false;
         }
+        Logger(Important, "Successfully allocated space for the data.\n");
 
-        status = H5Dwrite(dataset, H5T_IEEE_F64LE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-
-        H5Dclose(dataset);
-        H5Sclose(dataspace);
-        delete hdims;
-
-        if (status < 0)
+        attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Acreate2.\n");
+                H5Sclose(dspace);
                 return false;
+        }
+        Logger(Important, "Successfully created attribute.\n");
 
+        status = H5Awrite(attr, H5T_IEEE_F64LE, data);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Awrite.\n");
+                retval = false;
+        }
+        else {
+                Logger(Important, "Successfully written array attribute.\n");
+        }
+
+        H5Aclose(attr);
+        H5Sclose(dspace);
+
+        return retval;
         return true;
 }
+
+bool H5Recorder::writeStringAttribute(hid_t dataset,
+                                      const std::string& attrName,
+                                      const std::string& attrValue)
+{
+        hid_t dspace, atype, attr;
+        herr_t status;
+        bool retval = true;
+        
+        dspace = H5Screate(H5S_SCALAR);
+        if (dspace < 0) {
+                Logger(Critical, "Error in H5Screate.\n");
+                return false;
+        }
+
+        atype = H5Tcopy(H5T_C_S1);
+        if (atype < 0) {
+                Logger(Critical, "Error in H5Tcopy.\n");
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Important, "Successfully copied type.\n");
+
+        status = H5Tset_size(atype, attrValue.size() + 1);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Tset_size.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Important, "Successfully set type size.\n");
+
+        status = H5Tset_strpad(atype, H5T_STR_NULLTERM);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Tset_strpad.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Important, "Successfully set type padding string.\n");
+
+        attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Acreate2.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Important, "Successfully created attribute.\n");
+
+        status = H5Awrite(attr, atype, attrValue.c_str());
+        if (status < 0) {
+                Logger(Critical, "Error in H5Awrite.\n");
+                retval = false;
+        }
+        else {
+                Logger(Important, "Successfully written string attribute.\n");
+        }
+
+        H5Aclose(attr);
+        H5Tclose(atype);
+        H5Sclose(dspace);
+
+        return retval;
+}
+
 
 int H5Recorder::isCompressionAvailable() const
 {

@@ -1,4 +1,5 @@
 #include "pid.h"
+#include "engine.h"
 
 dynclamp::Entity* PIDFactory(dictionary& args)
 {
@@ -26,6 +27,7 @@ PID::PID(double baseline, double gp, double gi, double gd, uint id)
         m_parameters.push_back(gp);
         m_parameters.push_back(gi);
         m_parameters.push_back(gd);
+        setName("PID");
 }
 
 double PID::output() const

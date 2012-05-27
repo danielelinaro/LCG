@@ -1,4 +1,5 @@
 #include "event_counter.h"
+#include "engine.h"
 
 dynclamp::Entity* EventCounterFactory(dictionary& args)
 {
@@ -19,6 +20,7 @@ EventCounter::EventCounter(uint maxCount, uint id)
         : Entity(id), m_maxCount(maxCount)
 {
         m_parameters.push_back(m_maxCount);
+        setName("EventCounter");
 }
 
 uint EventCounter::maxCount() const

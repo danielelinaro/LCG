@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "synapses.h"
 #include "events.h"
+#include "engine.h"
 
 using namespace dynclamp;
 using namespace dynclamp::synapses;

@@ -6,7 +6,7 @@
 dynclamp::Entity* AnalogInputFactory(dictionary& args)
 {
         uint inputSubdevice, readChannel, range, reference, id;
-        std::string deviceFile, rangeStr, referenceStr;
+        std::string deviceFile, rangeStr, referenceStr, units;
         double inputConversionFactor;
 
         id = dynclamp::GetIdFromDictionary(args);
@@ -69,14 +69,18 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                 }
         }
 
+        if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
+                units = "mV";
+        }
+
         return new dynclamp::AnalogInput(deviceFile.c_str(), inputSubdevice, readChannel,
-                        inputConversionFactor, range, reference, id);
+                                         inputConversionFactor, range, reference, units, id);
 }
 
 dynclamp::Entity* AnalogOutputFactory(dictionary& args)
 {
         uint outputSubdevice, writeChannel, reference, id;
-        std::string deviceFile, referenceStr;
+        std::string deviceFile, referenceStr, units;
         double outputConversionFactor;
 
         id = dynclamp::GetIdFromDictionary(args);
@@ -106,19 +110,26 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
                 }
         }
 
+        if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
+                units = "pA";
+        }
+
         return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
-                        outputConversionFactor, reference, id);
+                                          outputConversionFactor, reference, units, id);
 }
 
 namespace dynclamp {
 
 AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
-                         uint range, uint aref,
+                         uint range, uint aref, const std::string& units,
                          uint id)
         : Entity(id),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
-{}
+{
+        setName("AnalogInput");
+        setUnits(units);
+}
 
 bool AnalogInput::initialise()
 {
@@ -142,10 +153,13 @@ double AnalogInput::output() const
 
 AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
-                           uint id)
+                           const std::string& units, uint id)
         : Entity(id),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
-{}
+{
+        setName("AnalogOutput");
+        setUnits(units);
+}
 
 AnalogOutput::~AnalogOutput()
 {

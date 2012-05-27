@@ -54,3 +54,56 @@ double gammln(double x) {
 	return tmp + log(2.5066282746310005*ser/xx);
 }
 
+void sobseq(int *n, float *x)
+{
+        int j,k,l;
+        unsigned long i,im,ipp;
+        static float fac;
+        static unsigned long in,ix[MAXDIM+1],*iu[MAXBIT+1];
+        static unsigned long mdeg[MAXDIM+1] = {0,1,2,3,3,4,4};
+        static unsigned long ip[MAXDIM+1] = {0,0,1,1,2,1,4};
+        static unsigned long iv[MAXDIM*MAXBIT+1] = {0,1,1,1,1,1,1,3,1,3,3,1,1,5,7,7,3,3,5,15,11,5,15,13,9};
+
+        if (*n < 0) { // Initialize, don’t return a vector.
+                for (k=1; k<=MAXDIM; k++)
+                        ix[k] = 0;
+                in = 0;
+                if (iv[1] != 1)
+                        return;
+                fac = 1.0/(1L << MAXBIT);
+                for (j=1,k=0; j<=MAXBIT; j++,k+=MAXDIM)
+                        iu[j] = &iv[k];
+                // To allow both 1D and 2D addressing.
+                for (k=1; k<=MAXDIM; k++) {
+                        for (j=1; j<=mdeg[k]; j++)
+                                iu[j][k] <<= (MAXBIT-j);
+                        // Stored values only require normalization.
+                        for (j=mdeg[k]+1; j<=MAXBIT; j++) { // Use the recurrence to get other values.
+                                ipp = ip[k];
+                                i = iu[j-mdeg[k]][k];
+                                i ^= (i >> mdeg[k]);
+                                for (l=mdeg[k]-1; l>=1; l--) {
+                                        if (ipp & 1)
+                                                i ^= iu[j-l][k];
+                                        ipp >>= 1;
+                                }
+                                iu[j][k] = i;
+                        }
+                }
+        }
+        else {
+                im = in++;
+                for (j=1; j<=MAXBIT; j++) {
+                        if (!(im & 1))
+                                break;
+                        im >>= 1;
+                } 
+                if (j > MAXBIT)
+                        fprintf(stderr, "MAXBIT (%d) too small in sobseq.\n", MAXBIT);
+                im = (j-1)*MAXDIM;
+                for (k=1; k<=MIN(*n,MAXDIM); k++) {
+                        ix[k] ^= iv[im+k];
+                        x[k-1] = ix[k]*fac;
+                }
+        }
+}

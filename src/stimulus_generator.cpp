@@ -3,6 +3,7 @@
 #include "stimulus_generator.h"
 #include "generate_trial.h"
 #include "events.h"
+#include "engine.h"
 namespace fs = boost::filesystem;
 
 dynclamp::Entity* WaveformFactory(dictionary& args)
@@ -28,6 +29,7 @@ Waveform::Waveform(const char *stimulusFile, bool triggered, uint id)
 {
         if (stimulusFile != NULL)
             setFilename(stimulusFile);
+        setName("Waveform");
 }
 
 Waveform::~Waveform()
@@ -183,7 +185,12 @@ void Waveform::handleEvent(const Event *event)
 
 void Waveform::reset()
 {
-    m_position = 0;
+        m_position = 0;
+}
+
+void Waveform::terminate()
+{
+        m_position = m_stimulusLength;
 }
 
 } // namespace generators

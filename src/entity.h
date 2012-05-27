@@ -1,10 +1,12 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <vector>
+#include <string>
+
 #include "types.h"
 #include "utils.h"
 #include "events.h"
-#include "engine.h"
 
 namespace dynclamp
 {
@@ -37,6 +39,9 @@ public:
 
         void readAndStoreInputs();
 
+        const std::string& name() const;
+        const std::string& units() const;
+
         virtual void step() = 0;
 
         virtual double output() const = 0;
@@ -55,6 +60,8 @@ public:
 protected:
         virtual void addPre(Entity *entity);
         virtual void addPost(Entity *entity);
+        void setName(const std::string& name);
+        void setUnits(const std::string &units);
 
 private:
         bool isPost(const Entity *entity) const;
@@ -67,6 +74,9 @@ protected:
 
         std::vector<Entity*> m_pre;
         std::vector<Entity*> m_post;
+
+private:
+        std::string m_name, m_units;
 };
 
 }

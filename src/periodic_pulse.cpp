@@ -1,5 +1,6 @@
-#include "periodic_pulse.h"
 #include <math.h>
+#include "periodic_pulse.h"
+#include "engine.h"
 
 dynclamp::Entity* PeriodicPulseFactory(dictionary& args)
 {
@@ -52,6 +53,9 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         m_parameters.push_back(amplitude);      // m_parameters[2] -> amplitude
         m_parameters.push_back(1.0/frequency);  // m_parameters[3] -> period
 
+        setName("PeriodicPulse");
+        setUnits("pA");
+
         Logger(Debug, "---\nPeriodicPulse:\n\tFrequency: %g\n\tAmplitude: %g\n\tDuration: %g\n\tPeriod: %g\n---\n",
                         PP_FREQUENCY, PP_AMPLITUDE, PP_DURATION, PP_PERIOD);
         Logger(Debug, "m_parameters.size() = %d\n", m_parameters.size());
@@ -76,6 +80,9 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         m_parameters.push_back(gp);             // m_parameters[6] -> proportional gain
         m_parameters.push_back(gi);             // m_parameters[7] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[8] -> derivative gain
+
+        setName("PeriodicPulse");
+        setUnits("pA");
 
         Logger(Info, "---\nPeriodicPulse:\n\tFrequency: %g Hz\n\tAmplitude: %g pA\n\tDuration: %g sec\n\tPeriod: %g sec\n---\n",
                         PP_FREQUENCY, PP_AMPLITUDE, PP_DURATION, PP_PERIOD);

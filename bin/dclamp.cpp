@@ -2,6 +2,7 @@
 #include "entity.h"
 #include "utils.h"
 #include "stimulus_generator.h"
+#include "engine.h"
 
 using namespace dynclamp;
 

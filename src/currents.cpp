@@ -1,5 +1,6 @@
-#include "currents.h"
 #include <math.h>
+#include "currents.h"
+#include "engine.h"
 
 dynclamp::Entity* HHSodiumFactory(dictionary& args)
 {
@@ -87,6 +88,9 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         m_state.push_back(0);           // fraction of open channels -> m_state[0]
 
         Logger(Info, "Area = %g\n", IC_AREA);
+
+        setName("IonicCurrent");
+        setUnits("pA");
 }
 
 bool IonicCurrent::initialise()
@@ -125,6 +129,8 @@ HHSodium::HHSodium(double area, double gbar, double E, uint id)
 {
         m_state.push_back(0);           // m
         m_state.push_back(0);           // h
+        setName("HHSodiumCurrent");
+        setUnits("pA");
 }
 
 bool HHSodium::initialise()
@@ -198,6 +204,8 @@ HHPotassium::HHPotassium(double area, double gbar, double E, uint id)
         : IonicCurrent(area, gbar, E, id)
 {
         m_state.push_back(0);           // n
+        setName("HHPotassiumCurrent");
+        setUnits("pA");
 }
 
 bool HHPotassium::initialise()
@@ -256,6 +264,8 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
         m_parameters.push_back(ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA)));     // number of channels -> m_parameters[4]
         m_state.push_back(NIC_NCHANNELS * IC_FRACTION); // number of open channels -> m_state[1]
         Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
+        setName("NoisyIonicCurrent");
+        setUnits("pA");
 }
 
 bool NoisyIonicCurrent::initialise()
@@ -278,6 +288,8 @@ HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double g
         m_state.push_back(0.0);   // h
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
+        setName("HHSodiumWithChannelNoiseCurrent");
+        setUnits("pA");
 }
 
 HHSodiumCN::~HHSodiumCN()
@@ -386,6 +398,8 @@ HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, do
         m_state.push_back(0.0);   // n
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
+        setName("HHPotassiumWithChannelNoiseCurrent");
+        setUnits("pA");
 }
 
 HHPotassiumCN::~HHPotassiumCN()

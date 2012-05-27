@@ -37,6 +37,8 @@ FrequencyClamp::FrequencyClamp(double baselineCurrent, double tau,
         m_parameters.push_back(gp);             // m_parameters[2] -> proportional gain
         m_parameters.push_back(gi);             // m_parameters[3] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[4] -> derivative gain
+        setName("FrequencyClamp");
+        setUnits("pA");
 }
 
 FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double tau,
@@ -49,6 +51,8 @@ FrequencyClamp::FrequencyClamp(double frequency, double baselineCurrent, double 
         m_parameters.push_back(gi);             // m_parameters[3] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[4] -> derivative gain
         m_parameters.push_back(frequency);      // m_parameters[5] -> frequency
+        setName("FrequencyClamp");
+        setUnits("pA");
 }
 
 void FrequencyClamp::addPre(Entity *entity)

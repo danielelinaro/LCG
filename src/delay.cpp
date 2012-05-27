@@ -1,5 +1,6 @@
-#include "delay.h"
 #include <math.h>
+#include "delay.h"
+#include "engine.h"
 
 dynclamp::Entity* DelayFactory(dictionary& args)
 {
@@ -28,6 +29,7 @@ Delay::Delay(uint nSamples, uint id)
 
         m_bufferLength = nSamples + 1;
         allocateBuffer();
+        setName("Delay");
 }
 
 Delay::Delay(double delay, uint id)

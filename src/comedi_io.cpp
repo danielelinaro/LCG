@@ -1,6 +1,7 @@
 #include "comedi_io.h"
 
 #ifdef HAVE_LIBCOMEDI
+#include "engine.h"
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>

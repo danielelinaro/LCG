@@ -1,13 +1,12 @@
-#include "events.h"
-#include "thread_safe_queue.h"
 #include "entity.h"
+#include "thread_safe_queue.h"
 
 namespace dynclamp {
 
 extern ThreadSafeQueue<Event*> eventsQueue;
 
 Entity::Entity(uint id)
-        : m_id(id), m_inputs(), m_pre(), m_post()
+        : m_id(id), m_inputs(), m_pre(), m_post(), m_name("Entity"), m_units("N/A")
 {}
 
 Entity::~Entity()
@@ -131,6 +130,26 @@ bool Entity::hasMetadata(size_t *ndims) const
 const double* Entity::metadata(size_t *dims, char *label) const
 {
         return NULL;
+}
+
+const std::string& Entity::name() const
+{
+        return m_name;
+}
+
+const std::string& Entity::units() const
+{
+        return m_units;
+}
+
+void Entity::setName(const std::string& name)
+{
+        m_name = name;
+}
+
+void Entity::setUnits(const std::string& units)
+{
+        m_units = units;
 }
 
 } // namespace dynclamp

@@ -19,6 +19,8 @@ namespace generators {
 ConductanceStimulus::ConductanceStimulus(double E, uint id) : Generator(id)
 {
         m_parameters.push_back(E);
+        setName("ConductanceStimulus");
+        setUnits("pA");
 }
 
 bool ConductanceStimulus::initialise()

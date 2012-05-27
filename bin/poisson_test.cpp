@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "poisson_generator.h"
 #include "synapses.h"
+#include "engine.h"
 
 using namespace dynclamp;
 using namespace dynclamp::synapses;

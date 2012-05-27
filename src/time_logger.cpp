@@ -1,11 +1,14 @@
 #include "time_logger.h"
-#include "utils.h"
+#include "engine.h"
 
 namespace dynclamp {
 
 TimeLogger::TimeLogger(uint id)
         : Entity(id)
-{}
+{
+        setName("TimeLogger");
+        setUnits("s");
+}
 
 bool TimeLogger::initialise()
 {

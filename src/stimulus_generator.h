@@ -22,6 +22,7 @@ public:
         virtual bool hasNext() const;
 
         virtual void step();
+        virtual void terminate();
 
         virtual double output() const; 
         virtual void handleEvent(const Event *event);

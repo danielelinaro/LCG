@@ -1,6 +1,7 @@
-#include "synapses.h"
-#include "neurons.h"
 #include <stdlib.h>
+#include "synapses.h"
+#include "engine.h"
+#include "neurons.h"
 
 dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
 {
@@ -62,6 +63,8 @@ Synapse::Synapse(double E, double weight, double delay, uint id)
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
         m_parameters.push_back(weight); // m_parameters[1] -> weight
         m_parameters.push_back(delay);  // m_parameters[2] -> delay
+        setName("Synapse");
+        setUnits("pA");
 }
 
 bool Synapse::initialise()
@@ -126,6 +129,8 @@ ExponentialSynapse::ExponentialSynapse(double E, double weight, double delay, do
         : Synapse(E, weight, delay, id)
 {
         m_parameters.push_back(exp(-GetGlobalDt()/tau));   // m_parameters[3] -> decay coefficient
+        setName("ExponentialSynapse");
+        setUnits("pA");
 }
 
 bool ExponentialSynapse::initialise()
@@ -158,6 +163,8 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
         m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[3] -> first decay coefficient
         m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[4] -> second decay coefficient
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
+        setName("Exp2Synapse");
+        setUnits("pA");
 }
 
 bool Exp2Synapse::initialise()
@@ -203,6 +210,9 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
         m_parameters.push_back(1.0 / tau[1]);           // m_parameters[7] -> 1 / tau_rec
         m_parameters.push_back(1.0 / tau[2]);           // m_parameters[8] -> 1 / tau_facil
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[9] -> coeff.
+
+        setName("TMGSynapse");
+        setUnits("pA");
 }
 
 bool TMGSynapse::initialise()

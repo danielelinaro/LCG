@@ -97,6 +97,7 @@ OU::OU(double sigma, double tau, double eta0, ullong seed, double interval[2], u
 
         m_state.push_back(0.0);         // m_state[0] -> eta
         m_state.push_back(0.0);         // m_state[1] -> auxiliary variable
+        setName("OU");
 } 
 
 bool OU::initialise()
@@ -120,7 +121,10 @@ void OU::evolve()
 
 OUcurrent::OUcurrent(double sigma, double tau, double I0, ullong seed, double interval[2], uint id)
         : OU(sigma, tau, I0, seed, interval, id)
-{}
+{
+        setName("OUcurrent");
+        setUnits("pA");
+}
 
 double OUcurrent::output() const
 {
@@ -132,6 +136,8 @@ OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullo
         : OU(sigma, tau, G0, seed, interval, id), m_neuron(NULL)
 {
         m_parameters.push_back(E);      // m_parameters[9] -> reversal potential
+        setName("OUconductance");
+        setUnits("nS");
 }
 
 double OUconductance::output() const

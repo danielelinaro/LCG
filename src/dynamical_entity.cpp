@@ -4,7 +4,9 @@ namespace dynclamp {
 
 DynamicalEntity::DynamicalEntity(uint id)
         : Entity(id)
-{}
+{
+        setName("DynamicalEntity");
+}
 
 const array& DynamicalEntity::state() const
 {

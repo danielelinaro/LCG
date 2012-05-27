@@ -1,6 +1,7 @@
 #include <vector>
 #include "entity.h"
 #include "utils.h"
+#include "engine.h"
 
 using namespace dynclamp;
 
