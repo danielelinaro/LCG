@@ -27,6 +27,10 @@ PID::PID(double baseline, double gp, double gi, double gd, uint id)
         m_parameters.push_back(gp);
         m_parameters.push_back(gi);
         m_parameters.push_back(gd);
+        m_parametersNames.push_back("baseline");
+        m_parametersNames.push_back("gp");
+        m_parametersNames.push_back("gi");
+        m_parametersNames.push_back("gd");
         setName("PID");
 }
 

@@ -52,6 +52,10 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         m_parameters.push_back(duration);       // m_parameters[1] -> duration
         m_parameters.push_back(amplitude);      // m_parameters[2] -> amplitude
         m_parameters.push_back(1.0/frequency);  // m_parameters[3] -> period
+        m_parametersNames.push_back("frequency");
+        m_parametersNames.push_back("duration");
+        m_parametersNames.push_back("amplitude");
+        m_parametersNames.push_back("period");
 
         setName("PeriodicPulse");
         setUnits("pA");
@@ -80,6 +84,15 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         m_parameters.push_back(gp);             // m_parameters[6] -> proportional gain
         m_parameters.push_back(gi);             // m_parameters[7] -> integral gain
         m_parameters.push_back(gd);             // m_parameters[8] -> derivative gain
+        m_parametersNames.push_back("frequency");
+        m_parametersNames.push_back("duration");
+        m_parametersNames.push_back("amplitude");
+        m_parametersNames.push_back("period");
+        m_parametersNames.push_back("probability");
+        m_parametersNames.push_back("tau");
+        m_parametersNames.push_back("gp");
+        m_parametersNames.push_back("gi");
+        m_parametersNames.push_back("gd");
 
         setName("PeriodicPulse");
         setUnits("pA");

@@ -30,7 +30,6 @@
 
 #define DYNCLAMP_VERSION 0.1
 
-#define OK 0
 #define FILENAME_MAXLEN 1024
 
 namespace dynclamp

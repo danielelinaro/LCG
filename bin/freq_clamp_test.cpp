@@ -17,6 +17,7 @@ using namespace dynclamp::generators;
 int main()
 {
         uint i, n;
+
         SetGlobalDt(1./20000);
 
         std::vector<Entity*> entities(8);
@@ -30,7 +31,7 @@ int main()
         entities[3] = new Waveform("ou.stim");
         entities[4] = new Waveform("freq.stim");
         entities[5] = new FrequencyEstimator(0.1);
-        entities[6] = new PID(60, 0.2, 0.1, 0.0);
+        entities[6] = new PID(60, 5, 0.5, 0.0);
         entities[7] = new H5Recorder(false, "freq_clamp.h5");
 
         n = entities.size();

@@ -9,7 +9,7 @@ int main()
 {
         double tend, dt;
         std::vector<Entity*> entities;
-        ParseConfigurationFile("configs/lif.xml", entities, &tend, &dt);
+        ParseConfigurationFile("../configs/lif.xml", entities, &tend, &dt);
         SetGlobalDt(dt);
         Simulate(entities, tend);
         for (int i=0; i<entities.size(); i++)

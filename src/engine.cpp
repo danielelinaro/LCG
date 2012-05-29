@@ -112,8 +112,12 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         SetGlobalTimeOffset();
         ResetGlobalTime();
-        for (i=0; i<nEntities; i++)
-                entities[i]->initialise();
+        for (i=0; i<nEntities; i++) {
+                if (!entities[i]->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
+                        return;
+                }
+        }
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -216,8 +220,12 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         ResetGlobalTime();
 
         // Initialise all entities
-        for (i=0; i<nEntities; i++)
-                entities[i]->initialise();
+        for (i=0; i<nEntities; i++) {
+                if (!entities[i]->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
+                        return;
+                }
+        }
         Logger(Info, "Initialised all entities.\n");
         
 	// Get current time
@@ -286,8 +294,12 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
         int i, nEntities = entities.size();
         double dt = GetGlobalDt();
         ResetGlobalTime();
-        for (i=0; i<nEntities; i++)
-                entities[i]->initialise();
+        for (i=0; i<nEntities; i++) {
+                if (!entities[i]->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
+                        return;
+                }
+        }
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)

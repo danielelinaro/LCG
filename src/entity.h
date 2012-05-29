@@ -23,9 +23,13 @@ public:
 
         void setParameters(const array& parameters);
         void setParameter(double parameter, uint index);
+        void setParametersNames(const std::vector<std::string>& parametersNames);
+        void setParameterName(const std::string& parameterName, uint index);
         size_t numberOfParameters() const;
         const array& parameters() const;
         double parameter(uint index) const;
+        const std::vector<std::string>& parametersNames() const;
+        const std::string& parameterName(uint index) const;
 
         /**
          * Connects this entity to the one passed as a parameter,
@@ -69,8 +73,9 @@ private:
 protected:
         uint   m_id;
 
-        array  m_parameters;
         array  m_inputs;
+        array  m_parameters;
+        std::vector<std::string> m_parametersNames;
 
         std::vector<Entity*> m_pre;
         std::vector<Entity*> m_post;

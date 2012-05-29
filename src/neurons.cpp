@@ -189,6 +189,15 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         m_parameters.push_back(Iext);
         m_parameters.push_back(-1.0/LIF_TAU); // parameters[7] -> lambda
         m_parameters.push_back(LIF_TAU/LIF_C);// parameters[8] -> Rl
+        m_parametersNames.push_back("C");
+        m_parametersNames.push_back("tau");
+        m_parametersNames.push_back("tarp");
+        m_parametersNames.push_back("Er");
+        m_parametersNames.push_back("E0");
+        m_parametersNames.push_back("Vth");
+        m_parametersNames.push_back("Iext");
+        m_parametersNames.push_back("lambda");
+        m_parametersNames.push_back("Rleak");
         setName("LIFNeuron");
         setUnits("mV");
 }
@@ -244,6 +253,14 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
         m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
         m_parameters.push_back(gl*10*area);     // m_parameters[6] -> leak conductance (in nS)
         m_parameters.push_back(GetGlobalDt() / (C*1e-5*area));   // m_parameters[7] -> coefficient
+        m_parametersNames.push_back("C");
+        m_parametersNames.push_back("gl");
+        m_parametersNames.push_back("El");
+        m_parametersNames.push_back("Iext");
+        m_parametersNames.push_back("area");
+        m_parametersNames.push_back("spikeThreshold");
+        m_parametersNames.push_back("gl_in_nS");
+        m_parametersNames.push_back("coeff");
         setName("ConductanceBasedNeuron");
         setUnits("mV");
 }
@@ -282,6 +299,8 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
         m_parameters.push_back((double) m_delaySteps);
+        m_parametersNames.push_back("spikeThreshold");
+        m_parametersNames.push_back("delaySteps");
         setName("RealNeuron");
         setUnits("mV");
 }
@@ -302,6 +321,8 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
         m_parameters.push_back((double) m_delaySteps);
+        m_parametersNames.push_back("spikeThreshold");
+        m_parametersNames.push_back("delaySteps");
         setName("RealNeuron");
         setUnits("mV");
 }

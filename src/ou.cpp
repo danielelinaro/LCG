@@ -95,6 +95,16 @@ OU::OU(double sigma, double tau, double eta0, ullong seed, double interval[2], u
         m_parameters.push_back(interval[0]);    // m_parameters[7] -> start time
         m_parameters.push_back(interval[1]);    // m_parameters[8] -> end time
 
+        m_parametersNames.push_back("sigma");
+        m_parametersNames.push_back("tau");
+        m_parametersNames.push_back("eta0");
+        m_parametersNames.push_back("diffusionConstant");
+        m_parametersNames.push_back("mu");
+        m_parametersNames.push_back("coeff");
+        m_parametersNames.push_back("seed");
+        m_parametersNames.push_back("startTime");
+        m_parametersNames.push_back("endTime");
+
         m_state.push_back(0.0);         // m_state[0] -> eta
         m_state.push_back(0.0);         // m_state[1] -> auxiliary variable
         setName("OU");
@@ -136,6 +146,7 @@ OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullo
         : OU(sigma, tau, G0, seed, interval, id), m_neuron(NULL)
 {
         m_parameters.push_back(E);      // m_parameters[9] -> reversal potential
+        m_parametersNames.push_back("E");
         setName("OUconductance");
         setUnits("nS");
 }

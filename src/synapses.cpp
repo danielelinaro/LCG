@@ -63,6 +63,9 @@ Synapse::Synapse(double E, double weight, double delay, uint id)
         m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
         m_parameters.push_back(weight); // m_parameters[1] -> weight
         m_parameters.push_back(delay);  // m_parameters[2] -> delay
+        m_parametersNames.push_back("E");
+        m_parametersNames.push_back("weight");
+        m_parametersNames.push_back("delay");
         setName("Synapse");
         setUnits("pA");
 }
@@ -129,6 +132,7 @@ ExponentialSynapse::ExponentialSynapse(double E, double weight, double delay, do
         : Synapse(E, weight, delay, id)
 {
         m_parameters.push_back(exp(-GetGlobalDt()/tau));   // m_parameters[3] -> decay coefficient
+        m_parametersNames.push_back("decayCoeff");
         setName("ExponentialSynapse");
         setUnits("pA");
 }
@@ -163,6 +167,9 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double delay, double tau[2],
         m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[3] -> first decay coefficient
         m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[4] -> second decay coefficient
 	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
+        m_parametersNames.push_back("decayCoeff1");
+        m_parametersNames.push_back("decayCoeff2");
+        m_parametersNames.push_back("factor");
         setName("Exp2Synapse");
         setUnits("pA");
 }
@@ -210,6 +217,14 @@ TMGSynapse::TMGSynapse(double E, double weight, double delay, double U, double t
         m_parameters.push_back(1.0 / tau[1]);           // m_parameters[7] -> 1 / tau_rec
         m_parameters.push_back(1.0 / tau[2]);           // m_parameters[8] -> 1 / tau_facil
 	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[9] -> coeff.
+
+        m_parametersNames.push_back("U");
+        m_parametersNames.push_back("tauFacil");
+        m_parametersNames.push_back("decayCoeff");
+        m_parametersNames.push_back("tau1Recipr");
+        m_parametersNames.push_back("tauRecRecipr");
+        m_parametersNames.push_back("tauFacilRecipr");
+        m_parametersNames.push_back("coeff");
 
         setName("TMGSynapse");
         setUnits("pA");

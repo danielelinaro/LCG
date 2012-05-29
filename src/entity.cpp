@@ -31,6 +31,18 @@ void Entity::setParameter(double parameter, uint index)
         m_parameters[index] = parameter;
 }
 
+void Entity::setParametersNames(const std::vector<std::string>& parametersNames)
+{
+        m_parametersNames = parametersNames;
+}
+        
+void Entity::setParameterName(const std::string& parameterName, uint index)
+{
+        if (index >= m_parameters.size())
+                throw "Parameter out of bounds.";
+        m_parametersNames[index] = parameterName;
+}
+
 size_t Entity::numberOfParameters() const
 {
         return m_parameters.size();
@@ -46,6 +58,18 @@ double Entity::parameter(uint index) const
         if (index >= m_parameters.size())
                 throw "Parameter out of bounds.";
         return m_parameters[index];
+}
+
+const std::vector<std::string>& Entity::parametersNames() const
+{
+        return m_parametersNames;
+}
+
+const std::string& Entity::parameterName(uint index) const
+{
+        if (index >= m_parameters.size())
+                throw "Parameter out of bounds.";
+        return m_parametersNames[index];
 }
 
 bool Entity::isPost(const Entity *entity) const

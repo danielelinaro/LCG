@@ -12,7 +12,7 @@ using namespace dynclamp::recorders;
 
 int main()
 {
-        SetLoggingLevel(Debug);
+        SetLoggingLevel(Info);
 
         int i;
         double t;

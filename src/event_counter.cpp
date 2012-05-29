@@ -20,6 +20,7 @@ EventCounter::EventCounter(uint maxCount, uint id)
         : Entity(id), m_maxCount(maxCount)
 {
         m_parameters.push_back(m_maxCount);
+        m_parametersNames.push_back("maxCount");
         setName("EventCounter");
 }
 

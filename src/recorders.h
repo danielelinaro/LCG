@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include <vector>
-#include <map>
 #include <queue>
 
 #include <boost/thread.hpp>
@@ -44,18 +43,14 @@ private:
 };
 
 
+#define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
-
-#define H5_FILE_OPEN_ERROR      -1
-#define H5_GROUPS_OPEN_ERROR    -2
-#define H5_MISC_WRITE_ERROR     -3
-#define H5_DATASET_ERROR        -4
-#define H5_SHUFFLE_ERROR        -5
-#define H5_DEFLATE_ERROR        -6
-
-#define H5_NO_GZIP_COMPRESSION  -7
-#define H5_NO_FILTER_INFO       -8
-#define H5_NO_SHUFFLE_FILTER    -9
+#define ENTITIES_GROUP   "/Entities"
+#define INFO_GROUP       "/Info"
+#define DATA_DATASET     "Data"
+#define METADATA_DATASET "Metadata"
+#define PARAMETERS_GROUP "Parameters"
+#define H5_FILE_VERSION  2
 
 class H5Recorder : public Recorder {
 public:
@@ -77,19 +72,21 @@ protected:
         virtual void addPre(Entity *entity);
 
 private:
-        int  isCompressionAvailable() const;
-        int  openFile();
+        bool isCompressionAvailable() const;
+        bool openFile();
         void closeFile();
         void startWriterThread();
         void stopWriterThread();
         void buffersWriter();
-        bool writeMiscellanea();
-        bool createGroups();
-        int  checkCompression();
-        void allocateForEntity(Entity *entity);
-        bool writeArrayAttribute(hid_t dataset, const std::string& attrName,
+        bool checkCompression();
+        bool allocateForEntity(Entity *entity);
+        bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
+        bool writeArrayAttribute(hid_t objId, const std::string& attrName,
                                  const double *data, const hsize_t *dims, int ndims);
-        bool writeStringAttribute(hid_t dataset, const std::string& attrName, const std::string& attrValue);
+        bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
+        bool createGroup(const std::string& groupName, hid_t *grp);
+        bool writeData(const std::string& datasetName, int rank, const hsize_t *dims, const double *data, const std::string& label = "");
+        bool createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset);
 
 private:
         // the handle of the file
@@ -126,9 +123,10 @@ private:
         bool m_threadRun;
 
         // H5 stuff
-        std::map<std::string,hid_t> m_groups;
+        std::vector<hid_t> m_groups;
         std::vector<hid_t> m_dataspaces;
         std::vector<hid_t> m_datasets;
+        hid_t m_infoGroup;
         hsize_t m_offset;
         hsize_t m_datasetSize;
 

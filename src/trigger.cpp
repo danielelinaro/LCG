@@ -36,6 +36,7 @@ PeriodicTrigger::PeriodicTrigger(double frequency, uint id)
         if (frequency <= 0)
                 throw "Frequency should be positive";
         m_parameters.push_back(frequency);
+        m_parametersNames.push_back("frequency");
 }
 
 bool PeriodicTrigger::initialise()

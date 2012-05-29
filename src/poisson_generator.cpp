@@ -28,6 +28,7 @@ Poisson::Poisson(double rate, ullong seed, uint id)
         : Generator(id), m_random(seed)
 {
         m_parameters.push_back(rate);
+        m_parametersNames.push_back("rate");
         setName("PoissonGenerator");
 }
 

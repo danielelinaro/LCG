@@ -23,6 +23,9 @@ FrequencyEstimator::FrequencyEstimator(double tau, uint id)
         if (tau <= 0)
                 throw "Tau must be positive";
         m_parameters.push_back(tau);
+        m_parametersNames.push_back("tau");
+        setName("FrequencyEstimator");
+        setUnits("Hz");
 }
 
 void FrequencyEstimator::setTau(double tau)

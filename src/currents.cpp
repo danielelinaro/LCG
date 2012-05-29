@@ -84,6 +84,9 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         m_parameters.push_back(area);   // area -> m_parameters[0]
         m_parameters.push_back(gbar);   // gbar -> m_parameters[1]
         m_parameters.push_back(E);      // E -> m_parameters[2]
+        m_parametersNames.push_back("area");
+        m_parametersNames.push_back("gbar");
+        m_parametersNames.push_back("E");
 
         m_state.push_back(0);           // fraction of open channels -> m_state[0]
 
@@ -262,6 +265,8 @@ NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double 
 {
         m_parameters.push_back(gamma);  // gamma -> m_parameters[3]
         m_parameters.push_back(ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA)));     // number of channels -> m_parameters[4]
+        m_parametersNames.push_back("gamma");
+        m_parametersNames.push_back("nchan");
         m_state.push_back(NIC_NCHANNELS * IC_FRACTION); // number of open channels -> m_state[1]
         Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
         setName("NoisyIonicCurrent");
@@ -284,6 +289,7 @@ HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double g
           m_rand(new NormalRandom(0, 1, seed))
 {
         m_parameters.push_back(seed); // seed -> m_parameters[4]
+        m_parametersNames.push_back("seed");
         m_state.push_back(0.0);   // m
         m_state.push_back(0.0);   // h
         for (uint i=0; i<numberOfStates; i++)
@@ -395,6 +401,7 @@ HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, do
           m_rand(new NormalRandom(0, 1, seed))
 {
         m_parameters.push_back(seed); // seed -> m_parameters[4]
+        m_parametersNames.push_back("seed");
         m_state.push_back(0.0);   // n
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;
