@@ -30,6 +30,7 @@ public:
         ~ASCIIRecorder();
         virtual bool initialise();
         virtual void step();
+        virtual void terminate();
 
 private:
         void openFile();
@@ -62,6 +63,7 @@ public:
         ~H5Recorder();
         virtual bool initialise();
         virtual void step();
+        virtual void terminate();
 
 public:
         static const hsize_t rank;

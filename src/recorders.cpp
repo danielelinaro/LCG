@@ -97,6 +97,11 @@ void ASCIIRecorder::step()
         }
 }
 
+void ASCIIRecorder::terminate()
+{
+        closeFile();
+}
+
 const hsize_t H5Recorder::rank           = 1;
 const hsize_t H5Recorder::unlimitedSize  = H5S_UNLIMITED;
 const hsize_t H5Recorder::chunkSize      = 1024;
@@ -197,6 +202,12 @@ void H5Recorder::stopWriterThread()
         m_cv.notify_all();
         m_writerThread.join();
         Logger(Debug, "H5Recorder::stopWriterThread() >> Writer thread has terminated.\n");
+}
+
+void H5Recorder::terminate()
+{
+        stopWriterThread();
+        closeFile();
 }
 
 void H5Recorder::step()
@@ -446,7 +457,7 @@ bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully allocated space for the data.\n");
+        Logger(Debug, "Successfully allocated space for the data.\n");
 
         attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
         if (status < 0) {
@@ -454,7 +465,7 @@ bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully created attribute.\n");
+        Logger(Debug, "Successfully created attribute.\n");
 
         status = H5Awrite(attr, H5T_IEEE_F64LE, data);
         if (status < 0) {
@@ -462,7 +473,7 @@ bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
                 retval = false;
         }
         else {
-                Logger(Important, "Successfully written array attribute.\n");
+                Logger(Debug, "Successfully written array attribute.\n");
         }
 
         H5Aclose(attr);
@@ -492,7 +503,7 @@ bool H5Recorder::writeStringAttribute(hid_t dataset,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully copied type.\n");
+        Logger(Debug, "Successfully copied type.\n");
 
         status = H5Tset_size(atype, attrValue.size() + 1);
         if (status < 0) {
@@ -501,7 +512,7 @@ bool H5Recorder::writeStringAttribute(hid_t dataset,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully set type size.\n");
+        Logger(Debug, "Successfully set type size.\n");
 
         status = H5Tset_strpad(atype, H5T_STR_NULLTERM);
         if (status < 0) {
@@ -510,7 +521,7 @@ bool H5Recorder::writeStringAttribute(hid_t dataset,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully set type padding string.\n");
+        Logger(Debug, "Successfully set type padding string.\n");
 
         attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
         if (status < 0) {
@@ -519,7 +530,7 @@ bool H5Recorder::writeStringAttribute(hid_t dataset,
                 H5Sclose(dspace);
                 return false;
         }
-        Logger(Important, "Successfully created attribute.\n");
+        Logger(Debug, "Successfully created attribute.\n");
 
         status = H5Awrite(attr, atype, attrValue.c_str());
         if (status < 0) {
@@ -527,7 +538,7 @@ bool H5Recorder::writeStringAttribute(hid_t dataset,
                 retval = false;
         }
         else {
-                Logger(Important, "Successfully written string attribute.\n");
+                Logger(Debug, "Successfully written string attribute.\n");
         }
 
         H5Aclose(attr);
@@ -599,16 +610,6 @@ bool H5Recorder::createGroups()
         if (grp < 0)
                 return false;
         m_groups["data"] = grp;
-
-        grp = H5Gcreate2(m_fid, "/Metadata", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (grp < 0)
-                return false;
-        m_groups["metadata"] = grp;
-
-        grp = H5Gcreate2(m_fid, "/Parameters", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (grp < 0)
-                return false;
-        m_groups["parameters"] = grp;
 
         grp = H5Gcreate2(m_fid, "/Misc", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (grp < 0)
