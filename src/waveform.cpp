@@ -1,6 +1,6 @@
 #include <sstream>
 #include <boost/filesystem.hpp>
-#include "stimulus_generator.h"
+#include "waveform.h"
 #include "generate_trial.h"
 #include "events.h"
 #include "engine.h"
@@ -10,26 +10,32 @@ dynclamp::Entity* WaveformFactory(dictionary& args)
 {
         uint id;
         bool triggered;
-        std::string filename;
+        std::string filename, units;
+        const char *filenamePtr;
         id = dynclamp::GetIdFromDictionary(args);
+        if (dynclamp::CheckAndExtractValue(args, "filename", filename))
+                filenamePtr = filename.c_str();
+        else
+                filenamePtr = NULL;
         if (!dynclamp::CheckAndExtractBool(args, "triggered", &triggered))
-            triggered = false;
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-            return new dynclamp::generators::Waveform(NULL, triggered, id);
-        return new dynclamp::generators::Waveform(filename.c_str(), triggered, id);
+                triggered = false;
+        if (!dynclamp::CheckAndExtractValue(args, "units", units))
+                units = "N/A";
+        return new dynclamp::generators::Waveform(filenamePtr, triggered, units, id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-Waveform::Waveform(const char *stimulusFile, bool triggered, uint id)
+Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, uint id)
         : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL),
           m_stimulusLength(0), m_triggered(triggered)
 {
         if (stimulusFile != NULL)
             setFilename(stimulusFile);
         setName("Waveform");
+        setUnits(units);
 }
 
 Waveform::~Waveform()

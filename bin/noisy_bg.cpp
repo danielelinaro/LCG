@@ -16,7 +16,7 @@
 #include "utils.h"
 #include "entity.h"
 #include "engine.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"

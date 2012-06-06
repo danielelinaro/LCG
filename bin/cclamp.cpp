@@ -15,7 +15,7 @@
 #include "utils.h"
 #include "entity.h"
 #include "engine.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -67,6 +67,7 @@ bool writeDefaultConfigurationFile()
         fprintf(fid, "channel = 0\n");
         fprintf(fid, "conversionFactor = 100\n");
         fprintf(fid, "reference = GRSE\n");
+        fprintf(fid, "units = mV\n");
         fprintf(fid, "\n");
         fprintf(fid, "[AnalogOutput0]\n");
         fprintf(fid, "device = /dev/comedi0\n");
@@ -75,6 +76,7 @@ bool writeDefaultConfigurationFile()
         fprintf(fid, "channel = 1\n");
         fprintf(fid, "conversionFactor = 0.001\n");
         fprintf(fid, "reference = GRSE\n");
+        fprintf(fid, "units = pA\n");
 
         fclose(fid);
 
@@ -207,6 +209,8 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                                 parameters["inputConversionFactor"] = pt.get<std::string>(str);
                                 sprintf(str, "AnalogInput%d.reference", cnt);
                                 parameters["reference"] = pt.get<std::string>(str);
+                                sprintf(str, "AnalogInput%d.units", cnt);
+                                parameters["units"] = pt.get<std::string>(str);
                         } catch(...) {
                                 break;
                         }
@@ -223,6 +227,7 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                 parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
                 parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
                 parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
+                parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
 
                 entities.push_back( EntityFactory("AnalogOutput", parameters) );
                 Logger(Debug, "Connecting the stimulus to the recorder.\n");

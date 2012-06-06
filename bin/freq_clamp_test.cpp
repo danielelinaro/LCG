@@ -3,7 +3,7 @@
 #include "entity.h"
 #include "engine.h"
 #include "neurons.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 #include "pid.h"
 #include "frequency_estimator.h"
 #include <vector>

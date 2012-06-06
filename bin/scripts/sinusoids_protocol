@@ -1,0 +1,101 @@
+#!/bin/bash
+
+#
+# Sinusoidal current injection with background synaptic noise
+# Author: Daniele Linaro, June 2012
+#
+
+function print_help
+{
+    echo
+    echo "Sinusoidal current injection with background synaptic noise protocol."
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -c   specify configuration file (default sinusoid.xml)"
+    echo "   -t   specify template stimulus file (default template.stim)"
+    echo "   -n   specify number of repetitions (default 2)"
+    echo "   -i   specify interval between repetitions in seconds (default 30)"
+    echo
+}
+
+function shuffle
+{
+    local array=()
+    local empty=-1
+    local n=10
+    local i=0
+    if [ $# -eq 1 ] ; then
+	let n=$1
+    fi
+    while [ $i -lt $n ] ; do
+	let array[$i]=$empty
+	let i++
+    done
+    i=0
+    while [ $i -lt $n ] ; do
+	let idx=$RANDOM%$n
+	while [ ${array[$idx]} -ne $empty ] ; do
+	    let idx=$RANDOM%$n
+	done
+	let array[$idx]=$i
+	let i++
+    done
+    index=(${array[@]})
+}
+
+reps=2
+interval=30
+template_file=template.stim
+config_file=sinusoid.xml
+current_file=current.stim
+while getopts ":n:i:t:c:h" opt ; do
+    case $opt in
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	t)
+	    template_file=$OPTARG
+	    ;;
+	c)
+	    config_file=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+freq=(1 5 10 50 100 200 300 600 1000)
+nfreq=${#freq[@]}
+shuffle $nfreq
+i=1
+while [ $i -le $reps ] ; do
+    j=0
+    while [ $j -lt $nfreq ] ; do
+	sed 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
+	dclamp -c $config_file
+	let j++
+	if [ $j -ne $nfreq ] ; then
+	    sleep $interval
+	fi
+    done
+    if [ $i -ne $reps ] ; then
+	sleep $interval
+    fi
+    let i++
+done
+
+

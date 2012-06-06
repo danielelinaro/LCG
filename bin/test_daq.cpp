@@ -2,7 +2,7 @@
 #include <vector>
 #include "entity.h"
 #include "analog_io.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 #include "recorders.h"
 #include "engine.h"
 #include "utils.h"

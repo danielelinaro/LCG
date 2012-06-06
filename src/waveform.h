@@ -1,5 +1,5 @@
-#ifndef STIMULUS_GENERATOR_H
-#define STIMULUS_GENERATOR_H
+#ifndef WAVEFORM_H
+#define WAVEFORM_H
 
 #include "entity.h"
 #include "types.h"
@@ -12,7 +12,8 @@ namespace generators {
 
 class Waveform : public Generator {
 public:
-        Waveform(const char *filename = NULL, bool triggered = false, uint id = GetId());
+        Waveform(const char *stimulusFile = NULL, bool triggered = false,
+                 const std::string& units = "N/A", uint id = GetId());
         virtual ~Waveform();
 
         bool setFilename(const char *filename);

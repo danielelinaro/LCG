@@ -15,7 +15,7 @@
 #include "utils.h"
 #include "entity.h"
 #include "engine.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 #include "frequency_clamp.h"
 
 #ifdef HAVE_CONFIG_H

@@ -4,7 +4,7 @@
 #include "engine.h"
 #include "entity.h"
 #include "recorders.h"
-#include "stimulus_generator.h"
+#include "waveform.h"
 
 using namespace dynclamp;
 using namespace dynclamp::recorders;
