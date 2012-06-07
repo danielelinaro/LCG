@@ -47,9 +47,9 @@
       <name>PID</name>
       <id>4</id>
       <parameters>
-	<baselineCurrent>400</baselineCurrent>
-	<gp>0.2</gp>
-	<gi>10</gi>
+	<baselineCurrent>I0</baselineCurrent>
+	<gp>GP</gp>
+	<gi>GI</gi>
 	<gd>0</gd>
       </parameters>
       <connections>0,1</connections>
@@ -60,8 +60,8 @@
       <id>5</id>
       <parameters>
 	<E>0</E>
-	<G0>1</G0>
-	<sigma>0.1</sigma>
+	<G0>G0_exc</G0>
+	<sigma>sigma_exc</sigma>
 	<tau>0.005</tau>
       </parameters>
       <connections>0,1</connections>
@@ -72,8 +72,8 @@
       <id>6</id>
       <parameters>
 	<E>-80</E>
-	<G0>2</G0>
-	<sigma>0.2</sigma>
+	<G0>G0_inh</G0>
+	<sigma>sigma_inh</sigma>
 	<tau>0.01</tau>
       </parameters>
       <connections>0,1</connections>

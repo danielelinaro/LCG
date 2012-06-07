@@ -14,7 +14,7 @@ using namespace dynclamp::ionic_currents;
 using namespace dynclamp::neurons;
 using namespace dynclamp::generators;
 
-int main()
+int main(int argc, char *argv[])
 {
         uint i, n;
 
@@ -23,15 +23,18 @@ int main()
         std::vector<Entity*> entities(8);
 
         double area = 628.31853071795865;
+        double gp=0.01, gi=0.1, gd=0.0;
+        
         entities[0] = new ConductanceBasedNeuron(1, 0.0003, -54.3, 0, area, -20, -65);
-        entities[1] = new HHSodium(area);
-        entities[2] = new HHPotassium(area);
-        //entities[1] = new HHSodiumCN(area, 5061983);
-        //entities[2] = new HHPotassiumCN(area, 7051983);
+        //entities[1] = new HHSodium(area);
+        //entities[2] = new HHPotassium(area);
+        entities[1] = new HHSodiumCN(area, 5061983);
+        entities[2] = new HHPotassiumCN(area, 7051984);
         entities[3] = new Waveform("ou.stim");
         entities[4] = new Waveform("freq.stim");
         entities[5] = new FrequencyEstimator(0.1);
-        entities[6] = new PID(60, 5, 0.5, 0.0);
+        //entities[6] = new PID(80, 0.01, 0.1, 0.0);
+        entities[6] = new PID(80, 0.001, 1., 0.);
         entities[7] = new H5Recorder(false, "freq_clamp.h5");
 
         n = entities.size();

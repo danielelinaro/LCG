@@ -24,65 +24,45 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0,3</connections>
+      <connections>0</connections>
     </entity>
 
     <entity>
       <name>Waveform</name>
       <id>2</id>
-      <parameters><filename>frequency.stim</filename></parameters>
-      <connections>0,4</connections>
+      <parameters><filename>current.stim</filename></parameters>
+      <connections>0,1</connections>
     </entity>
 
     <entity>
-      <name>FrequencyEstimator</name>
+      <name>OUconductance</name>
       <id>3</id>
       <parameters>
-	<tau>1</tau>
+	<E>0</E>
+	<G0>G0_exc</G0>
+	<sigma>sigma_exc</sigma>
+	<tau>0.005</tau>
+	<interval>2.61,32.61</interval>
       </parameters>
-      <connections>0,4</connections>
+      <connections>0,1</connections>
     </entity>
 
     <entity>
-      <name>PID</name>
+      <name>OUconductance</name>
       <id>4</id>
       <parameters>
-	<baselineCurrent>400</baselineCurrent>
-	<gp>0.2</gp>
-	<gi>10</gi>
-	<gd>0</gd>
-      </parameters>
-      <connections>0,1</connections>
-    </entity>
-
-    <entity>
-      <name>OUconductance</name>
-      <id>5</id>
-      <parameters>
-	<E>0</E>
-	<G0>1</G0>
-	<sigma>0.1</sigma>
-	<tau>0.005</tau>
-      </parameters>
-      <connections>0,1</connections>
-    </entity>
-
-    <entity>
-      <name>OUconductance</name>
-      <id>6</id>
-      <parameters>
 	<E>-80</E>
-	<G0>2</G0>
-	<sigma>0.2</sigma>
+	<G0>G0_inh</G0>
+	<sigma>sigma_inh</sigma>
 	<tau>0.01</tau>
+	<interval>2.61,32.61</interval>
       </parameters>
       <connections>0,1</connections>
     </entity>
- 
   </entities>
 
   <simulation>
-    <tend>30</tend>
+    <tend>33.61</tend>
     <rate>20000</rate>
   </simulation>
 
