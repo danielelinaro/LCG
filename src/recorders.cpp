@@ -409,6 +409,7 @@ bool H5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_t *d
 
         // modify dataset creation properties, i.e. enable chunking.
         hid_t cparms = H5Pcreate(H5P_DATASET_CREATE);
+
         if (cparms < 0) {
                 H5Sclose(*dspace);
                 Logger(Critical, "Unable to create dataset properties.\n");
@@ -438,6 +439,20 @@ bool H5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_t *d
         }
         else {
                 Logger(Debug, "Fill value set.\n");
+        }
+
+        if (m_compress) {
+                // Add the shuffle filter and the gzip compression filter to the
+                // dataset creation property list.
+                // The order in which the filters are added here is significant -
+                // we will see much greater results when the shuffle is applied
+                // first.  The order in which the filters are added to the property
+                // list is the order in which they will be invoked when writing
+                // data.
+                if (H5Pset_shuffle(cparms) < 0 || H5Pset_deflate(cparms, 9) < 0)
+                        Logger(Important, "Unable to enable compression.\n");
+                else 
+                        Logger(Debug, "Successfully enabled ompression.\n");
         }
 
         // create a new dataset within the file using cparms creation properties.
@@ -656,31 +671,31 @@ bool H5Recorder::isCompressionAvailable() const
         
         avail = H5Zfilter_avail(H5Z_FILTER_DEFLATE);
         if (!avail) {
-                Logger(Info, "GZIP compression is not available on this system.\n");
+                Logger(Important, "GZIP compression is not available on this system.\n");
                 return false;
         }
         Logger(All, "GZIP compression is available.\n");
 
         status = H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filterInfo);
         if (!(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
-                Logger(Info, "Unable to get filter info: disabling compression.\n");
+                Logger(Important, "Unable to get filter info: disabling compression.\n");
                 return false;
         }
-        Logger(All, "Gotten filter info.\n");
+        Logger(All, "Obtained filter info.\n");
         
         avail = H5Zfilter_avail(H5Z_FILTER_SHUFFLE);
         if (!avail) {
-                Logger(Info, "\nThe shuffle filter is not available on this system.\n");
+                Logger(Important, "\nThe shuffle filter is not available on this system.\n");
                 return false;
         }
-        Logger(All, "\nThe shuffle filter is available.\n");
+        Logger(All, "The shuffle filter is available.\n");
         
         status = H5Zget_filter_info (H5Z_FILTER_SHUFFLE, &filterInfo);
         if ( !(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ) {
-                Logger(Info, "Unable to get filter info: disabling compression.\n");
+                Logger(Important, "Unable to get filter info: disabling compression.\n");
                 return false;
         }
-        Logger(All, "Compression is enabled.\n");
+        Logger(Debug, "Compression is enabled.\n");
 
         return true;
 }
@@ -694,7 +709,7 @@ bool H5Recorder::openFile()
         if(m_fid < 0)
                 return false;
 
-        return checkCompression();
+        return true;
 }
 
 bool H5Recorder::createGroup(const std::string& groupName, hid_t *grp)
@@ -706,25 +721,6 @@ bool H5Recorder::createGroup(const std::string& groupName, hid_t *grp)
         return true;
 }
 
-bool H5Recorder::checkCompression()
-{
-        if(m_compress) {
-                // Create the dataset creation property list and add the shuffle
-                // filter and the gzip compression filter.
-                // The order in which the filters are added here is significant -
-                // we will see much greater results when the shuffle is applied
-                // first.  The order in which the filters are added to the property
-                // list is the order in which they will be invoked when writing
-                // data.
-                m_datasetPropertiesList = H5Pcreate(H5P_DATASET_CREATE);
-                if(m_datasetPropertiesList < 0 ||
-                   H5Pset_shuffle(m_datasetPropertiesList) < 0 ||
-                   H5Pset_deflate(m_datasetPropertiesList, 9) < 0)
-                        return false;
-        }
-        return true;
-}
-        
 bool H5Recorder::writeScalarAttribute(hid_t dataset, const std::string& attrName, double attrValue)
 {
         hid_t aid, attr;
@@ -762,8 +758,6 @@ void H5Recorder::closeFile()
         Logger(All, "Closing file.\n");
         if (m_fid != -1) {
                 writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
-                if(m_compress)
-                        H5Pclose(m_datasetPropertiesList);
                 for (uint i=0; i<m_numberOfInputs; i++) {
                         H5Dclose(m_datasets[i]);
                         H5Sclose(m_dataspaces[i]);

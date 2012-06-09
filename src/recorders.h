@@ -78,7 +78,6 @@ private:
         void startWriterThread();
         void stopWriterThread();
         void buffersWriter();
-        bool checkCompression();
         bool allocateForEntity(Entity *entity);
         bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
         bool writeArrayAttribute(hid_t objId, const std::string& attrName,
@@ -93,8 +92,6 @@ private:
         hid_t m_fid;
         // whether compression is turned on or off
         bool m_compress;
-        // dataset creation property list
-        hid_t m_datasetPropertiesList;
         // the data
         std::vector<double**> m_data;
         // the queue of the indices of the buffers to save

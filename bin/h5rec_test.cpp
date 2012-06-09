@@ -16,11 +16,11 @@ int main()
 
         int i;
         double t;
-        double tend = 0.25;
+        double tend = 1;
         double sigma = 50;
         double tau = 10e-3;
         double i0 = 250;
-        bool compress = false;
+        bool compress = true;
         std::vector<Entity*> entities(N_ENT);
 
         entities[0] = new H5Recorder(compress, "h5rec_test.h5");
