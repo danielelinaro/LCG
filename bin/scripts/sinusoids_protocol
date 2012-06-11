@@ -18,7 +18,7 @@ function print_help
     echo "   -c   specify configuration file (default sinusoids.xml)"
     echo "   -t   specify template stimulus file (default template.stim)"
     echo "   -n   specify number of repetitions (default 2)"
-    echo "   -i   specify interval between repetitions in seconds (default 30)"
+    echo "   -i   specify interval between repetitions in seconds (default 45)"
     echo
 }
 
@@ -48,7 +48,7 @@ function shuffle
 }
 
 reps=2
-interval=30
+interval=45
 template_file=template.stim
 config_file=sinusoids.xml
 current_file=current.stim
@@ -83,6 +83,7 @@ nfreq=${#freq[@]}
 shuffle $nfreq
 i=1
 while [ $i -le $reps ] ; do
+    kernel_protocol
     j=0
     while [ $j -lt $nfreq ] ; do
 	sed 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
