@@ -9,10 +9,12 @@ namespace dynclamp {
 
 class EventCounter : public Entity {
 public:
-        EventCounter(uint maxCount, uint id = GetId());
+        EventCounter(uint maxCount, bool autoReset = true, uint id = GetId());
         uint maxCount() const;
         uint count() const;
+        bool autoReset() const;
         void setMaxCount(uint count);
+        void setAutoReset(bool autoReset);
         virtual void handleEvent(const Event *event);
         virtual void step();
         double output() const;
@@ -23,6 +25,7 @@ private:
 
 private:
         uint m_count, m_maxCount;
+        bool m_autoReset;
 };
 
 } // namespace dynclamp

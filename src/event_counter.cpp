@@ -4,6 +4,7 @@
 dynclamp::Entity* EventCounterFactory(dictionary& args)
 {
         uint id, maxCount;
+        bool autoReset;
 
         id = dynclamp::GetIdFromDictionary(args);
         if (! dynclamp::CheckAndExtractUnsignedInteger(args, "maxCount", &maxCount)) {
@@ -11,13 +12,17 @@ dynclamp::Entity* EventCounterFactory(dictionary& args)
                 return NULL;
         }
 
-        return new dynclamp::EventCounter(maxCount, id);
+        if (! dynclamp::CheckAndExtractBoolean(args, "autoReset", &autoReset)) {
+                autoReset = true;
+        }
+
+        return new dynclamp::EventCounter(maxCount, autoReset, id);
 }
 
 namespace dynclamp {
 
-EventCounter::EventCounter(uint maxCount, uint id)
-        : Entity(id), m_maxCount(maxCount)
+EventCounter::EventCounter(uint maxCount, bool autoReset, uint id)
+        : Entity(id), m_maxCount(maxCount), m_autoReset(autoReset)
 {
         m_parameters.push_back(m_maxCount);
         m_parametersNames.push_back("maxCount");
@@ -47,6 +52,7 @@ void EventCounter::handleEvent(const Event *event)
                 if (m_count == m_maxCount) {
                         Logger(Debug, "Received %d spikes at t = %g sec.\n", m_maxCount, GetGlobalTime());
                         emitEvent(new TriggerEvent(this));
+                        if (m_autoReset)
                         reset();
                 }
                 break;

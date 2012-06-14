@@ -1,0 +1,153 @@
+#!/bin/bash
+
+#
+# Sinusoidal current injection with background synaptic noise
+# Author: Daniele Linaro, June 2012
+#
+
+function print_help
+{
+    echo
+    echo "f-I curve protocol with the addition of background synaptic noise."
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -c   specify configuration file (default gain_mod.xml)"
+    echo "   -t   specify template stimulus file (default template.stim)"
+    echo "   -m   specify the minimum current value"
+    echo "   -M   specify the maximum current value"
+    echo "   -s   specify the current step"
+    echo "   -n   specify number of batches (default 2)"
+    echo "   -i   specify interval between batches in seconds (default 45)"
+    echo
+}
+
+function shuffle
+{
+    local array=()
+    local empty=-1
+    local n=10
+    local i=0
+    if [ $# -eq 1 ] ; then
+	let n=$1
+    fi
+    while [ $i -lt $n ] ; do
+	let array[$i]=$empty
+	let i++
+    done
+    i=0
+    while [ $i -lt $n ] ; do
+	let idx=$RANDOM%$n
+	while [ ${array[$idx]} -ne $empty ] ; do
+	    let idx=$RANDOM%$n
+	done
+	let array[$idx]=$i
+	let i++
+    done
+    index=(${array[@]})
+}
+
+reps=2
+interval=45
+template_file=template.stim
+config_file=gain_modulation.xml
+current_file=current.stim
+min_current=
+max_current=
+current_step=
+while getopts ":n:i:t:c:m:M:s:h" opt ; do
+    case $opt in
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	t)
+	    template_file=$OPTARG
+	    ;;
+	c)
+	    config_file=$OPTARG
+	    ;;
+	m)
+	    min_current=$OPTARG
+	    ;;
+	M)
+	    max_current=$OPTARG
+	    ;;
+	s)
+	    current_step=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ -z $min_current ] ; then
+    echo "Minimum current not set. Use the -m option."
+    exit 1
+fi
+
+if [ -z $max_current ] ; then
+    echo "Maximum current not set. Use the -M option."
+    exit 1
+fi
+
+if [ -z $current_step ] ; then
+    echo "Current step not set. Use the -s option."
+    exit 1
+fi
+
+if [ $min_current -eq $max_current ] ; then
+    echo "Minimum and maximum currents must be different."
+    exit 1
+fi
+
+if [ $min_current -gt $max_current ] ; then
+    echo "The minimum current must be smaller than the maximum current."
+    exit 1
+fi
+
+if [ $current_step -le 0 ] ; then
+    echo "The current step must be positive."
+    exit 1
+fi
+
+declare -a I
+j=0
+for (( i=$min_current; i<=$max_current; i+=$current_step ))
+do
+    let I[$j]=$i
+    let j++
+done
+
+ncurrents=${#I[@]}
+shuffle $ncurrents
+i=1
+rm -f current.stim
+while [ $i -le $reps ] ; do
+    kernel_protocol
+    j=0
+    while [ $j -lt $ncurrents ] ; do
+	sed 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file
+	dclamp -c $config_file
+	let j++
+	if [ $j -ne $ncurrents ] ; then
+	    sleep $interval
+	fi
+    done
+    if [ $i -ne $reps ] ; then
+	sleep $interval
+    fi
+    let i++
+done

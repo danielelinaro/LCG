@@ -24,30 +24,23 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0,3</connections>
-    </entity>
-
-    <entity>
-      <name>Waveform</name>
-      <id>2</id>
-      <parameters><filename>frequency.stim</filename></parameters>
-      <connections>0,4</connections>
+      <connections>0</connections>
     </entity>
 
     <entity>
       <name>FrequencyEstimator</name>
-      <id>3</id>
+      <id>2</id>
       <parameters>
 	<tau>1</tau>
       </parameters>
-      <connections>0,4</connections>
+      <connections>0,3</connections>
     </entity>
 
     <entity>
       <name>PID</name>
-      <id>4</id>
+      <id>3</id>
       <parameters>
-	<baselineCurrent>I0</baselineCurrent>
+	<baselineCurrent>IO</baselineCurrent>
 	<gp>GP</gp>
 	<gi>GI</gi>
 	<gd>0</gd>
@@ -55,34 +48,58 @@
       <connections>0,1</connections>
     </entity>
 
-    <entity>
-      <name>OUconductance</name>
-      <id>5</id>
+     <entity>
+      <name>Waveform</name>
+      <id>4</id>
       <parameters>
-	<E>0</E>
-	<G0>G0_exc</G0>
-	<sigma>sigma_exc</sigma>
-	<tau>0.005</tau>
+	<filename>frequency.stim</filename>
+	<units>Hz</units>
       </parameters>
-      <connections>0,1</connections>
+      <connections>0,3</connections>
     </entity>
 
     <entity>
-      <name>OUconductance</name>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
+	<filename>gexc.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
       <id>6</id>
       <parameters>
-	<E>-80</E>
-	<G0>G0_inh</G0>
-	<sigma>sigma_inh</sigma>
-	<tau>0.01</tau>
+	<filename>ginh.stim</filename>
+	<units>nS</units>
       </parameters>
-      <connections>0,1</connections>
+      <connections>0,8</connections>
     </entity>
- 
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>7</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>8</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
   </entities>
 
   <simulation>
-    <tend>30</tend>
+    <tend>0</tend>
     <rate>20000</rate>
   </simulation>
 
