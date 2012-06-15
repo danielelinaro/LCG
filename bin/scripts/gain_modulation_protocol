@@ -15,7 +15,7 @@ function print_help
     echo "where options are:"
     echo
     echo "   -h   display this help message and exit"
-    echo "   -c   specify configuration file (default gain_mod.xml)"
+    echo "   -c   specify configuration file (default gain_modulation.xml)"
     echo "   -t   specify template stimulus file (default template.stim)"
     echo "   -m   specify the minimum current value"
     echo "   -M   specify the maximum current value"

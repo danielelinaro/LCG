@@ -16,7 +16,7 @@ namespace dynclamp {
 
 namespace generators {
 
-ConductanceStimulus::ConductanceStimulus(double E, uint id) : Generator(id)
+ConductanceStimulus::ConductanceStimulus(double E, uint id) : Generator(id), m_neuron(NULL)
 {
         m_parameters.push_back(E);
         m_parametersNames.push_back("E");

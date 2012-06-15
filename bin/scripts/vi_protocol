@@ -22,8 +22,8 @@ print_help()
     echo
 }
 
-trial_interval=10
-batch_interval=10
+trial_interval=1
+batch_interval=1
 reps=2
 
 if [ -z "${PROTOCOLS_PATH:-}" ] ; then

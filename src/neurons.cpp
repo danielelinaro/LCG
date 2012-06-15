@@ -411,6 +411,8 @@ void RealNeuron::evolve()
         size_t nInputs = m_inputs.size();
         for (i=0; i<nInputs; i++)
                 Iinj += m_inputs[i];
+        if (Iinj < -10000)
+                Iinj = 10000;
         // inject the total input current into the neuron
         m_output.write(Iinj);
         // store the injected current into the buffer of the AEC

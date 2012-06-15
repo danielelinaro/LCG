@@ -12,7 +12,7 @@ dynclamp::Entity* EventCounterFactory(dictionary& args)
                 return NULL;
         }
 
-        if (! dynclamp::CheckAndExtractBoolean(args, "autoReset", &autoReset)) {
+        if (! dynclamp::CheckAndExtractBool(args, "autoReset", &autoReset)) {
                 autoReset = true;
         }
 
