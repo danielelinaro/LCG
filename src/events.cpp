@@ -61,5 +61,8 @@ ResetEvent::ResetEvent(const Entity *sender)
         : Event(RESET, sender)
 {}
 
+ToggleEvent::ToggleEvent(const Entity *sender)
+        : Event(TOGGLE, sender)
+{}
 } // namespace dynclamp
 

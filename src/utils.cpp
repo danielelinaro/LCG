@@ -12,6 +12,8 @@
 #include <time.h>
 
 #include <sstream>
+#include <algorithm>
+#include <vector>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -419,10 +421,14 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         ntts[id] = entities.back();
                 }
 
+                EntitySorter sorter;
+                std::sort(entities.begin(), entities.end(), sorter);
+
                 /*** connections ***/
                 uint idPre, idPost;
                 for (int i=0; i<entities.size(); i++) {
                         idPre = entities[i]->id();
+                        Logger(Info, "Id = %d.\n", idPre);
                         for (int j=0; j<connections[idPre].size(); j++) {
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);

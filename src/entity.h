@@ -84,6 +84,11 @@ private:
         std::string m_name, m_units;
 };
 
+class EntitySorter {
+public:
+    bool operator() (const Entity* e1, const Entity* e2) { return e1->id() < e2->id(); }
+};
+
 }
 
 #endif

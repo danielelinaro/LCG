@@ -38,12 +38,19 @@ double PID::output() const
 {
         return m_output;
 }
+bool PID::state(){
+    return m_state;
+}
 
+void PID::changeState(){
+    m_state = !m_state;
+}
 bool PID::initialise()
 {
         m_output = PID_BASELINE;
         m_erri = 0.0;
         m_errpPrev = 0.0;
+        m_state = true;
         return true;
 }
 
@@ -51,16 +58,26 @@ void PID::step()
 {}
 
 void PID::handleEvent(const Event *event)
-{
-        if (event->type() == SPIKE || event->type() == TRIGGER) {
+{   
+    switch(event->type())
+    {
+        case SPIKE:
+        case TRIGGER:
+            if(m_state) {
                 double errp, errd;
                 errp = m_inputs[0] - m_inputs[1];
                 m_erri += errp;
                 errd = errp - m_errpPrev;
                 m_errpPrev = errp;
                 m_output = PID_BASELINE + PID_GP*errp + PID_GI*m_erri + PID_GD*errd;
-                Logger(Info, "%9.3f %9.4f %9.4f %9.4f %7.2f\n", GetGlobalTime(), errp, m_erri, errd, m_output);                
-        }
+                Logger(Info, "%9.3f %9.4f %9.4f %9.4f %7.2f\n", GetGlobalTime(),errp, m_erri, errd, m_output);                
+            }
+            break;
+        case TOGGLE:
+            changeState();
+            Logger(Info, "%9.3f - PID toggled.\n", GetGlobalTime());                
+            break;
+    }
 }
 
 } // namespace dynclamp
