@@ -3,9 +3,10 @@ AM_CPPFLAGS = -I../stimgen -I../src -I.
 bin_PROGRAMS = dclamp
 dclamp_SOURCES = dclamp.cpp
 if ANALOG_IO
-bin_PROGRAMS += cclamp zero_output test_daq noisy_bg freq_clamp 
+bin_PROGRAMS += cclamp zero_output constant_output test_daq noisy_bg freq_clamp 
 cclamp_SOURCES = cclamp.cpp
 zero_output_SOURCES = zero_output.cpp
+constant_output_SOURCES = constant_output.cpp
 test_daq_SOURCES = test_daq.cpp
 noisy_bg_SOURCES = noisy_bg.cpp
 freq_clamp_SOURCES = freq_clamp.cpp

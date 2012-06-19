@@ -20,11 +20,12 @@ int main(int argc, char *argv[])
 #ifdef HAVE_LIBCOMEDI
 
         po::options_description description(
-                        "\nThis program resets to zero the output of the DAQ board.\n\n"
+                        "\nThis program outputs a constant value to a specified channel of the DAQ board.\n\n"
                         "Allowed options are");
         po::variables_map options;
         std::string deviceFile, refStr;
         uint subdevice, channel, ref;
+        double value, conversionFactor;
 
         try {
                 description.add_options()
@@ -33,8 +34,12 @@ int main(int argc, char *argv[])
                          "specify the path of the device")
                         ("subdevice,s", po::value<uint>(&subdevice)->default_value(1),
                          "specify output subdevice")
-                        ("channel,c", po::value<uint>(&channel)->default_value(-1),
-                         "specify write channel (if this option is not specified, all channels are set to 0)")
+                        ("channel,c", po::value<uint>(&channel)->default_value(0),
+                         "specify output channel")
+                        ("value,v", po::value<double>(&value)->default_value(0.0),
+                         "specify value to output (in pA)")
+                        ("factor,f", po::value<double>(&conversionFactor)->default_value(0.001),
+                         "specify conversion factor (in V/pA)")
                         ("reference,r", po::value<std::string>(&refStr)->default_value("grse"),
                          "specify reference type: allowed values are "
                          "'grse' for ground-referenced single ended or "
@@ -69,30 +74,18 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 
-        if (channel == -1) {
-                comedi_t *device;
-                device = comedi_open(deviceFile.c_str());
-                if (device == NULL) {
-                        Logger(Critical, "Unable to open device [%s].\n", deviceFile.c_str());
-                        exit(1);
-                }
-
-                int nChannels = comedi_get_n_channels(device, subdevice);
-
-                comedi_close(device);
-
-                for (int ch=0; ch<nChannels; ch++) {
-                        Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
-                                        deviceFile.c_str(), subdevice, ch);
-                        dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
-                        output.write(0.0);
-                }
+        Logger(Important, "Outputting %g on device [%s], subdevice [%d], channel [%d].\n",
+                value, deviceFile.c_str(), subdevice, channel);
+        dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, conversionFactor, ref);
+        output.write(value);
+        FILE *fid = fopen("/tmp/last_value.out","w");
+        if (fid != NULL) {
+                fprintf(fid, "%e", value);
+                fclose(fid);
+                Logger(Important, "Saved output value to /tmp/last_value.out.\n");
         }
         else {
-                Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
-                                deviceFile.c_str(), subdevice, channel);
-                dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
-                output.write(0.0);
+                Logger(Important, "Unable to save output value to /tmp/last_value.out.\n");
         }
 
 #else

@@ -1,5 +1,6 @@
 #include "connections.h"
 #include "engine.h"
+#include <limits>
 
 dynclamp::Entity* ConnectionFactory(dictionary& args)
 {
