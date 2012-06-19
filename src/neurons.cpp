@@ -3,6 +3,7 @@
 #include "thread_safe_queue.h"
 #include "utils.h"
 #include "engine.h"
+#include <stdio.h>
 
 dynclamp::Entity* LIFNeuronFactory(dictionary& args)
 {
@@ -51,7 +52,7 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
         uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, delaySteps, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
-        bool adaptiveThreshold;
+        bool holdLastValue, adaptiveThreshold;
 
         id = dynclamp::GetIdFromDictionary(args);
 
@@ -121,6 +122,9 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                 }
         }
 
+        if (! dynclamp::CheckAndExtractBool(args, "holdLastValue", &holdLastValue))
+                holdLastValue = false;
+
         if (! dynclamp::CheckAndExtractBool(args, "adaptiveThreshold", &adaptiveThreshold))
                 adaptiveThreshold = false;
 
@@ -128,7 +132,8 @@ dynclamp::Entity* RealNeuronFactory(dictionary& args)
                                                  deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
-                                                 inputRange, reference, delaySteps, adaptiveThreshold,
+                                                 inputRange, reference, delaySteps, 
+                                                 holdLastValue, adaptiveThreshold,
                                                  (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()), id);
 }
 
@@ -289,12 +294,14 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint inputSubdevice, uint outputSubdevice,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
-                       uint inputRange, uint reference, uint voltageDelaySteps, bool adaptiveThreshold,
+                       uint inputRange, uint reference, uint voltageDelaySteps,
+                       bool holdLastValue, bool adaptiveThreshold,
                        const char *kernelFile, uint id)
         : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL), m_adaptiveThreshold(adaptiveThreshold)
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL),
+          m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -312,11 +319,12 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        double inputConversionFactor, double outputConversionFactor,
                        uint inputRange, uint reference, uint voltageDelaySteps,
                        const double *AECKernel, size_t kernelSize,
-                       bool adaptiveThreshold, uint id)
+                       bool holdLastValue, bool adaptiveThreshold, uint id)
         : Neuron(V0, id), m_aec(AECKernel, kernelSize),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL), m_adaptiveThreshold(adaptiveThreshold)
+          m_delaySteps(voltageDelaySteps), m_VrDelay(NULL),
+          m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         m_parameters.push_back(spikeThreshold);
@@ -357,10 +365,27 @@ bool RealNeuron::initialise()
         m_Vth = RN_SPIKE_THRESH;
         m_Vmin = -80;
         m_Vmax = RN_SPIKE_THRESH + 20;
+        m_Iinj = 0.0;
 
         return true;
 }
         
+void RealNeuron::terminate()
+{
+        Neuron::terminate();
+        if (m_holdLastValue) {
+                m_output.write(0.0);
+        }
+        else {
+                FILE *fid = fopen("/tmp/last_value.out","w");
+                if (fid != NULL) {
+                        fprintf(fid, "%e", m_Iinj);
+                        fclose(fid);
+                        Logger(Important, "Written last output value to /tmp/last_value.out.\n");
+                }
+        }
+}
+
 uint RealNeuron::voltageDelaySteps() const
 {
         return m_delaySteps;
@@ -407,16 +432,16 @@ void RealNeuron::evolve()
 
         /*** CURRENT ***/
 
-        double Iinj = 0.0;
+        m_Iinj = 0.0;
         size_t nInputs = m_inputs.size();
         for (i=0; i<nInputs; i++)
-                Iinj += m_inputs[i];
-        if (Iinj < -10000)
-                Iinj = 10000;
+                m_Iinj += m_inputs[i];
+        if (m_Iinj < -10000)
+                m_Iinj = 10000;
         // inject the total input current into the neuron
-        m_output.write(Iinj);
+        m_output.write(m_Iinj);
         // store the injected current into the buffer of the AEC
-        m_aec.pushBack(Iinj);
+        m_aec.pushBack(m_Iinj);
 }
 
 bool RealNeuron::hasMetadata(size_t *ndims) const

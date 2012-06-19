@@ -111,6 +111,7 @@ double EventCounter::output() const
 bool EventCounter::initialise()
 {
         m_count = 0;
+        return true;
 }
 
 void EventCounter::reset()
