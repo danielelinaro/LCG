@@ -16,7 +16,7 @@ public:
                  const std::string& units = "N/A", uint id = GetId());
         virtual ~Waveform();
 
-        bool setFilename(const char *filename);
+        bool setStimulusFile(const char *filename);
         virtual bool initialise();
 
         uint stimulusLength() const;
@@ -33,13 +33,14 @@ public:
         double duration() const;
 
 private:
+        bool parseStimulusFile();
         void freeMemory();
 
 protected:
         virtual void reset();
 
 protected:
-        char m_filename[FILENAME_MAXLEN];
+        char m_stimulusFile[FILENAME_MAXLEN];
 
         double *m_stimulus;
         uint m_stimulusLength;
@@ -47,6 +48,9 @@ protected:
         bool m_triggered;
         double *m_stimulusMetadata;
         size_t m_stimulusRows, m_stimulusCols;
+
+private:
+        bool m_toInitialise;
 };
 
 } // namespace generators

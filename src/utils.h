@@ -86,6 +86,11 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
 
 Entity* EntityFactory(const char *name, dictionary& args);
 
+/**
+ * So far converts only Hz to seconds and vice versa.
+ */
+bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::string& unitsOut);
+
 } // namespace dynclamp
 
 #endif

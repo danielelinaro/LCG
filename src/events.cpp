@@ -34,6 +34,10 @@ Event::Event(EventType type, const Entity *sender)
         : m_type(type), m_sender(sender), m_time(GetGlobalTime())
 {}
 
+Event::Event(const Event& event)
+        : m_type(event.m_type), m_sender(event.m_sender), m_time(event.m_time)
+{}
+
 EventType Event::type() const
 {
         return m_type;

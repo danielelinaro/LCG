@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
                 for (int i=0; i<opt.nBatches; i++) {
                         for (int j=0; j<opt.stimulusFiles.size(); j++) {
-                                stimulus->setFilename(opt.stimulusFiles[j].c_str());
+                                stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
                                         ResetGlobalTime();
                                         Simulate(entities,stimulus->duration());

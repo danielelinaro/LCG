@@ -55,7 +55,10 @@ long oldseed;
 
 //printf("simple_waveform called with code = %d\n", (int) vector[CODE]);
 
-if (vector[FIXSEED]) oldseed = mysrand49((long) vector[MYSEED]);
+        if (vector[FIXSEED])
+                oldseed = mysrand49((long) vector[MYSEED]);
+        else
+                oldseed = mysrand49(time(NULL));
 
  switch ((uint) vector[CODE])   // Main decision stage to rule out the requested subwvform type (gauss, DC, etc..).
     {
@@ -111,7 +114,6 @@ int composite_waveform(double **parsed_data, uint current_line, double *output, 
 uint i, Ni, line = 0, index_old, myindex, howmany;
 double *out_temp, *vector;
 int return_code;
-long oldseed;
 
 Ni       = (uint) (parsed_data[current_line][DURATION] * srate);
 out_temp = (double *) calloc(Ni, sizeof(double));

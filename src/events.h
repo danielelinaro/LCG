@@ -18,6 +18,7 @@ class Event
 {
 public:
         Event(EventType type, const Entity *sender);
+        Event(const Event& event);
 
         EventType type() const;
         const Entity* sender() const;

@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
-                        stimulus->setFilename(opt.stimulusFiles[j].c_str());
+                        stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                         for (k=0; k<opt.nTrials; k++) {
                                 Logger(Info, "\nProcessing stimulus file [%s].\n\n", opt.stimulusFiles[j].c_str());
                                 Simulate(entities, stimulus->duration());

@@ -1,6 +1,9 @@
 
 Short term (and therefore relatively simple):
 
+-) since events now can be delivered through Connection objects, they should have
+   an "originalSender" field.
+-) modify the code of synapses in order to use Connection objects.
 -) add the possibility to specify spike latency in PeriodicPulse.
 -) understand why EnqueueEvent cannot be found.
 

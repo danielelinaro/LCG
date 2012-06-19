@@ -67,6 +67,9 @@ void FrequencyEstimator::handleEvent(const Event *event)
                         emitTrigger();
                         Logger(Debug, "Estimated frequency: %g\n", m_frequency);
                 }
+                else {
+                        m_frequency = 1.0 / now;
+                }
                 m_tPrevSpike = now;
         }
 }

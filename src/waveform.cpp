@@ -30,10 +30,10 @@ namespace generators {
 
 Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, uint id)
         : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL),
-          m_stimulusLength(0), m_triggered(triggered)
+          m_stimulusLength(0), m_triggered(triggered), m_toInitialise(true)
 {
         if (stimulusFile != NULL)
-            setFilename(stimulusFile);
+            setStimulusFile(stimulusFile);
         setName("Waveform");
         setUnits(units);
 }
@@ -45,31 +45,46 @@ Waveform::~Waveform()
 
 bool Waveform::initialise()
 {
-    if (!m_triggered) {
-        m_position = 0;
-    }
-    else {
-        m_position = m_stimulusLength + 1;
-        Logger(Info, "Waveform is waiting for events.\n");
-    }
-    return true;
+        if (m_toInitialise && !parseStimulusFile()) {
+                Logger(Critical, "Unable to parse stimulus file [%s].\n", m_stimulusFile);
+                return false;
+        }
+        // parse again the file in the next calls to initialise
+        m_toInitialise = true;
+
+        if (!m_triggered) {
+                m_position = 0;
+        }
+        else {
+                m_position = m_stimulusLength + 1;
+                Logger(Info, "Waveform is waiting for events.\n");
+        }
+        return true;
 }
 
-bool Waveform::setFilename(const char *filename)
+bool Waveform::setStimulusFile(const char *stimulusFile)
+{
+        if (!fs::exists(stimulusFile)) {
+                Logger(Critical, "%s: no such file.\n", stimulusFile);
+                return false;
+        }
+        strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
+        // parse the stimulus file here in order to have the metadata
+        bool flag = parseStimulusFile();
+        // the first call to initialise should not parse again the file
+        m_toInitialise = !flag;
+        return flag;
+}
+
+bool Waveform::parseStimulusFile()
 {
         bool retval = true;
         int i, j, flag;
         double **metadata;
 
-        if (!fs::exists(filename)) {
-                Logger(Critical, "%s: no such file.\n", filename);
-                return false;
-        }
-        strncpy(m_filename, filename, FILENAME_MAXLEN);
-
         freeMemory();
 
-        flag = generate_trial(m_filename, GetLoggingLevel() <= Debug,
+        flag = generate_trial(m_stimulusFile, GetLoggingLevel() <= Debug,
                               0, NULL, &m_stimulus, &m_stimulusLength,
                               1.0/GetGlobalDt(), GetGlobalDt());
 
@@ -96,8 +111,8 @@ bool Waveform::setFilename(const char *filename)
                 }
         }
         
-        if (readmatrix(m_filename, metadata, &m_stimulusRows, &m_stimulusCols) == -1) {
-                Logger(Critical, "Unable to parse file [%s].\n", m_filename);
+        if (readmatrix(m_stimulusFile, metadata, &m_stimulusRows, &m_stimulusCols) == -1) {
+                Logger(Critical, "Unable to parse file [%s].\n", m_stimulusFile);
                 retval = false;
                 goto endSetFilename;
         }

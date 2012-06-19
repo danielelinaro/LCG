@@ -25,7 +25,7 @@
 #define LIF_IEXT   m_parameters[6]
 #define LIF_LAMBDA m_parameters[7]
 #define LIF_RL     m_parameters[8]
-//#define LIF_ARTIFICIAL_SPIKE
+#define LIF_ARTIFICIAL_SPIKE
 
 #define CBN_VM_PREV             m_state[1]
 #define CBN_EL                  m_parameters[2]

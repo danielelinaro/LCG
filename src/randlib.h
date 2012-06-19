@@ -25,7 +25,7 @@ double gammln(double x);
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 /**
  * When n is negative, internally initializes a set of MAXBIT direction numbers for each
- * of MAXDIM different Sobol’ sequences. When n is positive (but less than or equal to
+ * of MAXDIM different Sobol sequences. When n is positive (but less than or equal to
  * MAXDIM), returns as the vector x[1..n] the next values from n of these sequences.
  * Note that n must not be changed between initializations.
  * Taken from Numerical Recipes in C - The Art of Scientific Computing, 2nd Edition, Section 7.7.

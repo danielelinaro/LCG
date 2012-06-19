@@ -428,7 +428,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                 uint idPre, idPost;
                 for (int i=0; i<entities.size(); i++) {
                         idPre = entities[i]->id();
-                        Logger(Info, "Id = %d.\n", idPre);
+                        Logger(Debug, "Id = %d.\n", idPre);
                         for (int j=0; j<connections[idPre].size(); j++) {
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
@@ -482,6 +482,22 @@ close_lib:
         }
 
         return entity;
+}
+
+bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::string& unitsOut)
+{
+        if (boost::equals(unitsIn, unitsOut)) {
+                *y = x;
+                return true;
+        }
+
+        if ((boost::equals(unitsIn, "s") && boost::equals(unitsOut, "Hz")) ||
+            (boost::equals(unitsIn, "Hz") && boost::equals(unitsOut, "s"))) {
+                *y = 1.0 / x;
+                return true;
+        }
+
+        return false;
 }
 
 } // namespace dynclamp
