@@ -346,24 +346,17 @@ void POISSON_SHOT1(double amplitude, double frequency, double width, double *out
 
   else {
 
-  j = 0;
-  while (j<Ni) {  
-    k = (uint) ( -tmp );
-    o = j + k;                      // This variable contains the index at the beginning of the event.
-    if ((o+m) < Ni) {               // However such an index + the duration of the pulse might exceed n:
-      for(i=0; i<k; i++)            // when this does not happen, simply go through the vector and place
-    output[(*index)++] = 0.;        // zeros from the old j to the new one (j + k) and generate the event
-      for(i=0; i<m; i++)            // by filling m points (duration of the square pulse event) with
-    output[(*index)++] = amplitude; // the appropriate amplitude value
-      j = o + m;                    // Finally update the current index, to the end of the event.
-    }
-    else {                          // When the drawn ISI is larger or equal to n,
-      //for(i=0; i<(n-j); i++)               // then fill the remaining part of vector with zeros.
-      //DATA[qq++] = 0.;                     // Although it might at first seems I should not do anything, as the vector
-      (*index) = (*index) + (Ni-j);
-      j = Ni;                                // is already filled with 0s, we have anyway to update qq!!!
-    }                                        // Simply set j to n, so we escape from the while loop and return.
-  }
+        /* Modified by Daniele Linaro on Jun 25, 2012 */
+        /* START */
+        k = (uint) -tmp;       // period, in number of samples
+        i = -1;                 // number of periods
+        for (j=0; j<Ni; j++, (*index)++) {
+                if (j%k == 0)
+                        i++;
+                if ((j-i*k)%m == (j-i*k))
+                        output[*index] = amplitude;
+        }
+        /* END */
 
   } // end if
 

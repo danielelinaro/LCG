@@ -89,7 +89,7 @@ bool ConstantFromFile::initialise()
         double value;
         FILE *fid = fopen(m_filename.c_str(),"r");
         if (fid != NULL) {
-                fscanf(fid, "%e", &value);
+                fscanf(fid, "%lf", &value);
                 fclose(fid);
         }
         else {
