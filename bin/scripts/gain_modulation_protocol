@@ -139,7 +139,7 @@ while [ $i -le $reps ] ; do
     kernel_protocol
     j=0
     while [ $j -lt $ncurrents ] ; do
-	sed 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file
+	sed -e 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file
 	dclamp -c $config_file
 	let j++
 	if [ $j -ne $ncurrents ] ; then

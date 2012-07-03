@@ -55,7 +55,7 @@ fi
 
 stimfile=/tmp/ap.stim
 
-cat $origstimfile | sed 's/500/'$amplitude'/' > $stimfile
+sed -e 's/500/'$amplitude'/' $origstimfile > $stimfile
 kernel_protocol
 cclamp -f $stimfile -n $reps -i $interval
 rm $stimfile

@@ -45,7 +45,7 @@ fi
 
 stimfile=/tmp/white_noise.stim
 
-cat $origstimfile | sed 's/^10/'$duration'/' > $stimfile
+sed -e 's/^10/'$duration'/' $origstimfile > $stimfile
 cclamp -f $stimfile
 datafile=`ls -lrth | tail -1 | awk '{ print $9 }'`
 extract_kernels.py $datafile

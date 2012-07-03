@@ -1,0 +1,30 @@
+<dynamicclamp>
+  <entities>
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>false</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>AnalogInput</name>
+      <id>1</id>
+      <parameters>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<inputRange>[-10,+10]</inputRange>
+	<readChannel>0</readChannel>
+	<inputConversionFactor>100</inputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>0</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>
