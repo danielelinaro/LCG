@@ -40,7 +40,7 @@ done
 if [ -z "${CONFIGURATIONS_PATH:-}" ] ; then
     origconfigfile=$HOME/configurations/spontaneous.xml
 else
-    origconfigufile=$CONFIGURATIONS_PATH/spontaneous.xml
+    origconfigfile=$CONFIGURATIONS_PATH/spontaneous.xml
 fi
 
 configfile=/tmp/spontaneous.xml

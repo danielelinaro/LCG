@@ -80,9 +80,9 @@ done
 
 freq=(1 5 10 20 50 100 200 300 600 1000)
 nfreq=${#freq[@]}
-shuffle $nfreq
 i=1
 while [ $i -le $reps ] ; do
+    shuffle $nfreq
     kernel_protocol
     j=0
     while [ $j -lt $nfreq ] ; do

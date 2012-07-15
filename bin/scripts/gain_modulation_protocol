@@ -132,10 +132,10 @@ do
 done
 
 ncurrents=${#I[@]}
-shuffle $ncurrents
 i=1
 rm -f current.stim
 while [ $i -le $reps ] ; do
+    shuffle $ncurrents
     kernel_protocol
     j=0
     while [ $j -lt $ncurrents ] ; do
