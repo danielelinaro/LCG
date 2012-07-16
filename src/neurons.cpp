@@ -381,7 +381,7 @@ void RealNeuron::terminate()
                 if (fid != NULL) {
                         fprintf(fid, "%e", m_Iinj);
                         fclose(fid);
-                        Logger(Important, "Written last output value to /tmp/last_value.out.\n");
+                        Logger(Debug, "Written last output value to /tmp/last_value.out.\n");
                 }
         }
 }
