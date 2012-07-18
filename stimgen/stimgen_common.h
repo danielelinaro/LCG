@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #define STIMGEN_SOFTWARE            "CREATE_STIMULUS"
-#define STIMGEN_VERSION             2009
+#define STIMGEN_VERSION             2012
 
 #define TWOPI 6.283185307179586476925286766559   // Mathematical constant := 2 * PI.
 #define POSPART(m) (((m) > 0) ? m : 0.)
@@ -35,6 +35,7 @@ extern "C" {
 #define POISSON2_WAVE   9
 #define BIPOLAR_WAVE    10
 #define UNIF_NOISE      11
+#define ALPHA_FUN       12
 
 #define SUMMATION       1
 #define MULTIPLICATION  2
