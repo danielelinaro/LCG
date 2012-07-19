@@ -10,6 +10,7 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+#include "common.h"
 #include "types.h"
 #include "utils.h"
 #include "analog_io.h"
@@ -78,14 +79,14 @@ int main(int argc, char *argv[])
                 value, deviceFile.c_str(), subdevice, channel);
         dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, conversionFactor, ref);
         output.write(value);
-        FILE *fid = fopen("/tmp/last_value.out","w");
+        FILE *fid = fopen(LOGFILE,"w");
         if (fid != NULL) {
-                fprintf(fid, "%e", value);
+                fprintf(fid, "%lf", value);
                 fclose(fid);
-                Logger(Important, "Saved output value to /tmp/last_value.out.\n");
+                Logger(Important, "Saved output value to [%s].\n", LOGFILE);
         }
         else {
-                Logger(Important, "Unable to save output value to /tmp/last_value.out.\n");
+                Logger(Important, "Unable to save output value to [%s].\n", LOGFILE);
         }
 
 #else

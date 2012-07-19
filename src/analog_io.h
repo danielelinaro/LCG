@@ -45,6 +45,25 @@ private:
         ComediAnalogOutputSoftCal m_output;
 };
 
+class AnalogIO : public Entity {
+public:
+        AnalogIO(const char *deviceFile, uint inputSubdevice,
+                 uint readChannel, double inputConversionFactor,
+                 uint outputSubdevice, uint writeChannel, double outputConversionFactor,
+                 uint inputRange = PLUS_MINUS_TEN, uint aref = GRSE,
+                 const std::string& units = "mV",
+                 uint id = GetId());
+        ~AnalogIO();
+        virtual bool initialise();
+        virtual void terminate();
+        virtual void step();
+        virtual double output() const;
+private:
+        double m_data;
+        ComediAnalogInputSoftCal m_input;
+        ComediAnalogOutputSoftCal m_output;
+};
+
 } // namespace dynclamp
 
 /***
@@ -56,6 +75,7 @@ extern "C" {
 
 dynclamp::Entity* AnalogInputFactory(dictionary& args);
 dynclamp::Entity* AnalogOutputFactory(dictionary& args);
+dynclamp::Entity* AnalogIOFactory(dictionary& args);
 	
 #ifdef __cplusplus
 }

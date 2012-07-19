@@ -450,12 +450,16 @@ ComediAnalogOutputHardCal::ComediAnalogOutputHardCal(const char *deviceFile, uin
           m_outputConversionFactor(outputConversionFactor)
 {
         initialise();
+#ifdef RESET_OUTPUT
         write(0.0);
+#endif
 }
 
 ComediAnalogOutputHardCal::~ComediAnalogOutputHardCal()
 {
+#ifdef RESET_OUTPUT
         write(0.0);
+#endif
 }
 
 bool ComediAnalogOutputHardCal::initialise()
@@ -616,12 +620,16 @@ ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal(const char *deviceFile, uin
 
 ComediAnalogOutputSoftCal::~ComediAnalogOutputSoftCal()
 {
+#ifdef RESET_OUTPUT
         write(0.0);
+#endif
 }
 
 bool ComediAnalogOutputSoftCal::initialise()
 {
+#ifdef RESET_OUTPUT
         write(0.0);
+#endif
         return true;
 }
 

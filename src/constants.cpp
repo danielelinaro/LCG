@@ -24,10 +24,8 @@ dynclamp::Entity* ConstantFromFileFactory(dictionary& args)
         uint id;
         std::string filename, units;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a ConstantFromFile.\n");
-                return NULL;
-        }
+        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+                filename = LOGFILE;
         if (!dynclamp::CheckAndExtractValue(args, "units", units))
                 units = "N/A";
         dynclamp::Logger(dynclamp::Info, "ConstantFromFile: using file [%s].\n", filename.c_str());

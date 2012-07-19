@@ -11,22 +11,26 @@ public:
         AEC(const double *kernel, size_t kernelSize);
         ~AEC();
 
-        virtual bool initialise();
+        virtual bool initialise(double I = 0);
+
+        bool hasKernel() const;
 
         void pushBack(double I);
-        double compensate(double V) const;
+        double compensate(double V);
 
         size_t kernelLength() const;
         const double* kernel() const;
 
 private:
-        double convolve() const;
+        double convolve();
 
 private:
         size_t m_length;
         unsigned int m_pos;
         double *m_kernel;
         double *m_current;
+        double m_buffer[2];
+        bool m_withKernel;
 };
 
 } // namespace dynclamp

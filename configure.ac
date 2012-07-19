@@ -88,6 +88,10 @@ AC_ARG_WITH([examples],
 	    [AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
+AC_ARG_WITH([output-reset],
+	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates])],
+ 	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
+AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
 
 with_comedi=no
 if test `expr $host_os : 'linux'` -eq 5 ; then

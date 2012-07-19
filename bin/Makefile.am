@@ -2,6 +2,9 @@ LDADD = ../stimgen/libstimgen.la ../src/libdynclamp.la
 AM_CPPFLAGS = -I../stimgen -I../src -I.
 bin_PROGRAMS = dclamp
 dclamp_SOURCES = dclamp.cpp
+if OUTPUT_RESET
+AM_CPPFLAGS += -DRESET_OUTPUT
+endif
 if ANALOG_IO
 bin_PROGRAMS += cclamp zero_output constant_output test_daq noisy_bg freq_clamp 
 cclamp_SOURCES = cclamp.cpp

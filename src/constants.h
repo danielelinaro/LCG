@@ -2,6 +2,7 @@
 #define CONSTANTS_H
 
 #include "entity.h"
+#include "common.h"
 
 namespace dynclamp
 {
@@ -22,7 +23,9 @@ private:
 class ConstantFromFile : public Constant
 {
 public:
-        ConstantFromFile(const std::string& filename, const std::string& units = "N/A", uint id = GetId());
+        ConstantFromFile(const std::string& filename = LOGFILE,
+                         const std::string& units = "N/A",
+                         uint id = GetId());
         virtual bool initialise();
         std::string filename() const;
         void setFilename(const std::string& filename);

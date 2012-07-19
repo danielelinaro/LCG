@@ -12,6 +12,7 @@ AEC::AEC(const char *kernelFile)
                 m_current = new double[m_length];
                 m_kernel[0] = 0.0;
                 m_current[0] = 0.0;
+                m_withKernel = false;
         }
         else {
                 FILE *fid;
@@ -36,6 +37,7 @@ AEC::AEC(const char *kernelFile)
                         m_current[i] = 0.0;
                 }
                 fclose(fid);
+                m_withKernel = true;
         }
         Logger(Debug, "The kernel has %d samples.\n", m_length);
 }
@@ -49,6 +51,7 @@ AEC::AEC(const double *kernel, size_t kernelSize)
                 m_kernel[i] = kernel[i];
                 m_current[i] = 0.0;
         }
+        m_withKernel = true;
 }
 
 AEC::~AEC()
@@ -57,12 +60,13 @@ AEC::~AEC()
         delete m_current;
 }
 
-bool AEC::initialise()
+bool AEC::initialise(double I)
 {
-        for (int i=0; i<m_length; i++) {
-                m_current[i] = 0.0;
-        }
+        for (int i=0; i<m_length; i++)
+                m_current[i] = I*1e-12;
         m_pos = 0;
+        if (I != 0)
+                Logger(Important, "Initialised kernel with %lf (pA).\n", I);
         return true;
 }
 
@@ -72,12 +76,17 @@ void AEC::pushBack(double I)
         m_pos = (m_pos+1) % m_length;
 }
 
-double AEC::compensate(double V) const
+double AEC::compensate(double V)
 {
-        return V - 1e3*convolve();
+        if (!m_withKernel)
+                return V;
+        double toCompensate = m_buffer[0];
+        m_buffer[0] = m_buffer[1];
+        m_buffer[1] = V;
+        return toCompensate - 1e3*convolve();
 }
 
-double AEC::convolve() const
+double AEC::convolve()
 {
         int i, j;
         double U = 0.0;
@@ -96,6 +105,11 @@ const double* AEC::kernel() const
 size_t AEC::kernelLength() const
 {
         return m_length;
+}
+
+bool AEC::hasKernel() const
+{
+        return m_withKernel;
 }
 
 } // namespace dynclamp

@@ -12,8 +12,6 @@
 #include "types.h"
 #include "entity.h"
 
-//#define ASYNCHRONOUS_INPUT
-
 /** Non-Referenced Single Ended */
 #define NRSE AREF_COMMON
 

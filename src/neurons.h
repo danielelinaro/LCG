@@ -1,6 +1,7 @@
 #ifndef NEURONS_H
 #define NEURONS_H
 
+#include "common.h"
 #include "dynamical_entity.h"
 #include "types.h"
 
@@ -9,6 +10,8 @@
 
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 #include "analog_io.h"
 #include "aec.h"
 #endif // HAVE_LIBCOMEDI
@@ -105,15 +108,15 @@ public:
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   uint inputRange, uint reference, uint voltageDelaySteps, bool holdLastValue = false,
-                   bool adaptiveThreshold = false, const char *kernelFile = NULL, uint id = GetId());
+                   uint inputRange, uint reference, const char *kernelFile = NULL,
+                   bool holdLastValue = false, bool adaptiveThreshold = false, uint id = GetId());
 
         RealNeuron(double spikeThreshold, double V0,
                    const char *deviceFile,
                    uint inputSubdevice, uint outputSubdevice,
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
-                   uint inputRange, uint reference, uint voltageDelaySteps,
+                   uint inputRange, uint reference, 
                    const double *AECKernel, size_t kernelSize, bool holdLastValue = false,
                    bool adaptiveThreshold = false, uint id = GetId());
 
@@ -125,8 +128,6 @@ public:
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
 
-        uint voltageDelaySteps() const;
-
 protected:
         virtual void evolve();
 
@@ -134,8 +135,6 @@ private:
         AEC m_aec;
         ComediAnalogInputSoftCal  m_input;
         ComediAnalogOutputSoftCal m_output;
-        uint m_delaySteps;
-        double *m_VrDelay;
         bool m_holdLastValue;
         // injected current
         double m_Iinj;
@@ -143,6 +142,7 @@ private:
         // adaptive threshold variables
         bool m_adaptiveThreshold;
         double m_Vmax, m_Vmin, m_Vth;
+
 };
 #endif // HAVE_LIBCOMEDI
 
