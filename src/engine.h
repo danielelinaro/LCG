@@ -34,8 +34,7 @@ extern double globalTimeOffset;
 
 extern double realtimeDt;
 
-#define NO_STOP_RT_TIMER
-
+//#define NO_STOP_RT_TIMER
 #undef GetGlobalDt
 #define GetGlobalDt() realtimeDt
 

@@ -268,7 +268,7 @@ bool ComediAnalogInputProxy::initialise()
                 Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
                 return false;
         }
-        m_cmd.flags            |= TRIG_RT;
+        //m_cmd.flags            |= TRIG_RT;
         m_cmd.convert_arg       = 0;    // this value is wrong, but will be fixed by comedi_command_test
         m_cmd.chanlist          = m_channelsPacked;
         m_cmd.stop_src          = TRIG_NONE;

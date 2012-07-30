@@ -95,6 +95,7 @@ bool ConstantFromFile::initialise()
                 value = 0.0;
         }
         setValue(value);
+        return true;
 }
 
 } // namespace dynclamp

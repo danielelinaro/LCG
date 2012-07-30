@@ -11,6 +11,7 @@
 #include <comedilib.h>
 #include "types.h"
 #include "entity.h"
+#include "common.h"
 
 /** Non-Referenced Single Ended */
 #define NRSE AREF_COMMON

@@ -75,6 +75,9 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         rt_set_periodic_mode();
 #endif
 
+        Logger(Info, "Starting the RT timer.\n");
+        tickPeriod = start_rt_timer(sec2count(globalDt));
+        
         Logger(Info, "Initialising task.\n");
         taskName = nam2num("hybrid_simulator");
         task = rt_task_init(taskName, RT_SCHED_HIGHEST_PRIORITY+1, STACK_SIZE, MSG_SIZE);
@@ -83,9 +86,6 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 return;
         }
 
-        Logger(Info, "Setting timer period.\n");
-        tickPeriod = start_rt_timer(sec2count(globalDt));
-        
         Logger(Info, "The period is %.6g ms (f = %.6g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
 
         Logger(Info, "Switching to hard real time.\n");
@@ -112,12 +112,14 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         SetGlobalTimeOffset();
         ResetGlobalTime();
+        Logger(Debug, "Initialising all the entities.\n");
         for (i=0; i<nEntities; i++) {
                 if (!entities[i]->initialise()) {
                         Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
                         return;
                 }
         }
+        Logger(Debug, "Starting the main loop.\n");
         while (GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -126,19 +128,20 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 for (i=0; i<nEntities; i++)
                         entities[i]->step();
                 rt_task_wait_period();
-                //Logger(Info, "%g\n", GetGlobalTime());
         }
+        Logger(Debug, "Finished the main loop.\n");
+        Logger(Debug, "Terminating all the entities.\n");
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
 
 stopRT:
-#ifndef NO_STOP_RT_TIMER
-        Logger(Info, "Stopping the timer.\n");
-        stop_rt_timer();
-#endif
-
         Logger(Info, "Deleting the task.\n");
         rt_task_delete(task);
+
+#ifndef NO_STOP_RT_TIMER
+        Logger(Info, "Stopping the RT timer.\n");
+        stop_rt_timer();
+#endif
 
         Logger(Info, "\n>>>>> DYNAMIC CLAMP THREAD ENDED <<<<<\n\n");
 }
