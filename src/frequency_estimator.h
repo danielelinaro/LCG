@@ -5,12 +5,13 @@
 #include "utils.h"
 
 #define FE_TAU m_parameters[0]
+#define FE_INITIAL_F m_parameters[1]
 
 namespace dynclamp {
 
 class FrequencyEstimator : public Entity {
 public:
-        FrequencyEstimator(double tau, uint id = GetId());
+        FrequencyEstimator(double tau, double initialFrequency = 0.0, uint id = GetId());
         void setTau(double tau);
         double tau() const;
         virtual bool initialise();

@@ -60,11 +60,13 @@ AEC::~AEC()
         delete m_current;
 }
 
-bool AEC::initialise(double I)
+bool AEC::initialise(double I, double V)
 {
         for (int i=0; i<m_length; i++)
                 m_current[i] = I*1e-12;
         m_pos = 0;
+        m_buffer[0] = V;
+        m_buffer[1] = V;
         if (I != 0)
                 Logger(Important, "Initialised kernel with %lf (pA).\n", I);
         return true;

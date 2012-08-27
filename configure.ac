@@ -6,8 +6,8 @@ AC_INIT([dynclamp], [0.1], [daniele@tnb.ua.ac.be])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/utils.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-#m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
-#AM_SILENT_RULES([yes])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+AM_SILENT_RULES([yes])
 LT_INIT
 
 # operating system's information

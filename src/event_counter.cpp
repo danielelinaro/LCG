@@ -96,7 +96,7 @@ void EventCounter::handleEvent(const Event *event)
                         reset();
                         break;
                 default:
-                        Logger(Important, "EventCounter: unknown event type.\n");
+                        Logger(Important, "EventCounter: unknown event type (%d).\n",event->type());
         }
 }
 

@@ -372,7 +372,6 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
 
                 try {
                         *dt = pt.get<double>("dynamicclamp.simulation.dt");
-                        SetGlobalDt(*dt);
                 } catch(...) {
                         *dt = -1;
                         try {
@@ -382,6 +381,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         }
                 }
 
+                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
                 /*** entities ***/
                 BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {
                         dictionary args;

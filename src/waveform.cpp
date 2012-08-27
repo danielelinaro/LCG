@@ -87,14 +87,14 @@ bool Waveform::parseStimulusFile()
         flag = generate_trial(m_stimulusFile, GetLoggingLevel() <= Debug,
                               0, NULL, &m_stimulus, &m_stimulusLength,
                               1.0/GetGlobalDt(), GetGlobalDt());
-
+        Logger(Debug,"Passed %lf - %lf to generate_trial.\n",1.0/GetGlobalDt(),GetGlobalDt());
         if (flag == -1) {
                 if (m_stimulus != NULL)
                         free(m_stimulus);
                 Logger(Critical, "Error in <generate_trial>\n");
                 return false;
         }
-
+        Logger(Debug,"The number of points in the stimulus is: %d, which will last for: %lf (s).\n",m_stimulusLength,m_stimulusLength*GetGlobalDt());
         metadata = new double*[MAXROWS];
         if (metadata == NULL) {
                 Logger(Critical, "Unable to allocate memory for <parsed_data>.\n");

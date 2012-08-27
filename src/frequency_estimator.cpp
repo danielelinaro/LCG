@@ -5,25 +5,32 @@ dynclamp::Entity* FrequencyEstimatorFactory(dictionary& args)
 {
         uint id;
         double tau;
+        double initialFrequency;
         id = dynclamp::GetIdFromDictionary(args);
         if (! dynclamp::CheckAndExtractDouble(args, "tau", &tau)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build FrequencyEstimator.\n");
                 return NULL;
                 
         }
-        return new dynclamp::FrequencyEstimator(tau, id);
+        if (! dynclamp::CheckAndExtractDouble(args, "initialFrequency", &initialFrequency))
+                initialFrequency = 0.0;
+        else
+                dynclamp::Logger(dynclamp::Info, "FrequencyEstimator: Initialized at %f Hz.\n",initialFrequency);
+        return new dynclamp::FrequencyEstimator(tau,initialFrequency, id);
         
 }
 
 namespace dynclamp {
 
-FrequencyEstimator::FrequencyEstimator(double tau, uint id)
+FrequencyEstimator::FrequencyEstimator(double tau, double initialFrequency, uint id)
         : Entity(id)
 {
         if (tau <= 0)
                 throw "Tau must be positive";
         m_parameters.push_back(tau);
         m_parametersNames.push_back("tau");
+        m_parameters.push_back(initialFrequency);
+        m_parametersNames.push_back("initialFrequency");
         setName("FrequencyEstimator");
         setUnits("Hz");
 }
@@ -43,7 +50,7 @@ double FrequencyEstimator::tau() const
 bool FrequencyEstimator::initialise()
 {
         m_tPrevSpike = 0.0;
-        m_frequency = 0.0;
+        m_frequency = FE_INITIAL_F;
         return true;
 }
 
@@ -67,9 +74,9 @@ void FrequencyEstimator::handleEvent(const Event *event)
                         emitTrigger();
                         Logger(Debug, "Estimated frequency: %g\n", m_frequency);
                 }
-                else {
-                        m_frequency = 1.0 / now;
-                }
+               //else {
+               //       m_frequency = 1.0 / now;
+               //}
                 m_tPrevSpike = now;
         }
 }

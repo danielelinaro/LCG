@@ -11,7 +11,7 @@ public:
         AEC(const double *kernel, size_t kernelSize);
         ~AEC();
 
-        virtual bool initialise(double I = 0);
+        virtual bool initialise(double I = 0, double V = 0);
 
         bool hasKernel() const;
 

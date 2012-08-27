@@ -245,14 +245,18 @@ AnalogOutput::~AnalogOutput()
 
 void AnalogOutput::terminate()
 {
+#ifdef RESET_OUTPUT
         m_output.write(0.0);
+#endif
 }
 
 bool AnalogOutput::initialise()
 {
         if (! m_output.initialise())
                 return false;
+#ifdef RESET_OUTPUT
         m_output.write(0.0);
+#endif
         return true;
 }
 

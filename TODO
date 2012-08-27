@@ -1,6 +1,7 @@
 
 Short term (and therefore relatively simple):
 
+-) set output limits equal to output range in comedi_io.
 -) since events now can be delivered through Connection objects, they should have
    an "originalSender" field.
 -) modify the code of synapses in order to use Connection objects.

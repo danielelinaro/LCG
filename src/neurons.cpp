@@ -355,10 +355,9 @@ bool RealNeuron::initialise()
                 m_Iinj = 0.0;
         }
 
-        if (! m_aec.initialise(m_Iinj))
-                return false;
-
         double Vr = m_input.read();
+        if (! m_aec.initialise(m_Iinj,Vr))
+                return false;
         VM = m_aec.compensate(Vr);
         m_aec.pushBack(m_Iinj);
 
@@ -403,9 +402,7 @@ void RealNeuron::evolve()
         // set previous value of the membrane potential
         RN_VM_PREV = VM;
         // read current value of the membrane potential
-        double Vr = m_input.read();
         // compensate the recorded voltage
-        VM = m_aec.compensate(Vr);
         /*
         if (!m_aec.hasKernel()) {
                 VM = Vr;
@@ -429,10 +426,13 @@ void RealNeuron::evolve()
         size_t nInputs = m_inputs.size();
         for (i=0; i<nInputs; i++)
                 m_Iinj += m_inputs[i];
-        if (m_Iinj < -10000)
-                m_Iinj = -10000;
+        //if (m_Iinj < -10000)
+        //        m_Iinj = -10000;
         // inject the total input current into the neuron
+        
+        double Vr = m_input.read();
         m_output.write(m_Iinj);
+        VM = m_aec.compensate(Vr);
         // store the injected current into the buffer of the AEC
         //if (m_aec.hasKernel())
         m_aec.pushBack(m_Iinj);

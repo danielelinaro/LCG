@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
                         for (int j=0; j<opt.stimulusFiles.size(); j++) {
                                 stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
+                                        Logger(Info, "Trial: %d of %d.\n", k+1,opt.nTrials);
                                         ResetGlobalTime();
                                         Simulate(entities,stimulus->duration());
                                         if (k != opt.nTrials-1)
@@ -86,6 +87,7 @@ int main(int argc, char *argv[])
                         exit(1);
                 }
                 for (int i=0; i<opt.nTrials; i++) {
+                        Logger(Info, "Trial: %d of %d.\n", i+1,opt.nTrials);
                         ResetGlobalTime();
                         Simulate(entities,tend);
                         if (i != opt.nTrials-1)

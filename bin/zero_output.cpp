@@ -2,7 +2,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -10,6 +9,7 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+#include "common.h"
 #include "types.h"
 #include "utils.h"
 #include "analog_io.h"
@@ -100,6 +100,16 @@ int main(int argc, char *argv[])
         std::cout << "This program requires the Comedi library." << std::endl;
 
 #endif
+        double value = 0.0;
+        FILE *fid = fopen(LOGFILE,"w");
+        if (fid != NULL) {
+                fprintf(fid, "%lf", value);
+                fclose(fid);
+                Logger(Important, "Saved output value to [%s].\n", LOGFILE);
+        }
+        else {
+                Logger(Important, "Unable to save output value to [%s].\n", LOGFILE);
+        }
         return 0;
 }
 
