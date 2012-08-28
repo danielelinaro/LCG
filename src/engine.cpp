@@ -13,15 +13,20 @@
 #define MSG_SIZE        0           /* use default value */
 #endif // HAVE_LIBLXRT
 
+#ifdef HAVE_LIBANALOGY
+#include <native/task.h>
+#include <native/timer.h>
+#endif // HAVE_LIBANALOGY
+
 #ifdef HAVE_LIBRT
 #include <errno.h>
-#endif
+#endif // HAVE_LIBRT
 
 namespace dynclamp {
 
 double globalT;
 double globalDt = SetGlobalDt(1.0/20e3);
-#ifdef REAL_TIME_ENGINE
+#ifdef REALTIME_ENGINE
 double globalTimeOffset = 0.0;
 #endif
 #ifdef HAVE_LIBLXRT
@@ -44,6 +49,10 @@ double SetGlobalDt(double dt)
 #endif // NO_STOP_RT_TIMER
 #endif // HAVE_LIBLXRT
 
+#ifdef HAVE_LIBANALOGY
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
+#endif // HAVE_LIBANALOGY
+
 #ifdef HAVE_LIBRT
         struct timespec ts;
         clock_getres(CLOCK_REALTIME, &ts);
@@ -52,7 +61,9 @@ double SetGlobalDt(double dt)
                 globalDt = cycles * ts.tv_nsec / NSEC_PER_SEC;
         }
         Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
-#endif
+#endif // HAVE_LIBRT
+
+        assert(globalDt > 0.0);
         return globalDt;
 }
 
@@ -68,7 +79,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         unsigned long taskName;
         size_t nEntities = entities.size();
 
-        Logger(Info, "\n>>>>> DYNAMIC CLAMP THREAD STARTED <<<<<\n\n");
+        Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
 #ifndef NO_STOP_RT_TIMER
         Logger(Info, "Setting periodic mode.\n");
@@ -143,7 +154,116 @@ stopRT:
         stop_rt_timer();
 #endif
 
-        Logger(Info, "\n>>>>> DYNAMIC CLAMP THREAD ENDED <<<<<\n\n");
+        Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
+}
+
+#elif defined(HAVE_LIBANALOGY)
+
+RT_TASK dynclamp_rt_task;
+
+class TaskArgs {
+public:
+        TaskArgs(const std::vector<Entity*>& entities, double tend)
+                : m_entities(entities), m_tend(tend) {}
+        const std::vector<Entity*>& entities() const { return m_entities; }
+        Entity* entity(int i) const { return m_entities[i]; }
+        double tend() const { return m_tend; }
+        int nEntities() const { return m_entities.size(); }
+private:
+        const std::vector<Entity*>& m_entities;
+        double m_tend;
+};
+
+void RTSimulationTask(void *cookie)
+{
+        TaskArgs *arg = static_cast<TaskArgs*>(cookie);
+        int flag, i;
+        size_t nEntities = arg->nEntities();
+        double tend = arg->tend();
+        RTIME start, stop;
+
+        SetGlobalTimeOffset();
+        ResetGlobalTime();
+        Logger(Info, "Initialising all the entities.\n");
+        for (i=0; i<nEntities; i++) {
+                if (!arg->entity(i)->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", arg->entity(i)->id());
+                        return;
+                }
+        }
+        Logger(Info, "Starting the main loop.\n");
+
+        flag = rt_task_set_periodic(NULL, TM_NOW, NSEC_PER_SEC*GetGlobalDt());
+        if (flag != 0) {
+                Logger(Critical, "Unable to make the task periodic.\n");
+                return;
+        }
+        start = rt_timer_read();
+        //Logger(Info, "Successfully made the task periodic (T = %g ns).\n", NSEC_PER_SEC*GetGlobalDt());
+
+        while (GetGlobalTime() <= tend) {
+                ProcessEvents();
+                for (i=0; i<nEntities; i++)
+                        arg->entity(i)->readAndStoreInputs();
+                IncreaseGlobalTime();
+                for (i=0; i<nEntities; i++)
+                        arg->entity(i)->step();
+                rt_task_wait_period(NULL);
+        }
+        stop = rt_timer_read();
+        rt_task_set_periodic(NULL, TM_NOW, TM_INFINITE);
+
+        Logger(Important, "Elapsed time: %ld.%03ld ms\n",
+                (long)(stop - start) / 1000000, (long)(stop - start) % 1000000);
+
+        Logger(Info, "Finished the main loop.\n");
+        Logger(Info, "Terminating all the entities.\n");
+        for (i=0; i<nEntities; i++)
+                arg->entity(i)->terminate();
+
+        Logger(Info, "Stopping the RT timer.\n");
+}
+
+void RTSimulation(const std::vector<Entity*>& entities, double tend)
+{
+        TaskArgs cookie(entities, tend);
+        int flag;
+
+        Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
+
+        // Avoids memory swapping for this program
+        mlockall(MCL_CURRENT | MCL_FUTURE);
+        
+        flag = rt_task_create(&dynclamp_rt_task, "dynclamp", 0, 99, T_CPU(3) | T_JOINABLE);
+        // Create the task
+        if (flag != 0) {
+                Logger(Critical, "Unable to create the real-time task (err = %d).\n", flag);
+                return;
+        }
+        Logger(Info, "Successfully created the real-time task.\n");
+
+        // Start the task
+        flag = rt_task_start(&dynclamp_rt_task, RTSimulationTask, &cookie);
+        if (flag != 0) {
+                Logger(Critical, "Unable to start the real-time task (err = %d).\n", flag);
+                rt_task_delete(&dynclamp_rt_task);
+        }
+        Logger(Info, "Successfully started the real-time task.\n");
+
+        // Wait for the task to finish
+        flag = rt_task_join(&dynclamp_rt_task);
+        if (flag == 0) {
+                // There's no need to delete the task if we've joined successfully
+                Logger(Info, "Successfully joined with the child task.\n");
+        }
+        else {
+                Logger(Important, "Unable to join with the child task.\n");
+                // Delete the task
+                Logger(Info, "Deleting the task.\n");
+                rt_task_delete(&dynclamp_rt_task);
+        }
+
+        Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
 }
 
 #elif defined(HAVE_LIBRT)
@@ -320,17 +440,15 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
         ResetGlobalTime();
-
 #ifdef HAVE_LIBRT
         if (!CheckPrivileges())
                 return;
 #endif
-
-#ifdef REAL_TIME_ENGINE
+#ifdef REALTIME_ENGINE
         boost::thread thrd(RTSimulation, entities, tend);
 #else
         boost::thread thrd(NonRTSimulation, entities, tend);
-#endif
+#endif // REALTIME_ENGINE
         thrd.join();
         Logger(Info, "Simulation thread has finished running.\n");
 }

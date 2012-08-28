@@ -6,8 +6,16 @@ include_HEADERS = types.h randlib.h utils.h entity.h dynamical_entity.h ou.h syn
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
+if REALTIME
+AM_CPPFLAGS += -DREALTIME_ENGINE
+endif
 if ANALOG_IO
-libdynclamp_la_SOURCES += comedi_io.cpp analog_io.cpp
-include_HEADERS += comedi_io.h analog_io.h
+AM_CPPFLAGS += -DANALOG_IO
+libdynclamp_la_SOURCES += analog_io.cpp
+include_HEADERS += analog_io.h
+if COMEDI
+libdynclamp_la_SOURCES += comedi_io.cpp
+include_HEADERS += comedi_io.h
+endif
 endif
 

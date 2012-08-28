@@ -93,18 +93,59 @@ AC_ARG_WITH([output-reset],
  	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
 
+with_io=no
 with_comedi=no
+with_analogy=no
+with_rt=no
+with_rtai=no
+with_rtlinux=no
+with_xenomai=no
 if test `expr $host_os : 'linux'` -eq 5 ; then
-        AC_CHECK_LIB([comedi], [comedi_open], [],[echo "Comedi not found: won't compile data acquisition code."])
-        if test "$ac_cv_lib_comedi_comedi_open" = "yes" ; then
-                with_comedi=yes
-        fi
-        AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found, checking for RT-Linux support."])
-        if test "$ac_cv_lib_lxrt_rt_set_periodic_mode" = "no" ; then
-                AC_CHECK_LIB([rt], [pthread_create], [], [echo "RT-Linux not found, the system won't run in real-time."])
-        fi
+   
+   ### real time ###
+   AC_CHECK_LIB([xenomai], [pthread_create], [], [echo "Xenomai not found."])
+   if test "$ac_cv_lib_xenomai_pthread_create" = "yes" ; then
+      with_xenomai=yes
+      with_rt=yes
+   fi
+   if test "$with_xenomai" = "no" ; then
+      AC_CHECK_LIB([lxrt], [rt_set_periodic_mode], [], [echo "RTAI not found."])
+      if test "$ac_cv_lib_lxrt_rt_set_periodic_mode" = "yes" ; then
+      	 with_rtai=yes
+	 with_rt=yes
+      fi
+      if test "$with_rtai" = "no" ; then
+      	 AC_CHECK_LIB([rt], [pthread_create], [], [echo "RT-Linux not found."])
+	 if test "$ac_cv_lib_rt_pthread_create" = "yes" ; then
+	    with_rtlinux=yes
+	    with_rt=yes
+	 fi
+      fi
+   fi
+
+   ### analog I/O ###
+   AC_CHECK_LIB([rtdm], [rt_dev_open], [], [])
+   AC_CHECK_LIB([native], [rt_timer_set_mode], [], [])
+   AC_CHECK_LIB([analogy], [a4l_open], [], [echo "Analogy not found."])
+   if test "$ac_cv_lib_analogy_a4l_open" = "yes" ; then
+      with_analogy=yes
+      with_io=yes
+   fi
+   if test "$with_analogy" = "no" ; then
+      AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found."])
+      if test "$ac_cv_lib_comedi_comedi_open" = "yes" ; then
+      	 with_comedi=yes
+      	 with_io=yes
+      fi
+   fi
 fi
-AM_CONDITIONAL([ANALOG_IO],[test "$with_comedi" = "yes"])
-		
+AM_CONDITIONAL([ANALOG_IO],[test "$with_io" = "yes"])
+AM_CONDITIONAL([COMEDI],[test "$with_comedi" = "yes"])
+AM_CONDITIONAL([ANALOGY],[test "$with_analogy" = "yes"])
+AM_CONDITIONAL([REALTIME],[test "$with_rt" = "yes"])
+AM_CONDITIONAL([RTAI],[test "$with_rtai" = "yes"])
+AM_CONDITIONAL([XENOMAI],[test "$with_xenomai" = "yes"])
+AM_CONDITIONAL([RTLINUX],[test "$with_rtlinux" = "yes"])
+
 AC_OUTPUT
 
