@@ -1,7 +1,7 @@
 #include "analog_io.h"
 #include "utils.h"
 
-#ifdef HAVE_LIBCOMEDI
+#ifdef ANALOG_IO
 
 dynclamp::Entity* AnalogInputFactory(dictionary& args)
 {
@@ -159,7 +159,6 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr, units;
         double outputConversionFactor;
-        double holdValue;
 
         id = dynclamp::GetIdFromDictionary(args);
 
@@ -191,10 +190,6 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
         if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
                 units = "pA";
         }
-        if (! dynclamp::CheckAndExtractDouble(args, "HoldValue",holdValue)) {
-                dynclamp::Logger(dynclamp::Info,"Using value %s for hold value.",holdValue)
-                holdValue = 0;
-        }
 
         return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
                                           outputConversionFactor, reference, units, id);
@@ -207,7 +202,7 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint range, uint aref, const std::string& units,
                          uint id)
         : Entity(id),
-          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
+          m_input(deviceFile, inputSubdevice, &readChannel, 1, /*inputConversionFactor,*/ range, aref)
 {
         setName("AnalogInput");
         setUnits(units);
@@ -215,15 +210,17 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
 
 bool AnalogInput::initialise()
 {
+        /*
         if (! m_input.initialise())
                 return false;
         m_data = m_input.read();
+        */
         return true;
 }
 
 void AnalogInput::step()
 {
-        m_data = m_input.read();
+        //m_data = m_input.read();
 }
 
 double AnalogInput::output() const
@@ -237,7 +234,7 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
                            const std::string& units, uint id)
         : Entity(id),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+          m_output(deviceFile, outputSubdevice, &writeChannel, 1, /*outputConversionFactor,*/ PLUS_MINUS_TEN, aref)
 {
         setName("AnalogOutput");
         setUnits(units);
@@ -251,17 +248,19 @@ AnalogOutput::~AnalogOutput()
 void AnalogOutput::terminate()
 {
 #ifdef RESET_OUTPUT
-        m_output.write(0.0);
+        //m_output.write(0.0);
 #endif
 }
 
 bool AnalogOutput::initialise()
 {
+        /*
         if (! m_output.initialise())
                 return false;
 #ifdef RESET_OUTPUT
         m_output.write(0.0);
 #endif
+        */
         return true;
 }
 
@@ -271,7 +270,7 @@ void AnalogOutput::step()
         m_data = 0.0;
         for (i=0; i<n; i++)
                 m_data += m_inputs[i];
-        m_output.write(m_data);
+        //m_output.write(m_data);
 }
 
 double AnalogOutput::output() const
@@ -284,8 +283,8 @@ AnalogIO::AnalogIO(const char *deviceFile, uint inputSubdevice,
                  uint outputSubdevice, uint writeChannel, double outputConversionFactor,
                  uint inputRange, uint aref, const std::string& units, uint id)
         : Entity(id),
-          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, aref),
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+          m_input(deviceFile, inputSubdevice, &readChannel, 1, /*inputConversionFactor,*/ inputRange, aref),
+          m_output(deviceFile, outputSubdevice, &writeChannel, 1, /*outputConversionFactor,*/ PLUS_MINUS_TEN, aref)
 {
         setName("AnalogIO");
         setUnits(units);
@@ -298,27 +297,29 @@ AnalogIO::~AnalogIO()
 
 bool AnalogIO::initialise()
 {
+        /*
         if (! m_output.initialise() ||
             ! m_input.initialise())
                 return false;
         m_data = m_input.read();
         m_output.write(0.0);
+        */
         return true;
 }
 
 void AnalogIO::terminate()
 {
-        m_output.write(0.0);
+        //m_output.write(0.0);
 }
 
 void AnalogIO::step()
 {
-        m_data = m_input.read();
+        //m_data = m_input.read();
         uint i, n = m_inputs.size();
         double output = 0.0;
         for (i=0; i<n; i++)
                 output += m_inputs[i];
-        m_output.write(output);
+        //m_output.write(output);
 }
 
 double AnalogIO::output() const
@@ -328,5 +329,5 @@ double AnalogIO::output() const
 
 } // namespace dynclamp
 
-#endif // HAVE_LIBCOMEDI
+#endif // ANALOG_IO
 

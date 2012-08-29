@@ -17,5 +17,9 @@ if COMEDI
 libdynclamp_la_SOURCES += comedi_io.cpp
 include_HEADERS += comedi_io.h
 endif
+if ANALOGY
+libdynclamp_la_SOURCES += analogy_io.cpp
+include_HEADERS += analogy_io.h
+endif
 endif
 

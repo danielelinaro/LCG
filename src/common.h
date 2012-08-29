@@ -33,8 +33,25 @@
  *
  */
 
- #define LOGFILE                 "/tmp/dynclamp.txt"
-//#define ASYNCHRONOUS_INPUT
+#define LOGFILE                 "/tmp/dynclamp.txt"
+#define ASYNCHRONOUS_INPUT
 #define TRIM_ANALOGOUTPUT
+
+
+// DAQ board stuff
+
+/** Non-Referenced Single Ended */
+#define NRSE AREF_COMMON
+
+/** Ground-Referenced Single Ended */
+#define GRSE AREF_GROUND
+
+enum {
+        PLUS_MINUS_TEN = 0,
+        PLUS_MINUS_FIVE,
+        PLUS_MINUS_ONE,
+        PLUS_MINUS_ZERO_POINT_TWO
+};
+
 #endif
 

@@ -5,10 +5,14 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_LIBCOMEDI
+#ifdef ANALOG_IO
 
 #include <string>
+#if defined(HAVE_LIBCOMEDI)
 #include "comedi_io.h"
+#elif defined(HAVE_LIBANALOGY)
+#include "analogy_io.h"
+#endif
 
 namespace dynclamp {
 
@@ -25,7 +29,11 @@ public:
         virtual double output() const;
 private:
         double m_data;
+#if defined(HAVE_LIBCOMEDI)
         ComediAnalogInputSoftCal m_input;
+#elif defined(HAVE_LIBANALOGY)
+        AnalogyAnalogIO m_input;
+#endif
 };
 
 class AnalogOutput : public Entity {
@@ -42,7 +50,11 @@ public:
         virtual double output() const;
 private:
         double m_data;
+#if defined(HAVE_LIBCOMEDI)
         ComediAnalogOutputSoftCal m_output;
+#elif defined(HAVE_LIBANALOGY)
+        AnalogyAnalogIO m_output;
+#endif
 };
 
 class AnalogIO : public Entity {
@@ -60,8 +72,13 @@ public:
         virtual double output() const;
 private:
         double m_data;
+#if defined(HAVE_LIBCOMEDI)
         ComediAnalogInputSoftCal m_input;
         ComediAnalogOutputSoftCal m_output;
+#elif defined(HAVE_LIBANALOGY)
+        AnalogyAnalogIO m_input;
+        AnalogyAnalogIO m_output;
+#endif
 };
 
 } // namespace dynclamp
@@ -81,7 +98,7 @@ dynclamp::Entity* AnalogIOFactory(dictionary& args);
 }
 #endif
 
-#endif // HAVE_LIBCOMEDI
+#endif // ANALOG_IO
 
 #endif // ANALOG_IO_H
 
