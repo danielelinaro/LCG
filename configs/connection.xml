@@ -22,7 +22,7 @@
 	<Vth>-50</Vth>
 	<Iext>220</Iext>
       </parameters>
-      <connections>0,2,4</connections>
+      <connections>0,2,5</connections>
     </entity>
 
     <entity>
@@ -47,16 +47,26 @@
       <id>4</id>
       <parameters>
       </parameters>
-      <connections>5</connections>
+      <connections>6</connections>
     </entity>
 
     <entity>
       <name>EventCounter</name>
       <id>5</id>
       <parameters>
-	<maxCount>100</maxCount>
+	<maxCount>10</maxCount>
       </parameters>
+      <connections>4</connections>
     </entity>
+<entity>
+    <name>Waveform</name>
+    <id>6</id>
+    <parameters>
+       <triggered>true</triggered>
+       <filename>current.stim</filename>
+    </parameters>
+      <connections>0,1</connections>
+   </entity>
 
   </entities>
 

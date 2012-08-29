@@ -200,7 +200,8 @@ void Waveform::handleEvent(const Event *event)
                 }
                 break;
         default:
-                Logger(Important, "Waveform: unknown event type.\n");
+
+                Logger(Important, "Waveform: unknown event (%d) type.\n",event->type());
         }
 }
 

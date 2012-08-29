@@ -126,5 +126,5 @@ void VariableDelayConnection::addPre(Entity *entity)
         }
 }
 
-}
+}//namespace dynclamp
 

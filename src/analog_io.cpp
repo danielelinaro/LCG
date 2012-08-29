@@ -159,6 +159,7 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr, units;
         double outputConversionFactor;
+        double holdValue;
 
         id = dynclamp::GetIdFromDictionary(args);
 
@@ -189,6 +190,10 @@ dynclamp::Entity* AnalogOutputFactory(dictionary& args)
 
         if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
                 units = "pA";
+        }
+        if (! dynclamp::CheckAndExtractDouble(args, "HoldValue",holdValue)) {
+                dynclamp::Logger(dynclamp::Info,"Using value %s for hold value.",holdValue)
+                holdValue = 0;
         }
 
         return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,

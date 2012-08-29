@@ -7,6 +7,17 @@ dynclamp::Entity* SobolDelayFactory(dictionary& args)
         return new dynclamp::SobolDelay(dynclamp::GetIdFromDictionary(args));
 }
 
+dynclamp::Entity* PhasicDelayFactory(dictionary& args)
+{
+
+        uint id;
+        double delay = 0.0;
+
+        id = dynclamp::GetIdFromDictionary(args);
+        if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay)) 
+                dynclamp::Logger(dynclamp::Important, "PhasicDelay: Using a phasic delay of zero!\n");
+        return new dynclamp::PhasicDelay(id,delay);
+}
 
 namespace dynclamp {
 
@@ -53,5 +64,24 @@ double SobolDelay::operator()()
         return x*y;
 }
 
+PhasicDelay::PhasicDelay(uint id, double phase)
+        : Functor(id), m_phase(phase)
+{
+        setName("PhasicDelay");
 }
+
+bool PhasicDelay::initialise()
+{
+        return true;
+}
+
+double PhasicDelay::operator()()
+{
+        double y;
+        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units(), "s"))
+                throw "Unable to convert.";
+        return m_phase*y;
+}
+
+}//namespace dynclamp
 
