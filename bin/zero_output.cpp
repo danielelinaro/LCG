@@ -84,14 +84,14 @@ int main(int argc, char *argv[])
                 for (int ch=0; ch<nChannels; ch++) {
                         Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
                                         deviceFile.c_str(), subdevice, ch);
-                        dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
+                        ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
                         output.write(0.0);
                 }
         }
         else {
                 Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
                                 deviceFile.c_str(), subdevice, channel);
-                dynclamp::ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
+                ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
                 output.write(0.0);
         }
 
@@ -100,6 +100,8 @@ int main(int argc, char *argv[])
         std::cout << "This program requires the Comedi library." << std::endl;
 
 #endif
+
+#ifdef ANALOG_IO
         double value = 0.0;
         FILE *fid = fopen(LOGFILE,"w");
         if (fid != NULL) {
@@ -110,6 +112,7 @@ int main(int argc, char *argv[])
         else {
                 Logger(Important, "Unable to save output value to [%s].\n", LOGFILE);
         }
+#endif
         return 0;
 }
 

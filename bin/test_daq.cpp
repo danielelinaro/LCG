@@ -16,6 +16,10 @@
 #define HEKA
 #define TWO_CHANNELS
 
+#ifdef HAVE_LIBCOMEDI
+#include "comedi_io.h"
+#endif
+
 using namespace dynclamp;
 using namespace dynclamp::generators;
 using namespace dynclamp::recorders;

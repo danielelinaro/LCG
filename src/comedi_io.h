@@ -13,6 +13,12 @@
 #include "entity.h"
 #include "common.h"
 
+/** Non-Referenced Single Ended */
+#define NRSE AREF_COMMON
+
+/** Ground-Referenced Single Ended */
+#define GRSE AREF_GROUND
+
 namespace dynclamp {
 
 class ComediAnalogInputProxy;

@@ -202,7 +202,11 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint range, uint aref, const std::string& units,
                          uint id)
         : Entity(id),
-          m_input(deviceFile, inputSubdevice, &readChannel, 1, /*inputConversionFactor,*/ range, aref)
+#ifdef HAVE_LIBCOMEDI
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
+#else
+          m_input(deviceFile, inputSubdevice, &readChannel, 1, range, aref)
+#endif
 {
         setName("AnalogInput");
         setUnits(units);
@@ -210,17 +214,15 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
 
 bool AnalogInput::initialise()
 {
-        /*
         if (! m_input.initialise())
                 return false;
         m_data = m_input.read();
-        */
         return true;
 }
 
 void AnalogInput::step()
 {
-        //m_data = m_input.read();
+        m_data = m_input.read();
 }
 
 double AnalogInput::output() const
@@ -234,7 +236,11 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
                            const std::string& units, uint id)
         : Entity(id),
-          m_output(deviceFile, outputSubdevice, &writeChannel, 1, /*outputConversionFactor,*/ PLUS_MINUS_TEN, aref)
+#ifdef HAVE_LIBCOMEDI
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+#else
+          m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref)
+#endif
 {
         setName("AnalogOutput");
         setUnits(units);
@@ -248,19 +254,17 @@ AnalogOutput::~AnalogOutput()
 void AnalogOutput::terminate()
 {
 #ifdef RESET_OUTPUT
-        //m_output.write(0.0);
+        m_output.write(0.0);
 #endif
 }
 
 bool AnalogOutput::initialise()
 {
-        /*
         if (! m_output.initialise())
                 return false;
 #ifdef RESET_OUTPUT
         m_output.write(0.0);
 #endif
-        */
         return true;
 }
 
@@ -270,7 +274,7 @@ void AnalogOutput::step()
         m_data = 0.0;
         for (i=0; i<n; i++)
                 m_data += m_inputs[i];
-        //m_output.write(m_data);
+        m_output.write(m_data);
 }
 
 double AnalogOutput::output() const
@@ -283,8 +287,13 @@ AnalogIO::AnalogIO(const char *deviceFile, uint inputSubdevice,
                  uint outputSubdevice, uint writeChannel, double outputConversionFactor,
                  uint inputRange, uint aref, const std::string& units, uint id)
         : Entity(id),
-          m_input(deviceFile, inputSubdevice, &readChannel, 1, /*inputConversionFactor,*/ inputRange, aref),
-          m_output(deviceFile, outputSubdevice, &writeChannel, 1, /*outputConversionFactor,*/ PLUS_MINUS_TEN, aref)
+#ifdef HAVE_LIBCOMEDI
+          m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, aref),
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+#else
+          m_input(deviceFile, inputSubdevice, &readChannel, 1, inputRange, aref),
+          m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref)
+#endif
 {
         setName("AnalogIO");
         setUnits(units);
