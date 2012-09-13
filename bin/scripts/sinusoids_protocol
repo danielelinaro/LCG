@@ -17,8 +17,8 @@ function print_help
     echo "   -h   display this help message and exit"
     echo "   -c   specify configuration file (default sinusoids.xml)"
     echo "   -t   specify template stimulus file (default template.stim)"
-    echo "   -n   specify number of repetitions (default 2)"
-    echo "   -i   specify interval between repetitions in seconds (default 45)"
+    echo "   -n   specify number of repetitions (default 1)"
+    echo "   -i   specify interval between repetitions in seconds (default 60)"
     echo
 }
 
@@ -47,8 +47,8 @@ function shuffle
     index=(${array[@]})
 }
 
-reps=2
-interval=45
+reps=1
+interval=60
 template_file=template.stim
 config_file=sinusoids.xml
 current_file=current.stim
@@ -78,6 +78,10 @@ while getopts ":n:i:t:c:h" opt ; do
     esac
 done
 
+gexc_template_file=gexc_template.stim
+ginh_template_file=ginh_template.stim
+gexc_file=gexc.stim
+ginh_file=ginh.stim
 freq=(1 5 10 20 50 100 200 300 600 1000)
 nfreq=${#freq[@]}
 i=1
@@ -87,6 +91,8 @@ while [ $i -le $reps ] ; do
     j=0
     while [ $j -lt $nfreq ] ; do
 	sed -e 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
+        sed -e 's/5061983/'$RANDOM'/' $gexc_template_file > $gexc_file
+        sed -e 's/5061983/'$RANDOM'/' $ginh_template_file > $ginh_file
 	dclamp -c $config_file
 	let j++
 	if [ $j -ne $nfreq ] ; then
@@ -98,3 +104,4 @@ while [ $i -le $reps ] ; do
     fi
     let i++
 done
+

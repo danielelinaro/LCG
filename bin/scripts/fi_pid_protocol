@@ -1,0 +1,108 @@
+#!/bin/bash
+
+#
+# f-I curve protocol with the usage of a PID controller
+# Author: Daniele Linaro, September 2012
+#
+
+function print_help
+{
+    echo
+    echo "f-I curve protocol with the usage of a PID controller."
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -c   specify the configuration file (default fI_PID.xml)"
+    echo "   -f   specify the frequency stimulus file (default frequency.stim)"
+    echo "   -F   specify the maximal frequency (default 30 Hz)"
+    echo "   -I   specify the initial value of the current (default 300 pA)"
+    echo "   -p   specify the proportional gain of the controller (default 1)"
+    echo "   -i   specify the integral gain of the controller (default 10)"
+    echo "   -d   specify the derivative gain of the controller (default 0)"
+    echo "   -t   specify the time constant of the frequency estimator (default 1 sec)"
+    echo "   -T   specify the duration of the ramp (default 10 sec)"
+    echo "   -n   specify the number of batches (default 2)"
+    echo "   -i   specify the interval between batches (default 30 sec)"
+    echo
+}
+
+config_file=fI_PID.xml
+frequency_file=frequency.stim
+F=30
+I0=300
+gp=1
+gi=10
+gd=0
+tau=1
+T=10
+reps=2
+interval=30
+while getopts ":c:f:I:p:i:d:t:T:n:i:h" opt ; do
+    case $opt in
+	c)
+	    config_file=$OPTARG
+	    ;;
+	f)
+	    frequency_file=$OPTARG
+	    ;;
+	F)
+	    F=$OPTARG
+	    ;;
+	I)
+	    I0=$OPTARG
+	    ;;
+	p)
+	    gp=$OPTARG
+	    ;;
+	i)
+	    gi=$OPTARG
+	    ;;
+	d)
+	    gd=$OPTARG
+	    ;;
+	t)
+	    tau=$OPTARG
+	    ;;
+	T)
+	    T=$OPTARG
+	    ;;
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
+    stimdir=$HOME/protocols/fclamp
+else
+    stimdir=$PROTOCOLS_PATH/fclamp
+fi
+
+if [ -z "${CONFIGURATIONS_PATH:-}" ] ; then
+    configdir=$HOME/configurations
+else
+    configdir=$CONFIGURATIONS_PATH
+fi
+
+let F0=$F/2
+sed -e 's/T/'$T'/' $stimdir/current.stim > current.stim
+TT=`awk '{ sum+=$1 } END { print sum }' current.stim`
+sed -e 's/T/'$T'/' -e 's/F/'$F'/' $stimdir/$frequency_file > $frequency_file
+sed -e 's/GP/'$gp'/' -e 's/GI/'$gi'/' -e 's/GD/'$gd'/' -e 's/I0/'$I0'/' -e 's/TAU/'$tau'/' -e 's/F0/'$F0'/' -e 's/frequency\.stim/'$frequency_file'/' -e 's/TEND/'$TT'/' $configdir/$config_file > $config_file
+
+dclamp -c $config_file -n $reps -i $interval

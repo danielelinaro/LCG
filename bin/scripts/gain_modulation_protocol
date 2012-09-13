@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Sinusoidal current injection with background synaptic noise
+# f-I curve protocol with the addition of background synaptic noise.
 # Author: Daniele Linaro, June 2012
 #
 
@@ -151,3 +151,4 @@ while [ $i -le $reps ] ; do
     fi
     let i++
 done
+
