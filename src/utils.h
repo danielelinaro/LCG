@@ -42,17 +42,14 @@ typedef enum
         All = 0, Debug, Info, Important, Critical
 } LogLevel;
 
-class CommandLineOptions {
-public:
+struct CommandLineOptions {
         CommandLineOptions() : tend(-1), dt(0), iti(0), ibi(0), nTrials(0), nBatches(0),
         configFile(""), kernelFile(""), stimulusFiles() {}
-
-public:
         double tend, dt;
         useconds_t iti, ibi;
         uint nTrials, nBatches;
         std::string configFile, kernelFile;
-        std::vector<std::string> stimulusFiles;
+        strings stimulusFiles;
 };
 
 void SetLoggingLevel(LogLevel level);

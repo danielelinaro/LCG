@@ -1,3 +1,25 @@
+/*=========================================================================
+ *
+ *   Program:     dynclamp
+ *   Filename:    entity.cpp
+ *
+ *   Copyright (C) 2012 Daniele Linaro
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *   
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *   
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *=========================================================================*/
+
 #include "entity.h"
 #include "thread_safe_queue.h"
 
@@ -31,7 +53,7 @@ void Entity::setParameter(double parameter, uint index)
         m_parameters[index] = parameter;
 }
 
-void Entity::setParametersNames(const std::vector<std::string>& parametersNames)
+void Entity::setParametersNames(const strings& parametersNames)
 {
         m_parametersNames = parametersNames;
 }
@@ -60,7 +82,7 @@ double Entity::parameter(uint index) const
         return m_parameters[index];
 }
 
-const std::vector<std::string>& Entity::parametersNames() const
+const strings& Entity::parametersNames() const
 {
         return m_parametersNames;
 }
@@ -140,9 +162,7 @@ void Entity::handleEvent(const Event *event)
 
 void Entity::emitEvent(Event *event) const
 {
-        eventsQueue.push_back(event);
-        // TODO: understand why the following line doesn't work...
-        //EnqueueEvent(event);
+        EnqueueEvent(event);
 }
 
 bool Entity::hasMetadata(size_t *ndims) const

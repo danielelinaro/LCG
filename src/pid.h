@@ -18,16 +18,12 @@ namespace dynclamp {
 * @param gi - integral gain.
 * @param gd - derivative gain.
 
-* The controller is changes it's updates value when receiving a SPIKE or a TRIGGER event.
+* The controller changes its output value when receiving a SPIKE or a TRIGGER event.
 * It requires two waveform inputs. The waveforms are compared (w2-w1).
 * The output follows the equation:
 * /f[
 * $\fraq{ (x_2-x_1)^2 + (y_2 - y_1)^2 }{1}$
 * /f]
-* Please note that all formulas must be valid LaTeX math-mode commands. 
-* Additionally, to be processed by Doxygen, the machine used must have 
-* LaTeX installed. Please see the Doxygen manual for more information 
-* about installing LaTeX locally.
 */
 
 class PID : public Entity {

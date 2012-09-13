@@ -6,7 +6,7 @@ Short term (and therefore relatively simple):
    an "originalSender" field.
 -) modify the code of synapses in order to use Connection objects.
 -) add the possibility to specify spike latency in PeriodicPulse.
--) understand why EnqueueEvent cannot be found.
+-) add a timestamp in H5 files.
 -) when <connections></connections> is in the cfg file, entity tries to connect to self.
 -) use signals to catch SIGINT and terminate entities when <ctr>c is pressed.
 -) Recorder can not write when the filename of a waveform does not exist (and one did not specify specific folder) and crashes dynclamp. 
