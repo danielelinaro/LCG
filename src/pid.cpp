@@ -9,7 +9,7 @@ dynclamp::Entity* PIDFactory(dictionary& args)
         if ( ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baseline) ||
              ! dynclamp::CheckAndExtractDouble(args, "gp", &gp) ||
              ! dynclamp::CheckAndExtractDouble(args, "gi", &gi)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a PID.\n");
+                dynclamp::Logger(dynclamp::Critical, "PID(%d): Unable to build. Need to specify baselineCurrent, gp, and gi.\n", id);
                 return NULL;
         }
         if (! dynclamp::CheckAndExtractDouble(args, "gd", &gd))
@@ -70,12 +70,12 @@ void PID::handleEvent(const Event *event)
                 errd = errp - m_errpPrev;
                 m_errpPrev = errp;
                 m_output = PID_BASELINE + PID_GP*errp + PID_GI*m_erri + PID_GD*errd;
-                Logger(Debug, "%9.3f %9.4f %9.4f %9.4f %7.2f\n", GetGlobalTime(),errp, m_erri, errd, m_output);                
+                Logger(Debug, "PID(%d): %9.3f %9.4f %9.4f %9.4f %7.2f\n",id(), GetGlobalTime(),errp, m_erri, errd, m_output);                
             }
             break;
         case TOGGLE:
             changeState();
-            Logger(Debug, "%9.3f - PID toggled.\n", GetGlobalTime());                
+			Logger(Debug, "PID(%d): Toggled at %9.3f.\n",id(), GetGlobalTime()); 
             break;
     }
 }

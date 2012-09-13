@@ -68,5 +68,12 @@ ResetEvent::ResetEvent(const Entity *sender)
 ToggleEvent::ToggleEvent(const Entity *sender)
         : Event(TOGGLE, sender)
 {}
+
+StopRunEvent::StopRunEvent(const Entity *sender)
+        : Event(STOPRUN, sender)
+{
+	stopRun();
+}
+
 } // namespace dynclamp
 

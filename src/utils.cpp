@@ -499,6 +499,5 @@ bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::st
 
         return false;
 }
-
 } // namespace dynclamp
 

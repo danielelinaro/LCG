@@ -3,6 +3,8 @@
 #include "engine.h"
 #include "entity.h"
 #include "utils.h"
+#include "common.h"
+
 
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
@@ -32,6 +34,23 @@ double globalTimeOffset = 0.0;
 #ifdef HAVE_LIBLXRT
 double realtimeDt;
 #endif
+
+// global variable and function to stop simulation in a thread safe way when required.
+boost::mutex globalRunMutex;
+bool globalRun = false; 
+void stopRun()
+{
+	boost::lock_guard<boost::mutex> lock(globalRunMutex);
+	Logger(Debug, "Used stopRun() funtion.\n");
+	globalRun = false;
+//	boost::lock_guard<boost::mutex> unlock(globalRunMutex);
+}
+void startRun() {
+	boost::lock_guard<boost::mutex> lock(globalRunMutex);
+	Logger(Debug, "Used startRun() funtion.\n");
+	globalRun = true;
+//	boost::lock_guard<boost::mutex> unlock(globalRunMutex);
+}
 
 double SetGlobalDt(double dt)
 {
@@ -72,6 +91,7 @@ double SetGlobalDt(double dt)
 
 void RTSimulation(const std::vector<Entity*>& entities, double tend)
 {
+		
         RT_TASK *task;
         RTIME tickPeriod;
         RTIME currentTime, previousTime;
@@ -131,7 +151,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
                 }
         }
         Logger(Debug, "Starting the main loop.\n");
-        while (GetGlobalTime() <= tend) {
+
+        while (GetGlobalTime() <= tend && globalRun) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -200,8 +221,7 @@ void RTSimulationTask(void *cookie)
         }
         start = rt_timer_read();
         //Logger(Info, "Successfully made the task periodic (T = %g ns).\n", NSEC_PER_SEC*GetGlobalDt());
-
-        while (GetGlobalTime() <= tend) {
+        while (GetGlobalTime() <= tend && globalRun) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         arg->entity(i)->readAndStoreInputs();
@@ -373,7 +393,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         Logger(Info, "The simulation will last %g seconds.\n", tend);
         Logger(Info, "Starting the main loop.\n");
-        while (GetGlobalTime() <= tend) {
+        while (GetGlobalTime() <= tend && globalRun) {
                 
                 // Wait for next period
 		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next, NULL);
@@ -413,8 +433,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 #else
 
 void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
-{
-        int i, nEntities = entities.size();
+{        
+		int i, nEntities = entities.size();
         double dt = GetGlobalDt();
         ResetGlobalTime();
         for (i=0; i<nEntities; i++) {
@@ -423,7 +443,7 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
                         return;
                 }
         }
-        while (GetGlobalTime() <= tend) {
+        while (GetGlobalTime() <= tend && globalRun) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -437,17 +457,20 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 
 #endif // HAVE_LIBLXRT
 
+
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
-        ResetGlobalTime();
+		ResetGlobalTime();
 #ifdef HAVE_LIBRT
         if (!CheckPrivileges())
                 return;
 #endif
+		startRun();
 #ifdef REALTIME_ENGINE
         boost::thread thrd(RTSimulation, entities, tend);
 #else
         boost::thread thrd(NonRTSimulation, entities, tend);
+
 #endif // REALTIME_ENGINE
         thrd.join();
         Logger(Info, "Simulation thread has finished running.\n");

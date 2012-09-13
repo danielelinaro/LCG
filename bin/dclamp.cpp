@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
                         for (int j=0; j<opt.stimulusFiles.size(); j++) {
                                 stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
-                                        Logger(Info, "Trial: %d of %d.\n", k+1,opt.nTrials);
+                                        Logger(Info, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
                                         ResetGlobalTime();
                                         Simulate(entities,stimulus->duration());
                                         if (k != opt.nTrials-1)

@@ -33,11 +33,10 @@
  *
  */
 
+
 #define LOGFILE                 "/tmp/dynclamp.txt"
 //#define ASYNCHRONOUS_INPUT
 #define TRIM_ANALOGOUTPUT
-
-
 enum {
         PLUS_MINUS_TEN = 0,
         PLUS_MINUS_FIVE,

@@ -15,7 +15,9 @@ void Simulate(const std::vector<Entity*>& entities, double tend);
 
 extern double globalT;
 extern double globalDt;
-
+extern bool globalStopRun;
+extern void stopRun();
+extern void startRun();
 #define GetGlobalDt() globalDt
 #define GetGlobalTime() globalT
 #define IncreaseGlobalTime() (globalT += globalDt)

@@ -6,25 +6,41 @@ dynclamp::Entity* EventCounterFactory(dictionary& args)
 {
         uint id, maxCount;
         bool autoReset;
-        std::string eventToSendStr;
-        dynclamp::EventType eventToSend;
+        std::string eventToSendStr, eventToCountStr;
+        dynclamp::EventType eventToSend, eventToCount;
 
         id = dynclamp::GetIdFromDictionary(args);
         if (! dynclamp::CheckAndExtractUnsignedInteger(args, "maxCount", &maxCount)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an EventCounter.\n");
+                dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unable to build. Need to specify maxCount.\n", id);
                 return NULL;
         }
 
         if (! dynclamp::CheckAndExtractBool(args, "autoReset", &autoReset)) {
                 autoReset = true;
         }
-
+        if (dynclamp::CheckAndExtractValue(args, "eventToCount", eventToCountStr)) {
+                int i=0;
+                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToCountStr, dynclamp::eventTypeNames[i]))
+                    i++;
+                if (i == NUMBER_OF_EVENT_TYPES) {
+                    dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unknown eventToCount type [%s].\n", id, eventToCountStr.c_str());
+                    return NULL;
+                }
+                eventToCount = static_cast<dynclamp::EventType>(i);
+				if (eventToCount == dynclamp::RESET) {
+                    dynclamp::Logger(dynclamp::Debug, "EventCounter(%d): Counting RESET events.\n", id);
+					autoReset = false;
+				}
+			}
+        else {
+                eventToCount = dynclamp::SPIKE;
+        }
         if (dynclamp::CheckAndExtractValue(args, "eventToSend", eventToSendStr)) {
                 int i=0;
                 while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToSendStr, dynclamp::eventTypeNames[i]))
                     i++;
                 if (i == NUMBER_OF_EVENT_TYPES) {
-                    dynclamp::Logger(dynclamp::Critical, "Unknown event type [%s].\n", eventToSendStr.c_str());
+                    dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unknown eventToSend type [%s].\n", id, eventToSendStr.c_str());
                     return NULL;
                 }
                 eventToSend = static_cast<dynclamp::EventType>(i);
@@ -32,13 +48,13 @@ dynclamp::Entity* EventCounterFactory(dictionary& args)
         else {
                 eventToSend = dynclamp::TRIGGER;
         }
-        return new dynclamp::EventCounter(maxCount, autoReset, eventToSend, id);
+        return new dynclamp::EventCounter(maxCount, autoReset, eventToCount, eventToSend, id);
 }
 
 namespace dynclamp {
 
-EventCounter::EventCounter(uint maxCount, bool autoReset, EventType eventToSend, uint id)
-        : Entity(id), m_maxCount(maxCount), m_autoReset(autoReset), m_eventToSend(eventToSend)
+EventCounter::EventCounter(uint maxCount, bool autoReset, EventType eventToCount, EventType eventToSend, uint id)
+        : Entity(id), m_maxCount(maxCount), m_autoReset(autoReset), m_eventToCount(eventToCount), m_eventToSend(eventToSend)
 {
         m_parameters.push_back(m_maxCount);
         m_parametersNames.push_back("maxCount");
@@ -53,6 +69,11 @@ uint EventCounter::maxCount() const
 bool EventCounter::autoReset() const
 {
         return m_autoReset;
+}
+
+EventType EventCounter::eventToCount() const
+{
+        return m_eventToCount;
 }
 
 EventType EventCounter::eventToSend() const
@@ -75,29 +96,31 @@ void EventCounter::setAutoReset(bool autoReset)
         m_autoReset = autoReset;
 }
 
+void EventCounter::setEventToCount(EventType eventToCount)
+{
+        m_eventToCount = eventToCount;
+}
+
 void EventCounter::setEventToSend(EventType eventToSend)
 {
         m_eventToSend = eventToSend;
 }
 
 void EventCounter::handleEvent(const Event *event)
-{
-        switch (event->type()) {
-                case SPIKE:
-                        m_count++;
-                        if (m_count == m_maxCount) {
-                                Logger(Debug, "Received %d spikes at t = %g sec.\n", m_maxCount, GetGlobalTime());
-                                dispatch(); 
-                                if (m_autoReset)
-                                    reset();
-                        }
-                        break;
-                case RESET:
-                        reset();
-                        break;
-                default:
-                        Logger(Important, "EventCounter: unknown event type (%d).\n",event->type());
-        }
+{	
+	//Logger(Debug, "EventCounter(%d): Received %d , comparing with %d.\n", id(), event->type(), m_eventToCount);
+	if(event->type() == m_eventToCount) {
+		m_count++;
+	    if (m_count == m_maxCount) {
+			Logger(Debug, "EventCounter(%d): Received %d events at t = %g sec.\n", id(), m_maxCount, GetGlobalTime());
+			dispatch(); 
+			if (m_autoReset)
+				reset();
+		}
+	}
+	else 
+		if(event->type() == RESET)
+			reset();
 }
 
 void EventCounter::step()
@@ -134,8 +157,12 @@ void EventCounter::dispatch()
                 case TOGGLE:
                         emitEvent(new ToggleEvent(this));
                         break;
+				case STOPRUN:
+                        emitEvent(new StopRunEvent(this));
+                        Logger(Important, "Simulation terminated by EventCounter(%d). Counted %d events.\n", id(), m_count);
+						break;
                 default:
-                        Logger(Important, "EventCounter: Can't send event.\n");
+                        Logger(Important, "EventCounter(%d): Can't send event.\n", id());
                         break;
         }
 }

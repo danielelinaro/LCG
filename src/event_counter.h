@@ -10,13 +10,15 @@ namespace dynclamp {
 
 class EventCounter : public Entity {
 public:
-        EventCounter(uint maxCount, bool autoReset = true, EventType eventToSend = TRIGGER, uint id = GetId());
+        EventCounter(uint maxCount, bool autoReset = true, EventType eventToCount = SPIKE, EventType eventToSend = TRIGGER, uint id = GetId());
         uint maxCount() const;
+        EventType eventToCount() const;
         EventType eventToSend() const;
         uint count() const;
         bool autoReset() const;
         void setMaxCount(uint count);
         void setAutoReset(bool autoReset);
+        void setEventToCount(EventType eventToCount);
         void setEventToSend(EventType eventToSend);
         virtual void handleEvent(const Event *event);
         virtual void step();
@@ -30,6 +32,7 @@ private:
 private:
         uint m_count, m_maxCount;
         bool m_autoReset;
+        EventType m_eventToCount;
         EventType m_eventToSend;
 };
 

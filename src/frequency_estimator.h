@@ -14,6 +14,8 @@ public:
         FrequencyEstimator(double tau, double initialFrequency = 0.0, uint id = GetId());
         void setTau(double tau);
         double tau() const;
+		void changeState();
+		bool state();
         virtual bool initialise();
         virtual void step();
         virtual double output() const;
@@ -21,6 +23,7 @@ public:
 protected:
         void emitTrigger() const;
 private:
+		bool m_state;
         double m_tPrevSpike;
         double m_frequency;
 };

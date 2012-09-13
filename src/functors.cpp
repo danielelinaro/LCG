@@ -15,7 +15,7 @@ dynclamp::Entity* PhasicDelayFactory(dictionary& args)
 
         id = dynclamp::GetIdFromDictionary(args);
         if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay)) 
-                dynclamp::Logger(dynclamp::Important, "PhasicDelay: Using a phasic delay of zero!\n");
+                dynclamp::Logger(dynclamp::Important, "PhasicDelay(%d): Using a phasic delay of zero!\n",id);
         return new dynclamp::PhasicDelay(id,delay);
 }
 
@@ -68,6 +68,7 @@ PhasicDelay::PhasicDelay(uint id, double phase)
         : Functor(id), m_phase(phase)
 {
         setName("PhasicDelay");
+		Logger(Important,"PhasicDelay(%d): Using a delay of %3.3f.\n", id, phase);
 }
 
 bool PhasicDelay::initialise()

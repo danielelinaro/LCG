@@ -8,11 +8,11 @@ namespace dynclamp {
 
 class Entity;
 
-#define NUMBER_OF_EVENT_TYPES 4
+#define NUMBER_OF_EVENT_TYPES 5
 typedef enum _event_type {
-        SPIKE = 0, TRIGGER, RESET, TOGGLE
+        SPIKE = 0, TRIGGER, RESET, TOGGLE, STOPRUN
 } EventType;
-const std::string eventTypeNames[NUMBER_OF_EVENT_TYPES] = {"spike", "trigger", "reset", "toggle"};
+const std::string eventTypeNames[NUMBER_OF_EVENT_TYPES] = {"spike", "trigger", "reset", "toggle", "stoprun"};
 
 class Event
 {
@@ -53,6 +53,12 @@ class ToggleEvent : public Event
 {
 public:
         ToggleEvent(const Entity *sender);
+};
+
+class StopRunEvent : public Event
+{
+public:
+        StopRunEvent(const Entity *sender);
 };
 
 void EnqueueEvent(const Event *event);
