@@ -6,6 +6,7 @@
 #include "neurons.h"
 #include "waveform.h"
 #include "synapses.h"
+#include "connections.h"
 
 using namespace dynclamp;
 using namespace dynclamp::recorders;
@@ -22,12 +23,14 @@ int main()
         std::vector<Entity*> entities;
         entities.push_back( new H5Recorder(compress, "autapse.h5") );
         entities.push_back( new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 220) );
-        entities.push_back( new TMGSynapse(-80.0, 20.0, 0.0, 0.03, taus) );
-        for (i=1; i<3; i++) {
-                entities[i]->connect(entities[0]);
-        }
+        entities.push_back( new Connection(3e-3) );
+        entities.push_back( new TMGSynapse(-80.0, 20.0, 0.03, taus) );
+
+        entities[1]->connect(entities[0]);
+        entities[3]->connect(entities[0]);
         entities[1]->connect(entities[2]);
-        entities[2]->connect(entities[1]);
+        entities[2]->connect(entities[3]);
+        entities[3]->connect(entities[1]);
 
         try {
                 Simulate(entities, tend);

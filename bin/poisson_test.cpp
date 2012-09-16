@@ -6,6 +6,7 @@
 #include "poisson_generator.h"
 #include "synapses.h"
 #include "engine.h"
+#include "connections.h"
 
 using namespace dynclamp;
 using namespace dynclamp::synapses;
@@ -73,11 +74,13 @@ int main(int argc, char *argv[])
         int i;
         double t, tend = (double) opt.nEvents / opt.rate;
         double taus[2] = {0.1e-3,1e-3};
-        Entity *entities[2];
+        Entity *entities[3];
         entities[0] = new Poisson(opt.rate, opt.seed);
-        entities[1] = new Exp2Synapse(0.0, 1.0, 0.0, taus);
+        entities[1] = new Connection(3e-3);
+        entities[2] = new Exp2Synapse(0.0, 1.0, taus);
         entities[0]->connect(entities[1]);
-        Synapse *synapse = dynamic_cast<Synapse*>(entities[1]);
+        entities[1]->connect(entities[2]);
+        Synapse *synapse = dynamic_cast<Synapse*>(entities[2]);
 
         while ((t = GetGlobalTime()) <= tend) {
                 ProcessEvents();

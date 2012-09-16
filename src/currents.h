@@ -5,32 +5,17 @@
 #include "neurons.h"
 #include "randlib.h"
 
+namespace dynclamp {
+
+namespace ionic_currents {
+
+double vtrap(double x, double y);
+
 #define IC_FRACTION     m_state[0]              // (1)
-
-#define HH_NA_M         m_state[1]
-#define HH_NA_H         m_state[2]
-
-#define HH_K_N          m_state[1]
-
-#define NIC_NOPEN       m_state[1]              // (1)
-
-#define HH_NA_CN_M      m_state[2]
-#define HH_NA_CN_H      m_state[3]
-
-#define HH_K_CN_N       m_state[2]
 
 #define IC_AREA         m_parameters[0]         // (um^2)
 #define IC_GBAR         m_parameters[1]         // (S/cm^2)
 #define IC_E            m_parameters[2]         // (mV)
-
-#define NIC_GAMMA       m_parameters[3]         // (pS)
-#define NIC_NCHANNELS   m_parameters[4]         // (1)
-
-#define V_TEST          -65
-
-namespace dynclamp {
-
-namespace ionic_currents {
 
 class IonicCurrent : public DynamicalEntity {
 public:
@@ -43,13 +28,15 @@ protected:
         neurons::Neuron *m_neuron;
 };
 
+#define HH_NA_M         m_state[1]
+#define HH_NA_H         m_state[2]
+
 class HHSodium : public IonicCurrent {
 public:
         HHSodium(double area, double gbar = 0.12, double E = 50, uint id = GetId());
 
         virtual bool initialise();
 
-	static double vtrap(double x, double y);
         static double alpham(double v);
         static double betam(double v);
         static double alphah(double v);
@@ -59,13 +46,14 @@ protected:
         void evolve();
 };
 
+#define HH_K_N          m_state[1]
+
 class HHPotassium : public IonicCurrent {
 public:
         HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId());
 
         virtual bool initialise();
 
-	static double vtrap(double x, double y);
         static double alphan(double v);
         static double betan(double v);
 
@@ -73,11 +61,134 @@ protected:
         void evolve();
 };
 
+#define HH2_NA_M        m_state[1]
+#define HH2_NA_H        m_state[2]
+
+#define HH2_VTRAUB      m_parameters[3]         // (mV)
+#define HH2_TEMPERATURE m_parameters[4]         // (celsius)
+
+class HH2Sodium : public IonicCurrent {
+public:
+        HH2Sodium(double area, double gbar = 0.003, double E = 50, double vtraub = -63., double temperature = 36., uint id = GetId());
+
+        virtual bool initialise();
+
+        static double alpham(double v);
+        static double betam(double v);
+        static double alphah(double v);
+        static double betah(double v);
+
+protected:
+        void evolve();
+
+private:
+        double m_tadj;
+};
+
+#define HH2_K_N         m_state[1]
+
+class HH2Potassium : public IonicCurrent {
+public:
+        HH2Potassium(double area, double gbar = 0.005, double E = -90, double vtraub = -63., double temperature = 36., uint id = GetId());
+
+        virtual bool initialise();
+
+        static double alphan(double v);
+        static double betan(double v);
+
+protected:
+        void evolve();
+
+private:
+        double m_tadj;
+};
+
+#define IM_M        m_state[1]
+
+#define IM_TAUMAX      m_parameters[3]         // (ms)
+#define IM_TEMPERATURE m_parameters[4]         // (celsius)
+
+/*!
+ * \class IM
+ * \brief M-current, responsible for the adaptation of firing rate and the 
+ *        afterhyperpolarization (AHP) of cortical pyramidal cells
+ *
+ * First-order model described by hodgkin-Hyxley like equations.
+ * K+ current, activated by depolarization, noninactivating.
+ *
+ * Model taken from Yamada, W.M., Koch, C. and Adams, P.R.  Multiple 
+ * channels and calcium dynamics.  In: Methods in Neuronal Modeling, 
+ * edited by C. Koch and I. Segev, MIT press, 1989, p 97-134.
+ *
+ * See also: McCormick, D.A., Wang, Z. and Huguenard, J. Neurotransmitter 
+ * control of neocortical neuronal activity and excitability. 
+ * Cerebral Cortex 3: 387-398, 1993.
+ */
+class MCurrent : public IonicCurrent {
+public:
+        MCurrent(double area, double gbar = 0.005, double E = -90, double taumax = 1000., double temperature = 36., uint id = GetId());
+        virtual bool initialise();
+
+protected:
+        void evolve();
+
+private:
+        double m_tadj;
+        double m_tauPeak;
+};
+
+#define IT_CAI      m_state[1]
+#define IT_H        m_state[2]
+
+#define IT_Q10          m_parameters[3]         // (1)
+#define IT_SHIFT        m_parameters[4]         // (mV)
+#define IT_CAO          m_parameters[5]         // (mM)
+#define IT_CAIINF       m_parameters[6]         // (mM)
+#define IT_TAUR         m_parameters[7]         // (ms)
+#define IT_DEPTH        m_parameters[8]         // (um)
+#define IT_TEMPERATURE  m_parameters[9]         // (celsius)
+
+#define FARADAY         (96489)
+
+/*!
+ * \class TCurrent
+ * \brief Low threshold calcium current
+ * 
+ * Ca++ current responsible for low threshold spikes (LTS)
+ * in thalamocortical cells.
+ * 
+ * Model based on the data of Huguenard & McCormick, J Neurophysiol
+ * 68: 1373-1383, 1992 and Huguenard & Prince, J Neurosci.
+ * 12: 3804-3817, 1992.
+ */
+class TCurrent : public IonicCurrent {
+public:
+        TCurrent(double area, double gbar = 0.002, double E = 120.,
+                 double q10 = 3., double shift = 2., double cao = 2.,
+                 double caiInf = 2.4e-4, double taur = 0.005, double depth = 0.1,
+                 double temperature = 36., uint id = GetId());
+        virtual bool initialise();
+
+protected:
+        void evolve();
+
+private:
+        double m_phi_h;
+};
+
+#define NIC_NOPEN       m_state[1]              // (1)
+
+#define NIC_GAMMA       m_parameters[3]         // (pS)
+#define NIC_NCHANNELS   m_parameters[4]         // (1)
+
 class NoisyIonicCurrent : public IonicCurrent {
 public:
         NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id = GetId());
         virtual bool initialise();
 };
+
+#define HH_NA_CN_M      m_state[2]
+#define HH_NA_CN_H      m_state[3]
 
 class HHSodiumCN : public NoisyIonicCurrent {
 public:
@@ -96,6 +207,8 @@ private:
         NormalRandom *m_rand;
         double m_z[numberOfStates-1];
 };
+
+#define HH_K_CN_N       m_state[2]
 
 class HHPotassiumCN : public NoisyIonicCurrent {
 public:
@@ -126,8 +239,15 @@ private:
 extern "C" {
 #endif
 
+///// DETERMINISTIC /////
 dynclamp::Entity* HHSodiumFactory(dictionary& args);
 dynclamp::Entity* HHPotassiumFactory(dictionary& args);
+dynclamp::Entity* HH2SodiumFactory(dictionary& args);
+dynclamp::Entity* HH2PotassiumFactory(dictionary& args);
+dynclamp::Entity* MCurrentFactory(dictionary& args);
+dynclamp::Entity* TCurrentFactory(dictionary& args);
+
+///// STOCHASTIC /////
 dynclamp::Entity* HHSodiumCNFactory(dictionary& args);
 dynclamp::Entity* HHPotassiumCNFactory(dictionary& args);
         

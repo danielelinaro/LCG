@@ -58,16 +58,17 @@
       </parameters>
       <connections>4</connections>
     </entity>
-<entity>
-    <name>Waveform</name>
-    <id>6</id>
-    <parameters>
-       <triggered>true</triggered>
-       <filename>current.stim</filename>
-    </parameters>
-      <connections>0,1</connections>
-   </entity>
 
+    <entity>
+      <name>Waveform</name>
+      <id>6</id>
+      <parameters>
+	<triggered>true</triggered>
+	<filename>current.stim</filename>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
+    
   </entities>
 
   <simulation>

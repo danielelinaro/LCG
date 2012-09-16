@@ -1,16 +1,15 @@
 
-Short term (and therefore relatively simple):
+=== Short term (and therefore relatively simple) ===
 
+-) add the ionic currents for LTS neurons.
 -) set output limits equal to output range in comedi_io.
--) since events now can be delivered through Connection objects, they should have
-   an "originalSender" field.
--) modify the code of synapses in order to use Connection objects.
 -) add the possibility to specify spike latency in PeriodicPulse.
 -) add a timestamp in H5 files.
 -) when <connections></connections> is in the cfg file, entity tries to connect to self.
 -) use signals to catch SIGINT and terminate entities when <ctr>c is pressed.
 -) Recorder can not write when the filename of a waveform does not exist (and one did not specify specific folder) and crashes dynclamp. 
-Long term (and therefore possibly complicated):
+
+=== Long term (and therefore possibly complicated) ===
 
 -) Distinguish between entities and recorders (remember an OUconductance connected to both a neuron and a recorder) ?
 -) OpenGL visualizer for recorded data.

@@ -1,0 +1,118 @@
+#!/bin/bash
+
+#
+# Reliability protocol with autaptic connection
+# Author: Daniele Linaro, September 2012
+#
+
+function print_help
+{
+    echo
+    echo " Reliability protocol with autaptic connection"
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -c   the configuration file (default reliability_autaptic.xml)"
+    echo "   -d   the delay of the synaptc connection (default 0.003 s)"
+    echo "   -E   the reversal potential of the synapse (default -80 mV)"
+    echo "   -w   the weight of the synaptic connection (default 100)"
+    echo "   -U   the probability of release of a Tsodyks-Markram synapse (default 0.003)"
+    echo "   -1   tau_1 in a Tsodyks-Markram synapse (default 0.003 s)"
+    echo "   -r   tau_rec in a Tsodyks-Markram synapse (default 0.1 s)"
+    echo "   -f   tau_facil in a Tsodyks-Markram synapse (default 1 s)"
+    echo "   -T   the duration of the step of current (default 5 s)"
+    echo "   -n   the number of batches (default 2)"
+    echo "   -i   the interval between batches (default 30 s)"
+    echo
+}
+
+config_file=reliability_autaptic.xml
+delay=0.003
+E=-80
+weight=100
+U=0.03
+tau_1=0.003
+tau_rec=0.1
+tau_facil=1
+T=5
+reps=20
+interval=30
+while getopts ":c:d:E:w:U:1:r:f:T:n:i:h" opt ; do
+    case $opt in
+	c)
+	    config_file=$OPTARG
+	    ;;
+	d)
+	    delay=$OPTARG
+	    ;;
+	E)
+	    E=$OPTARG
+	    ;;
+	w)
+	    weight=$OPTARG
+	    ;;
+	U)
+	    U=$OPTARG
+	    ;;
+	1)
+	    tau_1=$OPTARG
+	    ;;
+	r)
+	    tau_rec=$OPTARG
+	    ;;
+	f)
+	    tau_facil=$OPTARG
+	    ;;
+	n)
+	    reps=$OPTARG
+	    ;;
+	T)
+	    T=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ -z "${PROTOCOLS_PATH:-}" ] ; then
+    stimdir=$HOME/protocols/templates
+else
+    stimdir=$PROTOCOLS_PATH/templates
+fi
+
+if [ -z "${CONFIGURATIONS_PATH:-}" ] ; then
+    configdir=$HOME/configurations
+else
+    configdir=$CONFIGURATIONS_PATH
+fi
+
+sed -e 's/T/'$T'/' $stimdir/step.stim > step.stim
+TT=`awk '{ sum+=$1 } END { print sum }' step.stim`
+
+sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>' \
+    -e 's#<E>.*</E>#<E>'$E'</E>' \
+    -e 's#<weight>.*</weight>#<weight>'$weight'</weight>' \
+    -e 's#<U>.*</U>#<U>'$U'</U>' \
+    -e 's#<tau1>.*</tau1>#<tau1>'$tau1'</tau1>' \
+    -e 's#<tauRec>.*</tauRec>#<tauRec>'$tauRec'</tauRec>' \
+    -e 's#<tauFacil>.*</tauFacil>#<tauFacil>'$tauFacil'</tauFacil>' \
+    -e 's#<tend>.*</tend>#<tend>'$TT'</tend>#' \
+    -e 's/current_stimfile/step.stim/' \
+    -e 's/gexc_stimfile/gexc.stim/' \
+    -e 's/ginh_stimfile/ginh.stim/' \
+    $configdir/$config_file > $config_file
+
+dclamp -c $config_file -n $reps -i $interval
