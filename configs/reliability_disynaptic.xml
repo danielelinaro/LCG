@@ -1,0 +1,142 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>false</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>RealNeuron</name>
+      <id>1</id>
+      <parameters>
+	<spikeThreshold>-20</spikeThreshold>
+	<V0>-65</V0>
+	<kernelFile>kernel.dat</kernelFile>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
+	<inputRange>[-10,+10]</inputRange>
+	<readChannel>0</readChannel>
+	<writeChannel>0</writeChannel>
+	<inputConversionFactor>100</inputConversionFactor>
+	<outputConversionFactor>0.001</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+    <entity>
+      <name>Connection</name>
+      <id>2</id>
+      <parameters><delay>1e-3</delay></parameters>
+      <connections>3</connections>
+    </entity>
+
+    <entity>
+      <name>TMGSynapse</name>
+      <id>3</id>
+      <parameters>
+	<E>0</E>
+	<weight>100</weight>
+	<U>0.04</U>
+	<tau1>0.01</tau1>
+	<tauRec>0.1</tauRec>
+	<tauFacil>0.5</tauFacil>
+      </parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>4</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-65.2</Er>
+	<E0>-70</E0>
+	<Vth>-50</Vth>
+	<Iext>0</Iext>
+      </parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>Connection</name>
+      <id>5</id>
+      <parameters><delay>1e-3</delay></parameters>
+      <connections>6</connections>
+    </entity>
+
+    <entity>
+      <name>TMGSynapse</name>
+      <id>6</id>
+      <parameters>
+	<E>-90</E>
+	<weight>100</weight>
+	<U>0.5</U>
+	<tau1>0.003</tau1>
+	<tauRec>0.8</tauRec>
+	<tauFacil>0</tauFacil>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>7</id>
+      <parameters>
+	<filename>step.stim</filename>
+	<units>pA</units>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>8</id>
+      <parameters>
+	<filename>gexc.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,10</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>9</id>
+      <parameters>
+	<filename>ginh.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,11</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>10</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>11</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>8.11</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>
