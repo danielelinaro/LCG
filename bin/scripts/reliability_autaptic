@@ -23,6 +23,7 @@ function print_help
     echo "   -1   tau_1 in a Tsodyks-Markram synapse (default 0.003 s)"
     echo "   -r   tau_rec in a Tsodyks-Markram synapse (default 0.1 s)"
     echo "   -f   tau_facil in a Tsodyks-Markram synapse (default 1 s)"
+    echo "   -I   the amplitude of the step of current (default 500 pA)"
     echo "   -T   the duration of the step of current (default 5 s)"
     echo "   -n   the number of batches (default 2)"
     echo "   -i   the interval between batches (default 30 s)"
@@ -37,10 +38,11 @@ U=0.03
 tau_1=0.003
 tau_rec=0.1
 tau_facil=1
+I=500
 T=5
 reps=20
 interval=30
-while getopts ":c:d:E:w:U:1:r:f:T:n:i:h" opt ; do
+while getopts ":c:d:E:w:U:1:r:f:I:T:n:i:h" opt ; do
     case $opt in
 	c)
 	    config_file=$OPTARG
@@ -68,6 +70,9 @@ while getopts ":c:d:E:w:U:1:r:f:T:n:i:h" opt ; do
 	    ;;
 	n)
 	    reps=$OPTARG
+	    ;;
+	I)
+	    I=$OPTARG
 	    ;;
 	T)
 	    T=$OPTARG
@@ -99,20 +104,20 @@ else
     configdir=$CONFIGURATIONS_PATH
 fi
 
-sed -e 's/T/'$T'/' $stimdir/step.stim > step.stim
+sed -e 's/T/'$T'/' -e 's/I/'$I'/' $stimdir/step.stim > step.stim
 TT=`awk '{ sum+=$1 } END { print sum }' step.stim`
 
-sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>' \
-    -e 's#<E>.*</E>#<E>'$E'</E>' \
-    -e 's#<weight>.*</weight>#<weight>'$weight'</weight>' \
-    -e 's#<U>.*</U>#<U>'$U'</U>' \
-    -e 's#<tau1>.*</tau1>#<tau1>'$tau1'</tau1>' \
-    -e 's#<tauRec>.*</tauRec>#<tauRec>'$tauRec'</tauRec>' \
-    -e 's#<tauFacil>.*</tauFacil>#<tauFacil>'$tauFacil'</tauFacil>' \
+sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>#' \
+    -e 's#<E>.*</E>#<E>'$E'</E>#' \
+    -e 's#<weight>.*</weight>#<weight>'$weight'</weight>#' \
+    -e 's#<U>.*</U>#<U>'$U'</U>#' \
+    -e 's#<tau1>.*</tau1>#<tau1>'$tau_1'</tau1>#' \
+    -e 's#<tauRec>.*</tauRec>#<tauRec>'$tau_rec'</tauRec>#' \
+    -e 's#<tauFacil>.*</tauFacil>#<tauFacil>'$tau_facil'</tauFacil>#' \
     -e 's#<tend>.*</tend>#<tend>'$TT'</tend>#' \
     -e 's/current_stimfile/step.stim/' \
     -e 's/gexc_stimfile/gexc.stim/' \
     -e 's/ginh_stimfile/ginh.stim/' \
     $configdir/$config_file > $config_file
 
-dclamp -c $config_file -n $reps -i $interval
+#dclamp -c $config_file -n $reps -i $interval

@@ -4,10 +4,7 @@
     <entity>
       <name>H5Recorder</name>
       <id>0</id>
-      <parameters>
-	<filename>autapse.h5</filename>
-        <compress>false</compress>
-      </parameters>
+      <parameters><compress>false</compress></parameters>
     </entity>
 
     <entity>
