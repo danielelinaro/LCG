@@ -59,7 +59,7 @@ void Connection::step()
         for (it=m_events.begin(); it!=m_events.end(); it++)
                 it->first -= GetGlobalDt();
         int i;
-        while (m_events.size() && m_events.front().first <= 0) {
+        while (!m_events.empty() && m_events.front().first <= 0) {
                 for (i=0; i<m_post.size(); i++)
                         m_post[i]->handleEvent(m_events.front().second);
                 delete m_events.front().second;
