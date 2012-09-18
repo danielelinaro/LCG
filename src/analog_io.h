@@ -26,7 +26,7 @@ public:
                     uint id = GetId());
         virtual bool initialise();
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 private:
         double m_data;
 #if defined(HAVE_LIBCOMEDI)
@@ -47,7 +47,7 @@ public:
         virtual bool initialise();
         virtual void terminate();
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 private:
         double m_data;
 #if defined(HAVE_LIBCOMEDI)
@@ -69,7 +69,7 @@ public:
         virtual bool initialise();
         virtual void terminate();
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 private:
         double m_data;
 #if defined(HAVE_LIBCOMEDI)

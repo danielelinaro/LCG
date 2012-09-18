@@ -225,7 +225,7 @@ void AnalogInput::step()
         m_data = m_input.read();
 }
 
-double AnalogInput::output() const
+double AnalogInput::output()
 {
         return m_data;
 }
@@ -277,7 +277,7 @@ void AnalogOutput::step()
         m_output.write(m_data);
 }
 
-double AnalogOutput::output() const
+double AnalogOutput::output()
 {
         return m_data;
 }
@@ -306,32 +306,30 @@ AnalogIO::~AnalogIO()
 
 bool AnalogIO::initialise()
 {
-        /*
         if (! m_output.initialise() ||
             ! m_input.initialise())
                 return false;
         m_data = m_input.read();
         m_output.write(0.0);
-        */
         return true;
 }
 
 void AnalogIO::terminate()
 {
-        //m_output.write(0.0);
+        m_output.write(0.0);
 }
 
 void AnalogIO::step()
 {
-        //m_data = m_input.read();
+        m_data = m_input.read();
         uint i, n = m_inputs.size();
         double output = 0.0;
         for (i=0; i<n; i++)
                 output += m_inputs[i];
-        //m_output.write(output);
+        m_output.write(output);
 }
 
-double AnalogIO::output() const
+double AnalogIO::output()
 {
         return m_data;
 }
