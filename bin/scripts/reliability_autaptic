@@ -120,4 +120,5 @@ sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>#' \
     -e 's/ginh_stimfile/ginh.stim/' \
     $configdir/$config_file > $config_file
 
+kernel_protocol
 dclamp -c $config_file -n $reps -i $interval

@@ -25,8 +25,6 @@
 
 namespace dynclamp {
 
-extern ThreadSafeQueue<Event*> eventsQueue;
-
 Entity::Entity(uint id)
         : m_id(id), m_inputs(), m_pre(), m_post(), m_name("Entity"), m_units("N/A")
 {}

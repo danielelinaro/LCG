@@ -174,7 +174,7 @@ void Exp2Synapse::evolve()
 	
 void Exp2Synapse::handleSpike()
 {
-        Logger(Debug, "Exp2Synapse::handleEvent(const Event*)\n");
+        Logger(Debug, "Exp2Synapse::handleSpike()\n");
         m_state[1] += SYN_W * EXP2_SYN_FACTOR;
         m_state[2] += SYN_W * EXP2_SYN_FACTOR;
 }

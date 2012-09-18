@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
                         exit(1);
                 }
                 for (int i=0; i<opt.nTrials; i++) {
-                        Logger(Info, "Trial: %d of %d.\n", i+1,opt.nTrials);
+                        Logger(Important, "Trial: %d of %d.\n", i+1,opt.nTrials);
                         ResetGlobalTime();
                         Simulate(entities,tend);
                         if (i != opt.nTrials-1)

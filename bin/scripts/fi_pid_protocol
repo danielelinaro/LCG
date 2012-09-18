@@ -25,7 +25,7 @@ function print_help
     echo "   -t   specify the time constant of the frequency estimator (default 1 sec)"
     echo "   -T   specify the duration of the ramp (default 10 sec)"
     echo "   -n   specify the number of batches (default 2)"
-    echo "   -i   specify the interval between batches (default 30 sec)"
+    echo "   -w   specify the interval between batches (default 30 sec)"
     echo
 }
 
@@ -40,7 +40,8 @@ tau=1
 T=10
 reps=2
 interval=30
-while getopts ":c:f:I:p:i:d:t:T:n:i:h" opt ; do
+F0=5
+while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
     case $opt in
 	c)
 	    config_file=$OPTARG
@@ -72,7 +73,7 @@ while getopts ":c:f:I:p:i:d:t:T:n:i:h" opt ; do
 	n)
 	    reps=$OPTARG
 	    ;;
-	i)
+	w)
 	    interval=$OPTARG
 	    ;;
 	h)
@@ -87,6 +88,7 @@ while getopts ":c:f:I:p:i:d:t:T:n:i:h" opt ; do
     esac
 done
 
+let F=$F-$F0
 if [ -z "${PROTOCOLS_PATH:-}" ] ; then
     stimdir=$HOME/protocols/fclamp
 else
@@ -99,10 +101,9 @@ else
     configdir=$CONFIGURATIONS_PATH
 fi
 
-let F0=$F/2
-sed -e 's/T/'$T'/' $stimdir/current.stim > current.stim
-TT=`awk '{ sum+=$1 } END { print sum }' current.stim`
 sed -e 's/T/'$T'/' -e 's/F/'$F'/' $stimdir/$frequency_file > $frequency_file
-sed -e 's/GP/'$gp'/' -e 's/GI/'$gi'/' -e 's/GD/'$gd'/' -e 's/I0/'$I0'/' -e 's/TAU/'$tau'/' -e 's/F0/'$F0'/' -e 's/frequency\.stim/'$frequency_file'/' -e 's/TEND/'$TT'/' $configdir/$config_file > $config_file
+sed -e 's/GP/'$gp'/' -e 's/GI/'$gi'/' -e 's/GD/'$gd'/' -e 's/I0/'$I0'/' -e 's/TAU/'$tau'/' -e 's/F0/'$F0'/' -e 's/frequency\.stim/'$frequency_file'/' -e 's/TEND/'$T'/' $configdir/$config_file > $config_file
 
+kernel_protocol
 dclamp -c $config_file -n $reps -i $interval
+

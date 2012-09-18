@@ -58,8 +58,10 @@ void Connection::step()
         std::list< std::pair<double,Event*> >::iterator it;
         for (it=m_events.begin(); it!=m_events.end(); it++)
                 it->first -= GetGlobalDt();
-        while (m_events.front().first <= 0) {
-                emitEvent(new Event(m_events.front().second->type(), this));
+        int i;
+        while (m_events.size() && m_events.front().first <= 0) {
+                for (i=0; i<m_post.size(); i++)
+                        m_post[i]->handleEvent(m_events.front().second);
                 delete m_events.front().second;
                 m_events.pop_front();
         }
