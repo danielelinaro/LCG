@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string>
 
-dynclamp::Entity* ConstantFactory(dictionary& args)
+dynclamp::Entity* ConstantFactory(string_dict& args)
 {
         uint id;
         double value;
@@ -19,7 +19,7 @@ dynclamp::Entity* ConstantFactory(dictionary& args)
         return new dynclamp::Constant(value, units, id);
 }
 
-dynclamp::Entity* ConstantFromFileFactory(dictionary& args)
+dynclamp::Entity* ConstantFromFileFactory(string_dict& args)
 {
         uint id;
         std::string filename, units;
@@ -35,22 +35,16 @@ dynclamp::Entity* ConstantFromFileFactory(dictionary& args)
 namespace dynclamp {
 
 Constant::Constant(double value, const std::string& units, uint id)
-        : Entity(id), m_value(value)
+        : Entity(id)
 {
-        m_parameters.push_back(m_value);
-        m_parametersNames.push_back("value");
+        m_parameters["value"] = value;
         setName("Constant");
         setUnits(units);
 }
 
 void Constant::setValue(double value) 
 {
-        m_value = value;
-}
-
-double Constant::value() const
-{
-        return m_value;
+        m_parameters["value"] = value;
 }
 
 bool Constant::initialise()
@@ -58,9 +52,9 @@ bool Constant::initialise()
         return true;
 }
 
-double Constant::output() const
+double Constant::output()
 {
-        return m_value;
+        return m_parameters["value"];
 }
 
 void Constant::step()

@@ -2,7 +2,7 @@
 #include "delay.h"
 #include "engine.h"
 
-dynclamp::Entity* DelayFactory(dictionary& args)
+dynclamp::Entity* DelayFactory(string_dict& args)
 {
         uint id, nSamples;
         double delay;
@@ -66,7 +66,7 @@ void Delay::step()
         m_bufferPosition = (m_bufferPosition+1) % m_bufferLength;
 }
 
-double Delay::output() const
+double Delay::output()
 {
         return m_buffer[(m_bufferPosition+1) % m_bufferLength];
 }

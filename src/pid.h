@@ -6,10 +6,10 @@
 
 namespace dynclamp {
 
-#define PID_BASELINE m_parameters[0]
-#define PID_GP       m_parameters[1]
-#define PID_GI       m_parameters[2]
-#define PID_GD       m_parameters[3]
+#define PID_BASELINE m_parameters["baseline"]
+#define PID_GP       m_parameters["gp"]
+#define PID_GI       m_parameters["gi"]
+#define PID_GD       m_parameters["gd"]
 
 /**
 * PID controller entity
@@ -31,7 +31,7 @@ public:
         PID(double baseline, double gp, double gi, double gd = 0.0, uint id = GetId());
         bool state();
         void changeState();
-        virtual double output() const;
+        virtual double output();
         virtual bool initialise();
         virtual void step();
         void handleEvent(const Event *event);
@@ -51,7 +51,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PIDFactory(dictionary& args);
+dynclamp::Entity* PIDFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

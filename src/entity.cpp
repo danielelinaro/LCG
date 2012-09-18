@@ -39,57 +39,21 @@ uint Entity::id() const
         return m_id;
 }
 
-void Entity::setParameters(const array& parameters)
-{
-        m_parameters = parameters;
-}
-        
-void Entity::setParameter(double parameter, uint index)
-{
-        if (index >= m_parameters.size())
-                throw "Parameter out of bounds.";
-        m_parameters[index] = parameter;
-}
-
-void Entity::setParametersNames(const strings& parametersNames)
-{
-        m_parametersNames = parametersNames;
-}
-        
-void Entity::setParameterName(const std::string& parameterName, uint index)
-{
-        if (index >= m_parameters.size())
-                throw "Parameter out of bounds.";
-        m_parametersNames[index] = parameterName;
-}
-
 size_t Entity::numberOfParameters() const
 {
         return m_parameters.size();
 }
 
-const array& Entity::parameters() const
+const std::map<std::string,double>& Entity::parameters() const
 {
         return m_parameters;
 }
 
-double Entity::parameter(uint index) const
+double& Entity::parameter(std::string name)
 {
-        if (index >= m_parameters.size())
-                throw "Parameter out of bounds.";
-        return m_parameters[index];
-}
-
-const strings& Entity::parametersNames() const
-{
-        return m_parametersNames;
-}
-
-const std::string& Entity::parameterName(uint index) const
-{
-        if (index >= m_parameters.size())
-                throw "Parameter out of bounds.";
-        return m_parametersNames[index];
+        if (m_parameters.count(name) == 0)
+                throw "No parameter with such a name";
+        return m_parameters[name];
 }
 
 bool Entity::isPost(const Entity *entity) const

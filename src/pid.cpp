@@ -1,7 +1,7 @@
 #include "pid.h"
 #include "engine.h"
 
-dynclamp::Entity* PIDFactory(dictionary& args)
+dynclamp::Entity* PIDFactory(string_dict& args)
 {
         uint id;
         double baseline, gp, gi, gd;
@@ -23,28 +23,26 @@ namespace dynclamp {
 PID::PID(double baseline, double gp, double gi, double gd, uint id)
         : Entity(id)
 {
-        m_parameters.push_back(baseline);
-        m_parameters.push_back(gp);
-        m_parameters.push_back(gi);
-        m_parameters.push_back(gd);
-        m_parametersNames.push_back("baseline");
-        m_parametersNames.push_back("gp");
-        m_parametersNames.push_back("gi");
-        m_parametersNames.push_back("gd");
+        PID_BASELINE = baseline;
+        PID_GP = gp;
+        PID_GI = gi;
+        PID_GD = gd;
         setName("PID");
 }
 
-double PID::output() const
+double PID::output()
 {
         return m_output;
 }
+
 bool PID::state(){
-    return m_state;
+        return m_state;
 }
 
 void PID::changeState(){
-    m_state = !m_state;
+        m_state = !m_state;
 }
+
 bool PID::initialise()
 {
         m_output = PID_BASELINE;

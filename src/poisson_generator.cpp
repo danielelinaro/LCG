@@ -4,7 +4,7 @@
 #include "poisson_generator.h"
 #include "engine.h"
 
-dynclamp::Entity* PoissonFactory(dictionary& args)
+dynclamp::Entity* PoissonFactory(string_dict& args)
 {
         uint id;
         double rate;
@@ -27,8 +27,7 @@ namespace generators {
 Poisson::Poisson(double rate, ullong seed, uint id)
         : Generator(id), m_random(seed)
 {
-        m_parameters.push_back(rate);
-        m_parametersNames.push_back("rate");
+        POISSON_RATE = rate;
         setName("PoissonGenerator");
 }
 
@@ -43,7 +42,7 @@ bool Poisson::hasNext() const
         return true;
 }
 
-double Poisson::output() const
+double Poisson::output()
 {
         return 0.0;
 }

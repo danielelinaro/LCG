@@ -3,7 +3,7 @@
 #include "recorders.h"
 #include "engine.h"
 
-dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
+dynclamp::Entity* ASCIIRecorderFactory(string_dict& args)
 {
         uint id;
         std::string filename;
@@ -13,7 +13,7 @@ dynclamp::Entity* ASCIIRecorderFactory(dictionary& args)
         return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id);
 }
 
-dynclamp::Entity* H5RecorderFactory(dictionary& args)
+dynclamp::Entity* H5RecorderFactory(string_dict& args)
 {       
         uint id;
         std::string filename;
@@ -38,7 +38,7 @@ Recorder::Recorder(uint id) : Entity(id)
         setName("Recorder");
 }
 
-double Recorder::output() const
+double Recorder::output()
 {
         return 0.0;
 }
@@ -530,11 +530,10 @@ bool H5Recorder::allocateForEntity(Entity *entity)
         }
         Logger(Debug, "Group [%s] created.\n", groupName);
 
-        hsize_t npars = entity->numberOfParameters();
-        if (npars > 0) {
-                for (uint i=0; i<npars; i++)
-                        writeScalarAttribute(grp, entity->parameterName(i), entity->parameter(i));
-        }
+
+        double_dict::const_iterator it;
+        for (it = entity->parameters().begin(); it != entity->parameters().end(); it++)
+                writeScalarAttribute(grp, it->first, it->second);
 
         return true;
 }

@@ -6,7 +6,7 @@
 #include "engine.h"
 namespace fs = boost::filesystem;
 
-dynclamp::Entity* WaveformFactory(dictionary& args)
+dynclamp::Entity* WaveformFactory(string_dict& args)
 {
         uint id;
         bool triggered;
@@ -181,7 +181,7 @@ void Waveform::freeMemory()
 /**
  * Note: a RESET event is sent when the waveform ends.
  */
-double Waveform::output() const 
+double Waveform::output()
 {
         if (m_position < m_stimulusLength)
                 return m_stimulus[m_position];

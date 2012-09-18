@@ -17,7 +17,7 @@ int main()
 {
         double tend;
         std::vector<Entity*> entities;
-        dictionary parameters;
+        string_dict parameters;
 
         SetLoggingLevel(Info);
 

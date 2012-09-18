@@ -17,7 +17,7 @@ void Converter::step()
         m_previousInput = m_inputs[0];
 }
 
-double Converter::output() const
+double Converter::output()
 {
         return 0.0;
 }

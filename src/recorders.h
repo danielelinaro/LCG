@@ -20,7 +20,7 @@ namespace recorders {
 class Recorder : public Entity {
 public:
         Recorder(uint id = GetId());
-        virtual double output() const;
+        virtual double output();
 };
 
 class ASCIIRecorder : public Recorder {
@@ -140,8 +140,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ASCIIRecorderFactory(dictionary& args);
-dynclamp::Entity* H5RecorderFactory(dictionary& args);
+dynclamp::Entity* ASCIIRecorderFactory(string_dict& args);
+dynclamp::Entity* H5RecorderFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

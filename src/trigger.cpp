@@ -1,7 +1,7 @@
 #include "trigger.h"
 #include "engine.h"
 
-dynclamp::Entity* PeriodicTriggerFactory(dictionary& args)
+dynclamp::Entity* PeriodicTriggerFactory(string_dict& args)
 {
         uint id;
         double frequency;
@@ -20,7 +20,7 @@ Trigger::Trigger(uint id) : Entity(id)
         setName("Trigger");
 }
 
-double Trigger::output() const
+double Trigger::output()
 {
         return 0.0;
 }
@@ -31,12 +31,12 @@ void Trigger::emitTrigger() const
 }
 
 PeriodicTrigger::PeriodicTrigger(double frequency, uint id)
-        : Trigger(id), m_period(1.0/frequency)
+        : Trigger(id)
 {
         if (frequency <= 0)
                 throw "Frequency should be positive";
-        m_parameters.push_back(frequency);
-        m_parametersNames.push_back("frequency");
+        PT_FREQUENCY = frequency;
+        m_period = 1.0 / PT_FREQUENCY;
 }
 
 bool PeriodicTrigger::initialise()
@@ -51,11 +51,6 @@ void PeriodicTrigger::step()
                 emitTrigger();
                 m_tNextTrigger += m_period;
         }
-}
-
-double PeriodicTrigger::frequency() const
-{
-        return PT_FREQUENCY;
 }
 
 void PeriodicTrigger::setFrequency(double frequency)
@@ -75,8 +70,8 @@ void PeriodicTrigger::setPeriod(double period)
 {
         if (period <= 0)
                 throw "Period should be positive";
-        m_period = period;
         PT_FREQUENCY = 1.0 / period;
+        m_period = period;
 }
 
 } // namespace dynclamp

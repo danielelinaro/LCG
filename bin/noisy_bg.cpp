@@ -210,7 +210,7 @@ void runStimulus(OUoptions *opt, const std::string& stimfile, const std::string 
         Logger(Info, "Processing stimulus file [%s].\n", stimfile.c_str());
 
         std::vector<Entity*> entities(5);
-        dictionary parameters;
+        string_dictypedef parameters;
         double tend;
         int i;
 

@@ -6,7 +6,7 @@
 #include "randlib.h"
 #include "generator.h"
 
-#define POISSON_RATE m_parameters[0]
+#define POISSON_RATE m_parameters["rate"]
 
 namespace dynclamp {
 
@@ -17,7 +17,7 @@ public:
         Poisson(double rate, ullong seed, uint id = GetId());
         virtual bool initialise();
         virtual bool hasNext() const;
-        virtual double output() const;
+        virtual double output();
         virtual void step();
 
 private:
@@ -40,7 +40,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PoissonFactory(dictionary& args);
+dynclamp::Entity* PoissonFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

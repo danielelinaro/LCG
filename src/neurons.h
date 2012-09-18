@@ -19,23 +19,26 @@ namespace fs = boost::filesystem;
 
 #define VM       m_state[0]
 
-#define LIF_C      m_parameters[0]
-#define LIF_TAU    m_parameters[1]
-#define LIF_TARP   m_parameters[2]
-#define LIF_ER     m_parameters[3]
-#define LIF_E0     m_parameters[4]
-#define LIF_VTH    m_parameters[5]
-#define LIF_IEXT   m_parameters[6]
-#define LIF_LAMBDA m_parameters[7]
-#define LIF_RL     m_parameters[8]
+#define LIF_C      m_parameters["C"]
+#define LIF_TAU    m_parameters["tau"]
+#define LIF_TARP   m_parameters["tarp"]
+#define LIF_ER     m_parameters["Er"]
+#define LIF_E0     m_parameters["E0"]
+#define LIF_VTH    m_parameters["Vth"]
+#define LIF_IEXT   m_parameters["Iext"]
+#define LIF_LAMBDA m_parameters["lambda"]
+#define LIF_RL     m_parameters["Rl"]
 #define LIF_ARTIFICIAL_SPIKE
 
 #define CBN_VM_PREV             m_state[1]
-#define CBN_EL                  m_parameters[2]
-#define CBN_IEXT                m_parameters[3]
-#define CBN_SPIKE_THRESH        m_parameters[5]
-#define CBN_GL                  m_parameters[6]
-#define CBN_COEFF               m_parameters[7]
+#define CBN_C                   m_parameters["C"]
+#define CBN_GL                  m_parameters["gl"]
+#define CBN_EL                  m_parameters["El"]
+#define CBN_IEXT                m_parameters["Iext"]
+#define CBN_AREA                m_parameters["area"]
+#define CBN_SPIKE_THRESH        m_parameters["thresh"]
+#define CBN_GL_NS               m_parameters["gl_ns"]
+#define CBN_COEFF               m_parameters["coeff"]
 
 namespace dynclamp {
 
@@ -47,7 +50,7 @@ public:
         virtual bool initialise();
         double Vm() const;
         double Vm0() const;
-        virtual double output() const;
+        virtual double output();
 protected:
         void emitSpike() const;
 private:
@@ -99,7 +102,7 @@ protected:
 #ifdef HAVE_LIBCOMEDI
 
 #define RN_VM_PREV              m_state[1]
-#define RN_SPIKE_THRESH         m_parameters[0]
+#define RN_SPIKE_THRESH         m_parameters["thresh"]
 
 class RealNeuron : public Neuron {
 public:
@@ -158,10 +161,10 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* LIFNeuronFactory(dictionary& args);
-dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args);
+dynclamp::Entity* LIFNeuronFactory(string_dict& args);
+dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args);
 #ifdef HAVE_LIBCOMEDI
-dynclamp::Entity* RealNeuronFactory(dictionary& args);
+dynclamp::Entity* RealNeuronFactory(string_dict& args);
 #endif
 	
 #ifdef __cplusplus

@@ -10,7 +10,9 @@ namespace dynclamp {
 
 class EventCounter : public Entity {
 public:
-        EventCounter(uint maxCount, bool autoReset = true, EventType eventToCount = SPIKE, EventType eventToSend = TRIGGER, uint id = GetId());
+        EventCounter(uint maxCount, bool autoReset = true,
+                     EventType eventToCount = SPIKE, EventType eventToSend = TRIGGER,
+                     uint id = GetId());
         uint maxCount() const;
         EventType eventToCount() const;
         EventType eventToSend() const;
@@ -22,7 +24,7 @@ public:
         void setEventToSend(EventType eventToSend);
         virtual void handleEvent(const Event *event);
         virtual void step();
-        double output() const;
+        double output();
         bool initialise();
         
 private:
@@ -45,7 +47,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* EventCounterFactory(dictionary& args);
+dynclamp::Entity* EventCounterFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

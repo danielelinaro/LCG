@@ -93,7 +93,7 @@ uint GetId()
         return progressiveId;
 }
 
-uint GetIdFromDictionary(dictionary& args)
+uint GetIdFromDictionary(string_dict& args)
 {
         uint id;
         if (args.count("id") == 0) {
@@ -129,7 +129,7 @@ endGetRandomSeed:
         return seed;
 }
 
-ullong GetSeedFromDictionary(dictionary& args)
+ullong GetSeedFromDictionary(string_dict& args)
 {
         ullong s;
         if (args.count("seed") == 0 || (s = atoll(args["seed"].c_str())) == -1)
@@ -137,7 +137,7 @@ ullong GetSeedFromDictionary(dictionary& args)
         return s;
 }
 
-bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value)
+bool CheckAndExtractValue(string_dict& dict, const std::string& key, std::string& value)
 {
         if (dict.count(key)) {
                 value = dict[key];
@@ -147,7 +147,7 @@ bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string&
         return false;
 }
 
-bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value)
+bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -156,7 +156,7 @@ bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *val
         return true;
 }
 
-bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value)
+bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -165,7 +165,7 @@ bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value
         return true;
 }
 
-bool CheckAndExtractLong(dictionary& dict, const std::string& key, int *value)
+bool CheckAndExtractLong(string_dict& dict, const std::string& key, int *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -174,7 +174,7 @@ bool CheckAndExtractLong(dictionary& dict, const std::string& key, int *value)
         return true;
 }
 
-bool CheckAndExtractLongLong(dictionary& dict, const std::string& key, int *value)
+bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, int *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -183,7 +183,7 @@ bool CheckAndExtractLongLong(dictionary& dict, const std::string& key, int *valu
         return true;
 }
 
-bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, uint *value)
 {
         int i;
         if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
@@ -192,7 +192,7 @@ bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, ui
         return true;
 }
 
-bool CheckAndExtractUnsignedLong(dictionary& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, uint *value)
 {
         int i;
         if (!CheckAndExtractLong(dict, key, &i) || i < 0)
@@ -201,7 +201,7 @@ bool CheckAndExtractUnsignedLong(dictionary& dict, const std::string& key, uint 
         return true;
 }
 
-bool CheckAndExtractUnsignedLongLong(dictionary& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, uint *value)
 {
         int i;
         if (!CheckAndExtractLongLong(dict, key, &i) || i < 0)
@@ -210,7 +210,7 @@ bool CheckAndExtractUnsignedLongLong(dictionary& dict, const std::string& key, u
         return true;
 }
 
-bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value)
+bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -384,7 +384,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                  SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
                 /*** entities ***/
                 BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {
-                        dictionary args;
+                        string_dict args;
                         name = ntt.second.get<std::string>("name");
                         id = ntt.second.get<uint>("id");
                         if (ntts.count(id) == 1) {
@@ -445,7 +445,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
         return true;
 }
 
-Entity* EntityFactory(const char *entityName, dictionary& args)
+Entity* EntityFactory(const char *entityName, string_dict& args)
 {
         Entity *entity = NULL;
         Factory builder;

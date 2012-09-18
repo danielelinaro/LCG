@@ -4,7 +4,6 @@
 #include "entity.h"
 #include "functors.h"
 #include <list>
-#include <utility>
 
 namespace dynclamp {
 
@@ -14,11 +13,10 @@ public:
         Connection(double delay, uint id = GetId());
         ~Connection();
         
-        double delay() const;
         void setDelay(double delay);
 
         virtual void step();
-        virtual double output() const;
+        virtual double output();
         virtual bool initialise();
         virtual void terminate();
         virtual void handleEvent(const Event *event);
@@ -27,7 +25,6 @@ protected:
         void clearEventsList();
 
 protected:
-        double m_delay;
         std::list< std::pair<double, Event*> > m_events;
 };
 
@@ -51,8 +48,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConnectionFactory(dictionary& args);
-dynclamp::Entity* VariableDelayConnectionFactory(dictionary& args);
+dynclamp::Entity* ConnectionFactory(string_dict& args);
+dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

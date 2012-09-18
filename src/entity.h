@@ -28,9 +28,6 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include <vector>
-#include <string>
-
 #include "types.h"
 #include "utils.h"
 #include "events.h"
@@ -78,58 +75,17 @@ public:
         /*! Returns the identifier of this entity. */
         uint id() const;
 
-        /*!
-         * Sets the parameters of this entity.
-         * \param parameters A vector of double precision floating point values,
-         * which must contain at least as many elements as the number of parameters
-         * of the entity.
-         */
-        void setParameters(const array& parameters);
-
-        /*!
-         * Sets the value of the i-th parameter of this entity.
-         * \param parameter The parameter.
-         * \param index The index of the parameter in the parameters' array. If this
-         * value is greater or equal to the number of parameters of this entity, an
-         * exception is thrown.
-         */
-        void setParameter(double parameter, uint index);
-
-        /*!
-         * Sets the name of the parameters. This is useful for describing parameters
-         * with easy-to-remember labels.
-         * \param parametersNames A vector with the names of the parameters, as string objects.
-         */
-        void setParametersNames(const strings& parametersNames);
-
-        /*!
-         * Sets the name of the i-th parameter.
-         * \param parameterName The name of the parameter.
-         * \param index The index of the parameter in the parameters' array. If this
-         * value is greater or equal to the number of parameters of this entity, an
-         * exception is thrown.
-         */
-        void setParameterName(const std::string& parameterName, uint index);
-
         /*! Returns the number of parameters of this entity. */
         size_t numberOfParameters() const;
 
-        /*! Returns the array with the parameters. */
-        const array& parameters() const;
+        /*! Returns the string_dict with the parameters. */
+        const double_dict& parameters() const;
 
-        /*!
-         * Returns the i-th parameter.
-         * \param index The index of the parameter in the parameters' array. If this
-         * value is greater or equal to the number of parameters of this entity, an
-         * exception is thrown.
+        /*! 
+         * Returns a reference to the parameter with a given name.
+         * Throws an exception if no parameter with such name exists.
          */
-        double parameter(uint index) const;
-
-        /*! Returns the names of all parameters. */
-        const strings& parametersNames() const;
-
-        /*! Returns the name of the i-th parameter. */
-        const std::string& parameterName(uint index) const;
+        double& parameter(std::string name);
 
         /**
          * Connects this entity to the one passed as a parameter,
@@ -167,7 +123,7 @@ public:
         virtual void step() = 0;
 
         /*! Returns the output value of this entity. */
-        virtual double output() const = 0;
+        virtual double output() = 0;
 
         /*!
          * Performs required initialisations of the entity. This method is called before
@@ -243,11 +199,8 @@ protected:
         /*! The array where the inputs to this entity will be stored. */
         array  m_inputs;
 
-        /*! The array of parameters of this entity. */
-        array  m_parameters;
-
-        /*! The names of the parameters. */
-        strings m_parametersNames;
+        /*! The parameters of this entity. */
+        double_dict m_parameters;
 
         /*! The vector of entities that provide inputs to this entity. */
         std::vector<Entity*> m_pre;

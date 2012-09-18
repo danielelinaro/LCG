@@ -16,7 +16,7 @@ int main()
 {
         int i;
         double tend = 5;
-        dictionary params;
+        string_dict params;
         std::vector<Entity*> entities(N_ENT);
         params["compress"] = "false";
         params["filename"] = "ou_test.h5";

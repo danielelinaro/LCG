@@ -3,7 +3,7 @@
 #include "engine.h"
 #include "neurons.h"
 
-dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
+dynclamp::Entity* ExponentialSynapseFactory(string_dict& args)
 {
         uint id;
         double E, weight, tau;
@@ -17,7 +17,7 @@ dynclamp::Entity* ExponentialSynapseFactory(dictionary& args)
         return new dynclamp::synapses::ExponentialSynapse(E, weight, tau, id);
 }
 
-dynclamp::Entity* Exp2SynapseFactory(dictionary& args)
+dynclamp::Entity* Exp2SynapseFactory(string_dict& args)
 {        
         uint id;
         double E, weight, tau[2];
@@ -32,7 +32,7 @@ dynclamp::Entity* Exp2SynapseFactory(dictionary& args)
         return new dynclamp::synapses::Exp2Synapse(E, weight, tau, id);
 }
 
-dynclamp::Entity* TMGSynapseFactory(dictionary& args)
+dynclamp::Entity* TMGSynapseFactory(string_dict& args)
 {
         uint id;
         double E, weight, U, tau[3];
@@ -57,10 +57,8 @@ Synapse::Synapse(double E, double weight, uint id)
         : DynamicalEntity(id), m_neuron(NULL), m_spikeTimeouts()
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
-        m_parameters.push_back(E);      // m_parameters[0] -> reversal potential
-        m_parameters.push_back(weight); // m_parameters[1] -> weight
-        m_parametersNames.push_back("E");
-        m_parametersNames.push_back("weight");
+        SYN_E = E;
+        SYN_W = weight;
         setName("Synapse");
         setUnits("pA");
 }
@@ -72,7 +70,7 @@ bool Synapse::initialise()
         return true;
 }
 
-double Synapse::output() const
+double Synapse::output()
 {
         // i = g * (E - V_post)
         return SYN_G * (SYN_E - m_neuron->output());
@@ -81,11 +79,6 @@ double Synapse::output() const
 double Synapse::g() const
 {
 	return SYN_G;
-}
-
-void Synapse::setWeight(double weight)
-{
-        SYN_W = weight;
 }
 
 void Synapse::handleEvent(const Event *event)
@@ -114,8 +107,7 @@ ExponentialSynapse::ExponentialSynapse(double E, double weight, double tau,
                                        uint id)
         : Synapse(E, weight, id)
 {
-        m_parameters.push_back(exp(-GetGlobalDt()/tau));   // m_parameters[2] -> decay coefficient
-        m_parametersNames.push_back("decayCoeff");
+        EXP_SYN_DECAY = exp(-GetGlobalDt()/tau);
         setName("ExponentialSynapse");
         setUnits("pA");
 }
@@ -132,7 +124,7 @@ void ExponentialSynapse::evolve()
 
 void ExponentialSynapse::handleSpike()
 {
-	SYN_G += m_parameters[1];
+	SYN_G += SYN_W;
 }
 
 //~~~
@@ -146,12 +138,9 @@ Exp2Synapse::Exp2Synapse(double E, double weight, double tau[2],
 
         double dt = GetGlobalDt();
 	double tp = (tau[0]*tau[1])/(tau[1] - tau[0]) * log(tau[1]/tau[0]);
-        m_parameters.push_back(exp(-dt/tau[0]));        // m_parameters[3] -> first decay coefficient
-        m_parameters.push_back(exp(-dt/tau[1]));        // m_parameters[4] -> second decay coefficient
-	m_parameters.push_back(1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1])));  // m_parameters[5] -> factor
-        m_parametersNames.push_back("decayCoeff1");
-        m_parametersNames.push_back("decayCoeff2");
-        m_parametersNames.push_back("factor");
+        EXP2_SYN_DECAY1 = exp(-dt/tau[0]);
+        EXP2_SYN_DECAY2 = exp(-dt/tau[1]);
+	EXP2_SYN_FACTOR = 1. / (-exp(-tp/tau[0]) + exp(-tp/tau[1]));
         setName("Exp2Synapse");
         setUnits("pA");
 }
@@ -190,21 +179,15 @@ TMGSynapse::TMGSynapse(double E, double weight, double U, double tau[3],
         m_state.push_back(0.0);         // m_state[2] -> z
         m_state.push_back(U);           // m_state[3] -> u
 
-        m_parameters.push_back(U);      // m_parameters[3] -> U
-        m_parameters.push_back(tau[2]); // m_parameters[4] -> tau_facil
-        m_parameters.push_back(exp(-GetGlobalDt()/tau[0]));      // m_parameters[5] -> exp. decay
-        m_parameters.push_back(1.0 / tau[0]);           // m_parameters[6] -> 1 / tau_1
-        m_parameters.push_back(1.0 / tau[1]);           // m_parameters[7] -> 1 / tau_rec
-        m_parameters.push_back(1.0 / tau[2]);           // m_parameters[8] -> 1 / tau_facil
-	m_parameters.push_back(1.0 / ((tau[0]/tau[1])-1.));    // m_parameters[9] -> coeff.
-
-        m_parametersNames.push_back("U");
-        m_parametersNames.push_back("tauFacil");
-        m_parametersNames.push_back("decayCoeff");
-        m_parametersNames.push_back("tau1Recipr");
-        m_parametersNames.push_back("tauRecRecipr");
-        m_parametersNames.push_back("tauFacilRecipr");
-        m_parametersNames.push_back("coeff");
+        TMG_SYN_U = U;
+        TMG_SYN_TAU_1 = tau[0];
+        TMG_SYN_TAU_REC = tau[1];
+        TMG_SYN_TAU_FACIL = tau[2];
+        TMG_SYN_DECAY = exp(-GetGlobalDt()/TMG_SYN_TAU_1);
+        TMG_SYN_ONE_OVER_TAU_1 = 1.0 / TMG_SYN_TAU_1;
+        TMG_SYN_ONE_OVER_TAU_REC = 1.0 / TMG_SYN_TAU_REC;
+        TMG_SYN_ONE_OVER_TAU_FACIL = 1.0 / TMG_SYN_TAU_FACIL;
+	TMG_SYN_COEFF = 1.0 / ((tau[0]/tau[1])-1.);
 
         setName("TMGSynapse");
         setUnits("pA");

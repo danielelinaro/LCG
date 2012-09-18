@@ -1,6 +1,12 @@
 #include "time_logger.h"
 #include "engine.h"
 
+dynclamp::Entity* TimeLoggerFactory(string_dict& args)
+{
+        uint id = dynclamp::GetIdFromDictionary(args);
+        return new dynclamp::TimeLogger(id);
+}
+
 namespace dynclamp {
 
 TimeLogger::TimeLogger(uint id)
@@ -25,7 +31,7 @@ void TimeLogger::step()
 #endif
 }
 
-double TimeLogger::output() const
+double TimeLogger::output()
 {
         return m_time;
 }

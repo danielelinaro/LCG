@@ -7,7 +7,7 @@
 #include "generator.h"
 #include "neurons.h"
 
-#define COND_E  m_parameters[0]
+#define COND_E  m_parameters["E"]
 
 namespace dynclamp {
 
@@ -15,11 +15,11 @@ namespace generators {
 
 class ConductanceStimulus : public Generator {
 public:
-        ConductanceStimulus(double Erev, uint id = GetId());
+        ConductanceStimulus(double E, uint id = GetId());
         virtual bool initialise();
         virtual bool hasNext() const;
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 protected:
         virtual void addPost(Entity *entity);
 private:
@@ -38,7 +38,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConductanceStimulusFactory(dictionary& args);
+dynclamp::Entity* ConductanceStimulusFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

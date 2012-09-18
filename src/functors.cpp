@@ -2,12 +2,12 @@
 #include "randlib.h"
 #include "engine.h"
 
-dynclamp::Entity* SobolDelayFactory(dictionary& args)
+dynclamp::Entity* SobolDelayFactory(string_dict& args)
 {
         return new dynclamp::SobolDelay(dynclamp::GetIdFromDictionary(args));
 }
 
-dynclamp::Entity* PhasicDelayFactory(dictionary& args)
+dynclamp::Entity* PhasicDelayFactory(string_dict& args)
 {
 
         uint id;
@@ -15,14 +15,13 @@ dynclamp::Entity* PhasicDelayFactory(dictionary& args)
 
         id = dynclamp::GetIdFromDictionary(args);
         if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay)) 
-                dynclamp::Logger(dynclamp::Important, "PhasicDelay(%d): Using a phasic delay of zero!\n",id);
-        return new dynclamp::PhasicDelay(id,delay);
+                dynclamp::Logger(dynclamp::Important, "PhasicDelay(%d): Using a phasic delay of zero!\n", id);
+        return new dynclamp::PhasicDelay(delay, id);
 }
 
 namespace dynclamp {
 
-Functor::Functor(uint id)
-        : Entity(id)
+Functor::Functor(uint id) : Entity(id)
 {
         setName("Functor");
 }
@@ -30,7 +29,7 @@ Functor::Functor(uint id)
 void Functor::step()
 {}
 
-double Functor::output() const
+double Functor::output()
 {
         return 0.0;
 }
@@ -64,11 +63,12 @@ double SobolDelay::operator()()
         return x*y;
 }
 
-PhasicDelay::PhasicDelay(uint id, double phase)
-        : Functor(id), m_phase(phase)
+PhasicDelay::PhasicDelay(double phase, uint id)
+        : Functor(id)
 {
+        m_parameters["phase"] = phase;
         setName("PhasicDelay");
-		Logger(Important,"PhasicDelay(%d): Using a delay of %3.3f.\n", id, phase);
+	Logger(Debug, "PhasicDelay(%d): Using a delay of %3.3f.\n", id, m_parameters["phase"]);
 }
 
 bool PhasicDelay::initialise()
@@ -81,7 +81,7 @@ double PhasicDelay::operator()()
         double y;
         if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units(), "s"))
                 throw "Unable to convert.";
-        return m_phase*y;
+        return m_parameters["phase"] * y;
 }
 
 }//namespace dynclamp

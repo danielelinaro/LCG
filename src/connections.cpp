@@ -1,8 +1,8 @@
 #include "connections.h"
 #include "engine.h"
-#include <limits>
+#include "common.h"
 
-dynclamp::Entity* ConnectionFactory(dictionary& args)
+dynclamp::Entity* ConnectionFactory(string_dict& args)
 {
         uint id;
         double delay;
@@ -16,7 +16,7 @@ dynclamp::Entity* ConnectionFactory(dictionary& args)
         return new dynclamp::Connection(delay, id);
 }
 
-dynclamp::Entity* VariableDelayConnectionFactory(dictionary& args)
+dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args)
 {
         return new dynclamp::VariableDelayConnection(dynclamp::GetIdFromDictionary(args));
 }
@@ -30,8 +30,9 @@ bool CompareFirst(const std::pair<double,Event*>& p1,
 }
 
 Connection::Connection(double delay, uint id)
-        : Entity(id), m_delay(delay), m_events()
+        : Entity(id), m_events()
 {
+        m_parameters["delay"] = delay;
         setName("Connection");
 }
         
@@ -40,15 +41,10 @@ Connection::~Connection()
         clearEventsList();
 }
 
-double Connection::delay() const
-{
-        return m_delay;
-}
-
 void Connection::setDelay(double delay)
 {
         if (delay >= 0)
-                m_delay = delay;
+                m_parameters["delay"] = delay;
         else
                 Logger(Important, "Tried to set a negative delay.\n");
 }
@@ -67,7 +63,7 @@ void Connection::step()
         }
 }
 
-double Connection::output() const
+double Connection::output()
 {
         return 0.0;
 }
@@ -95,7 +91,7 @@ void Connection::clearEventsList()
 
 void Connection::handleEvent(const Event *event)
 {
-        m_events.push_back(std::make_pair(m_delay-GetGlobalDt(), new Event(*event)));
+        m_events.push_back(std::make_pair(m_parameters["delay"]-GetGlobalDt(), new Event(*event)));
         m_events.sort(CompareFirst);
 }
 
@@ -107,12 +103,11 @@ VariableDelayConnection::VariableDelayConnection(uint id)
 
 void VariableDelayConnection::handleEvent(const Event *event)
 {
-        double delay = (*m_functor)();
-        if (delay != std::numeric_limits<double>::infinity()) {
-                // we don't handle events with an infinite delay
-                setDelay(delay);
-                Connection::handleEvent(event);
-        }
+        double delay;
+        while ((delay = (*m_functor)()) == INFINITE)
+                ;
+        setDelay(delay);
+        Connection::handleEvent(event);
 }
 
 void VariableDelayConnection::addPre(Entity *entity)

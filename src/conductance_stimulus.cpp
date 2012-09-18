@@ -1,6 +1,6 @@
 #include "conductance_stimulus.h"
 
-dynclamp::Entity* ConductanceStimulusFactory(dictionary& args)
+dynclamp::Entity* ConductanceStimulusFactory(string_dict& args)
 {
         uint id;
         double E;
@@ -18,8 +18,7 @@ namespace generators {
 
 ConductanceStimulus::ConductanceStimulus(double E, uint id) : Generator(id), m_neuron(NULL)
 {
-        m_parameters.push_back(E);
-        m_parametersNames.push_back("E");
+        m_parameters["E"] = E;
         setName("ConductanceStimulus");
         setUnits("pA");
 }
@@ -40,7 +39,7 @@ void ConductanceStimulus::step()
         m_output = m_inputs[0] * (COND_E - m_neuron->output());
 }
 
-double ConductanceStimulus::output() const
+double ConductanceStimulus::output()
 {
         return m_output;
 }

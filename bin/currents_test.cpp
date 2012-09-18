@@ -15,16 +15,14 @@ class FakeNeuron : public dynclamp::neurons::Neuron {
 public:
         FakeNeuron(double V0, double f, double A, uint id = GetId())
                 : Neuron(V0, id), m_V0(V0) {
-                m_parameters.push_back(f);
-                m_parameters.push_back(A);
-                m_parametersNames.push_back("frequency");
-                m_parametersNames.push_back("amplitude");
+                m_parameters["f"] = f;
+                m_parameters["amp"] = A;
                 setName("FakeNeuron");
                 setUnits("mV");
         }
 protected:
         virtual void evolve() {
-                VM = m_V0 + m_parameters[1] * sin(2*pi*m_parameters[0]*GetGlobalTime());
+                VM = m_V0 + m_parameters["amp"] * sin(2*pi*m_parameters["f"]*GetGlobalTime());
         }
 private:
         double m_V0;

@@ -17,12 +17,13 @@ typedef unsigned long long ullong;
 typedef double real;
 typedef std::vector<double> array;
 typedef std::vector<std::string> strings;
-typedef std::map<std::string,std::string> dictionary;
+typedef std::map<std::string,std::string> string_dict;
+typedef std::map<std::string,double> double_dict;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef dynclamp::Entity* (*Factory)(dictionary&);
+typedef dynclamp::Entity* (*Factory)(string_dict&);
 #ifdef __cplusplus
 }
 #endif

@@ -42,7 +42,7 @@ class Converter : public Entity {
 public:
         Converter(std::string propertyName, uint id = GetId());
         virtual void step();
-        virtual double output() const;
+        virtual double output();
         virtual bool initialise();
 
 private:

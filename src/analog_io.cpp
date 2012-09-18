@@ -3,7 +3,7 @@
 
 #ifdef ANALOG_IO
 
-dynclamp::Entity* AnalogInputFactory(dictionary& args)
+dynclamp::Entity* AnalogInputFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, range, reference, id;
         std::string deviceFile, rangeStr, referenceStr, units;
@@ -16,7 +16,7 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
              ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
              ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor)) {
                 dynclamp::Logger(dynclamp::Debug, "AnalogInputFactory: missing parameter.\n");
-                dictionary::iterator it;
+                string_dict::iterator it;
                 dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
                 return NULL;
         }
@@ -77,7 +77,7 @@ dynclamp::Entity* AnalogInputFactory(dictionary& args)
                                          inputConversionFactor, range, reference, units, id);
 }
 
-dynclamp::Entity* AnalogIOFactory(dictionary& args)
+dynclamp::Entity* AnalogIOFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, inputRange, outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, rangeStr, referenceStr, units;
@@ -154,7 +154,7 @@ dynclamp::Entity* AnalogIOFactory(dictionary& args)
                                       writeChannel, outputConversionFactor, inputRange, reference, units, id);
 }
 
-dynclamp::Entity* AnalogOutputFactory(dictionary& args)
+dynclamp::Entity* AnalogOutputFactory(string_dict& args)
 {
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr, units;

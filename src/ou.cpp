@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-dynclamp::Entity* OUcurrentFactory(dictionary& args)
+dynclamp::Entity* OUcurrentFactory(string_dict& args)
 {
         uint id;
         ullong seed;
@@ -43,7 +43,7 @@ dynclamp::Entity* OUcurrentFactory(dictionary& args)
         return new dynclamp::OUcurrent(sigma, tau, I0, seed, interval, id);
 }
 
-dynclamp::Entity* OUconductanceFactory(dictionary& args)
+dynclamp::Entity* OUconductanceFactory(string_dict& args)
 {
         uint id;
         ullong seed;
@@ -85,25 +85,15 @@ OU::OU(double sigma, double tau, double eta0, ullong seed, double interval[2], u
 {
         // See the paper [Gillespie, 1994, PRE] for explanation of the meaning of parameters
         // and of the method of solution.
-        m_parameters.push_back(sigma);  // m_parameters[0] -> sigma
-        m_parameters.push_back(tau);    // m_parameters[1] -> tau
-        m_parameters.push_back(eta0);   // m_parameters[2] -> eta0
-        m_parameters.push_back(2*OU_SIGMA*OU_SIGMA/OU_TAU);                     // m_parameters[3] -> diffusion constant
-        m_parameters.push_back(exp(-GetGlobalDt()/OU_TAU));                     // m_parameters[4] -> mu
-        m_parameters.push_back(sqrt(OU_CONST*OU_TAU/2 * (1-OU_MU*OU_MU)));      // m_parameters[5] -> coefficient
-        m_parameters.push_back((double) seed);  // m_parameters[6] -> seed
-        m_parameters.push_back(interval[0]);    // m_parameters[7] -> start time
-        m_parameters.push_back(interval[1]);    // m_parameters[8] -> end time
-
-        m_parametersNames.push_back("sigma");
-        m_parametersNames.push_back("tau");
-        m_parametersNames.push_back("eta0");
-        m_parametersNames.push_back("diffusionConstant");
-        m_parametersNames.push_back("mu");
-        m_parametersNames.push_back("coeff");
-        m_parametersNames.push_back("seed");
-        m_parametersNames.push_back("startTime");
-        m_parametersNames.push_back("endTime");
+        OU_SIGMA = sigma;
+        OU_TAU = tau;
+        OU_ETA0 = eta0;
+        OU_CONST = 2*OU_SIGMA*OU_SIGMA/OU_TAU;
+        OU_MU = exp(-GetGlobalDt()/OU_TAU);
+        OU_COEFF = sqrt(OU_CONST*OU_TAU/2 * (1-OU_MU*OU_MU));
+        OU_SEED = seed;
+        OU_START = interval[0];
+        OU_STOP = interval[1];
 
         m_state.push_back(0.0);         // m_state[0] -> eta
         m_state.push_back(0.0);         // m_state[1] -> auxiliary variable
@@ -136,7 +126,7 @@ OUcurrent::OUcurrent(double sigma, double tau, double I0, ullong seed, double in
         setUnits("pA");
 }
 
-double OUcurrent::output() const
+double OUcurrent::output()
 {
         // OU_ETA is a current
         return OU_ETA;
@@ -145,13 +135,12 @@ double OUcurrent::output() const
 OUconductance::OUconductance(double sigma, double tau, double E, double G0, ullong seed, double interval[2], uint id)
         : OU(sigma, tau, G0, seed, interval, id), m_neuron(NULL)
 {
-        m_parameters.push_back(E);      // m_parameters[9] -> reversal potential
-        m_parametersNames.push_back("E");
+        OU_E = E;
         setName("OUconductance");
         setUnits("nS");
 }
 
-double OUconductance::output() const
+double OUconductance::output()
 {
         // OU_ETA is a conductance
         return OU_ETA * (OU_E - m_neuron->output());

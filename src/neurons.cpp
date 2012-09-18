@@ -5,7 +5,7 @@
 #include "engine.h"
 #include <stdio.h>
 
-dynclamp::Entity* LIFNeuronFactory(dictionary& args)
+dynclamp::Entity* LIFNeuronFactory(string_dict& args)
 {
         uint id;
         double C, tau, tarp, Er, E0, Vth, Iext;
@@ -26,7 +26,7 @@ dynclamp::Entity* LIFNeuronFactory(dictionary& args)
         return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
 }
 
-dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args)
+dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args)
 {
         uint id;
         double C, gl, El, Iext, area, spikeThreshold, V0;
@@ -47,7 +47,7 @@ dynclamp::Entity* ConductanceBasedNeuronFactory(dictionary& args)
 
 #ifdef HAVE_LIBCOMEDI
 
-dynclamp::Entity* RealNeuronFactory(dictionary& args)
+dynclamp::Entity* RealNeuronFactory(string_dict& args)
 {
         uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
@@ -168,7 +168,7 @@ double Neuron::Vm0() const
         return m_Vm0;
 }
 
-double Neuron::output() const
+double Neuron::output()
 {
         return VM;
 }
@@ -184,24 +184,15 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         : Neuron(E0, id)
 {
         double dt = GetGlobalDt();
-        m_parameters.push_back(C);
-        m_parameters.push_back(tau);
-        m_parameters.push_back(tarp);
-        m_parameters.push_back(Er);
-        m_parameters.push_back(E0);
-        m_parameters.push_back(Vth);
-        m_parameters.push_back(Iext);
-        m_parameters.push_back(-1.0/LIF_TAU); // parameters[7] -> lambda
-        m_parameters.push_back(LIF_TAU/LIF_C);// parameters[8] -> Rl
-        m_parametersNames.push_back("C");
-        m_parametersNames.push_back("tau");
-        m_parametersNames.push_back("tarp");
-        m_parametersNames.push_back("Er");
-        m_parametersNames.push_back("E0");
-        m_parametersNames.push_back("Vth");
-        m_parametersNames.push_back("Iext");
-        m_parametersNames.push_back("lambda");
-        m_parametersNames.push_back("Rleak");
+        LIF_C = C;
+        LIF_TAU = tau;
+        LIF_TARP = tarp;
+        LIF_ER = Er;
+        LIF_E0 = E0;
+        LIF_VTH = Vth;
+        LIF_IEXT = Iext;
+        LIF_LAMBDA = -1.0 / LIF_TAU;
+        LIF_RL = LIF_TAU / LIF_C;
         setName("LIFNeuron");
         setUnits("mV");
 }
@@ -249,22 +240,15 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
 {
         m_state.push_back(V0);                  // m_state[1] -> previous membrane voltage (for spike detection)
 
-        m_parameters.push_back(C);              // m_parameters[0] -> capacitance
-        m_parameters.push_back(gl);             // m_parameters[1] -> leak conductance
-        m_parameters.push_back(El);             // m_parameters[2] -> leak reversal potential
-        m_parameters.push_back(Iext);           // m_parameters[3] -> externally applied current
-        m_parameters.push_back(area);           // m_parameters[4] -> area
-        m_parameters.push_back(spikeThreshold); // m_parameters[5] -> spike threshold
-        m_parameters.push_back(gl*10*area);     // m_parameters[6] -> leak conductance (in nS)
-        m_parameters.push_back(GetGlobalDt() / (C*1e-5*area));   // m_parameters[7] -> coefficient
-        m_parametersNames.push_back("C");
-        m_parametersNames.push_back("gl");
-        m_parametersNames.push_back("El");
-        m_parametersNames.push_back("Iext");
-        m_parametersNames.push_back("area");
-        m_parametersNames.push_back("spikeThreshold");
-        m_parametersNames.push_back("gl_in_nS");
-        m_parametersNames.push_back("coeff");
+        CBN_C = C;
+        CBN_GL = gl;
+        CBN_EL = El;
+        CBN_IEXT = Iext;
+        CBN_AREA = area;
+        CBN_SPIKE_THRESH = spikeThreshold;
+        CBN_GL_NS = gl*10*area; // leak conductance in nS
+        CBN_COEFF = GetGlobalDt() / (C*1e-5*area); // coefficient
+
         setName("ConductanceBasedNeuron");
         setUnits("mV");
 }
@@ -273,7 +257,7 @@ void ConductanceBasedNeuron::evolve()
 {
         double Iinj, Ileak;
 	
-	Ileak = CBN_GL * (CBN_EL - VM);		// (pA)
+	Ileak = CBN_GL_NS * (CBN_EL - VM);	// (pA)
 	
 	Iinj = 0.;
 	for(uint i=0; i<m_inputs.size(); i++)
@@ -301,8 +285,7 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
           m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
-        m_parameters.push_back(spikeThreshold);
-        m_parametersNames.push_back("spikeThreshold");
+        RN_SPIKE_THRESH = spikeThreshold;
         setName("RealNeuron");
         setUnits("mV");
 }
@@ -321,8 +304,7 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
           m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
-        m_parameters.push_back(spikeThreshold);
-        m_parametersNames.push_back("spikeThreshold");
+        RN_SPIKE_THRESH = spikeThreshold;
         setName("RealNeuron");
         setUnits("mV");
 }

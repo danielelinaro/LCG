@@ -13,15 +13,15 @@ double vtrap(double x, double y);
 
 #define IC_FRACTION     m_state[0]              // (1)
 
-#define IC_AREA         m_parameters[0]         // (um^2)
-#define IC_GBAR         m_parameters[1]         // (S/cm^2)
-#define IC_E            m_parameters[2]         // (mV)
+#define IC_AREA         m_parameters["area"]         // (um^2)
+#define IC_GBAR         m_parameters["gbar"]         // (S/cm^2)
+#define IC_E            m_parameters["E"]            // (mV)
 
 class IonicCurrent : public DynamicalEntity {
 public:
         IonicCurrent(double area, double gbar, double E, uint id = GetId());
         virtual bool initialise();
-        double output() const;
+        double output();
 protected:
         virtual void addPost(Entity *entity);
 protected:
@@ -64,8 +64,8 @@ protected:
 #define HH2_NA_M        m_state[1]
 #define HH2_NA_H        m_state[2]
 
-#define HH2_VTRAUB      m_parameters[3]         // (mV)
-#define HH2_TEMPERATURE m_parameters[4]         // (celsius)
+#define HH2_VTRAUB      m_parameters["vtraub"]         // (mV)
+#define HH2_TEMPERATURE m_parameters["temperature"]    // (celsius)
 
 class HH2Sodium : public IonicCurrent {
 public:
@@ -105,8 +105,8 @@ private:
 
 #define IM_M        m_state[1]
 
-#define IM_TAUMAX      m_parameters[3]         // (ms)
-#define IM_TEMPERATURE m_parameters[4]         // (celsius)
+#define IM_TAUMAX      m_parameters["tauMax"]         // (ms)
+#define IM_TEMPERATURE m_parameters["temperature"]    // (celsius)
 
 /*!
  * \class IM
@@ -140,13 +140,13 @@ private:
 #define IT_CAI      m_state[1]
 #define IT_H        m_state[2]
 
-#define IT_Q10          m_parameters[3]         // (1)
-#define IT_SHIFT        m_parameters[4]         // (mV)
-#define IT_CAO          m_parameters[5]         // (mM)
-#define IT_CAIINF       m_parameters[6]         // (mM)
-#define IT_TAUR         m_parameters[7]         // (ms)
-#define IT_DEPTH        m_parameters[8]         // (um)
-#define IT_TEMPERATURE  m_parameters[9]         // (celsius)
+#define IT_Q10          m_parameters["q10"]           // (1)
+#define IT_SHIFT        m_parameters["shift"]         // (mV)
+#define IT_CAO          m_parameters["cao"]           // (mM)
+#define IT_CAIINF       m_parameters["caiInf"]        // (mM)
+#define IT_TAUR         m_parameters["taur"]          // (ms)
+#define IT_DEPTH        m_parameters["depth"]         // (um)
+#define IT_TEMPERATURE  m_parameters["temperature"]   // (celsius)
 
 #define FARADAY         (96489)
 
@@ -178,8 +178,8 @@ private:
 
 #define NIC_NOPEN       m_state[1]              // (1)
 
-#define NIC_GAMMA       m_parameters[3]         // (pS)
-#define NIC_NCHANNELS   m_parameters[4]         // (1)
+#define NIC_GAMMA       m_parameters["gamma"]   // (pS)
+#define NIC_NCHANNELS   m_parameters["N"]       // (1)
 
 class NoisyIonicCurrent : public IonicCurrent {
 public:
@@ -240,16 +240,16 @@ extern "C" {
 #endif
 
 ///// DETERMINISTIC /////
-dynclamp::Entity* HHSodiumFactory(dictionary& args);
-dynclamp::Entity* HHPotassiumFactory(dictionary& args);
-dynclamp::Entity* HH2SodiumFactory(dictionary& args);
-dynclamp::Entity* HH2PotassiumFactory(dictionary& args);
-dynclamp::Entity* MCurrentFactory(dictionary& args);
-dynclamp::Entity* TCurrentFactory(dictionary& args);
+dynclamp::Entity* HHSodiumFactory(string_dict& args);
+dynclamp::Entity* HHPotassiumFactory(string_dict& args);
+dynclamp::Entity* HH2SodiumFactory(string_dict& args);
+dynclamp::Entity* HH2PotassiumFactory(string_dict& args);
+dynclamp::Entity* MCurrentFactory(string_dict& args);
+dynclamp::Entity* TCurrentFactory(string_dict& args);
 
 ///// STOCHASTIC /////
-dynclamp::Entity* HHSodiumCNFactory(dictionary& args);
-dynclamp::Entity* HHPotassiumCNFactory(dictionary& args);
+dynclamp::Entity* HHSodiumCNFactory(string_dict& args);
+dynclamp::Entity* HHPotassiumCNFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

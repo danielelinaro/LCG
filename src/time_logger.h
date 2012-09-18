@@ -14,13 +14,25 @@ public:
         TimeLogger(uint id = GetId());
         virtual bool initialise();
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 private:
         double m_time;
 };
 
 } // namespace dynclamp
 
-
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+dynclamp::Entity* TimeLoggerFactory(string_dict& args);
+	
+#ifdef __cplusplus
+}
+#endif
+
+#endif // TIME_LOGGER_H
 

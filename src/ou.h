@@ -8,17 +8,17 @@
 #define OU_ETA       m_state[0]
 #define OU_ETA_AUX   m_state[1]
 
-#define OU_SIGMA m_parameters[0]
-#define OU_TAU   m_parameters[1]
-#define OU_ETA0  m_parameters[2]
-#define OU_CONST m_parameters[3]
-#define OU_MU    m_parameters[4]
-#define OU_COEFF m_parameters[5]
-#define OU_SEED  m_parameters[6]
-#define OU_START m_parameters[7]
-#define OU_STOP  m_parameters[8]
+#define OU_SIGMA m_parameters["sigma"]
+#define OU_TAU   m_parameters["tau"]
+#define OU_ETA0  m_parameters["eta0"]
+#define OU_CONST m_parameters["const"]
+#define OU_MU    m_parameters["mu"]
+#define OU_COEFF m_parameters["coeff"]
+#define OU_SEED  m_parameters["seed"]
+#define OU_START m_parameters["start"]
+#define OU_STOP  m_parameters["stop"]
 
-#define OU_E     m_parameters[9]
+#define OU_E     m_parameters["E"]
 
 namespace dynclamp {
 
@@ -46,7 +46,7 @@ class OUcurrent : public OU
 public:
         OUcurrent(double sigma, double tau, double I0, ullong seed,
                   double *interval = largeInterval, uint id = GetId());
-        virtual double output() const;
+        virtual double output();
 };
 
 class OUconductance : public OU
@@ -54,7 +54,7 @@ class OUconductance : public OU
 public:
         OUconductance(double sigma, double tau, double E, double G0, ullong seed,
                       double *interval = largeInterval, uint id = GetId());
-        virtual double output() const;
+        virtual double output();
 protected:
         virtual void addPost(Entity *entity);
 private:
@@ -70,8 +70,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* OUcurrentFactory(dictionary& args);
-dynclamp::Entity* OUconductanceFactory(dictionary& args);
+dynclamp::Entity* OUcurrentFactory(string_dict& args);
+dynclamp::Entity* OUconductanceFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

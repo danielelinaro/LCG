@@ -9,18 +9,17 @@ namespace dynclamp {
 class Trigger : public Entity {
 public:
         Trigger(uint id = GetId());
-        virtual double output() const;
+        virtual double output();
 protected:
         void emitTrigger() const;
 };
 
-#define PT_FREQUENCY m_parameters[0]
+#define PT_FREQUENCY m_parameters["f"]
 
 class PeriodicTrigger : public Trigger {
 public:
         PeriodicTrigger(double frequency, uint id = GetId());
 
-        double frequency() const;
         void setFrequency(double frequency);
         double period() const;
         void setPeriod(double period);
@@ -28,7 +27,8 @@ public:
         virtual bool initialise();
         virtual void step();
 private:
-        double m_tNextTrigger, m_period;
+        double m_period;
+        double m_tNextTrigger;
 };
 
 } // namespace dynclamp
@@ -40,7 +40,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PeriodicTriggerFactory(dictionary& args);
+dynclamp::Entity* PeriodicTriggerFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

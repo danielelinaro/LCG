@@ -90,9 +90,9 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* AnalogInputFactory(dictionary& args);
-dynclamp::Entity* AnalogOutputFactory(dictionary& args);
-dynclamp::Entity* AnalogIOFactory(dictionary& args);
+dynclamp::Entity* AnalogInputFactory(string_dict& args);
+dynclamp::Entity* AnalogOutputFactory(string_dict& args);
+dynclamp::Entity* AnalogIOFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

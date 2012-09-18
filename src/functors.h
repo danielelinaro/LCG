@@ -11,7 +11,7 @@ public:
         Functor(uint id = GetId());
         virtual double operator()() = 0;
         virtual void step();
-        virtual double output() const;
+        virtual double output();
         virtual bool initialise();
 };
 /** 
@@ -44,12 +44,11 @@ private:
 class PhasicDelay : public Functor
 {
 public:
-        PhasicDelay(uint id = GetId(),double phase = 0.0);
+        PhasicDelay(double phase = 0.0, uint id = GetId());
         virtual bool initialise();
         virtual double operator()();
-private:
-        double m_phase;
 };
+
 } //namespace dynclamp
 
 /***
@@ -59,8 +58,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* SobolDelayFactory(dictionary& args);
-dynclamp::Entity* PhasicDelayFactory(dictionary& args);
+dynclamp::Entity* SobolDelayFactory(string_dict& args);
+dynclamp::Entity* PhasicDelayFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

@@ -7,8 +7,8 @@
 #include "dynamical_entity.h"
 
 #define SYN_G m_state[0]
-#define SYN_E m_parameters[0]
-#define SYN_W m_parameters[1]
+#define SYN_E m_parameters["E"]
+#define SYN_W m_parameters["weight"]
 
 namespace dynclamp {
 
@@ -23,9 +23,8 @@ public:
 	Synapse(double E, double weight, uint id = GetId());
         virtual bool initialise();
 	
-        void setWeight(double weight);
         double g() const;
-        virtual double output() const;
+        virtual double output();
         
         virtual void handleEvent(const Event *event);
 
@@ -43,7 +42,7 @@ private:
 
 //~~
 
-#define EXP_SYN_DECAY m_parameters[2]
+#define EXP_SYN_DECAY m_parameters["decay_time_constant"]
 
 class ExponentialSynapse : public Synapse {
 public:
@@ -56,9 +55,9 @@ protected:
 
 //~~
 
-#define EXP2_SYN_DECAY1 m_parameters[2]
-#define EXP2_SYN_DECAY2 m_parameters[3]
-#define EXP2_SYN_FACTOR m_parameters[4]
+#define EXP2_SYN_DECAY1 m_parameters["decay_time_constant_1"]
+#define EXP2_SYN_DECAY2 m_parameters["decay_time_constant_2"]
+#define EXP2_SYN_FACTOR m_parameters["factor"]
 
 class Exp2Synapse : public Synapse {
 public:
@@ -72,13 +71,15 @@ protected:
 
 //~~
 
-#define TMG_SYN_U                       m_parameters[2]
-#define TMG_SYN_TAU_FACIL               m_parameters[3]
-#define TMG_SYN_DECAY                   m_parameters[4]
-#define TMG_SYN_ONE_OVER_TAU_1		m_parameters[5]
-#define TMG_SYN_ONE_OVER_TAU_REC	m_parameters[6]
-#define TMG_SYN_ONE_OVER_TAU_FACIL	m_parameters[7]
-#define TMG_SYN_COEFF                   m_parameters[8]
+#define TMG_SYN_U                       m_parameters["U"]
+#define TMG_SYN_TAU_1                   m_parameters["tau_1"]
+#define TMG_SYN_TAU_REC                 m_parameters["tau_rec"]
+#define TMG_SYN_TAU_FACIL               m_parameters["tau_facil"]
+#define TMG_SYN_DECAY                   m_parameters["decay_time_constant"]
+#define TMG_SYN_ONE_OVER_TAU_1		m_parameters["tau_1_recipr"]
+#define TMG_SYN_ONE_OVER_TAU_REC	m_parameters["tau_rec_recipr"]
+#define TMG_SYN_ONE_OVER_TAU_FACIL	m_parameters["tau_facil_recipr"]
+#define TMG_SYN_COEFF                   m_parameters["coeff"]
 
 class TMGSynapse : public Synapse {
 public:
@@ -100,9 +101,9 @@ protected:
 extern "C" {
 #endif
 
-dynclamp::Entity* ExponentialSynapseFactory(dictionary& args);
-dynclamp::Entity* Exp2SynapseFactory(dictionary& args);
-dynclamp::Entity* TMGSynapseFactory(dictionary& args);
+dynclamp::Entity* ExponentialSynapseFactory(string_dict& args);
+dynclamp::Entity* Exp2SynapseFactory(string_dict& args);
+dynclamp::Entity* TMGSynapseFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

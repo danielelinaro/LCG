@@ -10,20 +10,18 @@ AM_CPPFLAGS += -DREALTIME_ENGINE
 endif
 if ANALOG_IO
 AM_CPPFLAGS += -DANALOG_IO
-bin_PROGRAMS += cclamp zero_output constant_output test_daq noisy_bg freq_clamp 
+bin_PROGRAMS += cclamp zero_output constant_output test_daq noisy_bg
 cclamp_SOURCES = cclamp.cpp
 zero_output_SOURCES = zero_output.cpp
 constant_output_SOURCES = constant_output.cpp
 test_daq_SOURCES = test_daq.cpp
 noisy_bg_SOURCES = noisy_bg.cpp
-freq_clamp_SOURCES = freq_clamp.cpp
 endif
 if EXAMPLES
-noinst_PROGRAMS = ou_test syn_test lif_test stimgen_test poisson_test h5rec_test aec_test dynamic_load_test small_network autapse pp_test cbn_test currents_test freq_clamp_test
+noinst_PROGRAMS = ou_test syn_test lif_test stimgen_test poisson_test h5rec_test aec_test dynamic_load_test small_network autapse cbn_test currents_test freq_clamp_test
 ou_test_SOURCES = ou_test.cpp
 syn_test_SOURCES = syn_test.cpp
 lif_test_SOURCES = lif_test.cpp
-pp_test_SOURCES = pp_test.cpp
 stimgen_test_SOURCES = stimgen_test.cpp
 poisson_test_SOURCES = poisson_test.cpp
 h5rec_test_SOURCES = h5rec_test.cpp

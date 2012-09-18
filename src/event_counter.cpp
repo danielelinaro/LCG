@@ -2,7 +2,7 @@
 #include "engine.h"
 #include <boost/algorithm/string.hpp>
 
-dynclamp::Entity* EventCounterFactory(dictionary& args)
+dynclamp::Entity* EventCounterFactory(string_dict& args)
 {
         uint id, maxCount;
         bool autoReset;
@@ -56,8 +56,7 @@ namespace dynclamp {
 EventCounter::EventCounter(uint maxCount, bool autoReset, EventType eventToCount, EventType eventToSend, uint id)
         : Entity(id), m_maxCount(maxCount), m_autoReset(autoReset), m_eventToCount(eventToCount), m_eventToSend(eventToSend)
 {
-        m_parameters.push_back(m_maxCount);
-        m_parametersNames.push_back("maxCount");
+        m_parameters["maxCount"] = maxCount;
         setName("EventCounter");
 }
 
@@ -126,7 +125,7 @@ void EventCounter::handleEvent(const Event *event)
 void EventCounter::step()
 {}
 
-double EventCounter::output() const
+double EventCounter::output()
 {
         return 0.0;
 }

@@ -25,7 +25,7 @@ public:
         virtual void step();
         virtual void terminate();
 
-        virtual double output() const; 
+        virtual double output(); 
         virtual void handleEvent(const Event *event);
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
@@ -64,7 +64,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* WaveformFactory(dictionary& args);
+dynclamp::Entity* WaveformFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

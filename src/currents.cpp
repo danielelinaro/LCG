@@ -2,7 +2,7 @@
 #include "currents.h"
 #include "engine.h"
 
-dynclamp::Entity* HHSodiumFactory(dictionary& args)
+dynclamp::Entity* HHSodiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E;
@@ -18,7 +18,7 @@ dynclamp::Entity* HHSodiumFactory(dictionary& args)
         return new dynclamp::ionic_currents::HHSodium(area, gbar, E, id);
 }
 
-dynclamp::Entity* HHPotassiumFactory(dictionary& args)
+dynclamp::Entity* HHPotassiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E;
@@ -34,7 +34,7 @@ dynclamp::Entity* HHPotassiumFactory(dictionary& args)
         return new dynclamp::ionic_currents::HHPotassium(area, gbar, E, id);
 }
 
-dynclamp::Entity* HH2SodiumFactory(dictionary& args)
+dynclamp::Entity* HH2SodiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, vtraub, temperature;
@@ -54,7 +54,7 @@ dynclamp::Entity* HH2SodiumFactory(dictionary& args)
         return new dynclamp::ionic_currents::HH2Sodium(area, gbar, E, vtraub, temperature, id);
 }
 
-dynclamp::Entity* HH2PotassiumFactory(dictionary& args)
+dynclamp::Entity* HH2PotassiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, vtraub, temperature;
@@ -74,7 +74,7 @@ dynclamp::Entity* HH2PotassiumFactory(dictionary& args)
         return new dynclamp::ionic_currents::HH2Potassium(area, gbar, E, vtraub, temperature, id);
 }
 
-dynclamp::Entity* MCurrentFactory(dictionary& args)
+dynclamp::Entity* MCurrentFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, taumax, temperature;
@@ -94,7 +94,7 @@ dynclamp::Entity* MCurrentFactory(dictionary& args)
         return new dynclamp::ionic_currents::MCurrent(area, gbar, E, taumax, temperature, id);
 }
 
-dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
+dynclamp::Entity* HHSodiumCNFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, gamma;
@@ -114,7 +114,7 @@ dynclamp::Entity* HHSodiumCNFactory(dictionary& args)
         return new dynclamp::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id);
 }
 
-dynclamp::Entity* HHPotassiumCNFactory(dictionary& args)
+dynclamp::Entity* HHPotassiumCNFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, gamma;
@@ -147,12 +147,9 @@ double vtrap(double x, double y) {
 IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         : DynamicalEntity(id), m_neuron(NULL)
 {
-        m_parameters.push_back(area);   // area -> m_parameters[0]
-        m_parameters.push_back(gbar);   // gbar -> m_parameters[1]
-        m_parameters.push_back(E);      // E -> m_parameters[2]
-        m_parametersNames.push_back("area");
-        m_parametersNames.push_back("gbar");
-        m_parametersNames.push_back("E");
+        IC_AREA = area;
+        IC_GBAR = gbar;
+        IC_E = E;
 
         m_state.push_back(0);           // fraction of open channels -> m_state[0]
 
@@ -169,11 +166,10 @@ bool IonicCurrent::initialise()
         return true;
 }
 
-double IonicCurrent::output() const
+double IonicCurrent::output()
 {
         ////        (1)      * ( nS / cm^2 ) *            mV               * (    cm^2     )
         //return IC_FRACTION * 1e9 * IC_GBAR * (IC_E - m_neuron->output()) * IC_AREA * 1e-8; // (pA)
-        Logger(Debug, "Area = %g\n", IC_AREA);
         return IC_FRACTION * 10 * IC_GBAR * (IC_E - m_neuron->output()) * IC_AREA; // (pA)
 }
 
@@ -319,10 +315,8 @@ HH2Sodium::HH2Sodium(double area, double gbar, double E, double vtraub, double t
 {
         m_state.push_back(0);           // m
         m_state.push_back(0);           // h
-        m_parameters.push_back(vtraub);
-        m_parameters.push_back(temperature);
-        m_parametersNames.push_back("vtraub");
-        m_parametersNames.push_back("temperature");
+        HH2_VTRAUB = vtraub;
+        HH2_TEMPERATURE = temperature;
         m_tadj = pow(3., (HH2_TEMPERATURE - 36.) / 10.);
         setName("HH2SodiumCurrent");
         setUnits("pA");
@@ -380,10 +374,8 @@ HH2Potassium::HH2Potassium(double area, double gbar, double E, double vtraub, do
         : IonicCurrent(area, gbar, E, id)
 {
         m_state.push_back(0);           // n
-        m_parameters.push_back(vtraub);
-        m_parameters.push_back(temperature);
-        m_parametersNames.push_back("vtraub");
-        m_parametersNames.push_back("temperature");
+        HH2_VTRAUB = vtraub;
+        HH2_TEMPERATURE = temperature;
         m_tadj = pow(3., (HH2_TEMPERATURE - 36.) / 10.);
         setName("HH2PotassiumCurrent");
         setUnits("pA");
@@ -427,10 +419,8 @@ MCurrent::MCurrent(double area, double gbar, double E, double taumax, double tem
         : IonicCurrent(area, gbar, E, id)
 {
         m_state.push_back(0);           // m
-        m_parameters.push_back(taumax);
-        m_parameters.push_back(temperature);
-        m_parametersNames.push_back("taumax");
-        m_parametersNames.push_back("temperature");
+        IM_TAUMAX = taumax;
+        IM_TEMPERATURE = temperature;
         m_tadj = pow(2.3, (IM_TEMPERATURE - 36.) / 10.);
         m_tauPeak = IM_TAUMAX / m_tadj;
         setName("MCurrent");
@@ -468,20 +458,13 @@ TCurrent::TCurrent(double area, double gbar, double E,
         m_state.push_back(0);           // cai
         m_state.push_back(0);           // h
 
-        m_parameters.push_back(q10);
-        m_parameters.push_back(shift);
-        m_parameters.push_back(cao);
-        m_parameters.push_back(caiInf);
-        m_parameters.push_back(taur);
-        m_parameters.push_back(depth);
-        m_parameters.push_back(temperature);
-        m_parametersNames.push_back("q10");
-        m_parametersNames.push_back("shift");
-        m_parametersNames.push_back("cao");
-        m_parametersNames.push_back("caiInf");
-        m_parametersNames.push_back("taur");
-        m_parametersNames.push_back("depth");
-        m_parametersNames.push_back("temperature");
+        IT_Q10 = q10;
+        IT_SHIFT = shift;
+        IT_CAO = cao;
+        IT_CAIINF = caiInf;
+        IT_TAUR = taur;
+        IT_DEPTH = depth;
+        IT_TEMPERATURE = temperature;
 
         m_phi_h = pow(IT_Q10, (IT_TEMPERATURE - 24.) / 10.);
         setName("TCurrent");
@@ -515,10 +498,8 @@ void TCurrent::evolve()
 NoisyIonicCurrent::NoisyIonicCurrent(double area, double gbar, double E, double gamma, uint id)
         : IonicCurrent(area, gbar, E, id)
 {
-        m_parameters.push_back(gamma);  // gamma -> m_parameters[3]
-        m_parameters.push_back(ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA)));     // number of channels -> m_parameters[4]
-        m_parametersNames.push_back("gamma");
-        m_parametersNames.push_back("nchan");
+        NIC_GAMMA = gamma;
+        NIC_NCHANNELS = ceil(10000 * (IC_AREA*IC_GBAR/NIC_GAMMA));
         m_state.push_back(NIC_NCHANNELS * IC_FRACTION); // number of open channels -> m_state[1]
         Logger(Info, "The number of channels is %.0f.\n", NIC_NCHANNELS);
         setName("NoisyIonicCurrent");
@@ -540,8 +521,7 @@ HHSodiumCN::HHSodiumCN(double area, ullong seed, double gbar, double E, double g
         : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
-        m_parameters.push_back(seed); // seed -> m_parameters[4]
-        m_parametersNames.push_back("seed");
+        m_parameters["seed"] = seed;
         m_state.push_back(0.0);   // m
         m_state.push_back(0.0);   // h
         for (uint i=0; i<numberOfStates; i++)
@@ -652,8 +632,7 @@ HHPotassiumCN::HHPotassiumCN(double area, ullong seed, double gbar, double E, do
         : NoisyIonicCurrent(area, gbar, E, gamma, id),
           m_rand(new NormalRandom(0, 1, seed))
 {
-        m_parameters.push_back(seed); // seed -> m_parameters[4]
-        m_parametersNames.push_back("seed");
+        m_parameters["seed"] = seed;
         m_state.push_back(0.0);   // n
         for (uint i=0; i<numberOfStates; i++)
                 m_z[i] = 0.0;

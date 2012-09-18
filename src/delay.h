@@ -14,7 +14,7 @@ public:
 
         virtual bool initialise();
         virtual void step();
-        virtual double output() const;
+        virtual double output();
 
 private:
         void allocateBuffer();
@@ -34,7 +34,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* DelayFactory(dictionary& args);
+dynclamp::Entity* DelayFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

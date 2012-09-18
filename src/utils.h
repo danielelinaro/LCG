@@ -64,24 +64,24 @@ void ResetIds();
 uint GetId();
 
 ullong GetRandomSeed();
-uint GetIdFromDictionary(dictionary& args);
-ullong GetSeedFromDictionary(dictionary& args);
+uint GetIdFromDictionary(string_dict& args);
+ullong GetSeedFromDictionary(string_dict& args);
 
-bool CheckAndExtractValue(dictionary& dict, const std::string& key, std::string& value);
-bool CheckAndExtractDouble(dictionary& dict, const std::string& key, double *value);
-bool CheckAndExtractInteger(dictionary& dict, const std::string& key, int *value);
-bool CheckAndExtractLong(dictionary& dict, const std::string& key, int *value);
-bool CheckAndExtractLongLong(dictionary& dict, const std::string& key, int *value);
-bool CheckAndExtractUnsignedInteger(dictionary& dict, const std::string& key, uint *value);
-bool CheckAndExtractUnsignedLong(dictionary& dict, const std::string& key, ullong *value);
-bool CheckAndExtractUnsignedLongLong(dictionary& dict, const std::string& key, ullong *value);
-bool CheckAndExtractBool(dictionary& dict, const std::string& key, bool *value);
+bool CheckAndExtractValue(string_dict& dict, const std::string& key, std::string& value);
+bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *value);
+bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *value);
+bool CheckAndExtractLong(string_dict& dict, const std::string& key, int *value);
+bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, int *value);
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, uint *value);
+bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, ullong *value);
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, ullong *value);
+bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 
 bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt);
 bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt);
 
-Entity* EntityFactory(const char *name, dictionary& args);
+Entity* EntityFactory(const char *name, string_dict& args);
 
 /**
  * So far converts only Hz to seconds and vice versa.

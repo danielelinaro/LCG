@@ -163,7 +163,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
 bool parseConfigurationFile(std::vector<Entity*>& entities)
 {
         ptree pt;
-        dictionary parameters;
+        string_dict parameters;
         char *home, configFile[60] = {0};
 
         home = getenv("HOME");

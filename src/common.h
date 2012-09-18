@@ -43,6 +43,8 @@ namespace dynclamp {
 
 }
 
+#include <limits>
+
 #define LOGFILE                 "/tmp/dynclamp.txt"
 //#define ASYNCHRONOUS_INPUT
 #define TRIM_ANALOGOUTPUT
@@ -54,6 +56,8 @@ enum {
         PLUS_MINUS_ONE,
         PLUS_MINUS_ZERO_POINT_TWO
 };
+
+#define INFINITE std::numeric_limits<double>::infinity() 
 
 #endif
 
