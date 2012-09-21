@@ -19,13 +19,13 @@ function print_help
     echo "   -f   specify the frequency stimulus file (default frequency.stim)"
     echo "   -F   specify the maximal frequency (default 30 Hz)"
     echo "   -I   specify the initial value of the current (default 300 pA)"
-    echo "   -p   specify the proportional gain of the controller (default 1)"
-    echo "   -i   specify the integral gain of the controller (default 10)"
+    echo "   -p   specify the proportional gain of the controller (default 0.01)"
+    echo "   -i   specify the integral gain of the controller (default 1)"
     echo "   -d   specify the derivative gain of the controller (default 0)"
     echo "   -t   specify the time constant of the frequency estimator (default 1 sec)"
-    echo "   -T   specify the duration of the ramp (default 10 sec)"
+    echo "   -T   specify the duration of the ramp (default 20 sec)"
     echo "   -n   specify the number of batches (default 2)"
-    echo "   -w   specify the interval between batches (default 30 sec)"
+    echo "   -w   specify the interval between batches (default 45 sec)"
     echo
 }
 
@@ -33,13 +33,13 @@ config_file=fI_PID.xml
 frequency_file=frequency.stim
 F=30
 I0=300
-gp=1
-gi=10
+gp=0.01
+gi=1
 gd=0
 tau=1
-T=10
+T=20
 reps=2
-interval=30
+interval=45
 F0=5
 while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
     case $opt in

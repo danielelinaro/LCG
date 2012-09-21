@@ -68,7 +68,7 @@ void PID::handleEvent(const Event *event)
                 errd = errp - m_errpPrev;
                 m_errpPrev = errp;
                 m_output = PID_BASELINE + PID_GP*errp + PID_GI*m_erri + PID_GD*errd;
-                Logger(Debug, "PID(%d): %9.3f %9.4f %9.4f %9.4f %7.2f\n", id(), GetGlobalTime(), errp, m_erri, errd, m_output);                
+                Logger(Info, "PID(%d): %9.3f %9.4f %9.4f %9.4f %7.2f\n", id(), GetGlobalTime(), errp, m_erri, errd, m_output);                
             }
             break;
         case TOGGLE:
