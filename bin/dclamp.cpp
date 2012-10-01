@@ -8,26 +8,26 @@ using namespace dynclamp;
 
 int main(int argc, char *argv[])
 {
-        SetLoggingLevel(Info);
-
         CommandLineOptions opt;
+
+        if (!SetupSignalCatching()) {
+                Logger(Critical, "Unable to setup signal catching functionalities. Aborting.\n");
+                exit(1);
+        }
+
+        ParseCommandLineOptions(argc, argv, &opt);
+
+        if (opt.configFile.compare("") == 0) {
+                Logger(Critical, "No configuration file specified. Aborting.\n");
+                exit(1);
+        }
+
         double tend, dt;
         std::vector<Entity*> entities;
         dynclamp::generators::Waveform *stimulus;
 
-        if (!ParseCommandLineOptions(argc, argv, &opt)) {
-                Logger(Critical, "Error while parsing command line arguments.\n"
-                                 "Type \"dclamp -h\" for information on how to use this program.\n");
-                exit(1);
-        }
-
-        if (opt.configFile.compare("") == 0) {
-                Logger(Critical, "No configuration file specified. Aborting...\n");
-                exit(1);
-        }
-
         if (!ParseConfigurationFile(opt.configFile, entities, &tend, &dt)) {
-                Logger(Critical, "Error while parsing configuration file. Aborting...\n");
+                Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
 
@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
                                         Logger(Info, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
                                         ResetGlobalTime();
                                         Simulate(entities,stimulus->duration());
+                                        if (TERMINATE())
+                                                goto endMain;
                                         if (k != opt.nTrials-1)
                                                 usleep(opt.iti);
                                 }
@@ -83,13 +85,15 @@ int main(int argc, char *argv[])
         }
         else {
                 if (tend == -1) {
-                        Logger(Critical, "The duration of the simulation was not specified. Aborting...\n");
+                        Logger(Critical, "The duration of the simulation was not specified. Aborting.\n");
                         exit(1);
                 }
                 for (int i=0; i<opt.nTrials; i++) {
                         Logger(Important, "Trial: %d of %d.\n", i+1,opt.nTrials);
                         ResetGlobalTime();
                         Simulate(entities,tend);
+                        if (TERMINATE())
+                                goto endMain;
                         if (i != opt.nTrials-1)
                                 usleep(opt.iti);
                 }

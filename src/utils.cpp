@@ -253,17 +253,23 @@ void MakeFilename(char *filename, const char *extension)
         delete base;
 }
 
-bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
+void ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 {
+        SetLoggingLevel(Info);
+
         double tend, iti, ibi, freq;
+        int verbosity;
         std::string configfile, kernelfile, stimfile, stimdir;
         po::options_description description("Allowed options");
         po::variables_map options;
 
         try {
+                char msg[100];
+                sprintf(msg, "select verbosity level (%d for maximum, %d for minimum verbosity)", All, Critical);
                 description.add_options()
                         ("help,h", "print help message")
                         ("version,v", "print version number")
+                        ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
                         ("config-file,c", po::value<std::string>(&configfile), "specify configuration file")
                         ("kernel-file,k", po::value<std::string>(&kernelfile), "specify kernel file")
                         ("stimulus-file,f", po::value<std::string>(&stimfile), "specify stimulus file")
@@ -280,18 +286,18 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
 
                 if (options.count("help")) {
                         std::cout << description << "\n";
-                        return false;
+                        exit(0);
                 }
 
                 if (options.count("version")) {
-                        Logger(All, "%s version %d\n", fs::path(argv[0]).filename().c_str(), DYNCLAMP_VERSION);
-                        return false;
+                        Logger(Info, "%s version %d\n", fs::path(argv[0]).filename().c_str(), DYNCLAMP_VERSION);
+                        exit(0);
                 }
 
                 if (options.count("frequency")) {
                         if (freq <= 0) {
                                 Logger(Critical, "The sampling frequency must be positive.\n");
-                                return false;
+                                exit(1);
                         }
                         opt->dt = 1.0 / freq;
                 }
@@ -302,7 +308,7 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 if (options.count("config-file")) {
                         if (!fs::exists(configfile)) {
                                 Logger(Critical, "Configuration file [%s] not found.\n", configfile.c_str());
-                                return false;
+                                exit(1);
                         }
                         opt->configFile = configfile;
                 }
@@ -310,7 +316,7 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 if (options.count("kernel-file")) {
                         if (!fs::exists(kernelfile)) {
                                 Logger(Critical, "Kernel file [%s] not found.\n", kernelfile.c_str());
-                                return false;
+                                exit(1);
                         }
                         opt->kernelFile = kernelfile;
                 }
@@ -318,14 +324,14 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 if (options.count("stimulus-file")) {
                         if (!fs::exists(stimfile)) {
                                 Logger(Critical, "Stimulus file [%s] not found.\n", stimfile.c_str());
-                                return false;
+                                exit(1);
                         }
                         opt->stimulusFiles.push_back(stimfile);
                 }
                 else if (options.count("stimulus-dir")) {
                         if (!fs::exists(stimdir)) {
                                 Logger(Critical, "Directory [%s] not found.\n", stimdir.c_str());
-                                return false;
+                                exit(1);
                         }
                         for (fs::directory_iterator it(stimdir); it != fs::directory_iterator(); it++) {
                                 if (! fs::is_directory(it->status())) {
@@ -343,13 +349,18 @@ bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 if (options.count("ibi"))
                         opt->ibi = (useconds_t) (ibi * 1e6);
 
+                if (verbosity < All || verbosity > Critical) {
+                        Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
+                        exit(1);
+                }
+
+                SetLoggingLevel(static_cast<LogLevel>(verbosity));
+
         }
         catch (std::exception e) {
                 Logger(Critical, "Missing argument or unknown option.\n");
-                return false;
+                exit(1);
         }
-
-        return true;
 }
 
 bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
@@ -381,7 +392,8 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         }
                 }
 
-                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
+                SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
+
                 /*** entities ***/
                 BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {
                         string_dict args;
@@ -399,26 +411,39 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         }
                         try {
                                 conn = ntt.second.get<std::string>("connections");
-                                connections[id] = std::vector<uint>();
-                                size_t start=0, stop;
-                                int post;
-                                Logger(Debug, "Entity #%d is connected to entities", id);
-                                while ((stop = conn.find(",",start)) != conn.npos) {
+                                // this test allows to have <connections></connections> in the configuration file
+                                if (conn.length() > 0) {
+                                        connections[id] = std::vector<uint>();
+                                        size_t start=0, stop;
+                                        int post;
+                                        Logger(Debug, "Entity #%d is connected to entities", id);
+                                        while ((stop = conn.find(",",start)) != conn.npos) {
+                                                std::stringstream ss(conn.substr(start,stop-start));
+                                                ss >> post;
+                                                connections[id].push_back(post);
+                                                start = stop+1;
+                                                Logger(Debug, " #%d", post);
+                                        }
                                         std::stringstream ss(conn.substr(start,stop-start));
                                         ss >> post;
                                         connections[id].push_back(post);
-                                        start = stop+1;
-                                        Logger(Debug, " #%d", post);
+                                        Logger(Debug, " #%d.\n", post);
                                 }
-                                std::stringstream ss(conn.substr(start,stop-start));
-                                ss >> post;
-                                connections[id].push_back(post);
-                                Logger(Debug, " #%d.\n", post);
                         } catch(std::exception e) {
                                 Logger(Debug, "No connections for entity #%d.\n", id);
                         }
-                        entities.push_back(EntityFactory(name.c_str(), args));
-                        ntts[id] = entities.back();
+                        Entity *entity;
+                        try {
+                                entity = EntityFactory(name.c_str(), args);
+                        } catch(const char *err) {
+                                Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
+                                for (int i=0; i<entities.size(); i++)
+                                        delete entities[i];
+                                entities.clear();
+                                return false;
+                        }
+                        entities.push_back(entity);
+                        ntts[id] = entity;
                 }
 
                 EntitySorter sorter;

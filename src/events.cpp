@@ -94,7 +94,7 @@ ToggleEvent::ToggleEvent(const Entity *sender)
 StopRunEvent::StopRunEvent(const Entity *sender)
         : Event(STOPRUN, sender)
 {
-	stopRun();
+	TerminateProgram();
 }
 
 } // namespace dynclamp

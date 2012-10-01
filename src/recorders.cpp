@@ -1,5 +1,6 @@
 #include <sstream>
 #include <string.h>
+#include <time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "engine.h"
 
@@ -707,6 +708,16 @@ bool H5Recorder::openFile()
         m_fid = H5Fcreate(m_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         if(m_fid < 0)
                 return false;
+
+        time_t now;
+        char buf[26];
+        std::stringstream timestamp;
+        time(&now);
+        ctime_r(&now, buf);
+        // to remove newline at the end of the string returned by ctime
+        buf[24] = 0;
+        timestamp << "File created on " << buf << ".";
+        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
 
         return true;
 }

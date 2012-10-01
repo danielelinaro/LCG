@@ -10,10 +10,11 @@ namespace dynclamp {
 class Connection : public Entity
 {
 public:
-        Connection(double delay, uint id = GetId());
+        Connection(double delay, double weight, uint id = GetId());
         ~Connection();
         
         void setDelay(double delay);
+        void setWeight(double weight);
 
         virtual void step();
         virtual double output();
@@ -31,7 +32,7 @@ protected:
 class VariableDelayConnection : public Connection
 {
 public:
-        VariableDelayConnection(uint id = GetId());
+        VariableDelayConnection(double weight, uint id = GetId());
         virtual void handleEvent(const Event *event);
 protected:
         virtual void addPre(Entity *entity);

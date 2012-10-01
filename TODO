@@ -2,14 +2,9 @@
 === Short term (and therefore relatively simple) ===
 
 -) add a weight to handleEvent, that can be used for example by Connection.
--) add the possibility to specify the verbosity level at the command line.
 -) finish to add the ionic currents for LTS neurons.
 -) set output limits equal to output range in comedi_io.
 -) add the possibility to specify spike latency in PeriodicPulse.
--) add a timestamp in H5 files.
--) when <connections></connections> is in the configuration file, an entity tries to connect to itself.
--) use signals to catch SIGINT and terminate entities when <ctr>c is pressed.
--) Recorder can not write when the filename of a waveform does not exist (and one did not specify specific folder) and crashes dynclamp. 
 
 === Long term (and therefore possibly complicated) ===
 

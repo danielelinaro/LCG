@@ -35,22 +35,53 @@ double globalTimeOffset = 0.0;
 double realtimeDt;
 #endif
 
-// global variable and function to stop simulation in a thread safe way when required.
+////// SIGNAL HANDLING CODE - START /////
+
+bool globalRun = true; 
 boost::mutex globalRunMutex;
-bool globalRun = false; 
-void stopRun()
+
+void TerminationHandler(int signum)
 {
-	boost::lock_guard<boost::mutex> lock(globalRunMutex);
-	Logger(Debug, "Used stopRun() funtion.\n");
-	globalRun = false;
-//	boost::lock_guard<boost::mutex> unlock(globalRunMutex);
+        if (signum == SIGINT || signum == SIGHUP) {
+                Logger(Critical, "Terminating the program.\n");
+                TerminateProgram();
+        }
 }
-void startRun() {
-	boost::lock_guard<boost::mutex> lock(globalRunMutex);
-	Logger(Debug, "Used startRun() funtion.\n");
-	globalRun = true;
-//	boost::lock_guard<boost::mutex> unlock(globalRunMutex);
+
+bool SetupSignalCatching()
+{
+        struct sigaction oldAction, newAction;
+        int i, sig[] = {SIGINT, SIGHUP, -1};
+        // set up the structure to specify the new action.
+        newAction.sa_handler = TerminationHandler;
+        sigemptyset(&newAction.sa_mask);
+        newAction.sa_flags = 0;
+        i = 0;
+        while (sig[i] != -1) {
+                if (sigaction(sig[i], NULL, &oldAction) != 0) {
+                        perror("Error on sigaction:");
+                        return false;
+                }
+                if (oldAction.sa_handler != SIG_IGN) {
+                        if (sigaction(sig[i], &newAction, NULL) != 0) {
+                             perror("Error on sigaction:");
+                             return false;
+                        }
+                }
+                i++;
+        }
+        return true;
 }
+
+////// SIGNAL HANDLING CODE - END /////
+
+void TerminateProgram()
+{
+        boost::mutex::scoped_lock lock(globalRunMutex);
+        Logger(Debug, "Called Terminate() function.\n");
+        globalRun = false;
+}
+
 
 double SetGlobalDt(double dt)
 {
@@ -152,7 +183,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         }
         Logger(Debug, "Starting the main loop.\n");
 
-        while (GetGlobalTime() <= tend && globalRun) {
+        while (!TERMINATE() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -221,7 +252,7 @@ void RTSimulationTask(void *cookie)
         }
         start = rt_timer_read();
         //Logger(Info, "Successfully made the task periodic (T = %g ns).\n", NSEC_PER_SEC*GetGlobalDt());
-        while (GetGlobalTime() <= tend && globalRun) {
+        while (!TERMINATE() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         arg->entity(i)->readAndStoreInputs();
@@ -393,7 +424,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         Logger(Info, "The simulation will last %g seconds.\n", tend);
         Logger(Info, "Starting the main loop.\n");
-        while (GetGlobalTime() <= tend && globalRun) {
+        while (!TERMINATE() && GetGlobalTime() <= tend) {
                 
                 // Wait for next period
 		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next, NULL);
@@ -443,7 +474,7 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
                         return;
                 }
         }
-        while (GetGlobalTime() <= tend && globalRun) {
+        while (!TERMINATE() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -460,12 +491,11 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
 
 void Simulate(const std::vector<Entity*>& entities, double tend)
 {
-		ResetGlobalTime();
+	ResetGlobalTime();
 #ifdef HAVE_LIBRT
         if (!CheckPrivileges())
                 return;
 #endif
-		startRun();
 #ifdef REALTIME_ENGINE
         boost::thread thrd(RTSimulation, entities, tend);
 #else

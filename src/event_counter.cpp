@@ -156,10 +156,10 @@ void EventCounter::dispatch()
                 case TOGGLE:
                         emitEvent(new ToggleEvent(this));
                         break;
-				case STOPRUN:
+		case STOPRUN:
                         emitEvent(new StopRunEvent(this));
                         Logger(Important, "Simulation terminated by EventCounter(%d). Counted %d events.\n", id(), m_count);
-						break;
+			break;
                 default:
                         Logger(Important, "EventCounter(%d): Can't send event.\n", id());
                         break;

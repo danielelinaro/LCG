@@ -32,8 +32,10 @@ Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& 
         : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL),
           m_stimulusLength(0), m_triggered(triggered), m_toInitialise(true)
 {
-        if (stimulusFile != NULL)
-            setStimulusFile(stimulusFile);
+        if (stimulusFile != NULL) {
+            if (!setStimulusFile(stimulusFile))
+                    throw "missing stimulus file";
+        }
         setName("Waveform");
         setUnits(units);
 }

@@ -255,6 +255,11 @@ int main(int argc, char *argv[])
         exit(0);
 
 #else
+        if (!SetupSignalCatching()) {
+                Logger(Critical, "Unable to setup signal catching functionalities. Aborting.\n");
+                exit(1);
+        }
+
         std::vector<Entity*> entities;
         dynclamp::generators::Waveform *stimulus;
         CCoptions opt;
@@ -292,6 +297,8 @@ int main(int argc, char *argv[])
                         for (k=0; k<opt.nTrials; k++) {
                                 Logger(Info, "\nProcessing stimulus file [%s].\n\n", opt.stimulusFiles[j].c_str());
                                 Simulate(entities, stimulus->duration());
+                                if (TERMINATE())
+                                        goto endMain;
                                 if (k != opt.nTrials-1)
                                         usleep(opt.iti);
                         }
@@ -302,7 +309,7 @@ int main(int argc, char *argv[])
                         usleep(opt.ibi);
         }
 
-end:
+endMain:
         for (uint i=0; i<entities.size(); i++)
                 delete entities[i];
 

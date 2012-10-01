@@ -78,7 +78,7 @@ bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, 
 bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 
-bool ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt);
+void ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt);
 bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt);
 
 Entity* EntityFactory(const char *name, string_dict& args);

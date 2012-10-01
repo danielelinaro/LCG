@@ -1,6 +1,7 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <signal.h>
 #include "types.h"
 #include "utils.h"
 
@@ -15,9 +16,6 @@ void Simulate(const std::vector<Entity*>& entities, double tend);
 
 extern double globalT;
 extern double globalDt;
-extern bool globalStopRun;
-extern void stopRun();
-extern void startRun();
 #define GetGlobalDt() globalDt
 #define GetGlobalTime() globalT
 #define IncreaseGlobalTime() (globalT += globalDt)
@@ -48,6 +46,17 @@ extern double realtimeDt;
 #define SCHEDULER SCHED_RR
 #define SetGlobalTimeOffset(now) (globalTimeOffset = now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC))
 #endif // HAVE_LIBRT
+
+////// SIGNAL HANDLING CODE - START /////
+extern bool globalRun;
+#define TERMINATE() !globalRun
+bool SetupSignalCatching();
+////// SIGNAL HANDLING CODE - END /////
+
+/*!
+ * Stops the execution of the program (like issuing a SIGINT signal).
+ */
+void TerminateProgram();
 
 } // namespace dynclamp
 
