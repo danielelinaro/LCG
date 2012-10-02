@@ -1,6 +1,7 @@
 #include "connections.h"
 #include "engine.h"
 #include "common.h"
+#include "synapses.h"
 
 dynclamp::Entity* ConnectionFactory(string_dict& args)
 {
@@ -14,6 +15,21 @@ dynclamp::Entity* ConnectionFactory(string_dict& args)
         }
 
         return new dynclamp::Connection(delay, id);
+}
+
+dynclamp::Entity* SynapticConnectionFactory(string_dict& args)
+{
+        uint id;
+        double delay, weight;
+
+        id = dynclamp::GetIdFromDictionary(args);
+        if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
+            ! dynclamp::CheckAndExtractDouble(args, "weight", &weight)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a SynapticConnection.\n");
+                return NULL;
+        }
+
+        return new dynclamp::SynapticConnection(delay, weight, id);
 }
 
 dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args)
@@ -54,13 +70,17 @@ void Connection::step()
         std::list< std::pair<double,Event*> >::iterator it;
         for (it=m_events.begin(); it!=m_events.end(); it++)
                 it->first -= GetGlobalDt();
-        int i;
         while (!m_events.empty() && m_events.front().first <= 0) {
-                for (i=0; i<m_post.size(); i++)
-                        m_post[i]->handleEvent(m_events.front().second);
+                deliverEvent(m_events.front().second);
                 delete m_events.front().second;
                 m_events.pop_front();
         }
+}
+
+void Connection::deliverEvent(const Event *event)
+{
+        for (int i=0; i<m_post.size(); i++)
+                m_post[i]->handleEvent(event);
 }
 
 double Connection::output()
@@ -91,9 +111,34 @@ void Connection::clearEventsList()
 
 void Connection::handleEvent(const Event *event)
 {
-        m_events.push_back(std::make_pair(m_parameters["delay"]-GetGlobalDt(), new Event(*event)));
+        m_events.push_back(std::make_pair(m_parameters["delay"] - GetGlobalDt(), new Event(*event)));
         m_events.sort(CompareFirst);
 }
+
+//~~~
+
+SynapticConnection::SynapticConnection(double delay, double weight, uint id)
+        : Connection(delay, id)
+{
+        m_parameters["weight"] = weight;
+        setName("SynapticConnection");
+}
+
+void SynapticConnection::setWeight(double weight)
+{
+        m_parameters["weight"] = weight;
+}
+
+void SynapticConnection::deliverEvent(const Event *event)
+{
+        synapses::Synapse *syn;
+        for (int i=0; i<m_post.size(); i++) {
+                syn = dynamic_cast<synapses::Synapse*>(m_post[i]);
+                syn->handleSpike(m_parameters["weight"]);
+        }
+}
+
+//~~~
 
 VariableDelayConnection::VariableDelayConnection(uint id)
         : Connection(0, id)

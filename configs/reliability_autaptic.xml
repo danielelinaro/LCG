@@ -28,9 +28,12 @@
     </entity>
 
     <entity>
-      <name>Connection</name>
+      <name>SynapticConnection</name>
       <id>2</id>
-      <parameters><delay>3e-3</delay></parameters>
+      <parameters>
+	<delay>3e-3</delay>
+	<weight>200</weight>
+      </parameters>
       <connections>3</connections>
     </entity>
 
@@ -39,7 +42,6 @@
       <id>3</id>
       <parameters>
 	<E>-80</E>
-	<weight>200</weight>
 	<U>0.03</U>
 	<tau1>0.003</tau1>
 	<tauRec>0.1</tauRec>

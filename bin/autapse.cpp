@@ -23,8 +23,8 @@ int main()
         std::vector<Entity*> entities;
         entities.push_back( new H5Recorder(compress, "autapse.h5") );
         entities.push_back( new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 220) );
-        entities.push_back( new Connection(3e-3) );
-        entities.push_back( new TMGSynapse(-80.0, 20.0, 0.03, taus) );
+        entities.push_back( new SynapticConnection(3e-3, 20.) );
+        entities.push_back( new TMGSynapse(-80.0, 0.03, taus) );
 
         entities[1]->connect(entities[0]);
         entities[3]->connect(entities[0]);
@@ -38,7 +38,7 @@ int main()
                 fprintf(stderr, "ERROR: %s\n", msg);
         }
 
-        for (i=0; i<3; i++)
+        for (i=0; i<entities.size(); i++)
                 delete entities[i];
 
         return 0;

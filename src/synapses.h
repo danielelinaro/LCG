@@ -8,7 +8,6 @@
 
 #define SYN_G m_state[0]
 #define SYN_E m_parameters["E"]
-#define SYN_W m_parameters["weight"]
 
 namespace dynclamp {
 
@@ -20,16 +19,23 @@ namespace synapses {
 
 class Synapse : public DynamicalEntity {
 public:
-	Synapse(double E, double weight, uint id = GetId());
+	Synapse(double E, uint id = GetId());
         virtual bool initialise();
 	
         double g() const;
         virtual double output();
         
+        /*!
+         * A Synapse ignores all events that are not spikes delivered to it.
+         */
         virtual void handleEvent(const Event *event);
 
+        /*!
+         * Called by a Connection object when a spike is delivered to a Synapse.
+         */
+        virtual void handleSpike(double weight) = 0;
+
 protected:
-        virtual void handleSpike() = 0;
         virtual void addPost(Entity *entity);
 
 protected:
@@ -46,25 +52,27 @@ private:
 
 class ExponentialSynapse : public Synapse {
 public:
-	ExponentialSynapse(double E, double weight, double tau, uint id = GetId());
+	ExponentialSynapse(double E, double tau, uint id = GetId());
         virtual bool initialise();
+	virtual void handleSpike(double weight);
 protected:
-	virtual void handleSpike();
 	virtual void evolve();	
 };
 
 //~~
 
+#define EXP2_SYN_TAU1   m_parameters["tau_1"]
+#define EXP2_SYN_TAU2   m_parameters["tau_2"]
 #define EXP2_SYN_DECAY1 m_parameters["decay_time_constant_1"]
 #define EXP2_SYN_DECAY2 m_parameters["decay_time_constant_2"]
 #define EXP2_SYN_FACTOR m_parameters["factor"]
 
 class Exp2Synapse : public Synapse {
 public:
-	Exp2Synapse(double E, double weight, double tau[2], uint id = GetId());
+	Exp2Synapse(double E, double tau[2], uint id = GetId());
         virtual bool initialise();
+	virtual void handleSpike(double weight);
 protected:
-	virtual void handleSpike();
 	virtual void evolve();	
 };
 
@@ -83,10 +91,10 @@ protected:
 
 class TMGSynapse : public Synapse {
 public:
-	TMGSynapse(double E, double weight, double U, double tau[3], uint id = GetId());
+	TMGSynapse(double E, double U, double tau[3], uint id = GetId());
         virtual bool initialise();
+	virtual void handleSpike(double weight);
 protected:
-	virtual void handleSpike();
 	virtual void evolve();	
 };
 

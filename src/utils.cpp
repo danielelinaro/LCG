@@ -435,6 +435,8 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         Entity *entity;
                         try {
                                 entity = EntityFactory(name.c_str(), args);
+                                if (entity == NULL)
+                                        throw "Entity factory is missing";
                         } catch(const char *err) {
                                 Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
                                 for (int i=0; i<entities.size(); i++)
@@ -457,7 +459,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         for (int j=0; j<connections[idPre].size(); j++) {
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
-                                Logger(Debug, "Connecting entity #%d to entity #%d.\n", i, idPost);
+                                Logger(Debug, "Connecting entity #%d to entity #%d.\n", idPre, idPost);
                         }
                 }
 

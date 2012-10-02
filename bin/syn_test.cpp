@@ -20,27 +20,25 @@ int main()
         double delay = 0e-3;    // (s)
         int i, j;
 
-        SpikeEvent event(NULL);
-
         Synapse *syn[4];
 
         // Exponential synapse
         double expTau = 2e-3;    // (s)
-        syn[0] = new ExponentialSynapse(E, dg, expTau);
+        syn[0] = new ExponentialSynapse(E, expTau);
 
         // Alpha synapse
         double alphaTau[2] = {0.5e-3,2e-3};     // (s)
-        syn[1] = new Exp2Synapse(E, dg, alphaTau);
+        syn[1] = new Exp2Synapse(E, alphaTau);
 
         // Facilitating TMG synapse
         double U_facil = 0.03;
         double tau_facil[3] = {3e-3, 100e-3, 1000e-3};         // tau_1, tau_recovery, tau_facilitation
-        syn[2] = new TMGSynapse(E, dg, U_facil, tau_facil);
+        syn[2] = new TMGSynapse(E, U_facil, tau_facil);
 
         // Depressing TMG synapse
         double U_depr = 0.5;
         double tau_depr[3] = {3e-3, 800e-3, 0e-3};              // tau_1, tau_recovery, tau_facilitation 
-        syn[3] = new TMGSynapse(E, dg, U_depr, tau_depr);
+        syn[3] = new TMGSynapse(E, U_depr, tau_depr);
 
         t = 0.0;
         dt = GetGlobalDt();
@@ -56,7 +54,7 @@ int main()
                         IncreaseGlobalTime();
                 }
                 for (j=0; j<4; j++)
-                        syn[j]->handleEvent(&event);
+                        syn[j]->handleSpike(dg);
         }
 
         tspike = t + 0.5;
@@ -71,7 +69,7 @@ int main()
         }
 
         for (j=0; j<4; j++)
-                syn[j]->handleEvent(&event);
+                syn[j]->handleSpike(dg);
 
         while ((t=GetGlobalTime()) <= tspike + 0.3) {
                 printf("%e", t);

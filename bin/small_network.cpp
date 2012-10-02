@@ -25,11 +25,9 @@ int main()
         entities[1] = new OUconductance(1, 2e-3, 0, 0, 7051983);
         entities[2] = new OUconductance(2, 10e-3, -80, 0, 5061983);
         entities[3] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
-        entities[4] = new Connection(3e-3);
-        entities[5] = new TMGSynapse(0.0, 1.0, 0.03, taus);
+        entities[4] = new SynapticConnection(3e-3, 1);
+        entities[5] = new TMGSynapse(0.0, 0.03, taus);
         entities[6] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
-
-        //SetLoggingLevel(Debug);
 
         entities[0]->connect(entities[3]);
         entities[1]->connect(entities[3]);
@@ -37,6 +35,9 @@ int main()
         entities[3]->connect(entities[4]);
         entities[4]->connect(entities[5]);
         entities[5]->connect(entities[6]);
+
+        for (i=0; i<N_ENTITIES; i++)
+                entities[i]->initialise();
 
         while ((t = GetGlobalTime()) <= tend) {
                 ProcessEvents();

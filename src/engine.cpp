@@ -37,14 +37,16 @@ double realtimeDt;
 
 ////// SIGNAL HANDLING CODE - START /////
 
-bool globalRun = true; 
-boost::mutex globalRunMutex;
+bool programRun = true; 
+bool trialRun = false; 
+boost::mutex programRunMutex;
+boost::mutex trialRunMutex;
 
 void TerminationHandler(int signum)
 {
         if (signum == SIGINT || signum == SIGHUP) {
                 Logger(Critical, "Terminating the program.\n");
-                TerminateProgram();
+                KillProgram();
         }
 }
 
@@ -75,13 +77,26 @@ bool SetupSignalCatching()
 
 ////// SIGNAL HANDLING CODE - END /////
 
-void TerminateProgram()
+void SetTrialRun(bool value)
 {
-        boost::mutex::scoped_lock lock(globalRunMutex);
-        Logger(Debug, "Called Terminate() function.\n");
-        globalRun = false;
+        Logger(Debug, "SetTrialRun(bool)\n");
+        boost::mutex::scoped_lock lock(trialRunMutex);
+        trialRun = value;
 }
 
+void KillProgram()
+{
+        Logger(Debug, "KillProgram()\n");
+        TerminateTrial();
+        boost::mutex::scoped_lock lock(programRunMutex);
+        programRun = false;
+}
+
+void TerminateTrial()
+{
+        Logger(Debug, "TerminateTrial()\n");
+        SetTrialRun(false);
+}
 
 double SetGlobalDt(double dt)
 {
@@ -120,15 +135,16 @@ double SetGlobalDt(double dt)
 
 #if defined(HAVE_LIBLXRT)
 
-void RTSimulation(const std::vector<Entity*>& entities, double tend)
+void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
 {
-		
         RT_TASK *task;
         RTIME tickPeriod;
         RTIME currentTime, previousTime;
         int preambleIterations, flag, i;
         unsigned long taskName;
         size_t nEntities = entities.size();
+
+        *retval = false;
 
         Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
@@ -183,7 +199,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         }
         Logger(Debug, "Starting the main loop.\n");
 
-        while (!TERMINATE() && GetGlobalTime() <= tend) {
+        while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -207,6 +223,8 @@ stopRT:
 #endif
 
         Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
+
+        *retval = true;
 }
 
 #elif defined(HAVE_LIBANALOGY)
@@ -251,8 +269,7 @@ void RTSimulationTask(void *cookie)
                 return;
         }
         start = rt_timer_read();
-        //Logger(Info, "Successfully made the task periodic (T = %g ns).\n", NSEC_PER_SEC*GetGlobalDt());
-        while (!TERMINATE() && GetGlobalTime() <= tend) {
+        while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         arg->entity(i)->readAndStoreInputs();
@@ -275,10 +292,12 @@ void RTSimulationTask(void *cookie)
         Logger(Info, "Stopping the RT timer.\n");
 }
 
-void RTSimulation(const std::vector<Entity*>& entities, double tend)
+void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
 {
         TaskArgs cookie(entities, tend);
         int flag;
+
+        *retval = false;
 
         Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
@@ -315,6 +334,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
         }
 
         Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
+
+        *retval = true;
 }
 
 #elif defined(HAVE_LIBRT)
@@ -366,12 +387,14 @@ static inline int64_t calcdiff_ns(struct timespec t1, struct timespec t2)
         return diff;
 }
 
-void RTSimulation(const std::vector<Entity*>& entities, double tend)
+void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
 {
         int priority, flag, i;
         size_t nEntities = entities.size();
         struct timespec now, next, interval;
         struct sched_param schedp;
+
+        *retval = false;
 
         priority = sched_get_priority_max(SCHEDULER);
         if (priority < 0) {
@@ -424,7 +447,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 
         Logger(Info, "The simulation will last %g seconds.\n", tend);
         Logger(Info, "Starting the main loop.\n");
-        while (!TERMINATE() && GetGlobalTime() <= tend) {
+        while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
                 // Wait for next period
 		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next, NULL);
@@ -459,22 +482,28 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend)
 	flag = sched_setscheduler(0, SCHED_OTHER, &schedp);
         if (flag == 0)
                 Logger(Info, "Switched to non real-time scheduler.\n");
+
+        *retval = true;
 }
 
 #else
 
-void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
+void NonRTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
 {        
-		int i, nEntities = entities.size();
+	int i, nEntities = entities.size();
         double dt = GetGlobalDt();
+
+        *retval = false;
+
         ResetGlobalTime();
+
         for (i=0; i<nEntities; i++) {
                 if (!entities[i]->initialise()) {
                         Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
                         return;
                 }
         }
-        while (!TERMINATE() && GetGlobalTime() <= tend) {
+        while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities[i]->readAndStoreInputs();
@@ -484,26 +513,33 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend)
         }
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
+
+        *retval = true;
 }
 
 #endif // HAVE_LIBLXRT
 
 
-void Simulate(const std::vector<Entity*>& entities, double tend)
+bool Simulate(const std::vector<Entity*>& entities, double tend)
 {
+        bool success;
+
+        SetTrialRun(true);
 	ResetGlobalTime();
 #ifdef HAVE_LIBRT
         if (!CheckPrivileges())
-                return;
+                return success;
 #endif
 #ifdef REALTIME_ENGINE
-        boost::thread thrd(RTSimulation, entities, tend);
+        boost::thread thrd(RTSimulation, entities, tend, &success);
 #else
-        boost::thread thrd(NonRTSimulation, entities, tend);
+        boost::thread thrd(NonRTSimulation, entities, tend, &success);
 
 #endif // REALTIME_ENGINE
         thrd.join();
-        Logger(Info, "Simulation thread has finished running.\n");
+        if (success)
+                Logger(Info, "Simulation thread has finished running.\n");
+        return success;
 }
 
 } // namespace dynclamp

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include "utils.h"
 #include "poisson_generator.h"
+#include "neurons.h"
 #include "synapses.h"
 #include "engine.h"
 #include "connections.h"
@@ -11,6 +12,7 @@
 using namespace dynclamp;
 using namespace dynclamp::synapses;
 using namespace dynclamp::generators;
+using namespace dynclamp::neurons;
 
 struct options {
         double rate;    // (Hz)
@@ -74,25 +76,30 @@ int main(int argc, char *argv[])
         int i;
         double t, tend = (double) opt.nEvents / opt.rate;
         double taus[2] = {0.1e-3,1e-3};
-        Entity *entities[3];
+        Entity *entities[4];
         entities[0] = new Poisson(opt.rate, opt.seed);
-        entities[1] = new Connection(3e-3);
-        entities[2] = new Exp2Synapse(0.0, 1.0, taus);
+        entities[1] = new SynapticConnection(1e-3, 1.);
+        entities[2] = new Exp2Synapse(0.0, taus);
+        entities[3] = new LIFNeuron(0.08, 0.0075, 0.0014, -65.2, -70, -50, 0);
         entities[0]->connect(entities[1]);
         entities[1]->connect(entities[2]);
+        entities[2]->connect(entities[3]);
         Synapse *synapse = dynamic_cast<Synapse*>(entities[2]);
+
+        for (i=0; i<4; i++)
+                entities[i]->initialise();
 
         while ((t = GetGlobalTime()) <= tend) {
                 ProcessEvents();
-                for (i=0; i<2; i++)
+                for (i=0; i<4; i++)
                         entities[i]->readAndStoreInputs();
                 fprintf(stdout, "%e %e\n", t, synapse->g());
-                for (i=0; i<2; i++)
+                for (i=0; i<4; i++)
                         entities[i]->step();
                 IncreaseGlobalTime();
         }
 
-        for (i=0; i<2; i++)
+        for (i=0; i<4; i++)
                 delete entities[i];
 
         return 0;

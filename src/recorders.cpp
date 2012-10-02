@@ -150,6 +150,11 @@ H5Recorder::~H5Recorder()
 
 bool H5Recorder::initialise()
 {
+        if (m_inputs.size() == 0) {
+                Logger(Critical, "H5Recorder::initialise() >> There are no entities connected to this H5Recorder. Probably you don't want this.\n");
+                return false;
+        }
+
         stopWriterThread();
         closeFile();
 

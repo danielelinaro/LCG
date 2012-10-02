@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
         Logger(Info, "Number of trials: %d.\n", opt.nTrials);
         Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
 
+        bool success;
         if (opt.stimulusFiles.size() > 0) {
                 for (int i=0; i<entities.size(); i++) {
                         if ((stimulus = dynamic_cast<dynclamp::generators::Waveform*>(entities[i])) != NULL)
@@ -69,8 +70,8 @@ int main(int argc, char *argv[])
                                 for (int k=0; k<opt.nTrials; k++) {
                                         Logger(Info, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
                                         ResetGlobalTime();
-                                        Simulate(entities,stimulus->duration());
-                                        if (TERMINATE())
+                                        success = Simulate(entities,stimulus->duration());
+                                        if (!success || KILL_PROGRAM())
                                                 goto endMain;
                                         if (k != opt.nTrials-1)
                                                 usleep(opt.iti);
@@ -91,8 +92,8 @@ int main(int argc, char *argv[])
                 for (int i=0; i<opt.nTrials; i++) {
                         Logger(Important, "Trial: %d of %d.\n", i+1,opt.nTrials);
                         ResetGlobalTime();
-                        Simulate(entities,tend);
-                        if (TERMINATE())
+                        success = Simulate(entities,tend);
+                        if (!success || KILL_PROGRAM())
                                 goto endMain;
                         if (i != opt.nTrials-1)
                                 usleep(opt.iti);

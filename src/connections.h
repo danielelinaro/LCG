@@ -22,10 +22,20 @@ public:
         virtual void handleEvent(const Event *event);
 
 protected:
+        virtual void deliverEvent(const Event *event);
         void clearEventsList();
 
 protected:
         std::list< std::pair<double, Event*> > m_events;
+};
+
+class SynapticConnection : public Connection
+{
+public:
+        SynapticConnection(double delay, double weight, uint id = GetId());
+        void setWeight(double weight);
+protected:
+        virtual void deliverEvent(const Event *event);
 };
 
 class VariableDelayConnection : public Connection
@@ -49,6 +59,7 @@ extern "C" {
 #endif
 
 dynclamp::Entity* ConnectionFactory(string_dict& args);
+dynclamp::Entity* SynapticConnectionFactory(string_dict& args);
 dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args);
         
 #ifdef __cplusplus

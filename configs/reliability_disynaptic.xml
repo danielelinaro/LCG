@@ -28,9 +28,12 @@
     </entity>
 
     <entity>
-      <name>Connection</name>
+      <name>SynapticConnection</name>
       <id>2</id>
-      <parameters><delay>1e-3</delay></parameters>
+      <parameters>
+	<delay>1e-3</delay>
+	<weight>100</weight>
+      </parameters>
       <connections>3</connections>
     </entity>
 
@@ -39,7 +42,6 @@
       <id>3</id>
       <parameters>
 	<E>0</E>
-	<weight>100</weight>
 	<U>0.04</U>
 	<tau1>0.01</tau1>
 	<tauRec>0.1</tauRec>
@@ -64,9 +66,12 @@
     </entity>
 
     <entity>
-      <name>Connection</name>
+      <name>SynapticConnection</name>
       <id>5</id>
-      <parameters><delay>1e-3</delay></parameters>
+      <parameters>
+	<delay>1e-3</delay>
+	<weight>100</weight>
+      </parameters>
       <connections>6</connections>
     </entity>
 
@@ -75,7 +80,6 @@
       <id>6</id>
       <parameters>
 	<E>-90</E>
-	<weight>100</weight>
 	<U>0.5</U>
 	<tau1>0.003</tau1>
 	<tauRec>0.8</tauRec>

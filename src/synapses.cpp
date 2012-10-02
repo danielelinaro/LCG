@@ -6,39 +6,36 @@
 dynclamp::Entity* ExponentialSynapseFactory(string_dict& args)
 {
         uint id;
-        double E, weight, tau;
+        double E, tau;
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau", &tau)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build an exponential synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::ExponentialSynapse(E, weight, tau, id);
+        return new dynclamp::synapses::ExponentialSynapse(E, tau, id);
 }
 
 dynclamp::Entity* Exp2SynapseFactory(string_dict& args)
 {        
         uint id;
-        double E, weight, tau[2];
+        double E, tau[2];
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1])) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build a biexponential synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::Exp2Synapse(E, weight, tau, id);
+        return new dynclamp::synapses::Exp2Synapse(E, tau, id);
 }
 
 dynclamp::Entity* TMGSynapseFactory(string_dict& args)
 {
         uint id;
-        double E, weight, U, tau[3];
+        double E, U, tau[3];
         id = dynclamp::GetIdFromDictionary(args);
         if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "weight", &weight) ||
              ! dynclamp::CheckAndExtractDouble(args, "U", &U) ||
              ! dynclamp::CheckAndExtractDouble(args, "tau1", &tau[0]) ||
              ! dynclamp::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
@@ -46,19 +43,18 @@ dynclamp::Entity* TMGSynapseFactory(string_dict& args)
                 dynclamp::Logger(dynclamp::Critical, "Unable to build a Tsodyks-Markram synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::TMGSynapse(E, weight, U, tau, id);
+        return new dynclamp::synapses::TMGSynapse(E, U, tau, id);
 }
 
 namespace dynclamp {
 
 namespace synapses {
 
-Synapse::Synapse(double E, double weight, uint id)
+Synapse::Synapse(double E, uint id)
         : DynamicalEntity(id), m_neuron(NULL), m_spikeTimeouts()
 {
         m_state.push_back(0.0);         // m_state[0] -> conductance
         SYN_E = E;
-        SYN_W = weight;
         setName("Synapse");
         setUnits("pA");
 }
@@ -82,10 +78,7 @@ double Synapse::g() const
 }
 
 void Synapse::handleEvent(const Event *event)
-{
-        if (event->type() == SPIKE)
-                handleSpike();
-}
+{}
 
 void Synapse::addPost(Entity *entity)
 {
@@ -103,9 +96,9 @@ void Synapse::addPost(Entity *entity)
 
 //~~~
 
-ExponentialSynapse::ExponentialSynapse(double E, double weight, double tau,
+ExponentialSynapse::ExponentialSynapse(double E, double tau,
                                        uint id)
-        : Synapse(E, weight, id)
+        : Synapse(E, id)
 {
         EXP_SYN_DECAY = exp(-GetGlobalDt()/tau);
         setName("ExponentialSynapse");
@@ -122,17 +115,20 @@ void ExponentialSynapse::evolve()
 	SYN_G = SYN_G * EXP_SYN_DECAY;
 }
 
-void ExponentialSynapse::handleSpike()
+void ExponentialSynapse::handleSpike(double weight)
 {
-	SYN_G += SYN_W;
+	SYN_G += weight;
 }
 
 //~~~
 
-Exp2Synapse::Exp2Synapse(double E, double weight, double tau[2],
+Exp2Synapse::Exp2Synapse(double E, double tau[2],
                          uint id) :
-	Synapse(E, weight, id)
+	Synapse(E, id)
 {
+        EXP2_SYN_TAU1 = tau[0];
+        EXP2_SYN_TAU2 = tau[1];
+
         m_state.push_back(0.0);         // m_state[1]
         m_state.push_back(0.0);         // m_state[2]
 
@@ -161,18 +157,17 @@ void Exp2Synapse::evolve()
         SYN_G = m_state[2] - m_state[1];
 }
 	
-void Exp2Synapse::handleSpike()
+void Exp2Synapse::handleSpike(double weight)
 {
-        Logger(Debug, "Exp2Synapse::handleSpike()\n");
-        m_state[1] += SYN_W * EXP2_SYN_FACTOR;
-        m_state[2] += SYN_W * EXP2_SYN_FACTOR;
+        m_state[1] += weight * EXP2_SYN_FACTOR;
+        m_state[2] += weight * EXP2_SYN_FACTOR;
 }
 
 //~~~
 
-TMGSynapse::TMGSynapse(double E, double weight, double U, double tau[3],
+TMGSynapse::TMGSynapse(double E, double U, double tau[3],
                        uint id)
-        : Synapse(E, weight, id)
+        : Synapse(E, id)
 {
         // tau = {tau_1, tau_rec, tau_facil}
         m_state.push_back(0.0);         // m_state[1] -> y
@@ -208,7 +203,7 @@ void TMGSynapse::evolve()
 	SYN_G = SYN_G * TMG_SYN_DECAY;
 }
 	
-void TMGSynapse::handleSpike()
+void TMGSynapse::handleSpike(double weight)
 {
         double now = GetGlobalTime();
         // first calculate z at event, based on prior y and z
@@ -230,7 +225,7 @@ void TMGSynapse::handleSpike()
         }
         	
         double xu = x * m_state[3];
-        SYN_G += SYN_W * xu;
+        SYN_G += weight * xu;
         m_state[1] += xu;
         
         m_tPrevSpike = now;

@@ -12,7 +12,7 @@
 namespace dynclamp {
 
 double SetGlobalDt(double dt);
-void Simulate(const std::vector<Entity*>& entities, double tend);
+bool Simulate(const std::vector<Entity*>& entities, double tend);
 
 extern double globalT;
 extern double globalDt;
@@ -48,15 +48,17 @@ extern double realtimeDt;
 #endif // HAVE_LIBRT
 
 ////// SIGNAL HANDLING CODE - START /////
-extern bool globalRun;
-#define TERMINATE() !globalRun
+extern bool programRun;
+extern bool trialRun;
+#define KILL_PROGRAM() !programRun
+#define TERMINATE_TRIAL() !trialRun
 bool SetupSignalCatching();
 ////// SIGNAL HANDLING CODE - END /////
 
-/*!
- * Stops the execution of the program (like issuing a SIGINT signal).
- */
-void TerminateProgram();
+/*! Stops the execution of the program (like issuing a SIGINT signal). */
+void KillProgram();
+/*! Stops the execution of the current trial. */
+void TerminateTrial();
 
 } // namespace dynclamp
 

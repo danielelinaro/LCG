@@ -291,13 +291,14 @@ int main(int argc, char *argv[])
         Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
+        bool success;
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
                         stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                         for (k=0; k<opt.nTrials; k++) {
                                 Logger(Info, "\nProcessing stimulus file [%s].\n\n", opt.stimulusFiles[j].c_str());
-                                Simulate(entities, stimulus->duration());
-                                if (TERMINATE())
+                                success = Simulate(entities, stimulus->duration());
+                                if (!success || KILL_PROGRAM())
                                         goto endMain;
                                 if (k != opt.nTrials-1)
                                         usleep(opt.iti);
