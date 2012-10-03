@@ -1,7 +1,7 @@
 
 === Short term (and therefore relatively simple) ===
 
--) see which examples should be removed (substitute them with configuration files).
+-) see whether OU*, TimeLogger and Delay can be removed.
 -) finish to add the ionic currents for LTS neurons.
 -) set output limits equal to output range in comedi_io.
 

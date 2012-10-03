@@ -16,14 +16,8 @@ zero_output_SOURCES = zero_output.cpp
 constant_output_SOURCES = constant_output.cpp
 test_daq_SOURCES = test_daq.cpp
 endif
-if EXAMPLES
-noinst_PROGRAMS = aec_test syn_test small_network
-syn_test_SOURCES = syn_test.cpp
-aec_test_SOURCES = aec_test.cpp
-small_network_SOURCES = small_network.cpp
 if ANALOGY
-noinst_PROGRAMS += analogy_test
+noinst_PROGRAMS = analogy_test
 analogy_test_SOURCES = analogy_test.cpp
-endif
 endif
 

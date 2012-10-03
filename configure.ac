@@ -93,6 +93,10 @@ AC_ARG_WITH([output-reset],
  	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
 
+if test "$with_examples" = "yes" ; then
+        AC_CONFIG_FILES([examples/Makefile])
+fi
+
 with_io=no
 with_comedi=no
 with_analogy=no
