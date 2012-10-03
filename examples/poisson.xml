@@ -1,0 +1,82 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+	<filename>poisson.h5</filename>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>Poisson</name>
+      <id>1</id>
+      <parameters><rate>1000</rate></parameters>
+      <connections>2</connections>
+    </entity>
+
+    <entity>
+      <name>SynapticConnection</name>
+      <id>2</id>
+      <parameters>
+	<delay>1e-3</delay>
+	<weight>1</weight>
+      </parameters>
+      <connections>3</connections>
+    </entity>
+
+    <entity>
+      <name>ExponentialSynapse</name>
+      <id>3</id>
+      <parameters>
+	<E>0</E>
+	<tau>5e-3</tau>
+      </parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>4</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-65.2</Er>
+	<E0>-70</E0>
+	<Vth>-50</Vth>
+	<Iext>0</Iext>
+      </parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>Connection</name>
+      <id>5</id>
+      <parameters>
+	<delay>2e-3</delay>
+      </parameters>
+      <connections>6</connections>
+    </entity>
+
+    <entity>
+      <name>EventCounter</name>
+      <id>6</id>
+      <parameters>
+	<maxCount>10</maxCount>
+	<autoReset>false</autoReset>
+	<eventToCount>spike</eventToCount>
+	<eventToSend>stoprun</eventToSend>
+      </parameters>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>1</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>

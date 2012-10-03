@@ -1,0 +1,81 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+	<filename>conductance_based_neuron.h5</filename>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>1</id>
+      <parameters><filename>cbn_step.stim</filename></parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceBasedNeuron</name>
+      <id>2</id>
+      <parameters>
+	<C>1</C>
+	<gl>0.0001</gl>
+	<El>-70</El>
+	<Iext>0</Iext>
+	<area>28952</area>
+	<spikeThreshold>0</spikeThreshold>
+	<V0>-65</V0>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+    <entity>
+      <name>HH2Sodium</name>
+      <id>3</id>
+      <parameters>
+	<area>28952</area>
+	<gbar>0.05</gbar>
+	<E>50</E>
+	<vtraub>-55</vtraub>
+	<temperature>36</temperature>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>HH2Potassium</name>
+      <id>4</id>
+      <parameters>
+	<area>28952</area>
+	<gbar>0.005</gbar>
+	<E>-100</E>
+	<vtraub>-55</vtraub>
+	<temperature>36</temperature>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>MCurrent</name>
+      <id>5</id>
+      <parameters>
+	<area>28952</area>
+	<gbar>0.00007</gbar>
+	<E>-100</E>
+	<taumax>1000</taumax>
+	<temperature>36</temperature>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>5</tend>
+    <rate>100000</rate>
+  </simulation>
+
+</dynamicclamp>

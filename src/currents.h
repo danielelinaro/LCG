@@ -109,7 +109,7 @@ private:
 #define IM_TEMPERATURE m_parameters["temperature"]    // (celsius)
 
 /*!
- * \class IM
+ * \class MCurrent
  * \brief M-current, responsible for the adaptation of firing rate and the 
  *        afterhyperpolarization (AHP) of cortical pyramidal cells
  *

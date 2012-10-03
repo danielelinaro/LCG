@@ -1,25 +1,17 @@
 <dynamicclamp>
   <entities>
-
     <entity>
       <name>H5Recorder</name>
       <id>0</id>
       <parameters>
-	<filename>cbn.h5</filename>
-        <compress>true</compress>
+	<filename>frequency_clamp.h5</filename>
+	<compress>true</compress>
       </parameters>
     </entity>
 
     <entity>
-      <name>Waveform</name>
-      <id>1</id>
-      <parameters><filename>step.stim</filename></parameters>
-      <connections>0,2</connections>
-    </entity>
-
-    <entity>
       <name>ConductanceBasedNeuron</name>
-      <id>2</id>
+      <id>1</id>
       <parameters>
 	<C>1</C>
 	<gl>0.0001</gl>
@@ -29,12 +21,12 @@
 	<spikeThreshold>0</spikeThreshold>
 	<V0>-65</V0>
       </parameters>
-      <connections>0</connections>
+      <connections>0,6</connections>
     </entity>
 
     <entity>
       <name>HH2Sodium</name>
-      <id>3</id>
+      <id>2</id>
       <parameters>
 	<area>28952</area>
 	<gbar>0.05</gbar>
@@ -42,12 +34,12 @@
 	<vtraub>-55</vtraub>
 	<temperature>36</temperature>
       </parameters>
-      <connections>0,2</connections>
+      <connections>0,1</connections>
     </entity>
 
     <entity>
       <name>HH2Potassium</name>
-      <id>4</id>
+      <id>3</id>
       <parameters>
 	<area>28952</area>
 	<gbar>0.005</gbar>
@@ -55,12 +47,12 @@
 	<vtraub>-55</vtraub>
 	<temperature>36</temperature>
       </parameters>
-      <connections>0,2</connections>
+      <connections>0,1</connections>
     </entity>
 
     <entity>
-      <name>IM</name>
-      <id>5</id>
+      <name>MCurrent</name>
+      <id>4</id>
       <parameters>
 	<area>28952</area>
 	<gbar>0.00007</gbar>
@@ -68,13 +60,42 @@
 	<taumax>1000</taumax>
 	<temperature>36</temperature>
       </parameters>
-      <connections>0,2</connections>
+      <connections>0,1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters><filename>frequency_clamp.stim</filename></parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>FrequencyEstimator</name>
+      <id>6</id>
+      <parameters>
+	<tau>0.5</tau>
+	<initialFrequency>0</initialFrequency>
+      </parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>PID</name>
+      <id>7</id>
+      <parameters>
+	<baselineCurrent>700</baselineCurrent>
+	<gp>0.05</gp>
+	<gi>2</gi>
+	<gd>0</gd>
+      </parameters>
+      <connections>0,1</connections>
     </entity>
 
   </entities>
 
   <simulation>
-    <tend>7</tend>
+    <tend>40</tend>
     <rate>100000</rate>
   </simulation>
 

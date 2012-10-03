@@ -5,7 +5,7 @@
       <name>H5Recorder</name>
       <id>0</id>
       <parameters>
-	<filename>conn_test.h5</filename>
+	<filename>triggered_stimulation.h5</filename>
         <compress>true</compress>
       </parameters>
     </entity>
@@ -26,16 +26,19 @@
     </entity>
 
     <entity>
-      <name>FrequencyEstimator</name>
+      <name>EventCounter</name>
       <id>2</id>
       <parameters>
-	<tau>0.1</tau>
+	<maxCount>100</maxCount>
+	<autoReset>true</autoReset>
+	<eventToCount>spike</eventToCount>
+	<eventToSend>trigger</eventToSend>
       </parameters>
-      <connections>0,3</connections>
+      <connections>3</connections>
     </entity>
 
     <entity>
-      <name>SobolDelay</name>
+      <name>VariableDelayConnection</name>
       <id>3</id>
       <parameters>
       </parameters>
@@ -43,36 +46,36 @@
     </entity>
 
     <entity>
-      <name>VariableDelayConnection</name>
+      <name>Waveform</name>
       <id>4</id>
       <parameters>
-      </parameters>
-      <connections>6</connections>
-    </entity>
-
-    <entity>
-      <name>EventCounter</name>
-      <id>5</id>
-      <parameters>
-	<maxCount>10</maxCount>
-      </parameters>
-      <connections>4</connections>
-    </entity>
-
-    <entity>
-      <name>Waveform</name>
-      <id>6</id>
-      <parameters>
 	<triggered>true</triggered>
-	<filename>current.stim</filename>
+	<filename>triggered_pulse.stim</filename>
       </parameters>
       <connections>0,1</connections>
     </entity>
     
+    <entity>
+      <name>FrequencyEstimator</name>
+      <id>5</id>
+      <parameters>
+	<tau>0.1</tau>
+      </parameters>
+      <connections>0,6</connections>
+    </entity>
+
+    <entity>
+      <name>SobolDelay</name>
+      <id>6</id>
+      <parameters>
+      </parameters>
+      <connections>3</connections>
+    </entity>
+
   </entities>
 
   <simulation>
-    <tend>5</tend>
+    <tend>6</tend>
     <rate>20000</rate>
   </simulation>
 

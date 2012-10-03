@@ -8,8 +8,6 @@
 #define PP_AMPLITUDE    m_parameters["amp"]
 #define PP_PERIOD       m_parameters["T"]
 
-#define PP_INTERVAL     15e-3
-
 namespace dynclamp {
 
 namespace generators {
@@ -25,8 +23,6 @@ public:
         virtual void step();
         virtual double output();
 
-        void handleEvent(const Event *event);
-
         double period() const;
 
         void setFrequency(double frequency);
@@ -35,13 +31,8 @@ public:
         void setDuration(double duration);
 
 private:
-        double m_period;
         double m_output;
-        double m_amplitude;
-        double m_tLastPulse;
         double m_tNextPulse;
-        double m_tUpdate;
-        double m_tLastSpike;
 };
 
 } // namespace generators
