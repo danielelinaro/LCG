@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
         if (i == entities.size()) {
                 Logger(Critical, "No stimulus present.\n");
                 retval = 1;
-                goto end;
+                goto endMain;
         }
 
         parseArgs(argc, argv, &opt);
