@@ -146,17 +146,17 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
         *retval = false;
 
-        Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
+        Logger(Debug, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
 #ifndef NO_STOP_RT_TIMER
-        Logger(Info, "Setting periodic mode.\n");
+        Logger(Debug, "Setting periodic mode.\n");
         rt_set_periodic_mode();
 #endif
 
-        Logger(Info, "Starting the RT timer.\n");
+        Logger(Debug, "Starting the RT timer.\n");
         tickPeriod = start_rt_timer(sec2count(globalDt));
         
-        Logger(Info, "Initialising task.\n");
+        Logger(Debug, "Initialising task.\n");
         taskName = nam2num("hybrid_simulator");
         task = rt_task_init(taskName, RT_SCHED_HIGHEST_PRIORITY+1, STACK_SIZE, MSG_SIZE);
         if(task == NULL) {
@@ -166,10 +166,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
         Logger(Info, "The period is %.6g ms (f = %.6g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
 
-        Logger(Info, "Switching to hard real time.\n");
+        Logger(Debug, "Switching to hard real time.\n");
         rt_make_hard_real_time();
 
-        Logger(Info, "Making the task periodic.\n");
+        Logger(Debug, "Making the task periodic.\n");
         flag = rt_task_make_periodic_relative_ns(task, count2nano(5*tickPeriod), count2nano(tickPeriod));
         if(flag != 0) {
                 Logger(Critical, "Error while making the task periodic.\n");
@@ -214,15 +214,15 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 entities[i]->terminate();
 
 stopRT:
-        Logger(Info, "Deleting the task.\n");
+        Logger(Debug, "Deleting the task.\n");
         rt_task_delete(task);
 
 #ifndef NO_STOP_RT_TIMER
-        Logger(Info, "Stopping the RT timer.\n");
+        Logger(Debug, "Stopping the RT timer.\n");
         stop_rt_timer();
 #endif
 
-        Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
+        Logger(Debug, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
 
         *retval = true;
 }
@@ -254,14 +254,14 @@ void RTSimulationTask(void *cookie)
 
         SetGlobalTimeOffset();
         ResetGlobalTime();
-        Logger(Info, "Initialising all the entities.\n");
+        Logger(Debug, "Initialising all the entities.\n");
         for (i=0; i<nEntities; i++) {
                 if (!arg->entity(i)->initialise()) {
                         Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", arg->entity(i)->id());
                         return;
                 }
         }
-        Logger(Info, "Starting the main loop.\n");
+        Logger(Debug, "Starting the main loop.\n");
 
         flag = rt_task_set_periodic(NULL, TM_NOW, NSEC_PER_SEC*GetGlobalDt());
         if (flag != 0) {
@@ -284,12 +284,12 @@ void RTSimulationTask(void *cookie)
         Logger(Important, "Elapsed time: %ld.%03ld ms\n",
                 (long)(stop - start) / 1000000, (long)(stop - start) % 1000000);
 
-        Logger(Info, "Finished the main loop.\n");
-        Logger(Info, "Terminating all the entities.\n");
+        Logger(Debug, "Finished the main loop.\n");
+        Logger(Debug, "Terminating all the entities.\n");
         for (i=0; i<nEntities; i++)
                 arg->entity(i)->terminate();
 
-        Logger(Info, "Stopping the RT timer.\n");
+        Logger(Debug, "Stopping the RT timer.\n");
 }
 
 void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
@@ -299,7 +299,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
         *retval = false;
 
-        Logger(Info, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
+        Logger(Debug, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
         // Avoids memory swapping for this program
         mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -310,7 +310,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 Logger(Critical, "Unable to create the real-time task (err = %d).\n", flag);
                 return;
         }
-        Logger(Info, "Successfully created the real-time task.\n");
+        Logger(Debug, "Successfully created the real-time task.\n");
 
         // Start the task
         flag = rt_task_start(&dynclamp_rt_task, RTSimulationTask, &cookie);
@@ -318,22 +318,22 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 Logger(Critical, "Unable to start the real-time task (err = %d).\n", flag);
                 rt_task_delete(&dynclamp_rt_task);
         }
-        Logger(Info, "Successfully started the real-time task.\n");
+        Logger(Debug, "Successfully started the real-time task.\n");
 
         // Wait for the task to finish
         flag = rt_task_join(&dynclamp_rt_task);
         if (flag == 0) {
                 // There's no need to delete the task if we've joined successfully
-                Logger(Info, "Successfully joined with the child task.\n");
+                Logger(Debug, "Successfully joined with the child task.\n");
         }
         else {
                 Logger(Important, "Unable to join with the child task.\n");
                 // Delete the task
-                Logger(Info, "Deleting the task.\n");
+                Logger(Debug, "Deleting the task.\n");
                 rt_task_delete(&dynclamp_rt_task);
         }
 
-        Logger(Info, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
+        Logger(Debug, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
 
         *retval = true;
 }
@@ -411,7 +411,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 		Logger(Critical, "Unable to set maximum priority.\n");
 		return; 
 	}
-        Logger(Info, "Successfully set maximum priority.\n");
+        Logger(Debug, "Successfully set maximum priority.\n");
 
         // Reset simulation time
         ResetGlobalTime();
@@ -423,7 +423,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                         return;
                 }
         }
-        Logger(Info, "Initialised all entities.\n");
+        Logger(Debug, "Initialised all entities.\n");
         
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
@@ -445,8 +445,8 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         // Set the time offset, i.e. the absolute time of the beginning of the simulation
         SetGlobalTimeOffset(now);
 
-        Logger(Info, "The simulation will last %g seconds.\n", tend);
-        Logger(Info, "Starting the main loop.\n");
+        Logger(Important, "The simulation will last %g seconds.\n", tend);
+        Logger(Debug, "Starting the main loop.\n");
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
                 // Wait for next period
@@ -473,7 +473,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
 	flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag == 0) {
-                Logger(Info, "Elapsed time: %g seconds.\n",
+                Logger(Important, "Elapsed time: %g seconds.\n",
                         ((double) now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC)) - GetGlobalTimeOffset());
         }
 
@@ -481,7 +481,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 	schedp.sched_priority = 0;
 	flag = sched_setscheduler(0, SCHED_OTHER, &schedp);
         if (flag == 0)
-                Logger(Info, "Switched to non real-time scheduler.\n");
+                Logger(Debug, "Switched to non real-time scheduler.\n");
 
         *retval = true;
 }
@@ -538,7 +538,7 @@ bool Simulate(const std::vector<Entity*>& entities, double tend)
 #endif // REALTIME_ENGINE
         thrd.join();
         if (success)
-                Logger(Info, "Simulation thread has finished running.\n");
+                Logger(Debug, "Simulation thread has finished running.\n");
         return success;
 }
 

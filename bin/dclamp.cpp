@@ -41,13 +41,13 @@ int main(int argc, char *argv[])
                 dt = opt.dt;
         if (dt == -1) {
                 dt = 1.0 / 20000;
-                Logger(Info, "Using default timestep (%g sec -> %g Hz).\n", dt, 1.0/dt);
+                Logger(Debug, "Using default timestep (%g sec -> %g Hz).\n", dt, 1.0/dt);
         }
 
         SetGlobalDt(dt);
 
-        Logger(Info, "Number of trials: %d.\n", opt.nTrials);
-        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
+        Logger(Debug, "Number of trials: %d.\n", opt.nTrials);
+        Logger(Debug, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
 
         bool success;
         if (opt.stimulusFiles.size() > 0) {
@@ -61,14 +61,14 @@ int main(int argc, char *argv[])
                         goto endMain;
                 }
 
-                Logger(Info, "Number of batches: %d.\n", opt.nBatches);
-                Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
+                Logger(Debug, "Number of batches: %d.\n", opt.nBatches);
+                Logger(Debug, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
                 for (int i=0; i<opt.nBatches; i++) {
                         for (int j=0; j<opt.stimulusFiles.size(); j++) {
                                 stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
-                                        Logger(Info, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
+                                        Logger(Debug, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
                                         ResetGlobalTime();
                                         success = Simulate(entities,stimulus->duration());
                                         if (!success || KILL_PROGRAM())

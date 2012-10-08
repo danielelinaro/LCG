@@ -1,2 +1,2 @@
-bin_SCRIPTS = ap_protocol fi_protocol fi_protocol_noisy kernel_protocol tau_protocol vi_protocol stability_protocol sinusoids_protocol gain_modulation_protocol spontaneous_recorder ramp_protocol fi_pid_protocol reliability_autaptic psp_opt.py
+bin_SCRIPTS = ap_protocol fi_protocol fi_protocol_noisy kernel_protocol tau_protocol vi_protocol stability_protocol sinusoids_protocol gain_modulation_protocol spontaneous_recorder ramp_protocol fi_pid_protocol reliability_autaptic psp_opt.py f_opt.py
 
