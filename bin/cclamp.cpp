@@ -187,6 +187,7 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                 
                 parameters.clear();
                 parameters["id"] = "1";
+                parameters["units"] = "pA";
                 entities.push_back( EntityFactory("Waveform", parameters) );
 
                 int cnt = 0;
