@@ -1,0 +1,71 @@
+#!/bin/bash
+
+#
+# Extracellular stimulation protocol
+# Author: Daniele Linaro, October 2012
+#
+
+function print_help
+{
+    echo
+    echo "Extracellular stimulation protocol."
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -n   the number of repetitions (default 30)"
+    echo "   -i   the interval between trials (default 5 sec)"
+    echo "   -f   the name of the stimulation file (default pulses.stim)"
+    echo
+}
+
+config_file=extracellular_stim.xml
+pulses_file=pulses.stim
+reps=30
+interval=5
+while getopts ":n:i:h" opt ; do
+    case $opt in
+	n)
+	    reps=$OPTARG
+	    ;;
+	i)
+	    interval=$OPTARG
+	    ;;
+	f)
+	    pulses_file=$OPTARG
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ ! -f "$pulses_file" ] ; then
+    echo "Can't find stimulation file [$pulses_file]."
+    exit 1
+fi
+
+if [ -z "${CONFIGURATIONS_PATH:-}" ] ; then
+    config_dir=$HOME/configurations
+else
+    config_dir=$CONFIGURATIONS_PATH
+fi
+
+if [ ! -f "$config_dir/$config_file" ] ; then
+    echo "Can't find configuration file [$config_file]."
+    exit 1
+fi
+
+T=`awk '{ sum+=$1 } END { print sum }' $pulses_file`
+echo "Each trial will last $T seconds."
+sed -e 's/TEND/'$T'/' -e 's/STIMFILE/'$pulses_file'/' $config_dir/$config_file > $config_file
+kernel_protocol
+dclamp -c $config_file -n $reps -i $interval
