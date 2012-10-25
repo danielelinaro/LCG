@@ -182,7 +182,7 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
 
         try {
                 parameters["id"] = "0";
-                parameters["compress"] = "false";
+                parameters["compress"] = "true";
                 entities.push_back( EntityFactory("H5Recorder", parameters) );
                 
                 parameters.clear();

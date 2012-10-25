@@ -75,12 +75,18 @@ int main(int argc, char *argv[])
                                                 goto endMain;
                                         if (k != opt.nTrials-1)
                                                 usleep(opt.iti);
+                                        if (KILL_PROGRAM())
+                                                goto endMain;
                                 }
                                 if (j != opt.stimulusFiles.size()-1)
                                         usleep(opt.iti);
+                                if (KILL_PROGRAM())
+                                        goto endMain;
                         }
                         if (i != opt.nBatches-1)
                                 usleep(opt.ibi);
+                        if (KILL_PROGRAM())
+                                goto endMain;
                 }
 
         }
@@ -97,6 +103,8 @@ int main(int argc, char *argv[])
                                 goto endMain;
                         if (i != opt.nTrials-1)
                                 usleep(opt.iti);
+                        if (KILL_PROGRAM())
+                                goto endMain;
                 }
         }
 

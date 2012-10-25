@@ -3,10 +3,10 @@
 
 #include "generator.h"
 
-#define PP_FREQUENCY    m_parameters["f"]
-#define PP_DURATION     m_parameters["dur"]
-#define PP_AMPLITUDE    m_parameters["amp"]
-#define PP_PERIOD       m_parameters["T"]
+#define PP_FREQUENCY    m_parameters["frequency"]
+#define PP_DURATION     m_parameters["duration"]
+#define PP_AMPLITUDE    m_parameters["amplitude"]
+#define PP_PERIOD       m_parameters["period"]
 
 namespace dynclamp {
 
@@ -14,7 +14,7 @@ namespace generators {
 
 class PeriodicPulse : public Generator {
 public:
-        PeriodicPulse(double frequency, double duration, double amplitude, uint id = GetId());
+        PeriodicPulse(double frequency, double duration, double amplitude, std::string units = "pA", uint id = GetId());
 
         virtual bool initialise();
 

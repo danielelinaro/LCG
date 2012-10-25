@@ -6,6 +6,7 @@ dynclamp::Entity* PeriodicPulseFactory(string_dict& args)
 {
         uint id;
         double frequency, duration, amplitude;
+        std::string units;
 
         id = dynclamp::GetIdFromDictionary(args);
 
@@ -16,14 +17,17 @@ dynclamp::Entity* PeriodicPulseFactory(string_dict& args)
                 return NULL;
         }
 
-        return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, id);
+        if ( ! dynclamp::CheckAndExtractValue(args, "units", units))
+                units = "pA";
+
+        return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, units, id);
 }
 
 namespace dynclamp {
 
 namespace generators {
 
-PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, uint id)
+PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, std::string units, uint id)
         : Generator(id)
 {
         if (frequency <= 0)
@@ -37,7 +41,7 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         PP_PERIOD = 1.0 / frequency;
 
         setName("PeriodicPulse");
-        setUnits("pA");
+        setUnits(units);
 
         Logger(Debug, "---\nPeriodicPulse:\n\tFrequency: %g\n\tAmplitude: %g\n\tDuration: %g\n\tPeriod: %g\n---\n",
                         PP_FREQUENCY, PP_AMPLITUDE, PP_DURATION, PP_PERIOD);
@@ -45,8 +49,12 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         
 bool PeriodicPulse::initialise()
 {
+        //m_output = 0.0;
+        //m_tNextPulse = 1.0 / PP_FREQUENCY;
+        //m_output = PP_AMPLITUDE;
+        //m_tNextPulse = 0.0;
         m_output = 0.0;
-        m_tNextPulse = 1.0 / PP_FREQUENCY;
+        m_tNextPulse = GetGlobalDt();
         return true;
 }
 
@@ -58,13 +66,14 @@ bool PeriodicPulse::hasNext() const
 void PeriodicPulse::step()
 {
         double now = GetGlobalTime();
-        if (now >= m_tNextPulse) {
+        if (now >= (m_tNextPulse - 0.5*GetGlobalDt())) {
                 if (m_output == 0.0) {
-                        Logger(Debug, "Turning output ON @ t = %g s.\n", now);
+                        Logger(Debug, "Turning output ON @ t = %f s.\n", now);
                         m_output = PP_AMPLITUDE;
+                        emitEvent(new TriggerEvent(this));
                 }
                 else if (now >= m_tNextPulse+PP_DURATION) {
-                        Logger(Debug, "Turning output OFF @ t = %g s.\n", now);
+                        Logger(Debug, "Turning output OFF @ t = %f s.\n", now);
                         m_tNextPulse += PP_PERIOD;
                         m_output = 0.0;
                 }

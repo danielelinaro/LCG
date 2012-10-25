@@ -149,10 +149,12 @@ VariableDelayConnection::VariableDelayConnection(uint id)
 void VariableDelayConnection::handleEvent(const Event *event)
 {
         double delay;
-        while ((delay = (*m_functor)()) == INFINITE)
-                ;
+        do {
+                delay = (*m_functor)();
+        } while (delay == INFINITE || delay <= 0);
         setDelay(delay);
         Connection::handleEvent(event);
+        Logger(Debug, "Connection #%d will deliver an event in %g seconds.\n", id(), delay);
 }
 
 void VariableDelayConnection::addPre(Entity *entity)

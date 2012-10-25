@@ -1,0 +1,88 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>PeriodicPulse</name>
+      <id>1</id>
+      <parameters>
+	<frequency>2</frequency>
+	<amplitude>5</amplitude>
+	<duration>0.0001</duration>
+      </parameters>
+      <connections>0,2,4</connections>
+    </entity>
+
+    <entity>
+      <name>AnalogOutput</name>
+      <id>2</id>
+      <parameters>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<outputSubdevice>1</outputSubdevice>
+	<writeChannel>1</writeChannel>
+	<outputConversionFactor>1</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>RandomDelay</name>
+      <id>3</id>
+      <parameters>
+	<interval>0,0.02</interval>
+      </parameters>
+      <connections>4</connections>
+    </entity>
+
+    <entity>
+      <name>VariableDelayConnection</name>
+      <id>4</id>
+      <parameters></parameters>
+      <connections>5</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
+	<filename>pulse.stim</filename>
+	<triggered>true</triggered>
+      </parameters>
+      <connections>0,6</connections>
+    </entity>
+
+    <entity>
+      <name>RealNeuron</name>
+      <id>7</id>
+      <parameters>
+	<spikeThreshold>-20</spikeThreshold>
+	<V0>-65</V0>
+	<kernelFile>kernel.dat</kernelFile>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
+	<inputRange>[-10,+10]</inputRange>
+	<readChannel>0</readChannel>
+	<writeChannel>0</writeChannel>
+	<inputConversionFactor>100</inputConversionFactor>
+	<outputConversionFactor>0.001</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>TEND</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>

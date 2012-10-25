@@ -165,7 +165,7 @@ bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *valu
         return true;
 }
 
-bool CheckAndExtractLong(string_dict& dict, const std::string& key, int *value)
+bool CheckAndExtractLong(string_dict& dict, const std::string& key, long *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -174,7 +174,7 @@ bool CheckAndExtractLong(string_dict& dict, const std::string& key, int *value)
         return true;
 }
 
-bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, int *value)
+bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, long long *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -183,30 +183,30 @@ bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, int *val
         return true;
 }
 
-bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, unsigned int *value)
 {
         int i;
         if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
                 return false;
-        *value = (uint) i;
+        *value = (unsigned int) i;
         return true;
 }
 
-bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsigned long *value)
 {
-        int i;
-        if (!CheckAndExtractLong(dict, key, &i) || i < 0)
+        long l;
+        if (!CheckAndExtractLong(dict, key, &l) || l < 0)
                 return false;
-        *value = (ulong) i;
+        *value = (unsigned long) l;
         return true;
 }
 
-bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, uint *value)
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, unsigned long long *value)
 {
-        int i;
-        if (!CheckAndExtractLongLong(dict, key, &i) || i < 0)
+        long long l;
+        if (!CheckAndExtractLongLong(dict, key, &l) || l < 0)
                 return false;
-        *value = (ullong) i;
+        *value = (unsigned long long) l;
         return true;
 }
 

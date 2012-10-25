@@ -6,7 +6,7 @@
       <id>0</id>
       <parameters>
 	<filename>synapses.h5</filename>
-        <compress>false</compress>
+        <compress>true</compress>
       </parameters>
     </entity>
 

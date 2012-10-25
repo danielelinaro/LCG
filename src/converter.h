@@ -36,22 +36,54 @@ namespace dynclamp {
 /*!
  * \class Converter
  * \brief Converts a change in the value of its <b>sole</b> input to a call
- * to the method changeProperty of the <b>sole</b> entity to which it is connected.
+ * to the ``parameter'' method of the <b>sole</b> entity to which it is connected.
  */
 class Converter : public Entity {
 public:
-        Converter(std::string propertyName, uint id = GetId());
+        /*!
+         * Constructor.
+         * \param parameterName The name of the parameter of the post entity to be changed whenever
+         * the input to this Converter changes.
+         * \param id The id of this object.
+         */
+        Converter(std::string parameterName, uint id = GetId());
+
+        /*!
+         * This method compares the current input to the previous one. In case they are
+         * different, the actual value is used to change the value of one of the parameters
+         * of the post entity.
+         */
         virtual void step();
+
+        /*! This method only outputs 0. */
         virtual double output();
+
+        /*! Performs required initialisation. */
         virtual bool initialise();
 
 private:
-        std::string m_propertyName;
+        /*! The name of the parameter in the post entity to change whenever a change in the input is detected. */
+        std::string m_parameterName;
+        /* This flag is true only on the first step, when no operation should be performed. */
         bool m_first;
+        /*! The value of the input at the previous step. */
         double m_previousInput;
 };
 
 } // namespace dynclamp
+
+/***
+ *   FACTORY METHODS
+ ***/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+dynclamp::Entity* ConverterFactory(string_dict& args);
+        
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

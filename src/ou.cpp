@@ -22,8 +22,8 @@ dynclamp::Entity* OUcurrentFactory(string_dict& args)
         if (dynclamp::CheckAndExtractValue(args, "interval", intervalStr)) {
                 size_t stop = intervalStr.find(",",0);
                 if (stop == intervalStr.npos) {
-                        dynclamp::Logger(dynclamp::Critical, "Error in the definition of the interval"
-                                        "(which should be composed of two comma-separated values.\n");
+                        dynclamp::Logger(dynclamp::Critical, "Error in the definition of the interval "
+                                        "(which should be composed of two comma-separated values).\n");
                         return NULL;
                 }
                 {

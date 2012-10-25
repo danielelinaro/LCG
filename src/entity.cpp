@@ -49,7 +49,7 @@ const std::map<std::string,double>& Entity::parameters() const
         return m_parameters;
 }
 
-double& Entity::parameter(std::string name)
+double& Entity::parameter(const std::string name)
 {
         if (m_parameters.count(name) == 0)
                 throw "No parameter with such a name";
@@ -76,7 +76,7 @@ void Entity::connect(Entity *entity)
         }
 
         if (isPost(entity)) {
-                Logger(Info, "Entity #%d was already connected to entity #%d.", id(), entity->id());
+                Logger(Info, "Entity #%d was already connected to entity #%d.\n", id(), entity->id());
                 return;
         }
 

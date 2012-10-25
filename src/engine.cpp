@@ -140,6 +140,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         RT_TASK *task;
         RTIME tickPeriod;
         RTIME currentTime, previousTime;
+        RTIME start, stop;
         int preambleIterations, flag, i;
         unsigned long taskName;
         size_t nEntities = entities.size();
@@ -197,8 +198,11 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                         return;
                 }
         }
+
+        Logger(Important, "Expected duration: %g seconds.\n", tend);
         Logger(Debug, "Starting the main loop.\n");
 
+        start = rt_timer_read();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -208,8 +212,14 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                         entities[i]->step();
                 rt_task_wait_period();
         }
+        stop = rt_timer_read();
+
+        Logger(Important, "Elapsed time: %ld.%03ld ms\n",
+                (long)(stop - start) / 1000000, (long)(stop - start) % 1000000);
+
         Logger(Debug, "Finished the main loop.\n");
-        Logger(Debug, "Terminating all the entities.\n");
+        Logger(Debug, "Terminating all entities.\n");
+
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
 
@@ -261,6 +271,8 @@ void RTSimulationTask(void *cookie)
                         return;
                 }
         }
+
+        Logger(Important, "Expected duration: %g seconds.\n", tend);
         Logger(Debug, "Starting the main loop.\n");
 
         flag = rt_task_set_periodic(NULL, TM_NOW, NSEC_PER_SEC*GetGlobalDt());
@@ -285,7 +297,8 @@ void RTSimulationTask(void *cookie)
                 (long)(stop - start) / 1000000, (long)(stop - start) % 1000000);
 
         Logger(Debug, "Finished the main loop.\n");
-        Logger(Debug, "Terminating all the entities.\n");
+        Logger(Debug, "Terminating all entities.\n");
+
         for (i=0; i<nEntities; i++)
                 arg->entity(i)->terminate();
 
@@ -445,8 +458,9 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         // Set the time offset, i.e. the absolute time of the beginning of the simulation
         SetGlobalTimeOffset(now);
 
-        Logger(Important, "The simulation will last %g seconds.\n", tend);
+        Logger(Important, "Expected duration: %g seconds.\n", tend);
         Logger(Debug, "Starting the main loop.\n");
+
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
                 // Wait for next period
@@ -468,14 +482,17 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 	        next.tv_nsec += interval.tv_nsec;
 	        tsnorm(&next);
         }
-        for (i=0; i<nEntities; i++)
-                entities[i]->terminate();
 
-	flag = clock_gettime(CLOCK_REALTIME, &now);
+        // Compute how much time has passed since the beginning
+        flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag == 0) {
                 Logger(Important, "Elapsed time: %g seconds.\n",
                         ((double) now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC)) - GetGlobalTimeOffset());
         }
+
+        // Stop all entities
+        for (i=0; i<nEntities; i++)
+                entities[i]->terminate();
 
 	// Switch to normal
 	schedp.sched_priority = 0;

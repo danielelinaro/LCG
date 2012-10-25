@@ -59,7 +59,7 @@ bool Waveform::initialise()
         }
         else {
                 m_position = m_stimulusLength + 1;
-                Logger(Info, "Waveform is waiting for events.\n");
+                Logger(Debug, "Waveform is waiting for events.\n");
         }
         return true;
 }

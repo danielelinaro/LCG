@@ -63,6 +63,12 @@ public:
 public:
         static const hsize_t rank;
         static const hsize_t unlimitedSize;
+        /*!
+         * The number of buffers used for storing the input data: they need to be at least 2,
+         * so that the realtime thread writes in one, while the thread created by H5Recorder
+         * saves the data in the other buffer to file.
+         */
+        static const uint    numberOfBuffers;
         static const hsize_t chunkSize;
         static const uint    numberOfChunks; 
         static const hsize_t bufferSize;
@@ -108,8 +114,6 @@ private:
         uint m_bufferPosition;
         // the length of each buffer
         hsize_t *m_bufferLengths;
-        // the number of buffers
-        uint m_numberOfBuffers;
         // the thread that continuosly waits for data to save
         boost::thread m_writerThread;
         // the index of the buffer in which the main thread saves data

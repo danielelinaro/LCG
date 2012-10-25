@@ -23,9 +23,9 @@ function print_help
     echo "   -i   specify the integral gain of the controller (default 1)"
     echo "   -d   specify the derivative gain of the controller (default 0)"
     echo "   -t   specify the time constant of the frequency estimator (default 1 sec)"
-    echo "   -T   specify the duration of the ramp (default 20 sec)"
+    echo "   -T   specify the duration of the ramp (default 30 sec)"
     echo "   -n   specify the number of batches (default 2)"
-    echo "   -w   specify the interval between batches (default 45 sec)"
+    echo "   -w   specify the interval between batches (default 60 sec)"
     echo
 }
 
@@ -37,9 +37,9 @@ gp=0.01
 gi=1
 gd=0
 tau=1
-T=20
+T=30
 reps=2
-interval=45
+interval=60
 F0=5
 while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
     case $opt in

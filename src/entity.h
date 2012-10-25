@@ -85,7 +85,7 @@ public:
          * Returns a reference to the parameter with a given name.
          * Throws an exception if no parameter with such name exists.
          */
-        double& parameter(std::string name);
+        double& parameter(const std::string name);
 
         /**
          * Connects this entity to the one passed as a parameter,

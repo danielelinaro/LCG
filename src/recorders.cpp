@@ -104,17 +104,18 @@ void ASCIIRecorder::terminate()
         closeFile();
 }
 
-const hsize_t H5Recorder::rank           = 1;
-const hsize_t H5Recorder::unlimitedSize  = H5S_UNLIMITED;
-const hsize_t H5Recorder::chunkSize      = 1024;
-const uint    H5Recorder::numberOfChunks = 20;
-const hsize_t H5Recorder::bufferSize     = 20480;    // This MUST be equal to chunkSize times numberOfChunks.
-const double  H5Recorder::fillValue      = 0.0;
+const hsize_t H5Recorder::rank            = 1;
+const hsize_t H5Recorder::unlimitedSize   = H5S_UNLIMITED;
+const uint    H5Recorder::numberOfBuffers = 2;
+const hsize_t H5Recorder::chunkSize       = 1024;
+const uint    H5Recorder::numberOfChunks  = 20;
+const hsize_t H5Recorder::bufferSize      = 20480;    // This MUST be equal to chunkSize times numberOfChunks.
+const double  H5Recorder::fillValue       = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
         : Recorder(id), m_fid(-1),
           m_data(), m_numberOfInputs(0),
-          m_threadRun(false), m_numberOfBuffers(2),
+          m_threadRun(false),
           m_mutex(), m_cv(), 
           m_groups(), m_dataspaces(), m_datasets()
 {
@@ -131,7 +132,7 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
         else
                 m_compress = false;
 
-        m_bufferLengths = new hsize_t[m_numberOfBuffers];
+        m_bufferLengths = new hsize_t[numberOfBuffers];
         setName("H5Recorder");
 }
 
@@ -141,7 +142,7 @@ H5Recorder::~H5Recorder()
         closeFile();
         uint i, j;
         for (i=0; i<m_numberOfInputs; i++) {
-                for(j=0; j<m_numberOfBuffers; j++)
+                for(j=0; j<numberOfBuffers; j++)
                         delete m_data[i][j];
                 delete m_data[i];
         }
@@ -161,7 +162,7 @@ bool H5Recorder::initialise()
         if (m_makeFilename)
                 MakeFilename(m_filename, "h5");
 
-        m_bufferInUse = m_numberOfBuffers-1;
+        m_bufferInUse = numberOfBuffers-1;
         m_bufferPosition = 0;
         m_offset = 0;
         m_datasetSize = 0;
@@ -173,7 +174,7 @@ bool H5Recorder::initialise()
                 return false;
         Logger(Debug, "Successfully opened file [%s].\n", m_filename);
 
-        if (! createGroup(INFO_GROUP, &m_infoGroup)) {
+        if (!createGroup(INFO_GROUP, &m_infoGroup)) {
                 Logger(Critical, "Unable to create Info group.\n");
                 return false;
         }
@@ -182,7 +183,7 @@ bool H5Recorder::initialise()
         writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
 
         hid_t grp;
-        if (! createGroup(ENTITIES_GROUP, &grp)) {
+        if (!createGroup(ENTITIES_GROUP, &grp)) {
                 Logger(Critical, "Unable to create Entities group.\n");
                 return false;
         }
@@ -241,11 +242,11 @@ void H5Recorder::step()
         if (m_bufferPosition == 0)
         {
                 boost::unique_lock<boost::mutex> lock(m_mutex);
-                while (m_dataQueue.size() == m_numberOfBuffers) {
+                while (m_dataQueue.size() == numberOfBuffers) {
                         Logger(Debug, "Main thread: the data queue is full.\n");
                         m_cv.wait(lock);
                 }
-                m_bufferInUse = (m_bufferInUse+1) % m_numberOfBuffers;
+                m_bufferInUse = (m_bufferInUse+1) % numberOfBuffers;
                 m_bufferLengths[m_bufferInUse] = 0;
                 Logger(Debug, "H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
@@ -551,8 +552,8 @@ void H5Recorder::addPre(Entity *entity)
         Logger(All, "--- H5Recorder::addPre(Entity*, double) ---\n");
 
         m_numberOfInputs++;
-        double **buffer = new double*[m_numberOfBuffers];
-        for (uint i=0; i<m_numberOfBuffers; i++)
+        double **buffer = new double*[numberOfBuffers];
+        for (uint i=0; i<numberOfBuffers; i++)
                 buffer[i] = new double[bufferSize];
         m_data.push_back(buffer);
 }

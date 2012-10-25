@@ -59,9 +59,13 @@ public:
 	inline double doub() {
 		return 5.42101086242752217E-20 * int64();
 	}
+
+        virtual double random() {
+                return doub();
+        }
 };
 
-class NormalRandom : UniformRandom {
+class NormalRandom : public UniformRandom {
 private:
 	double mu,sig;
 	double storedval;
@@ -97,8 +101,12 @@ public:
 			logfact[i] = -1.; 
 	}
 	
+        double random() {
+                return (double) irandom();
+        }
+
 	/** Return a Poisson deviate using the most recently set value of lambda. */
-	int random() {
+	int irandom() {
 		double u,u2,v,v2,p,t,lfac;
 		int k;
 		if (lambda < 5.) {	// Will use product of uniforms method.

@@ -17,13 +17,13 @@ print_help()
     echo "   -h   display this help message and exit"
     echo "   -a   specify amplitude of the stimulation in pA (default 1000)"
     echo "   -n   specify number of repetitions (default 30)"
-    echo "   -i   specify interval between repetitions in seconds (default 2)"
+    echo "   -i   specify interval between repetitions in seconds (default 1)"
     echo
 }
 
 reps=30
 amplitude=1000
-interval=2
+interval=1
 while getopts ":a:n:i:h" opt ; do
     case $opt in
 	a)

@@ -70,11 +70,11 @@ ullong GetSeedFromDictionary(string_dict& args);
 bool CheckAndExtractValue(string_dict& dict, const std::string& key, std::string& value);
 bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *value);
 bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *value);
-bool CheckAndExtractLong(string_dict& dict, const std::string& key, int *value);
-bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, int *value);
-bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, uint *value);
-bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, ullong *value);
-bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, ullong *value);
+bool CheckAndExtractLong(string_dict& dict, const std::string& key, long *value);
+bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, long long *value);
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, unsigned int *value);
+bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsigned long *value);
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, unsigned long long *value);
 bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 

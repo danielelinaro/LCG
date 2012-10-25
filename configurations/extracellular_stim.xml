@@ -25,7 +25,7 @@
       <id>2</id>
       <parameters>
 	<deviceFile>/dev/comedi0</deviceFile>
-	<outputSubdevice>0</outputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
 	<writeChannel>1</writeChannel>
 	<outputConversionFactor>1</outputConversionFactor>
 	<reference>GRSE</reference>
