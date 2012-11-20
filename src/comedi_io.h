@@ -20,7 +20,7 @@
 #define GRSE AREF_GROUND
 
 /**
- * We ask the card to acquire data at a frequency
+ * We ask the card to operate at a frequency
  * of OVERSAMPLING_FACTOR times the sampling rate.
  */
 #define OVERSAMPLING_FACTOR 1
@@ -172,7 +172,7 @@ public:
         double inputConversionFactor() const;
         double read();
 private:
-#ifdef ASYNCHRONOUS_INPUT
+#ifdef ASYNCHRONOUS_IO
         ComediAnalogInputProxy *m_proxy;
 #endif
         comedi_polynomial_t m_converter;

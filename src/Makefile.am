@@ -6,6 +6,9 @@ include_HEADERS = types.h randlib.h utils.h entity.h dynamical_entity.h ou.h syn
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
+if ASYNCHRONOUS_IO
+AM_CPPFLAGS += -DASYNCHRONOUS_IO
+endif
 if REALTIME
 AM_CPPFLAGS += -DREALTIME_ENGINE
 endif

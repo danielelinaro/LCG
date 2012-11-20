@@ -10,7 +10,7 @@
 
 namespace dynclamp {
 
-#ifdef ASYNCHRONOUS_INPUT
+#ifdef ASYNCHRONOUS_IO
 std::map<std::string,ComediAnalogInputProxy*> proxies;
 #endif
 
@@ -538,7 +538,7 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
                 throw "Error in comedi_get_softcal_converter()";
         }
 
-#ifdef ASYNCHRONOUS_INPUT
+#ifdef ASYNCHRONOUS_IO
         std::stringstream key;
         key << deviceFile << "-" << inputSubdevice;
         if (proxies.count(key.str()) == 0) {
@@ -555,14 +555,14 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
 
 ComediAnalogInputSoftCal::~ComediAnalogInputSoftCal()
 {
-#ifdef ASYNCHRONOUS_INPUT
+#ifdef ASYNCHRONOUS_IO
         m_proxy->decreaseRefCount();
 #endif
 }
 
 bool ComediAnalogInputSoftCal::initialise()
 {
-#ifndef ASYNCHRONOUS_INPUT
+#ifndef ASYNCHRONOUS_IO
         return true;
 #else
         return m_proxy->initialise();
@@ -576,7 +576,7 @@ double ComediAnalogInputSoftCal::inputConversionFactor() const
 
 double ComediAnalogInputSoftCal::read()
 {
-#ifndef ASYNCHRONOUS_INPUT
+#ifndef ASYNCHRONOUS_IO
         lsampl_t sample;
         comedi_data_read(m_device, m_subdevice, m_channels[0], m_range, m_aref, &sample);
         return comedi_to_physical(sample, &m_converter) * m_inputConversionFactor;

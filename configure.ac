@@ -72,6 +72,10 @@ AC_ARG_WITH([output-reset],
 	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates])],
  	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
+AC_ARG_WITH([asynchronous-io],
+	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O])],
+ 	    [with_asynchronous_io=yes],[echo "WARNING: using synchronous I/O."])
+AM_CONDITIONAL([ASYNCHRONOUS_IO],[test "$with_asynchronous_io" = "yes"])
 
 if test "$with_examples" = "yes" ; then
         AC_CONFIG_FILES([examples/Makefile])
