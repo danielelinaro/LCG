@@ -16,10 +16,13 @@ bool Simulate(const std::vector<Entity*>& entities, double tend);
 
 extern double globalT;
 extern double globalDt;
+extern double runTime;
 #define GetGlobalDt() globalDt
 #define GetGlobalTime() globalT
 #define IncreaseGlobalTime() (globalT += globalDt)
 #define ResetGlobalTime()  (globalT = 0.0)
+#define SetRunTime(tend) (runTime = tend)
+#define GetRunTime() runTime
 
 #ifdef REALTIME_ENGINE
 extern double globalTimeOffset;

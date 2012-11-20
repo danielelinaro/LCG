@@ -5,7 +5,6 @@
 #include "utils.h"
 #include "common.h"
 
-
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
@@ -28,6 +27,7 @@ namespace dynclamp {
 
 double globalT;
 double globalDt = SetGlobalDt(1.0/20e3);
+double runTime;
 #ifdef REALTIME_ENGINE
 double globalTimeOffset = 0.0;
 #endif
@@ -404,7 +404,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 {
         int priority, flag, i;
         size_t nEntities = entities.size();
-        struct timespec now, next, interval;
+        struct timespec now, period;
         struct sched_param schedp;
 
         *retval = false;
@@ -438,6 +438,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         }
         Logger(Debug, "Initialised all entities.\n");
         
+        // The period of execution of the main loop
+	period.tv_sec = 0;
+	period.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
+
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag < 0) {
@@ -446,41 +450,34 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 return;
         }
 
-	interval.tv_sec = 0;
-	interval.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
-
-        // Compute the time at which the thread will have to resume
-        next = now;
-	next.tv_sec += interval.tv_sec;
-	next.tv_nsec += interval.tv_nsec;
-	tsnorm(&next);
-
         // Set the time offset, i.e. the absolute time of the beginning of the simulation
         SetGlobalTimeOffset(now);
 
         Logger(Important, "Expected duration: %g seconds.\n", tend);
-        Logger(Debug, "Starting the main loop.\n");
 
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
+                // Process the events and have all entities read their inputs
+                ProcessEvents();
+                for (i=0; i<nEntities; i++)
+                        entities[i]->readAndStoreInputs();
+
+                // Compute the time at which the thread will have to resume
+	        now.tv_sec += period.tv_sec;
+	        now.tv_nsec += period.tv_nsec;
+	        tsnorm(&now);
+
                 // Wait for next period
-		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next, NULL);
+		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &now, NULL);
                 if (flag != 0) {
                         Logger(Critical, "Error in clock_nanosleep.\n");
                         break;
                 }
 
-                ProcessEvents();
-                for (i=0; i<nEntities; i++)
-                        entities[i]->readAndStoreInputs();
+                // Increase the time of the simulation and step all entities forward
                 IncreaseGlobalTime();
                 for (i=0; i<nEntities; i++)
                         entities[i]->step();
-
-                // Compute the time at which the thread will have to resume
-	        next.tv_sec += interval.tv_sec;
-	        next.tv_nsec += interval.tv_nsec;
-	        tsnorm(&next);
         }
 
         // Compute how much time has passed since the beginning

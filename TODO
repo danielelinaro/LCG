@@ -1,6 +1,9 @@
 
 === Short term (and therefore relatively simple) ===
 
+-) analog output should also be proxied in asynchronous mode.
+-) fix the way the average deflection is computed in psp_opt.py
+-) change the priority of the writing thread in H5Recorder.
 -) CHECK FOR MEMORY LEAKS (in H5Recorder??) !!!
 -) see whether OU*, TimeLogger and Delay can be removed.
 -) finish to add the ionic currents for LTS neurons.

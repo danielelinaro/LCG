@@ -19,9 +19,13 @@
 /** Ground-Referenced Single Ended */
 #define GRSE AREF_GROUND
 
-namespace dynclamp {
+/**
+ * We ask the card to acquire data at a frequency
+ * of OVERSAMPLING_FACTOR times the sampling rate.
+ */
+#define OVERSAMPLING_FACTOR 1
 
-class ComediAnalogInputProxy;
+namespace dynclamp {
 
 /**
  * \brief Base class for analog I/O with Comedi.
@@ -70,8 +74,6 @@ public:
                                uint aref = GRSE);
         ~ComediAnalogInputProxy();
 
-        //virtual bool addChannel(uint channel);
-
         bool initialise();
         void acquire();
         lsampl_t value(uint channel);
@@ -79,13 +81,16 @@ public:
         void increaseRefCount();
         void decreaseRefCount();
         uint refCount() const;
-private:
-        bool fixCommand();
-        bool startCommand();
-        bool stopCommand();
-        void packChannelsList();
 
 private:
+        bool stopCommand();
+        void packChannelsList();
+        bool issueCommand();
+        bool fixCommand();
+        bool startCommand();
+
+private:
+        char m_buffer[1024];
         comedi_cmd m_cmd;
         bool m_commandRunning;
         double m_tLastSample;

@@ -46,8 +46,8 @@ namespace dynclamp {
 #include <limits>
 
 #define LOGFILE                 "/tmp/dynclamp.txt"
-//#define ASYNCHRONOUS_INPUT
-#define TRIM_ANALOGOUTPUT
+#define ASYNCHRONOUS_INPUT
+#define TRIM_ANALOG_OUTPUT
 
 // WHY is this enumeration here???
 enum {

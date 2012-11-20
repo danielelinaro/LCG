@@ -393,6 +393,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                 }
 
                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
+                SetRunTime(*tend);
 
                 /*** entities ***/
                 BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {

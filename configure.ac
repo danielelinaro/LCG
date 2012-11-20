@@ -43,35 +43,16 @@ AC_CHECK_FUNCS([floor pow sqrt])
 AC_HEADER_STDBOOL
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
+
 # required libraries
-AC_CHECK_LIB([dl], [dlopen], [], [
-echo "Can't find the dl library."
-exit
-])
-AC_CHECK_LIB([hdf5], [H5Fcreate], [], [
-echo "Can't find HDF5 library."
-exit
-])
-AC_CHECK_LIB([hdf5_hl], [H5LTmake_dataset_double], [], [
-echo "Can't find HDF5 library."
-exit
-])
-AC_CHECK_LIB([boost_thread], [pthread_create], [], [
-echo "Can't find boost thread library."
-exit
-])
-AC_CHECK_LIB([boost_program_options], [memcmp], [], [
-echo "Can't find boost program options library."
-exit
-])
-AC_CHECK_LIB([boost_system], [malloc], [], [
-echo "Can't find boost system library."
-exit
-])
-AC_CHECK_LIB([boost_filesystem], [open], [], [
-echo "Can't find boost filesystem library."
-exit
-])
+AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library missing.)])
+AC_CHECK_LIB([hdf5], [H5Fcreate], [], [AC_MSG_ERROR([HDF5 library missing.])])
+AC_CHECK_LIB([hdf5_hl], [H5LTmake_dataset_double], [], [AC_MSG_ERROR([HDF5 library missing.])])
+AC_LANG_CPLUSPLUS
+AC_CHECK_LIB([boost_thread], [main], [], [AC_MSG_ERROR([BOOST thread library missing.])])
+AC_CHECK_LIB([boost_program_options], [main], [], [AC_MSG_ERROR([BOOST program_options library missing.])])
+AC_CHECK_LIB([boost_system], [main], [], [AC_MSG_ERROR([BOOST system library missing.])])
+AC_CHECK_LIB([boost_filesystem], [main], [], [AC_MSG_ERROR([BOOST filesystem library missing.])])
 
 # defines
 LIB_CURRENT=0
@@ -81,7 +62,6 @@ LIB_VER=$LIB_CURRENT:$LIB_REVISION:$LIB_AGE
 LIB_TAG=$LIB_CURRENT.$LIB_REVISION.$LIB_AGE
 AC_SUBST([LIB_VER])
 AC_SUBST([LIB_TAG])
-
 
 # conditional building
 AC_ARG_WITH([examples],

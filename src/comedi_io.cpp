@@ -2,6 +2,7 @@
 
 #ifdef HAVE_LIBCOMEDI
 #include "engine.h"
+#include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -28,7 +29,7 @@ ComediAnalogIO::ComediAnalogIO(const char *deviceFile, uint subdevice,
                 throw "Unable to open communication with the DAQ board.";
 
         // copy the channels to read
-        if (channels != NULL && nChannels > 0) {
+        if (nChannels > 0 && channels != NULL) {
                 m_nChannels = nChannels;
                 m_channels = new uint[m_nChannels];
                 for (uint i=0; i<m_nChannels; i++)
@@ -78,7 +79,7 @@ bool ComediAnalogIO::isChannelPresent(uint channel)
 
 bool ComediAnalogIO::addChannel(uint channel)
 {
-        Logger(Info, "ComediAnalogIO::addChannel(uint)\n");
+        Logger(Debug, "ComediAnalogIO::addChannel(uint)\n");
         uint i;
 
         if (isChannelPresent(channel))
@@ -101,6 +102,10 @@ bool ComediAnalogIO::addChannel(uint channel)
                 delete m_data;
         }
         m_data = new lsampl_t[m_nChannels];
+        Logger(Info, "Channel list: [");
+        for (int i=0; i<m_nChannels-1; i++)
+                Logger(Info, "%d,", m_channels[i]);
+        Logger(Info, "%d].\n", m_channels[m_nChannels-1]);
 
         return true;
 }
@@ -137,61 +142,39 @@ uint ComediAnalogIO::reference() const
 
 //~~~
 
-char *cmd_src(int src,char *buf)
+char* CommandSource(int src,char *buf)
 {
 	buf[0]=0;
-
-	if(src&TRIG_NONE)strcat(buf,"none|");
-	if(src&TRIG_NOW)strcat(buf,"now|");
-	if(src&TRIG_FOLLOW)strcat(buf, "follow|");
-	if(src&TRIG_TIME)strcat(buf, "time|");
-	if(src&TRIG_TIMER)strcat(buf, "timer|");
-	if(src&TRIG_COUNT)strcat(buf, "count|");
-	if(src&TRIG_EXT)strcat(buf, "ext|");
-	if(src&TRIG_INT)strcat(buf, "int|");
+	if (src&TRIG_NONE) strcat(buf,"none|");
+	if (src&TRIG_NOW) strcat(buf,"now|");
+	if (src&TRIG_FOLLOW) strcat(buf, "follow|");
+	if (src&TRIG_TIME) strcat(buf, "time|");
+	if (src&TRIG_TIMER) strcat(buf, "timer|");
+	if (src&TRIG_COUNT) strcat(buf, "count|");
+	if (src&TRIG_EXT) strcat(buf, "ext|");
+	if (src&TRIG_INT) strcat(buf, "int|");
 #ifdef TRIG_OTHER
-	if(src&TRIG_OTHER)strcat(buf, "other|");
+	if(src&TRIG_OTHER) strcat(buf, "other|");
 #endif
-
-	if(strlen(buf)==0){
-		sprintf(buf,"unknown(0x%08x)",src);
-	}else{
-		buf[strlen(buf)-1]=0;
-	}
-
+	if(strlen(buf)==0)
+		sprintf(buf, "unknown(0x%08x)", src);
+        else
+		buf[strlen(buf)-1] = 0;
 	return buf;
 }
 
-void dump_cmd(FILE *out,comedi_cmd *cmd)
+void DumpCommand(LogLevel level, comedi_cmd *cmd)
 {
 	char buf[100];
-
-	fprintf(out,"subdev:      %d\n", cmd->subdev);
-	fprintf(out,"flags:       %x\n", cmd->flags);
-
-	fprintf(out,"start:      %-8s %d\n",
-		cmd_src(cmd->start_src,buf),
-		cmd->start_arg);
-
-	fprintf(out,"scan_begin: %-8s %d\n",
-		cmd_src(cmd->scan_begin_src,buf),
-		cmd->scan_begin_arg);
-
-	fprintf(out,"convert:    %-8s %d\n",
-		cmd_src(cmd->convert_src,buf),
-		cmd->convert_arg);
-
-	fprintf(out,"scan_end:   %-8s %d\n",
-		cmd_src(cmd->scan_end_src,buf),
-		cmd->scan_end_arg);
-
-	fprintf(out,"stop:       %-8s %d\n",
-		cmd_src(cmd->stop_src,buf),
-		cmd->stop_arg);
-	
-	fprintf(out,"chanlist_len: %d\n", cmd->chanlist_len);
-	fprintf(out,"data_len: %d\n", cmd->data_len);
-	
+	Logger(level, "subdev:         %d\n", cmd->subdev);
+	Logger(level, "flags:          %x\n", cmd->flags);
+	Logger(level, "start:          %-8s %d\n", CommandSource(cmd->start_src,buf), cmd->start_arg);
+	Logger(level, "scan_begin:     %-8s %d\n", CommandSource(cmd->scan_begin_src,buf), cmd->scan_begin_arg);
+	Logger(level, "convert:        %-8s %d\n", CommandSource(cmd->convert_src,buf), cmd->convert_arg);
+	Logger(level, "scan_end:       %-8s %d\n", CommandSource(cmd->scan_end_src,buf), cmd->scan_end_arg);
+	Logger(level, "stop:           %-8s %d\n", CommandSource(cmd->stop_src,buf), cmd->stop_arg);
+	Logger(level, "chanlist_len:   %d\n", cmd->chanlist_len);
+	Logger(level, "data_len:       %d\n", cmd->data_len);
 }
 
 ComediAnalogInputProxy::ComediAnalogInputProxy(const char *deviceFile, uint subdevice,
@@ -207,7 +190,7 @@ ComediAnalogInputProxy::ComediAnalogInputProxy(const char *deviceFile, uint subd
         else
                 m_bytesPerSample = sizeof(sampl_t);
         m_deviceFd = comedi_fileno(m_device);
-        Logger(Important, "Sample size is %d bytes.\n", m_bytesPerSample);
+        Logger(Debug, "Sample size is %d bytes.\n", m_bytesPerSample);
 }
 
 ComediAnalogInputProxy::~ComediAnalogInputProxy()
@@ -235,66 +218,57 @@ uint ComediAnalogInputProxy::refCount() const
         return m_refCount;
 }
 
-bool ComediAnalogInputProxy::fixCommand()
-{                
-        if (comedi_command_test(m_device, &m_cmd) < 0 && 
-            comedi_command_test(m_device, &m_cmd) < 0) {
-                Logger(Critical, "Invalid command.");
-                return false;
-        }
-        Logger(Info, "Successfully fixed the command.\n");
-        Logger(Info, "--------------------------------\n");
-        dump_cmd(stderr, &m_cmd);
-        Logger(Info, "--------------------------------\n");
-        return true;
-}
-
 bool ComediAnalogInputProxy::initialise()
 {
+        Logger(Debug, "ComediAnalogInputProxy::initialise()\n");
         if (m_nChannels == 0) {
                 Logger(Critical, "No channels are configured.\n");
                 return false;
         }
 
-        Logger(Important, "Initialising ComediAnalogInputProxy.\n");
-
         stopCommand();
 
         packChannelsList();
 
-        memset(&m_cmd, 0, sizeof(struct comedi_cmd_struct));
-        int ret = comedi_get_cmd_generic_timed(m_device, m_subdevice, &m_cmd, m_nChannels, int(1e9 * GetGlobalDt()));
-        if (ret < 0) {
-                Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
+        // the command doesn't start immediately
+        bool flag = issueCommand();
+        if (flag) {
+                Logger(Debug, "Successfully issued the command.\n");
+                flag = startCommand();
+                if (flag)
+                        Logger(Debug, "Successfully started the acquisition.\n");
+                else
+                        Logger(Critical, "Unable to start the acquisition.\n");
+        }
+        else {
+                Logger(Critical, "Unable to issue the command.\n");
+        }
+
+        return flag;
+}
+
+bool ComediAnalogInputProxy::stopCommand()
+{
+        if (!m_commandRunning) {
+                Logger(Debug, "The command is not running.\n");
+                return true;
+        }
+
+        if (comedi_cancel(m_device, m_subdevice) != 0) {
+                Logger(Critical, "Error stopping the command.\n");
                 return false;
         }
-        //m_cmd.flags            |= TRIG_RT;
-        m_cmd.convert_arg       = 0;    // this value is wrong, but will be fixed by comedi_command_test
-        m_cmd.chanlist          = m_channelsPacked;
-        m_cmd.stop_src          = TRIG_NONE;
-        m_cmd.stop_arg          = 0;
 
-        /*
-        m_cmd.subdev = m_subdevice;
-        m_cmd.flags = 0;
-        //m_cmd.flags |= TRIG_RT;
-        m_cmd.start_src = TRIG_NOW;
-        m_cmd.start_arg = 0;
-        m_cmd.scan_begin_src = TRIG_TIMER;
-        m_cmd.scan_begin_arg = (uint) (GetGlobalDt()*1000000000); // period in nanoseconds
-        m_cmd.convert_src = TRIG_TIMER;
-        m_cmd.convert_arg = 0; // will be adjusted by comedi_command_test
-        m_cmd.scan_end_src = TRIG_COUNT;
-        m_cmd.scan_end_arg = m_nChannels;
-        m_cmd.stop_src = TRIG_NONE;
-        m_cmd.stop_arg = 0;
-        m_cmd.chanlist = m_channelsPacked;
-        m_cmd.chanlist_len = m_nChannels;
-        */
+        Logger(Debug, "Successfully stopped running command.\n");
 
-        m_bytesToRead = m_nChannels * m_bytesPerSample;
+        // read data that may have remained in the internal buffer of the card
+        char buffer[1024];
+        size_t n;
+        while ((n = read(m_deviceFd, buffer, 1024)) > 0)
+                Logger(Info, "Read %d remaining bytes.\n");
 
-        return fixCommand() && startCommand();
+        m_commandRunning = false;
+        return true;
 }
 
 void ComediAnalogInputProxy::packChannelsList()
@@ -308,26 +282,46 @@ void ComediAnalogInputProxy::packChannelsList()
         }
 }
 
-bool ComediAnalogInputProxy::stopCommand()
-{
-        if (!m_commandRunning) {
-                Logger(Info, "The command is not running.\n");
-                return true;
-        }
 
-        if (comedi_cancel(m_device, m_subdevice) != 0) {
-                Logger(Critical, "Error stopping the command.\n");
+bool ComediAnalogInputProxy::issueCommand()
+{
+        memset(&m_cmd, 0, sizeof(struct comedi_cmd_struct));
+        int ret = comedi_get_cmd_generic_timed(m_device, m_subdevice, &m_cmd,
+                        m_nChannels, int(NSEC_PER_SEC * GetGlobalDt())/OVERSAMPLING_FACTOR);
+        if (ret < 0) {
+                Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
+                return false;
+        }
+        m_cmd.convert_arg = 0;    // this value is wrong, but will be fixed by comedi_command_test
+        m_cmd.chanlist    = m_channelsPacked;
+        m_cmd.start_src   = TRIG_INT;
+        m_cmd.stop_src    = TRIG_COUNT;
+        m_cmd.stop_arg    = (int) ceil(GetRunTime()/GetGlobalDt())*OVERSAMPLING_FACTOR;
+
+        m_bytesToRead = m_nChannels * m_bytesPerSample * OVERSAMPLING_FACTOR;
+
+        if (!fixCommand())
+                return false;
+
+        if (comedi_command(m_device, &m_cmd) != 0) {
+                Logger(Critical, "Error starting the command.\n");
                 return false;
         }
 
-        Logger(Info, "Successfully stopped running command.\n");
+        return true;
+}
 
-        char buffer[1024];
-        size_t n;
-        while ((n = read(m_deviceFd, buffer, 1024)) > 0)
-                Logger(Info, "Read %d bytes.\n");
-
-        m_commandRunning = false;
+bool ComediAnalogInputProxy::fixCommand()
+{                
+        if (comedi_command_test(m_device, &m_cmd) < 0 && 
+            comedi_command_test(m_device, &m_cmd) < 0) {
+                Logger(Critical, "Invalid command.\n");
+                return false;
+        }
+        Logger(Debug, "Successfully fixed the command.\n");
+        Logger(Debug, "--------------------------------\n");
+        DumpCommand(Debug, &m_cmd);
+        Logger(Debug, "--------------------------------\n");
         return true;
 }
 
@@ -337,60 +331,51 @@ bool ComediAnalogInputProxy::startCommand()
                 Logger(Info, "The command is already running.\n");
                 return true;
         }
+        
+        comedi_insn insn;
+        unsigned int data = 0;
 
-        if (comedi_command(m_device, &m_cmd) != 0) {
-                Logger(Critical, "Error starting the command.\n");
+        // prepare the triggering instruction
+        memset(&insn, 0, sizeof(insn));
+        insn.insn = INSN_INTTRIG;
+        insn.n = 1;
+        insn.data = &data;
+        insn.subdev = m_subdevice;
+
+        // start the acquisition
+        if (comedi_do_insn(m_device, &insn) < 0) {
+                Logger(Critical, "Unable to start the acquisition (error in comedi_do_insn).\n");
                 return false;
         }
 
         m_commandRunning = true;
-        return true;
-}
-
-/*
-bool ComediAnalogInputProxy::addChannel(uint channel)
-{
-        Logger(Info, "ComediAnalogInputProxy::addChannel(uint)\n");
-
-        if (! ComediAnalogIO::addChannel(channel))
-                return false;
-
-        delete m_channelsPacked;
-        m_channelsPacked = new uint[m_nChannels];
-        for (uint i=0; i<m_nChannels; i++) {
-                m_channelsPacked[i] = CR_PACK(m_channels[i], m_range, m_aref);
-                Logger(Info, "Packed channel %d.\n", m_channels[i]);
-        }
-        m_cmd.chanlist = m_channelsPacked;
-        m_cmd.chanlist_len = m_nChannels;
-        m_cmd.scan_end_arg = m_nChannels;
-        fixCommand();
 
         return true;
 }
-*/
 
 void ComediAnalogInputProxy::acquire()
 {
-        char buffer[512];
-        size_t nBytes;
-        int i;
+        if (!m_commandRunning)
+                startCommand();
         double now = GetGlobalTime();
         if (now != m_tLastSample) {
-                // read the actual data
-                nBytes = read(m_deviceFd, buffer, m_bytesToRead);
 
-                for (i=0; i<nBytes/m_bytesPerSample; i++) {
+                // read the data
+                size_t nBytes = 0;
+                char *ptr = m_buffer;
+                do {
+                        nBytes += read(m_deviceFd, ptr, m_bytesToRead-nBytes);
+                        ptr += nBytes;
+                } while (nBytes != 0 && nBytes < m_bytesToRead);
+
+                for (int i=0; i<m_nChannels; i++) {
                         if (m_subdeviceFlags & SDF_LSAMPL)
-                                m_data[i] = ((lsampl_t *) buffer)[i];
+                                m_data[i] = ((lsampl_t *) m_buffer)[i];
                         else
-                                m_data[i] = ((sampl_t *) buffer)[i];
+                                m_data[i] = ((sampl_t *) m_buffer)[i];
+                        m_hash[m_channels[i]] = m_data[i];
                 }
 
-                // copy the samples into the data hashtable
-                for (i=0; i<m_nChannels; i++)
-                        m_hash[m_channels[i]] = m_data[i];
-                
                 // update the time of last read operation
                 m_tLastSample = now;
         }
