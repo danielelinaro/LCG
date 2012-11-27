@@ -1,0 +1,87 @@
+<dynamicclamp>
+  <entities>
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>true</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>RealNeuron</name>
+      <id>1</id>
+      <parameters>
+	<spikeThreshold>-20</spikeThreshold>
+	<V0>-65</V0>
+	<kernelFile>kernel.dat</kernelFile>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
+	<inputRange>[-10,+10]</inputRange>
+	<readChannel>0</readChannel>
+	<writeChannel>0</writeChannel>
+	<inputConversionFactor>100</inputConversionFactor>
+	<outputConversionFactor>0.001</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>2</id>
+      <parameters><filename>gexc.stim</filename></parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>3</id>
+      <parameters><filename>ginh.stim</filename></parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>4</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>5</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>6</id>
+      <parameters><filename>current.stim</filename></parameters>
+      <connections>0,1</connections>
+    </entity>
+
+    <entity>
+      <name>EventCounter</name>
+      <id>7</id>
+      <parameters>
+	<maxCount>0</maxCount>
+	<autoReset>false</autoReset>
+	<eventToCount>spike</eventToCount>
+	<eventToSend>stoprun</eventToSend>
+      </parameters>
+      <connections></connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>0</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>

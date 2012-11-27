@@ -63,20 +63,27 @@ protected:
         lsampl_t *m_data;
 };
 
+#define PROXY_BUFSIZE 1024
+
 /**
- * \brief Proxy class for analog input on multiple channels.
+ * \brief Proxy class for analog I/O on multiple channels.
  */
-class ComediAnalogInputProxy : public ComediAnalogIO {
+class ComediAnalogIOProxy : public ComediAnalogIO {
 public:
-        ComediAnalogInputProxy(const char *deviceFile, uint subdevice,
-                               uint *channels, uint nChannels,
-                               uint range = PLUS_MINUS_TEN,
-                               uint aref = GRSE);
-        ~ComediAnalogInputProxy();
+        ComediAnalogIOProxy(const char *deviceFile, uint subdevice,
+                            uint *channels, uint nChannels,
+                            uint range = PLUS_MINUS_TEN,
+                            uint aref = GRSE);
+        ~ComediAnalogIOProxy();
 
         bool initialise();
+
+        // analog input
         void acquire();
         lsampl_t value(uint channel);
+
+        // analog output
+        void output(uint channel, lsampl_t value);
 
         void increaseRefCount();
         void decreaseRefCount();
@@ -90,7 +97,7 @@ private:
         bool startCommand();
 
 private:
-        char m_buffer[1024];
+        char m_buffer[PROXY_BUFSIZE];
         comedi_cmd m_cmd;
         bool m_commandRunning;
         double m_tLastSample;
@@ -99,44 +106,15 @@ private:
         uint m_bytesPerSample;
         int m_subdeviceFlags;
         int m_deviceFd;
-        int m_bytesToRead;
+
         // key -> channel number, value -> sample
         std::map<uint,lsampl_t> m_hash;
-};
 
-/**
- * \brief Class for analog input from a single channel with hardware calibration.
- */
-class ComediAnalogInputHardCal : public ComediAnalogIO {
-public:
-        ComediAnalogInputHardCal(const char *deviceFile, uint outputSubdevice,
-                                 uint readChannel, double inputConversionFactor,
-                                 uint range = PLUS_MINUS_TEN, uint aref = GRSE);
-        bool initialise();
-        double inputConversionFactor() const;
-        double read();
-private:
-        comedi_range *m_dataRange;
-        lsampl_t m_maxData;
-        double m_inputConversionFactor;
-};
+        /*** used only for analog output ***/
+        int m_bytesToWrite, m_nStoredSamples;
 
-/**
- * \brief Class for analog output to a single channel with hardware calibration.
- */
-class ComediAnalogOutputHardCal : public ComediAnalogIO {
-public:
-        ComediAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
-                                  uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE);
-        ~ComediAnalogOutputHardCal();
-        bool initialise();
-        double outputConversionFactor() const;
-        void write(double data);
-private:
-        comedi_range *m_dataRange;
-        lsampl_t m_maxData;
-        double m_outputConversionFactor;
+        /*** used only for analog input ***/
+        int m_bytesToRead;
 };
 
 /**
@@ -173,7 +151,7 @@ public:
         double read();
 private:
 #ifdef ASYNCHRONOUS_IO
-        ComediAnalogInputProxy *m_proxy;
+        ComediAnalogIOProxy *m_proxy;
 #endif
         comedi_polynomial_t m_converter;
         double m_inputConversionFactor;
@@ -192,7 +170,48 @@ public:
         double outputConversionFactor() const;
         void write(double data);
 private:
+#ifdef ASYNCHRONOUS_IO
+        ComediAnalogIOProxy *m_proxy;
+#endif
         comedi_polynomial_t m_converter;
+#ifdef TRIM_ANALOG_OUTPUT
+        comedi_range *m_dataRange;
+#endif
+        double m_outputConversionFactor;
+};
+
+/**
+ * \brief Class for analog input from a single channel with hardware calibration.
+ */
+class ComediAnalogInputHardCal : public ComediAnalogIO {
+public:
+        ComediAnalogInputHardCal(const char *deviceFile, uint outputSubdevice,
+                                 uint readChannel, double inputConversionFactor,
+                                 uint range = PLUS_MINUS_TEN, uint aref = GRSE);
+        bool initialise();
+        double inputConversionFactor() const;
+        double read();
+private:
+        comedi_range *m_dataRange;
+        lsampl_t m_maxData;
+        double m_inputConversionFactor;
+};
+
+/**
+ * \brief Class for analog output to a single channel with hardware calibration.
+ */
+class ComediAnalogOutputHardCal : public ComediAnalogIO {
+public:
+        ComediAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
+                                  uint writeChannel, double outputConversionFactor,
+                                  uint aref = GRSE);
+        ~ComediAnalogOutputHardCal();
+        bool initialise();
+        double outputConversionFactor() const;
+        void write(double data);
+private:
+        comedi_range *m_dataRange;
+        lsampl_t m_maxData;
         double m_outputConversionFactor;
 };
 

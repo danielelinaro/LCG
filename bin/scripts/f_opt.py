@@ -41,13 +41,17 @@ def usage():
     print('     -f    target frequency (default 1 Hz)')
     print('     -r    background synaptic rate (default 7000 Hz)')
     print('     -i    interval between repetitions (default 1 s)')
+    print('     -d    duration of the stimulation (default 10 s)')
+    print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
+    print('     -v    maximum (depolarized) voltage (default -40 mV).')
     print('     -d    duration of the stimulation (default 10 s)\n')
+
 
 def main():
     import getopt
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hf:r:R:d:i:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], "hf:r:R:d:i:V:v:", ["help", "output="])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -59,6 +63,8 @@ def main():
     duration = 10          # [s]
     interval = 1           # [s]
     Rm = -1                # [MOhm]
+    Vmin = -60             # [mV]
+    Vmax = -40             # [mV]
 
     for o,a in opts:
         if o == '-h':
@@ -74,14 +80,23 @@ def main():
             interval = float(a)
         elif o == '-d':
             duration = float(a)
+        elif o == '-V':
+            Vmin = float(a)
+        elif o == '-v':
+            Vmax = float(a)
+
+    if Vmin >= Vmax:
+        print('\n>>> Error: Vmin must be smaller than Vmax. <<<')
+        usage()
+        sys.exit(1)
 
     if Rm < 0:
-        print('\n>>> Error: you must specify the input resistance of the cell (in MOhm) <<<')
+        print('\n>>> Error: you must specify the input resistance of the cell (in MOhm). <<<')
         usage()
         sys.exit(1)
 
     import scipy.optimize as opt
-    Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, -55, -1,
+    Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
                                           args = [targetFrequency, Rm, rate, duration, interval, dclamp],
                                           xtol=0.5, maxfun=15, full_output=1, disp=1)
 

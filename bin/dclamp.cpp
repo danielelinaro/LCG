@@ -57,7 +57,8 @@ int main(int argc, char *argv[])
                 }
 
                 if (stimulus == NULL) {
-                        Logger(Critical, "You need to have at least one Stimulus in your configuration file if you specify a stimulus file. Aborting.\n");
+                        Logger(Critical, "You need to have at least one Stimulus in your configuration "
+                                         "file if you specify a stimulus file. Aborting.\n");
                         goto endMain;
                 }
 
@@ -68,7 +69,8 @@ int main(int argc, char *argv[])
                         for (int j=0; j<opt.stimulusFiles.size(); j++) {
                                 stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
                                 for (int k=0; k<opt.nTrials; k++) {
-                                        Logger(Debug, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n", i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
+                                        Logger(Debug, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n",
+                                                i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
                                         ResetGlobalTime();
                                         success = Simulate(entities,stimulus->duration());
                                         if (!success || KILL_PROGRAM())

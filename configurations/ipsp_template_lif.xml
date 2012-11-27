@@ -1,0 +1,80 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>false</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>1</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-65.2</Er>
+	<E0>-70</E0>
+	<Vth>-50</Vth>
+	<Iext>0</Iext>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>SynapticConnection</name>
+      <id>2</id>
+      <parameters>
+	<weight>W</weight>
+	<delay>2e-3</delay>
+      </parameters>
+      <connections>3</connections>
+    </entity>
+
+    <entity>
+      <name>TMGSynapse</name>
+      <id>3</id>
+      <parameters>
+	<E>-80</E>
+	<U>0.03</U>
+	<tau1>0.003</tau1>
+	<tauRec>0.1</tauRec>
+	<tauFacil>1</tauFacil>
+      </parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>4</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-65.2</Er>
+	<E0>-70</E0>
+	<Vth>-50</Vth>
+	<Iext>0</Iext>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
+	<filename>/home/daniele/protocols/templates/pulse.stim</filename>
+	<units>pA</units>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>1</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>

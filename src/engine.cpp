@@ -548,11 +548,12 @@ bool Simulate(const std::vector<Entity*>& entities, double tend)
         boost::thread thrd(RTSimulation, entities, tend, &success);
 #else
         boost::thread thrd(NonRTSimulation, entities, tend, &success);
-
 #endif // REALTIME_ENGINE
         thrd.join();
         if (success)
-                Logger(Debug, "Simulation thread has finished running.\n");
+                Logger(Debug, "The structimulation thread has terminated successfully.\n");
+        else
+                Logger(Important, "There were some problems with the simulation thread.\n");
         return success;
 }
 

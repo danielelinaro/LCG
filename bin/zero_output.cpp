@@ -9,10 +9,10 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+#include <comedilib.h>
 #include "common.h"
 #include "types.h"
 #include "utils.h"
-#include "analog_io.h"
 using namespace dynclamp;
 
 int main(int argc, char *argv[])
@@ -54,10 +54,10 @@ int main(int argc, char *argv[])
                 }
 
                 if (boost::iequals(refStr, "grse")) {
-                        ref = GRSE;
+                        ref = AREF_GROUND;
                 }
                 else if (boost::iequals(refStr, "nrse")) {
-                        ref = NRSE;
+                        ref = AREF_COMMON;
                 }
                 else {
                         Logger(Critical, "Unknown reference type [%s].\n", refStr.c_str());
@@ -69,31 +69,33 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 
+        uint range = 0;
+        comedi_t *device;
+        char *calibrationFile;
+        comedi_calibration_t *calibration;
+        comedi_polynomial_t converter;
+
+        device = comedi_open(deviceFile.c_str());
+        calibrationFile = comedi_get_default_calibration_path(device);
+        calibration = comedi_parse_calibration_file(calibrationFile);
+
         if (channel == -1) {
-                comedi_t *device;
-                device = comedi_open(deviceFile.c_str());
-                if (device == NULL) {
-                        Logger(Critical, "Unable to open device [%s].\n", deviceFile.c_str());
-                        exit(1);
-                }
-
                 int nChannels = comedi_get_n_channels(device, subdevice);
-
-                comedi_close(device);
-
                 for (int ch=0; ch<nChannels; ch++) {
-                        Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
-                                        deviceFile.c_str(), subdevice, ch);
-                        ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, ch, 0.0, ref);
-                        output.write(0.0);
+                        Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n", deviceFile.c_str(), subdevice, ch);
+                        comedi_get_softcal_converter(subdevice, ch, range, COMEDI_FROM_PHYSICAL, calibration, &converter);
+                        comedi_data_write(device, subdevice, ch, range, ref, comedi_from_physical(0., &converter));
                 }
         }
         else {
-                Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n",
-                                deviceFile.c_str(), subdevice, channel);
-                ComediAnalogOutputSoftCal output(deviceFile.c_str(), subdevice, channel, 0.0, ref);
-                output.write(0.0);
+                Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n", deviceFile.c_str(), subdevice, channel);
+                comedi_get_softcal_converter(subdevice, channel, range, COMEDI_FROM_PHYSICAL, calibration, &converter);
+                comedi_data_write(device, subdevice, channel, range, ref, comedi_from_physical(0., &converter));
         }
+
+        comedi_cleanup_calibration(calibration);
+        free(calibrationFile);
+        comedi_close(device);
 
 #else
 
@@ -107,10 +109,10 @@ int main(int argc, char *argv[])
         if (fid != NULL) {
                 fprintf(fid, "%lf", value);
                 fclose(fid);
-                Logger(Important, "Saved output value to [%s].\n", LOGFILE);
+                Logger(Info, "Saved output value to [%s].\n", LOGFILE);
         }
         else {
-                Logger(Important, "Unable to save output value to [%s].\n", LOGFILE);
+                Logger(Critical, "Unable to save output value to [%s].\n", LOGFILE);
         }
 #endif
         return 0;

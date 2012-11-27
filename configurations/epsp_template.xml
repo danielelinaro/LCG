@@ -4,7 +4,9 @@
     <entity>
       <name>H5Recorder</name>
       <id>0</id>
-      <parameters><compress>false</compress></parameters>
+      <parameters>
+	<compress>true</compress>
+      </parameters>
     </entity>
 
     <entity>
@@ -26,7 +28,7 @@
       <name>SynapticConnection</name>
       <id>2</id>
       <parameters>
-	<delay>3e-3</delay>
+	<delay>1e-3</delay>
 	<weight>W</weight>
       </parameters>
       <connections>3</connections>
@@ -36,8 +38,8 @@
       <name>TMGSynapse</name>
       <id>3</id>
       <parameters>
-	<E>-80</E>
-	<U>0.03</U>
+	<E>0</E>
+	<U>0.04</U>
 	<tau1>0.003</tau1>
 	<tauRec>0.1</tauRec>
 	<tauFacil>1</tauFacil>
@@ -64,7 +66,7 @@
       <name>Waveform</name>
       <id>5</id>
       <parameters>
-	<filename>pulse.stim</filename>
+	<filename>/home/daniele/protocols/templates/pulse.stim</filename>
 	<units>pA</units>
       </parameters>
       <connections>0,1</connections>

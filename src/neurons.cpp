@@ -377,50 +377,28 @@ void RealNeuron::terminate()
 
 void RealNeuron::evolve()
 {
-        int i;
-
-        /*** VOLTAGE ***/
-
-        // set previous value of the membrane potential
-        RN_VM_PREV = VM;
-        // read current value of the membrane potential
-        // compensate the recorded voltage
-        /*
-        if (!m_aec.hasKernel()) {
-                VM = Vr;
-        }
-        else {
-                if (m_delaySteps == 0) {
-                        VM = m_aec.compensate(Vr);
-                }
-                else {
-                        VM = m_aec.compensate(m_VrDelay[0]);
-                        for (i=0; i<m_delaySteps-1; i++)
-                                m_VrDelay[i] = m_VrDelay[i+1];
-                        m_VrDelay[m_delaySteps-1] = Vr;
-                }
-        }
-        */
-
-        /*** CURRENT ***/
-
+        // compute the total input current
         m_Iinj = 0.0;
         size_t nInputs = m_inputs.size();
-        for (i=0; i<nInputs; i++)
+        for (int i=0; i<nInputs; i++)
                 m_Iinj += m_inputs[i];
-        //if (m_Iinj < -10000)
-        //        m_Iinj = -10000;
-        // inject the total input current into the neuron
-        
+#ifndef TRIM_ANALOG_OUTPUT
+        /*** BE SAFE! ***/
+        if (m_Iinj < -10000)
+                m_Iinj = -10000;
+#endif
+        // read current value of the membrane potential
         double Vr = m_input.read();
+        // inject the total input current into the neuron
         m_output.write(m_Iinj);
+        // store the previous value of the membrane potential
+        RN_VM_PREV = VM;
+        // compensate the recorded voltage
         VM = m_aec.compensate(Vr);
         // store the injected current into the buffer of the AEC
-        //if (m_aec.hasKernel())
         m_aec.pushBack(m_Iinj);
 
         /*** SPIKE DETECTION ***/
-
         if (VM >= m_Vth && RN_VM_PREV < m_Vth) {
                 emitSpike();
                 if (m_adaptiveThreshold) {
@@ -428,7 +406,6 @@ void RealNeuron::evolve()
                         m_Vmax = VM;
                 }
         }
-
         if (m_adaptiveThreshold) {
                 if (VM < m_Vmin) {
                         m_Vmin = VM;
@@ -438,7 +415,6 @@ void RealNeuron::evolve()
                         m_Vth = m_Vmax - 0.15 * (m_Vmax - m_Vmin);
                 }
         }
-
 }
 
 bool RealNeuron::hasMetadata(size_t *ndims) const

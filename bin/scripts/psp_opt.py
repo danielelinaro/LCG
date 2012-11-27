@@ -5,14 +5,24 @@ import sys
 import glob
 import numpy as np
 import dlutils as dl
+import pylab as p
 
 def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp'):
+    try:
+        w = weight[0]
+    except:
+        w = weight
     dl.substituteStrings(templateFile, 'psp.xml',
-                         {'<weight>W</weight>': '<weight>' + str(weight[0]) + '</weight>'})
-    os.system(dclamp + ' -c psp.xml -n ' + str(trials))     # run dclamp
+                         {'<weight>W</weight>': '<weight>' + str(w) + '</weight>'})
+    # run dclamp
+    os.system(dclamp + ' -c psp.xml -V 4 -n ' + str(trials))     # run dclamp
+
+    # get the file list
     files = glob.glob('*.h5')
     files.sort()
     files = files[-trials:]
+
+    # read the first file to allocate memory
     entities,info = dl.loadH5Trace(files[0])
     for ntt in entities:
         if ntt['name'] == 'RealNeuron' or ntt['id'] == 4:
@@ -23,25 +33,27 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
             t0 = ntt['metadata'][0][0]
     if max(pre['data']) < -30:    # no spike in the presynaptic
         print('>>> No spike in the presynaptic neuron. <<<')
-        return target**2        
-    V = np.zeros((trials,len(post['data'])))
-    V[0,:] = post['data']
+        sys.exit(1)
+
+    # allocate memory
+    t = np.arange(0, info['dt']*len(post['data']), info['dt'])
+    idx = np.nonzero(t < t0)[0]
+    dV = np.zeros((trials,len(post['data'])))
+    dV[0,:] = post['data'] - np.mean(post['data'][idx])
     for k in range(1,trials):
         entities,info = dl.loadH5Trace(files[k])
         for ntt in entities:
-            if ntt['name'] == 'RealNeuron':
-                V[k,:] = ntt['data']
+            if ntt['name'] == 'RealNeuron' or ntt['id'] == 4:
+                dV[k,:] = ntt['data'] - np.mean(ntt['data'][idx])
                 break
-    t = np.arange(0, info['dt']*len(entities[0]['data']), info['dt'])
-    V = np.mean(V,0)
-    Vbase = np.mean(V[t<t0])    # baseline voltage of the postsynaptic neuron
+    dV = np.mean(dV,0)
     idx = np.intersect1d(np.nonzero(t>t0)[0], np.nonzero(t<t0+window)[0])
-    deflection = np.max(np.abs(V[idx] - Vbase))
+    deflection = np.max(np.abs(dV[idx]))
     print('weight = %.3f -> deflection = %.3f mV' % (weight,deflection))
     return (deflection - target)**2
 
 def usage():
-    print('\nUsage: %s -e/-i [option <value>]' % sys.argv[0])
+    print('\nUsage: %s -e/-i [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('     -e    use the template file for excitatory post-synaptic potentials.')
     print('     -i    use the template file for inhibitory post-synaptic potentials.')
