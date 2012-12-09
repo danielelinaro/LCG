@@ -70,7 +70,7 @@
       <id>7</id>
       <parameters>
 	<maxCount>0</maxCount>
-	<autoReset>false</autoReset>
+	<autoReset>true</autoReset>
 	<eventToCount>spike</eventToCount>
 	<eventToSend>stoprun</eventToSend>
       </parameters>

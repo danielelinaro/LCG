@@ -31,8 +31,8 @@
       <name>SynapticConnection</name>
       <id>2</id>
       <parameters>
-	<delay>3e-3</delay>
-	<weight>200</weight>
+	<delay>1e-3</delay>
+	<weight>28</weight>
       </parameters>
       <connections>3</connections>
     </entity>
@@ -41,67 +41,65 @@
       <name>TMGSynapse</name>
       <id>3</id>
       <parameters>
-	<E>-80</E>
-	<U>0.03</U>
-	<tau1>0.003</tau1>
+	<E>0</E>
+	<U>0.1</U>
+	<tau1>0.005</tau1>
 	<tauRec>0.1</tauRec>
-	<tauFacil>1</tauFacil>
+	<tauFacil>0.4</tauFacil>
+      </parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>4</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-60</Er>
+	<E0>-60</E0>
+	<Vth>-50</Vth>
+	<Iext>0</Iext>
+      </parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>SynapticConnection</name>
+      <id>5</id>
+      <parameters>
+	<delay>1e-3</delay>
+	<weight>0</weight>
+      </parameters>
+      <connections>6</connections>
+    </entity>
+
+    <entity>
+      <name>Exp2Synapse</name>
+      <id>6</id>
+      <parameters>
+	<E>0</E>
+	<tauRise>0</tauRise>
+	<tauDecay>0</tauDecay>
       </parameters>
       <connections>0,1</connections>
     </entity>
 
     <entity>
       <name>Waveform</name>
-      <id>4</id>
+      <id>7</id>
       <parameters>
-	<filename>current_stimfile</filename>
+	<filename>current.stim</filename>
 	<units>pA</units>
       </parameters>
       <connections>0,1</connections>
     </entity>
 
-    <entity>
-      <name>Waveform</name>
-      <id>5</id>
-      <parameters>
-	<filename>gexc_stimfile</filename>
-	<units>nS</units>
-      </parameters>
-      <connections>0,7</connections>
-    </entity>
-
-    <entity>
-      <name>Waveform</name>
-      <id>6</id>
-      <parameters>
-	<filename>ginh_stimfile</filename>
-	<units>nS</units>
-      </parameters>
-      <connections>0,8</connections>
-    </entity>
-
-    <entity>
-      <name>ConductanceStimulus</name>
-      <id>7</id>
-      <parameters>
-	<E>0</E>
-      </parameters>
-      <connections>1</connections>
-    </entity>
-
-    <entity>
-      <name>ConductanceStimulus</name>
-      <id>8</id>
-      <parameters>
-	<E>-80</E>
-      </parameters>
-      <connections>1</connections>
-    </entity>
-
   </entities>
 
   <simulation>
-    <tend>7</tend>
+    <tend>0</tend>
     <rate>20000</rate>
   </simulation>
 

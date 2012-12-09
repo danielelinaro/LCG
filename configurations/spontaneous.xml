@@ -3,7 +3,7 @@
     <entity>
       <name>H5Recorder</name>
       <id>0</id>
-      <parameters><compress>false</compress></parameters>
+      <parameters><compress>true</compress></parameters>
     </entity>
 
     <entity>

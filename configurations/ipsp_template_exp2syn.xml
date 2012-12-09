@@ -4,7 +4,7 @@
     <entity>
       <name>H5Recorder</name>
       <id>0</id>
-      <parameters><compress>false</compress></parameters>
+      <parameters><compress>true</compress></parameters>
     </entity>
 
     <entity>
@@ -14,20 +14,20 @@
 	<C>0.08</C>
 	<tau>0.0075</tau>
 	<tarp>0.0014</tarp>
-	<Er>-65.2</Er>
-	<E0>-70</E0>
+	<Er>-60</Er>
+	<E0>-60</E0>
 	<Vth>-50</Vth>
 	<Iext>0</Iext>
       </parameters>
-      <connections>0,2</connections>
+      <connections>0,5</connections>
     </entity>
 
     <entity>
       <name>SynapticConnection</name>
       <id>2</id>
       <parameters>
-	<weight>W</weight>
-	<delay>2e-3</delay>
+	<weight>0</weight>
+	<delay>1e-3</delay>
       </parameters>
       <connections>3</connections>
     </entity>

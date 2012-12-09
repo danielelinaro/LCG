@@ -13,7 +13,7 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
     except:
         w = weight
     dl.substituteStrings(templateFile, 'psp.xml',
-                         {'<weight>W</weight>': '<weight>' + str(w) + '</weight>'})
+                         {'<weight>0</weight>': '<weight>' + str(w) + '</weight>'})
     # run dclamp
     os.system(dclamp + ' -c psp.xml -V 4 -n ' + str(trials))     # run dclamp
 
@@ -113,6 +113,11 @@ def main():
         print('You must specify either -e or -i.')
         usage()
         sys.exit(4)
+
+    if not os.path.isfile(templateFile):
+        print('The template file [%s] does not exist.' % templateFile)
+        usage()
+        sys.exit(5)
 
     import scipy.optimize as opt
     weight,err,ierr,numfunc = opt.fminbound(deflection_error, minWeight, maxWeight,
