@@ -87,9 +87,11 @@ nfreq=${#freq[@]}
 i=1
 while [ $i -le $reps ] ; do
     shuffle $nfreq
-    kernel_protocol
     j=0
     while [ $j -lt $nfreq ] ; do
+	if [ $j -eq 0 ] ; then
+	    kernel_protocol
+	fi
 	sed -e 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
         sed -e 's/5061983/'$RANDOM'/' $gexc_template_file > $gexc_file
         sed -e 's/5061983/'$RANDOM'/' $ginh_template_file > $ginh_file

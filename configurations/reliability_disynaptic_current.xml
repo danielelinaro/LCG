@@ -24,7 +24,7 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0</connections>
+      <connections>0,2</connections>
     </entity>
 
     <entity>
@@ -79,7 +79,7 @@
       <name>Exp2Synapse</name>
       <id>6</id>
       <parameters>
-	<E>0</E>
+	<E>-80</E>
 	<tauRise>0</tauRise>
 	<tauDecay>0</tauDecay>
       </parameters>

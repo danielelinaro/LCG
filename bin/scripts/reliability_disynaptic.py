@@ -112,8 +112,8 @@ def run():
         if os.path.isfile(template_file):
             config_file = 'reliability_disynaptic.xml'
             dl.substituteStrings(template_file, config_file,
-                                 {'<weight>0</weight>': '<weight>'+str(weight)+'<weight>',
-                                  '<E>0</E>': '<E>'+str(E)+'</E>',
+                                 {'<weight>0</weight>': '<weight>'+str(weight)+'</weight>',
+                                  '<E>-80</E>': '<E>'+str(E)+'</E>',
                                   '<tauRise>0</tauRise>': '<tauRise>'+str(tau_r)+'</tauRise>',
                                   '<tauDecay>0</tauDecay>': '<tauDecay>'+str(tau_d)+'</tauDecay>',
                                   '<tend>0</tend>': '<tend>'+str(np.sum(stimulus,0)[0])+'</tend>'})
@@ -123,7 +123,7 @@ def run():
             sys.exit(2)
 
     writeStimFile('current.stim',stimulus)
-    os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str('interval'))
+    os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
 if __name__ == '__main__':
     run()

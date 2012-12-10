@@ -43,8 +43,7 @@ def usage():
     print('     -i    interval between repetitions (default 1 s)')
     print('     -d    duration of the stimulation (default 10 s)')
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
-    print('     -v    maximum (depolarized) voltage (default -40 mV).')
-    print('     -d    duration of the stimulation (default 10 s)\n')
+    print('     -v    maximum (depolarized) voltage (default -40 mV).\n')
 
 
 def main():

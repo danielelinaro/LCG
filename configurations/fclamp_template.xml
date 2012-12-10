@@ -23,7 +23,7 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0</connections>
+      <connections>0,2</connections>
     </entity>
 
     <entity>
@@ -39,7 +39,7 @@
       <name>PID</name>
       <id>3</id>
       <parameters>
-	<baselineCurrent>IO</baselineCurrent>
+	<baselineCurrent>I0</baselineCurrent>
 	<gp>GP</gp>
 	<gi>GI</gi>
 	<gd>0</gd>

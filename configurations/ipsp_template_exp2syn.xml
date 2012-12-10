@@ -19,7 +19,7 @@
 	<Vth>-50</Vth>
 	<Iext>0</Iext>
       </parameters>
-      <connections>0,5</connections>
+      <connections>0,2</connections>
     </entity>
 
     <entity>
