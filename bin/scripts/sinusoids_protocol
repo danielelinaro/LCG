@@ -95,7 +95,7 @@ while [ $i -le $reps ] ; do
 	sed -e 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
         sed -e 's/5061983/'$RANDOM'/' $gexc_template_file > $gexc_file
         sed -e 's/5061983/'$RANDOM'/' $ginh_template_file > $ginh_file
-	dclamp -c $config_file
+	dclamp -c $config_file -V 3
 	let j++
 	if [ $j -ne $nfreq ] ; then
 	    sleep $interval

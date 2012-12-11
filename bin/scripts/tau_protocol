@@ -15,12 +15,12 @@ print_help()
     echo "where options are:"
     echo
     echo "   -h   display this help message and exit"
-    echo "   -n   specify number of repetitions (default 50)"
+    echo "   -n   specify number of repetitions (default 30)"
     echo "   -i   specify interval between repetitions in seconds (default 0.5)"
     echo
 }
 
-reps=50
+reps=30
 interval=0.5
 while getopts ":a:n:i:h" opt ; do
     case $opt in
