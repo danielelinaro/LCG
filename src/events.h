@@ -87,13 +87,18 @@ public:
          * initialises also the time at which the event was created.
          * \sa EventType
          */
-        Event(EventType type, const Entity *sender);
+        Event(EventType type, const Entity *sender, size_t nParams = 0, double *params = NULL);
 
         /*!
          * Constructs a copy of a given event. Also the creation time is the same,
          * despite the fact that the copy may be constructed successively.
          */
         Event(const Event& event);
+
+        /*!
+         * Event destructor
+         */
+        virtual ~Event();
 
         /*! Returns the type of the event. \sa EventType */
         EventType type() const;
@@ -104,10 +109,21 @@ public:
         /*! Returns the time at which this event was emitted. */
         double time() const;
 
+        /*! Returns the number of parameters in this event. */
+        size_t nParams() const;
+
+        /*! Returns the vector of parameters. */
+        const double* params() const;
+
+        /*! Returns the parameter at position pos. */
+        double param(uint pos) const;
+
 private:
         EventType m_type;
         const Entity *m_sender;
         double m_time;
+        size_t m_nParams;
+        double *m_params;
 };
 
 /*!
@@ -119,7 +135,7 @@ class SpikeEvent : public Event
 {
 public:
         /*! Constructs a SpikeEvent with a given sender. */
-        SpikeEvent(const Entity *sender);
+        SpikeEvent(const Entity *sender, double weight = 0);
 };
 
 /*!

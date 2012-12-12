@@ -131,11 +131,14 @@ void SynapticConnection::setWeight(double weight)
 
 void SynapticConnection::deliverEvent(const Event *event)
 {
+        /*
         synapses::Synapse *syn;
         for (int i=0; i<m_post.size(); i++) {
                 syn = dynamic_cast<synapses::Synapse*>(m_post[i]);
                 syn->handleSpike(m_parameters["weight"]);
         }
+        */
+        emitEvent(new SpikeEvent(this, m_parameters["weight"]));
 }
 
 //~~~

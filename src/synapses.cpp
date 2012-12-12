@@ -78,7 +78,10 @@ double Synapse::g() const
 }
 
 void Synapse::handleEvent(const Event *event)
-{}
+{
+        if (event->type() == SPIKE)
+                handleSpike(event->param(0));
+}
 
 void Synapse::addPost(Entity *entity)
 {

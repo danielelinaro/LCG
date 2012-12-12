@@ -52,13 +52,30 @@ void ProcessEvents()
         }
 }
 
-Event::Event(EventType type, const Entity *sender)
-        : m_type(type), m_sender(sender), m_time(GetGlobalTime())
-{}
+Event::Event(EventType type, const Entity *sender, size_t nParams, double *params)
+        : m_type(type), m_sender(sender), m_nParams(nParams), m_params(NULL), m_time(GetGlobalTime())
+{
+        if (m_nParams > 0) {
+                m_params = new double[m_nParams];
+                memcpy(m_params, params, m_nParams * sizeof(double));
+        }
+}
 
 Event::Event(const Event& event)
-        : m_type(event.m_type), m_sender(event.m_sender), m_time(event.m_time)
-{}
+        : m_type(event.m_type), m_sender(event.m_sender), m_nParams(event.m_nParams), m_params(NULL), m_time(event.m_time)
+{
+        if (m_nParams > 0) {
+                m_params = new double[m_nParams];
+                memcpy(m_params, event.m_params, m_nParams * sizeof(double));
+        }
+}
+
+Event::~Event()
+{
+        if (m_nParams > 0)
+                delete m_params;
+}
+
 
 EventType Event::type() const
 {
@@ -75,8 +92,26 @@ double Event::time() const
         return m_time;
 }
 
-SpikeEvent::SpikeEvent(const Entity *sender)
-        : Event(SPIKE, sender)
+size_t Event::nParams() const
+{
+        return m_nParams;
+}
+
+const double* Event::params() const
+{
+        return m_params;
+}
+
+double Event::param(uint pos) const
+{
+        if (pos < m_nParams)
+                return m_params[pos];
+        else
+                throw "Index out of bounds.";
+}
+
+SpikeEvent::SpikeEvent(const Entity *sender, double weight)
+        : Event(SPIKE, sender, 1, &weight)
 {}
 
 TriggerEvent::TriggerEvent(const Entity *sender)
