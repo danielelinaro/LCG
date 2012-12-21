@@ -43,6 +43,11 @@ private:
 };
 
 
+class BaseH5Recorder : public Recorder {
+public:
+        BaseH5Recorder(uint id = GetId());
+};
+
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
@@ -52,7 +57,7 @@ private:
 #define PARAMETERS_GROUP "Parameters"
 #define H5_FILE_VERSION  2
 
-class H5Recorder : public Recorder {
+class H5Recorder : public BaseH5Recorder {
 public:
         H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();

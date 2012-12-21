@@ -104,6 +104,14 @@ void ASCIIRecorder::terminate()
         closeFile();
 }
 
+//~~~
+
+BaseH5Recorder::BaseH5Recorder(uint id)
+        : Recorder(id)
+{}
+
+//~~~
+
 const hsize_t H5Recorder::rank            = 1;
 const hsize_t H5Recorder::unlimitedSize   = H5S_UNLIMITED;
 const uint    H5Recorder::numberOfBuffers = 2;
@@ -113,7 +121,7 @@ const hsize_t H5Recorder::bufferSize      = 20480;    // This MUST be equal to c
 const double  H5Recorder::fillValue       = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
-        : Recorder(id), m_fid(-1),
+        : BaseH5Recorder(id), m_fid(-1),
           m_data(), m_numberOfInputs(0),
           m_threadRun(false),
           m_mutex(), m_cv(), 
