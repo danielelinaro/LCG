@@ -1,0 +1,73 @@
+#!/bin/bash
+
+#
+# Recorder for extracellular activity
+# Author: Daniele Linaro, December 2012
+#
+
+print_help()
+{
+    echo
+    echo "Recorder of extracellular activity"
+    echo
+    echo "Usage : `basename $0` [options <value>]"
+    echo
+    echo "where options are:"
+    echo
+    echo "   -h   display this help message and exit"
+    echo "   -c   the channels to record (in the form 0,1,2,...)"
+    echo "   -d   duration of the recording in seconds (default 60)"
+    echo
+}
+
+duration=60
+have_channels=
+while getopts ":d:c:h" opt ; do
+    case $opt in
+	d)
+	    duration=$OPTARG
+	    ;;
+	c)
+	    channels=$(echo $OPTARG | tr "," "\n")
+	    have_channels=1
+	    ;;
+	h)
+	    print_help
+	    exit 0
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG."
+	    echo "Type `basename $0` -h for help."
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ -z $have_channels ] ; then
+    echo "You must specify the list of channels you want to record."
+    print_help
+    exit 1
+fi
+
+if [ -z "${CONFIGURATIONS_PATH:-}" ] ; then
+    begin=$HOME/configurations/extracellular_begin
+    end=$HOME/configurations/extracellular_end
+    channel=$HOME/configurations/extracellular_channel
+else
+    begin=$CONFIGURATIONS_PATH/extracellular_begin
+    end=$CONFIGURATIONS_PATH/extracellular_end
+    channel=$CONFIGURATIONS_PATH/extracellular_channel
+fi
+
+configfile=/tmp/extracellular.xml
+cp $begin $configfile
+id=1
+for c in $channels
+do
+    sed -e 's#<id>0</id>#<id>'$id'</id>#' -e 's#<readChannel>0</readChannel>#<readChannel>'$c'</readChannel>#' $channel >> $configfile
+    echo "" >> $configfile
+    let id++
+done
+sed -e 's#<tend>0</tend>#<tend>'$duration'</tend>#' $end >> $configfile
+dclamp -c $configfile
+#rm $configfile

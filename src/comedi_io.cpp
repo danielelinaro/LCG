@@ -159,10 +159,10 @@ bool ComediAnalogIO::addChannel(uint channel)
                 delete m_data;
         }
         m_data = new lsampl_t[m_nChannels];
-        Logger(Info, "Channel list: [");
+        Logger(Debug, "Channel list: [");
         for (int i=0; i<m_nChannels-1; i++)
-                Logger(Info, "%d,", m_channels[i]);
-        Logger(Info, "%d].\n", m_channels[m_nChannels-1]);
+                Logger(Debug, "%d,", m_channels[i]);
+        Logger(Debug, "%d].\n", m_channels[m_nChannels-1]);
 
         return true;
 }
@@ -371,10 +371,10 @@ bool ComediAnalogIOProxy::fixCommand()
                 Logger(Critical, "comedi_command_test: %s.\n", comedi_strerror(comedi_errno()));
                 return false;
         }
-        Logger(Info, "Successfully fixed the command.\n");
-        Logger(Info, "--------------------------------\n");
-        DumpCommand(Info, &m_cmd);
-        Logger(Info, "--------------------------------\n");
+        Logger(Debug, "Successfully fixed the command.\n");
+        Logger(Debug, "--------------------------------\n");
+        DumpCommand(Debug, &m_cmd);
+        Logger(Debug, "--------------------------------\n");
         return true;
 }
 
@@ -385,22 +385,6 @@ bool ComediAnalogIOProxy::startCommand()
                 return true;
         }
         
-        /*
-        comedi_insn insn;
-        unsigned int data = 0;
-        // prepare the triggering instruction
-        memset(&insn, 0, sizeof(insn));
-        insn.insn = INSN_INTTRIG;
-        insn.n = 1;
-        insn.data = &data;
-        insn.subdev = m_subdevice;
-        // start the acquisition
-        if (comedi_do_insn(m_device, &insn) < 0) {
-                Logger(Critical, "comedi_do_insn: %s\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-        */
-
         if (comedi_internal_trigger(m_device, m_subdevice, 0)) {
                 Logger(Critical, "comedi_internal_trigger: %s\n", comedi_strerror(comedi_errno()));
                 return false;
