@@ -34,6 +34,7 @@ void SAW(double, double, double, double *, uint *, uint, double, double, double)
 void SWEEP(double, double, double, double *, uint *, uint, double, double, double);
 void UNIFNOISE(double, double, double *, uint *, uint, double, double, double); 
 void ALPHA(double, double, double, double *, uint *, uint, double, double, double); 
+void SIN_MOD_OU(double, double, double, double, double, double *, uint *, uint, double, double, double); 
 #ifdef __cplusplus
 }
 #endif

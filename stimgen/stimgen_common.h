@@ -36,6 +36,7 @@ extern "C" {
 #define BIPOLAR_WAVE    10
 #define UNIF_NOISE      11
 #define ALPHA_FUN       12
+#define SIN_MOD_OU_WAVE 13      // sinusoidally modulated Ornstein-Uhlenbeck noise
 
 #define SUMMATION       1
 #define MULTIPLICATION  2

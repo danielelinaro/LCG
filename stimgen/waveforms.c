@@ -732,3 +732,13 @@ void ALPHA(double amplitude, double Trise, double Tdecay, double *output, uint *
             output[(*index)++] = amplitude*(1.0/(Nfactor*(Tdecay-Trise)))*(exp(-((i/srate)/Tdecay))-exp(-((i/srate)/Trise)));         //double exp alpha function.
     return;
 } // end ALPHA() -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+void SIN_MOD_OU(double g0, double tau, double r0, double dr, double F, double *output, uint *index, uint Ni, double expon, double srate, double dt)
+{
+        uint i, j = *index;
+        double coeff[] = {TWOPI*F*dt, g0*tau*1e-3, tau*1e-3/2};
+        ORUHL(0, 1, tau, output, index, Ni, 1, srate, dt);
+        for (i=0; i<Ni; i++, j++)
+                output[j] = coeff[1]*(r0+dr*sin(i*coeff[0])) + g0*sqrt(coeff[2]*(r0+dr*sin(i*coeff[0])))*output[j];
+} // end SIN_MOD_OU() -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
