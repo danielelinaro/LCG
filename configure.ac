@@ -68,21 +68,22 @@ AC_SUBST([LIB_TAG])
 AC_ARG_WITH([examples],
 	    [AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
-AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 AC_ARG_WITH([output-reset],
-	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates])],
- 	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
-AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
+      	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on a realtime system)])],
+       	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AC_ARG_WITH([asynchronous-io],
-	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O])],
- 	    [with_asynchronous_io=yes],[echo "WARNING: using synchronous I/O."])
-AM_CONDITIONAL([ASYNCHRONOUS_IO],[test "$with_asynchronous_io" = "yes"])
+       	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
+       	    [with_asynchronous_io=yes],[echo "WARNING: using synchronous I/O."])
 
+with_examples=no
+AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 if test "$with_examples" = "yes" ; then
         AC_CONFIG_FILES([examples/Makefile])
 fi
 
+with_output_reset=no
 with_io=no
+with_asynchronous_io=no
 with_comedi=no
 with_analogy=no
 with_rt=no
@@ -128,7 +129,10 @@ if test `expr $host_os : 'linux'` -eq 5 ; then
       fi
    fi
 fi
+
+AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
 AM_CONDITIONAL([ANALOG_IO],[test "$with_io" = "yes"])
+AM_CONDITIONAL([ASYNCHRONOUS_IO],[test "$with_asynchronous_io" = "yes"])
 AM_CONDITIONAL([COMEDI],[test "$with_comedi" = "yes"])
 AM_CONDITIONAL([ANALOGY],[test "$with_analogy" = "yes"])
 AM_CONDITIONAL([REALTIME],[test "$with_rt" = "yes"])
