@@ -106,9 +106,158 @@ void ASCIIRecorder::terminate()
 
 //~~~
 
-BaseH5Recorder::BaseH5Recorder(uint id)
+BaseH5Recorder::BaseH5Recorder(bool compress, const char *filename, uint id)
         : Recorder(id)
+{
+        if (filename == NULL) {
+                m_makeFilename = true;
+        }
+        else {
+                m_makeFilename = false;
+                strncpy(m_filename, filename, FILENAME_MAXLEN);
+        }
+        if (compress && isCompressionAvailable())
+                m_compress = true;
+        else
+                m_compress = false;
+}
+
+BaseH5Recorder::~BaseH5Recorder()
 {}
+
+bool BaseH5Recorder::isCompressionAvailable() const
+{
+        htri_t avail;
+        herr_t status;
+        uint filterInfo;
+        
+        avail = H5Zfilter_avail(H5Z_FILTER_DEFLATE);
+        if (!avail) {
+                Logger(Important, "GZIP compression is not available on this system.\n");
+                return false;
+        }
+        Logger(All, "GZIP compression is available.\n");
+
+        status = H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filterInfo);
+        if (!(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
+                Logger(Important, "Unable to get filter info: disabling compression.\n");
+                return false;
+        }
+        Logger(All, "Obtained filter info.\n");
+        
+        avail = H5Zfilter_avail(H5Z_FILTER_SHUFFLE);
+        if (!avail) {
+                Logger(Important, "\nThe shuffle filter is not available on this system.\n");
+                return false;
+        }
+        Logger(All, "The shuffle filter is available.\n");
+        
+        status = H5Zget_filter_info (H5Z_FILTER_SHUFFLE, &filterInfo);
+        if ( !(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ) {
+                Logger(Important, "Unable to get filter info: disabling compression.\n");
+                return false;
+        }
+        Logger(Debug, "Compression is enabled.\n");
+
+        return true;
+}
+
+bool BaseH5Recorder::openFile()
+{
+        Logger(All, "--- BaseH5Recorder::openFile() ---\n");
+        Logger(All, "Opening file %s.\n", m_filename);
+
+        m_fid = H5Fcreate(m_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+        if(m_fid < 0)
+                return false;
+
+        time_t now;
+        char buf[26];
+        std::stringstream timestamp;
+        time(&now);
+        ctime_r(&now, buf);
+        // to remove newline at the end of the string returned by ctime
+        buf[24] = 0;
+        timestamp << "File created on " << buf << ".";
+        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
+
+        return true;
+}
+
+void BaseH5Recorder::closeFile()
+{
+        Logger(All, "--- BaseH5Recorder::closeFile() ---\n");
+        if (m_fid != -1) {
+                H5Fclose(m_fid);
+                m_fid = -1;
+        }
+}
+
+bool BaseH5Recorder::writeStringAttribute(hid_t dataset,
+                                      const std::string& attrName,
+                                      const std::string& attrValue)
+{
+        hid_t dspace, atype, attr;
+        herr_t status;
+        bool retval = true;
+        
+        dspace = H5Screate(H5S_SCALAR);
+        if (dspace < 0) {
+                Logger(Critical, "Error in H5Screate.\n");
+                return false;
+        }
+
+        atype = H5Tcopy(H5T_C_S1);
+        if (atype < 0) {
+                Logger(Critical, "Error in H5Tcopy.\n");
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Debug, "Successfully copied type.\n");
+
+        status = H5Tset_size(atype, attrValue.size() + 1);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Tset_size.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Debug, "Successfully set type size.\n");
+
+        status = H5Tset_strpad(atype, H5T_STR_NULLTERM);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Tset_strpad.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Debug, "Successfully set type padding string.\n");
+
+        attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
+        if (status < 0) {
+                Logger(Critical, "Error in H5Acreate2.\n");
+                H5Tclose(atype);
+                H5Sclose(dspace);
+                return false;
+        }
+        Logger(Debug, "Successfully created attribute.\n");
+
+        status = H5Awrite(attr, atype, attrValue.c_str());
+        if (status < 0) {
+                Logger(Critical, "Error in H5Awrite.\n");
+                retval = false;
+        }
+        else {
+                Logger(Debug, "Successfully written string attribute.\n");
+        }
+
+        H5Aclose(attr);
+        H5Tclose(atype);
+        H5Sclose(dspace);
+
+        return retval;
+}
+
 
 //~~~
 
@@ -121,25 +270,12 @@ const hsize_t H5Recorder::bufferSize      = 20480;    // This MUST be equal to c
 const double  H5Recorder::fillValue       = 0.0;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
-        : BaseH5Recorder(id), m_fid(-1),
+        : BaseH5Recorder(compress, filename, id),
           m_data(), m_numberOfInputs(0),
           m_threadRun(false),
           m_mutex(), m_cv(), 
           m_groups(), m_dataspaces(), m_datasets()
 {
-        if (filename == NULL) {
-                m_makeFilename = true;
-        }
-        else {
-                m_makeFilename = false;
-                strncpy(m_filename, filename, FILENAME_MAXLEN);
-        }
-
-        if (compress && isCompressionAvailable())
-                m_compress = true;
-        else
-                m_compress = false;
-
         m_bufferLengths = new hsize_t[numberOfBuffers];
         setName("H5Recorder");
 }
@@ -611,131 +747,6 @@ bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
         return true;
 }
 
-bool H5Recorder::writeStringAttribute(hid_t dataset,
-                                      const std::string& attrName,
-                                      const std::string& attrValue)
-{
-        hid_t dspace, atype, attr;
-        herr_t status;
-        bool retval = true;
-        
-        dspace = H5Screate(H5S_SCALAR);
-        if (dspace < 0) {
-                Logger(Critical, "Error in H5Screate.\n");
-                return false;
-        }
-
-        atype = H5Tcopy(H5T_C_S1);
-        if (atype < 0) {
-                Logger(Critical, "Error in H5Tcopy.\n");
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully copied type.\n");
-
-        status = H5Tset_size(atype, attrValue.size() + 1);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Tset_size.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully set type size.\n");
-
-        status = H5Tset_strpad(atype, H5T_STR_NULLTERM);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Tset_strpad.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully set type padding string.\n");
-
-        attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Acreate2.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully created attribute.\n");
-
-        status = H5Awrite(attr, atype, attrValue.c_str());
-        if (status < 0) {
-                Logger(Critical, "Error in H5Awrite.\n");
-                retval = false;
-        }
-        else {
-                Logger(Debug, "Successfully written string attribute.\n");
-        }
-
-        H5Aclose(attr);
-        H5Tclose(atype);
-        H5Sclose(dspace);
-
-        return retval;
-}
-
-
-bool H5Recorder::isCompressionAvailable() const
-{
-        htri_t avail;
-        herr_t status;
-        uint filterInfo;
-        
-        avail = H5Zfilter_avail(H5Z_FILTER_DEFLATE);
-        if (!avail) {
-                Logger(Important, "GZIP compression is not available on this system.\n");
-                return false;
-        }
-        Logger(All, "GZIP compression is available.\n");
-
-        status = H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filterInfo);
-        if (!(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
-                Logger(Important, "Unable to get filter info: disabling compression.\n");
-                return false;
-        }
-        Logger(All, "Obtained filter info.\n");
-        
-        avail = H5Zfilter_avail(H5Z_FILTER_SHUFFLE);
-        if (!avail) {
-                Logger(Important, "\nThe shuffle filter is not available on this system.\n");
-                return false;
-        }
-        Logger(All, "The shuffle filter is available.\n");
-        
-        status = H5Zget_filter_info (H5Z_FILTER_SHUFFLE, &filterInfo);
-        if ( !(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ) {
-                Logger(Important, "Unable to get filter info: disabling compression.\n");
-                return false;
-        }
-        Logger(Debug, "Compression is enabled.\n");
-
-        return true;
-}
-
-bool H5Recorder::openFile()
-{
-        Logger(All, "--- H5Recorder::openFile() ---\n");
-        Logger(All, "Opening file %s.\n", m_filename);
-
-        m_fid = H5Fcreate(m_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-        if(m_fid < 0)
-                return false;
-
-        time_t now;
-        char buf[26];
-        std::stringstream timestamp;
-        time(&now);
-        ctime_r(&now, buf);
-        // to remove newline at the end of the string returned by ctime
-        buf[24] = 0;
-        timestamp << "File created on " << buf << ".";
-        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
-
-        return true;
-}
-
 bool H5Recorder::createGroup(const std::string& groupName, hid_t *grp)
 {
         *grp = H5Gcreate2(m_fid, groupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -774,12 +785,11 @@ bool H5Recorder::writeScalarAttribute(hid_t dataset, const std::string& attrName
         }
 
         return true;
- }
+}
 
 void H5Recorder::closeFile()
 {
         Logger(All, "--- H5Recorder::closeFile() ---\n");
-        Logger(All, "Closing file.\n");
         if (m_fid != -1) {
                 writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
                 for (uint i=0; i<m_numberOfInputs; i++) {
@@ -788,9 +798,8 @@ void H5Recorder::closeFile()
                 }
                 for (int i=0; i<m_groups.size(); i++)
                         H5Gclose(m_groups[i]);
-                H5Fclose(m_fid);
-                m_fid = -1;
         }
+        BaseH5Recorder::closeFile();
 }
 
 } // namespace recorders

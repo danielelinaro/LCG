@@ -45,7 +45,23 @@ private:
 
 class BaseH5Recorder : public Recorder {
 public:
-        BaseH5Recorder(uint id = GetId());
+        BaseH5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
+        virtual ~BaseH5Recorder();
+        virtual bool initialise() = 0;
+protected:
+        bool isCompressionAvailable() const;
+        virtual bool openFile();
+        virtual void closeFile();
+        bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
+protected:
+        // the handle of the file
+        hid_t m_fid;
+        // whether compression is turned on or off
+        bool m_compress;
+        // the name of the file
+        char m_filename[FILENAME_MAXLEN];
+        // tells whether the filename should be generated from the timestamp
+        bool m_makeFilename;
 };
 
 #define GROUP_NAME_LEN   128
@@ -81,11 +97,9 @@ public:
 
 protected:
         virtual void addPre(Entity *entity);
+        virtual void closeFile();
 
 private:
-        bool isCompressionAvailable() const;
-        bool openFile();
-        void closeFile();
         void startWriterThread();
         void stopWriterThread();
         void buffersWriter();
@@ -93,27 +107,17 @@ private:
         bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
         bool writeArrayAttribute(hid_t objId, const std::string& attrName,
                                  const double *data, const hsize_t *dims, int ndims);
-        bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
         bool createGroup(const std::string& groupName, hid_t *grp);
         bool writeData(const std::string& datasetName, int rank, const hsize_t *dims, const double *data, const std::string& label = "");
         bool createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset);
 
 private:
-        // the handle of the file
-        hid_t m_fid;
-        // whether compression is turned on or off
-        bool m_compress;
         // the data
         std::vector<double**> m_data;
         // the queue of the indices of the buffers to save
         std::deque<uint> m_dataQueue;
         // number of inputs
         uint m_numberOfInputs;
-
-        // the name of the file
-        char m_filename[FILENAME_MAXLEN];
-        // tells whether the filename should be generated from the timestamp
-        bool m_makeFilename;
 
         // position in the buffer
         uint m_bufferPosition;
