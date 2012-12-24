@@ -107,7 +107,7 @@ void ASCIIRecorder::terminate()
 //~~~
 
 BaseH5Recorder::BaseH5Recorder(bool compress, const char *filename, uint id)
-        : Recorder(id)
+        : Recorder(id), m_fid(-1)
 {
         if (filename == NULL) {
                 m_makeFilename = true;
@@ -234,7 +234,7 @@ bool BaseH5Recorder::writeStringAttribute(hid_t dataset,
         Logger(Debug, "Successfully set type padding string.\n");
 
         attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
-        if (status < 0) {
+        if (attr < 0) {
                 Logger(Critical, "Error in H5Acreate2.\n");
                 H5Tclose(atype);
                 H5Sclose(dspace);
@@ -724,7 +724,7 @@ bool H5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
         Logger(Debug, "Successfully allocated space for the data.\n");
 
         attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
-        if (status < 0) {
+        if (attr < 0) {
                 Logger(Critical, "Error in H5Acreate2.\n");
                 H5Sclose(dspace);
                 return false;
@@ -758,6 +758,7 @@ bool H5Recorder::createGroup(const std::string& groupName, hid_t *grp)
 
 bool H5Recorder::writeScalarAttribute(hid_t dataset, const std::string& attrName, double attrValue)
 {
+        Logger(Debug, "H5Recorder::writeScalarAttribute(%d, %s, %g)\n", dataset, attrName.c_str(), attrValue);
         hid_t aid, attr;
         herr_t status;
 
@@ -770,7 +771,7 @@ bool H5Recorder::writeScalarAttribute(hid_t dataset, const std::string& attrName
         attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
         if (attr < 0) {
                 H5Sclose(aid);
-                Logger(Critical, "Unable to create attribute.\n");
+                Logger(Critical, "Unable to create scalar attribute.\n");
                 return false;
         }
 
