@@ -43,27 +43,6 @@ private:
 };
 
 
-class BaseH5Recorder : public Recorder {
-public:
-        BaseH5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
-        virtual ~BaseH5Recorder();
-        virtual bool initialise() = 0;
-protected:
-        bool isCompressionAvailable() const;
-        virtual bool openFile();
-        virtual void closeFile();
-        bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
-protected:
-        // the handle of the file
-        hid_t m_fid;
-        // whether compression is turned on or off
-        bool m_compress;
-        // the name of the file
-        char m_filename[FILENAME_MAXLEN];
-        // tells whether the filename should be generated from the timestamp
-        bool m_makeFilename;
-};
-
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
@@ -73,17 +52,82 @@ protected:
 #define PARAMETERS_GROUP "Parameters"
 #define H5_FILE_VERSION  2
 
-class H5Recorder : public BaseH5Recorder {
+class BaseH5Recorder : public Recorder {
 public:
-        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
-        ~H5Recorder();
+        BaseH5Recorder(bool compress, hsize_t bufferSize = 20480, const char *filename = NULL, uint id = GetId());
+        BaseH5Recorder(bool compress, hsize_t chunkSize, uint numberOfChunks, const char *filename = NULL, uint id = GetId());
+        virtual ~BaseH5Recorder();
         virtual bool initialise();
-        virtual void step();
         virtual void terminate();
+
+        hsize_t bufferSize() const;
+        hsize_t chunkSize() const;
+        uint numberOfChunks() const;
 
 public:
         static const hsize_t rank;
         static const hsize_t unlimitedSize;
+        static const double  fillValue;
+
+protected:
+        bool isCompressionAvailable() const;
+
+        virtual bool openFile();
+        virtual void closeFile();
+
+        virtual bool finaliseInit() = 0;
+        
+        virtual void addPre(Entity *entity);
+        virtual void finaliseAddPre(Entity *entity) = 0;
+
+        virtual bool allocateForEntity(Entity *entity);
+
+        virtual bool createGroup(const std::string& groupName, hid_t *grp);
+        virtual bool createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset);
+
+        virtual bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
+        virtual bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
+        virtual bool writeArrayAttribute(hid_t objId, const std::string& attrName,
+                                         const double *data, const hsize_t *dims, int ndims);
+        virtual bool writeData(const std::string& datasetName, int rank, const hsize_t *dims,
+                               const double *data, const std::string& label = "");
+
+protected:
+        // the handle of the file
+        hid_t m_fid;
+        // whether compression is turned on or off
+        bool m_compress;
+        // the name of the file
+        char m_filename[FILENAME_MAXLEN];
+        // tells whether the filename should be generated from the timestamp
+        bool m_makeFilename;
+         
+        // number of inputs
+        uint m_numberOfInputs;
+
+        // H5 stuff
+        hid_t m_infoGroup;
+        std::vector<hid_t> m_groups;
+        std::vector<hid_t> m_dataspaces;
+        std::vector<hid_t> m_datasets;
+
+private:
+        // the size of each chunk of data that is saved to the H5 file
+        hsize_t m_chunkSize;
+        // the number of chunks of data
+        uint m_numberOfChunks; 
+        // the total size of the buffer, given by the size of each chunk times the number of chunks
+        hsize_t m_bufferSize;
+};
+
+class H5Recorder : public BaseH5Recorder {
+public:
+        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
+        ~H5Recorder();
+        virtual void step();
+        virtual void terminate();
+
+public:
         /*!
          * The number of buffers used for storing the input data: they need to be at least 2,
          * so that the realtime thread writes in one, while the thread created by H5Recorder
@@ -91,33 +135,23 @@ public:
          */
         static const uint    numberOfBuffers;
         static const hsize_t chunkSize;
-        static const uint    numberOfChunks; 
-        static const hsize_t bufferSize;
-        static const double  fillValue;
+        static const uint    numberOfChunks;
 
 protected:
-        virtual void addPre(Entity *entity);
+        virtual bool finaliseInit();
+        virtual void finaliseAddPre(Entity *entity);
         virtual void closeFile();
 
 private:
         void startWriterThread();
         void stopWriterThread();
         void buffersWriter();
-        bool allocateForEntity(Entity *entity);
-        bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
-        bool writeArrayAttribute(hid_t objId, const std::string& attrName,
-                                 const double *data, const hsize_t *dims, int ndims);
-        bool createGroup(const std::string& groupName, hid_t *grp);
-        bool writeData(const std::string& datasetName, int rank, const hsize_t *dims, const double *data, const std::string& label = "");
-        bool createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset);
 
 private:
         // the data
         std::vector<double**> m_data;
         // the queue of the indices of the buffers to save
         std::deque<uint> m_dataQueue;
-        // number of inputs
-        uint m_numberOfInputs;
 
         // position in the buffer
         uint m_bufferPosition;
@@ -133,10 +167,6 @@ private:
         bool m_threadRun;
 
         // H5 stuff
-        std::vector<hid_t> m_groups;
-        std::vector<hid_t> m_dataspaces;
-        std::vector<hid_t> m_datasets;
-        hid_t m_infoGroup;
         hsize_t m_offset;
         hsize_t m_datasetSize;
 
