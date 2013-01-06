@@ -122,7 +122,7 @@ private:
 
 class H5Recorder : public BaseH5Recorder {
 public:
-        H5Recorder(bool compress, const char *filename = NULL, uint id = GetId());
+        H5Recorder(bool compress = true, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();
         virtual void step();
         virtual void terminate();
@@ -140,7 +140,6 @@ public:
 protected:
         virtual bool finaliseInit();
         virtual void finaliseAddPre(Entity *entity);
-        virtual void closeFile();
 
 private:
         void startWriterThread();
@@ -172,6 +171,33 @@ private:
 
 };
 
+class TriggeredH5Recorder : public BaseH5Recorder {
+public:
+        TriggeredH5Recorder(double duration, bool compress = true, const char *filename = NULL, uint id = GetId());
+        ~TriggeredH5Recorder();
+        virtual void step();
+        virtual void terminate();
+        virtual void handleEvent(const Event *event);
+
+protected:
+        virtual bool finaliseInit();
+        virtual void finaliseAddPre(Entity *entity);
+
+private:
+        void buffersWriter();
+
+private:
+        bool m_recording;
+        // the data
+        std::vector<double*> m_data;
+        // position in the buffer
+        uint m_bufferPosition;
+        // the size of each buffer
+        hsize_t m_bufferSize;
+        // the thread that saves the data once the buffers are full
+        boost::thread m_writerThread;
+};
+
 } // namespace recorders
 
 } // namespace dynclamp
@@ -185,6 +211,7 @@ extern "C" {
 
 dynclamp::Entity* ASCIIRecorderFactory(string_dict& args);
 dynclamp::Entity* H5RecorderFactory(string_dict& args);
+dynclamp::Entity* TriggeredH5RecorderFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

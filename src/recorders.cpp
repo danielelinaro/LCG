@@ -20,14 +20,29 @@ dynclamp::Entity* H5RecorderFactory(string_dict& args)
         std::string filename;
         bool compress;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an H5 recorder.\n");
-                return NULL;
-        }
+        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
+                compress = true;
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
                 return new dynclamp::recorders::H5Recorder(compress, NULL, id);
         return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id);
+}
 
+dynclamp::Entity* TriggeredH5RecorderFactory(string_dict& args)
+{       
+        uint id;
+        double duration;
+        std::string filename;
+        bool compress;
+        id = dynclamp::GetIdFromDictionary(args);
+        if (!dynclamp::CheckAndExtractDouble(args, "duration", &duration)) {
+                dynclamp::Logger(dynclamp::Critical, "Unable to build a TriggeredH5Recorder.\n");
+                return NULL;
+        }
+        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
+                compress = true;
+        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+                return new dynclamp::recorders::TriggeredH5Recorder(duration, compress, NULL, id);
+        return new dynclamp::recorders::TriggeredH5Recorder(duration, compress, filename.c_str(), id);
 }
 
 namespace dynclamp {
@@ -277,6 +292,13 @@ void BaseH5Recorder::closeFile()
 {
         Logger(All, "--- BaseH5Recorder::closeFile() ---\n");
         if (m_fid != -1) {
+                writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
+                for (uint i=0; i<m_numberOfInputs; i++) {
+                        H5Dclose(m_datasets[i]);
+                        H5Sclose(m_dataspaces[i]);
+                }
+                for (int i=0; i<m_groups.size(); i++)
+                        H5Gclose(m_groups[i]);
                 H5Fclose(m_fid);
                 m_fid = -1;
         }
@@ -852,19 +874,85 @@ void H5Recorder::finaliseAddPre(Entity *entity)
         m_data.push_back(buffer);
 }
 
-void H5Recorder::closeFile()
+//~~~
+
+TriggeredH5Recorder::TriggeredH5Recorder(double duration, bool compress, const char *filename, uint id)
+        : BaseH5Recorder(compress, ceil(duration/GetGlobalDt()), filename, id),
+          m_recording(false), m_data(), m_bufferPosition(0), m_bufferSize(ceil(duration/GetGlobalDt()))
 {
-        Logger(All, "--- H5Recorder::closeFile() ---\n");
-        if (m_fid != -1) {
-                writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
-                for (uint i=0; i<m_numberOfInputs; i++) {
-                        H5Dclose(m_datasets[i]);
-                        H5Sclose(m_dataspaces[i]);
-                }
-                for (int i=0; i<m_groups.size(); i++)
-                        H5Gclose(m_groups[i]);
+        setName("TriggeredH5Recorder");
+}
+
+TriggeredH5Recorder::~TriggeredH5Recorder()
+{
+        m_writerThread.join();
+        closeFile();
+        for (int i=0; i<m_numberOfInputs; i++) {
+                delete m_data[i];
         }
-        BaseH5Recorder::closeFile();
+}
+
+void TriggeredH5Recorder::step()
+{
+        if (m_recording) {
+                // store the data
+                for (int i=0; i<m_numberOfInputs; i++)
+                        m_data[i][m_bufferPosition] = m_inputs[i];
+                m_bufferPosition++;
+                if (m_bufferPosition == m_bufferSize) {
+                        m_recording = false;
+                        // start the writing thread
+                        m_writerThread.join();
+                        m_writerThread = boost::thread(&TriggeredH5Recorder::buffersWriter, this); 
+                }
+        }
+}
+
+void TriggeredH5Recorder::terminate()
+{
+        m_writerThread.join();
+        BaseH5Recorder::terminate();
+}
+
+void TriggeredH5Recorder::handleEvent(const Event *event)
+{
+        if (event->type() == TRIGGER) {
+                if (!m_recording) {
+                        Logger(Info, "Started recording.\n");
+                        m_recording = true;
+                        m_bufferPosition = 0;
+                }
+                else {
+                        // we're already recording, this CAN'T happen
+                        Logger(Critical, "TriggeredH5Recorder: received a Trigger event while already recording: "
+                                         "ignoring it, but probably there's something wrong here.\n");
+                }
+        }
+}
+
+bool TriggeredH5Recorder::finaliseInit()
+{
+        Logger(Info, "TriggeredH5Recorder::finaliseInit()\n");
+        m_writerThread.join();
+        m_bufferPosition = 0;
+        for (uint i=0; i<m_pre.size(); i++) {
+                if (!allocateForEntity(m_pre[i]))
+                        return false;
+        }
+        return true;
+}
+
+void TriggeredH5Recorder::finaliseAddPre(Entity *entity)
+{
+        Logger(Info, "TriggeredH5Recorder::finaliseAddPre(Entity*)\n");
+        double *buffer = new double[bufferSize()];
+        m_data.push_back(buffer);
+}
+
+void TriggeredH5Recorder::buffersWriter()
+{
+        Logger(Info, "TriggeredH5Recorder::buffersWriter started.\n");
+        Logger(Info, "TriggeredH5Recorder::buffersWriter terminated.\n");
 }
 
 } // namespace recorders

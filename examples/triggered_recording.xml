@@ -1,0 +1,58 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>TriggeredH5Recorder</name>
+      <id>0</id>
+      <parameters>
+	<filename>triggered_recording.h5</filename>
+        <compress>true</compress>
+	<duration>0.3</duration>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>1</id>
+      <parameters>
+	<C>0.08</C>
+	<tau>0.0075</tau>
+	<tarp>0.0014</tarp>
+	<Er>-65.2</Er>
+	<E0>-70</E0>
+	<Vth>-50</Vth>
+	<Iext>220</Iext>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>EventCounter</name>
+      <id>2</id>
+      <parameters>
+	<maxCount>100</maxCount>
+	<autoReset>true</autoReset>
+	<eventToCount>spike</eventToCount>
+	<eventToSend>trigger</eventToSend>
+      </parameters>
+      <connections>0,3</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>3</id>
+      <parameters>
+	<triggered>true</triggered>
+	<filename>triggered_pulse.stim</filename>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
+    
+  </entities>
+
+  <simulation>
+    <tend>6</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>
