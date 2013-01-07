@@ -121,7 +121,6 @@ void ASCIIRecorder::terminate()
 
 //~~~
 
-const hsize_t BaseH5Recorder::rank          = 1;
 const hsize_t BaseH5Recorder::unlimitedSize = H5S_UNLIMITED;
 const double  BaseH5Recorder::fillValue     = 0.0;
 
@@ -293,7 +292,7 @@ void BaseH5Recorder::closeFile()
         Logger(All, "--- BaseH5Recorder::closeFile() ---\n");
         if (m_fid != -1) {
                 writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
-                for (uint i=0; i<m_numberOfInputs; i++) {
+                for (int i=0; i<m_numberOfInputs; i++) {
                         H5Dclose(m_datasets[i]);
                         H5Sclose(m_dataspaces[i]);
                 }
@@ -317,7 +316,7 @@ void BaseH5Recorder::addPre(Entity *entity)
         finaliseAddPre(entity);
 }
 
-bool BaseH5Recorder::allocateForEntity(Entity *entity)
+bool BaseH5Recorder::allocateForEntity(Entity *entity, int dataRank, const hsize_t *dataDims, const hsize_t *chunkDims)
 {
         hid_t dspace, dset, grp;
         char groupName[GROUP_NAME_LEN];
@@ -333,7 +332,7 @@ bool BaseH5Recorder::allocateForEntity(Entity *entity)
 
         // dataset for actual data (i.e., /Entities/0001/Data)
         sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), DATA_DATASET);
-        if (!createUnlimitedDataset(datasetName, &dspace, &dset)) {
+        if (!createUnlimitedDataset(datasetName, dataRank, dataDims, chunkDims, &dspace, &dset)) {
                 Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
                 return false;
         }
@@ -388,14 +387,21 @@ bool BaseH5Recorder::createGroup(const std::string& groupName, hid_t *grp)
         return true;
 }
 
-bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset)
+bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName,
+                                            int rank, const hsize_t *dataDims, const hsize_t *chunkDims,
+                                            hid_t *dspace, hid_t *dset)
 {
         herr_t status;
+        hsize_t *maxDims = new hsize_t[rank];
+
+        for (int i=0; i<rank; i++)
+                maxDims[i] = H5S_UNLIMITED;
         
         // create the dataspace with unlimited dimensions
-        *dspace = H5Screate_simple(rank, &m_bufferSize, &unlimitedSize);
+        *dspace = H5Screate_simple(rank, dataDims, maxDims);
         if (*dspace < 0) {
                 Logger(Critical, "Unable to create dataspace.\n");
+                delete maxDims;
                 return false;
         }
         else {
@@ -406,19 +412,21 @@ bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_
         hid_t cparms = H5Pcreate(H5P_DATASET_CREATE);
 
         if (cparms < 0) {
-                H5Sclose(*dspace);
                 Logger(Critical, "Unable to create dataset properties.\n");
+                H5Sclose(*dspace);
+                delete maxDims;
                 return false;
         }
         else {
                 Logger(Debug, "Dataset properties created.\n");
         }
 
-        status = H5Pset_chunk(cparms, rank, &m_chunkSize);
+        status = H5Pset_chunk(cparms, rank, chunkDims);
         if (status < 0) {
+                Logger(Critical, "Unable to set chunking.\n");
                 H5Sclose(*dspace);
                 H5Pclose(cparms);
-                Logger(Critical, "Unable to set chunking.\n");
+                delete maxDims;
                 return false;
         }
         else {
@@ -427,9 +435,10 @@ bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_
 
         status = H5Pset_fill_value(cparms, H5T_IEEE_F64LE, &fillValue);
         if (status < 0) {
+                Logger(Critical, "Unable to set fill value.\n");
                 H5Sclose(*dspace);
                 H5Pclose(cparms);
-                Logger(Critical, "Unable to set fill value.\n");
+                delete maxDims;
                 return false;
         }
         else {
@@ -455,9 +464,10 @@ bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_
                            H5T_IEEE_F64LE, *dspace,
                            H5P_DEFAULT, cparms, H5P_DEFAULT);
         if (*dset < 0) {
+                Logger(Critical, "Unable to create dataset.\n");
                 H5Sclose(*dspace);
                 H5Pclose(cparms);
-                Logger(Critical, "Unable to create dataset.\n");
+                delete maxDims;
                 return false;
         }
         else {
@@ -465,6 +475,7 @@ bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName, hid_
         }
 
         H5Pclose(cparms);
+        delete maxDims;
         m_datasets.push_back(*dset);
         m_dataspaces.push_back(*dspace);
 
@@ -662,11 +673,10 @@ bool BaseH5Recorder::writeData(const std::string& datasetName, int rank, const h
 //~~~
 
 const uint    H5Recorder::numberOfBuffers = 2;
-const hsize_t H5Recorder::chunkSize       = 1024;
-const uint    H5Recorder::numberOfChunks  = 20;
+const int     H5Recorder::rank            = 1;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
-        : BaseH5Recorder(compress, H5Recorder::chunkSize, H5Recorder::numberOfChunks, filename, id),
+        : BaseH5Recorder(compress, 1024, 20, filename, id), // 1024 = chunkSize and 20 = numberOfChunks
           m_data(),
           m_threadRun(false),
           m_mutex(), m_cv()
@@ -677,11 +687,9 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
 
 H5Recorder::~H5Recorder()
 {
-        stopWriterThread();
-        closeFile();
-        uint i, j;
-        for (i=0; i<m_numberOfInputs; i++) {
-                for(j=0; j<numberOfBuffers; j++)
+        terminate();
+        for (int i=0; i<m_numberOfInputs; i++) {
+                for(int j=0; j<numberOfBuffers; j++)
                         delete m_data[i][j];
                 delete m_data[i];
         }
@@ -691,6 +699,7 @@ H5Recorder::~H5Recorder()
 bool H5Recorder::finaliseInit()
 {
         Logger(Debug, "H5Recorder::finaliseInit()\n");
+        hsize_t bufsz = bufferSize(), chunksz = chunkSize();
 
         stopWriterThread();
 
@@ -699,8 +708,8 @@ bool H5Recorder::finaliseInit()
         m_offset = 0;
         m_datasetSize = 0;
         
-        for (uint i=0; i<m_pre.size(); i++) {
-                if (!allocateForEntity(m_pre[i]))
+        for (int i=0; i<m_pre.size(); i++) {
+                if (!allocateForEntity(m_pre[i], rank, &bufsz, &chunksz))
                         return false;
         }
 
@@ -761,7 +770,7 @@ void H5Recorder::step()
                 Logger(Debug, "H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
 
-        for (uint i=0; i<m_numberOfInputs; i++)
+        for (int i=0; i<m_numberOfInputs; i++)
                 m_data[i][m_bufferInUse][m_bufferPosition] = m_inputs[i];
         m_bufferLengths[m_bufferInUse]++;
         m_bufferPosition = (m_bufferPosition+1) % bufferSize();
@@ -805,7 +814,7 @@ void H5Recorder::buffersWriter()
                         Logger(Debug, " Offset = %d.", m_offset);
                         Logger(Debug, " Time = %g sec.\n", m_datasetSize*GetGlobalDt());
 
-                        for (uint i=0; i<m_numberOfInputs; i++) {
+                        for (int i=0; i<m_numberOfInputs; i++) {
 
                                 // extend the dataset
                                 status = H5Dset_extent(m_datasets[i], &m_datasetSize);
@@ -869,27 +878,28 @@ void H5Recorder::finaliseAddPre(Entity *entity)
 {
         Logger(All, "--- H5Recorder::finaliseAddPre(Entity*) ---\n");
         double **buffer = new double*[numberOfBuffers];
-        for (uint i=0; i<numberOfBuffers; i++)
+        for (int i=0; i<numberOfBuffers; i++)
                 buffer[i] = new double[bufferSize()];
         m_data.push_back(buffer);
 }
 
 //~~~
 
+const int TriggeredH5Recorder::rank = 2;
+
 TriggeredH5Recorder::TriggeredH5Recorder(double duration, bool compress, const char *filename, uint id)
         : BaseH5Recorder(compress, ceil(duration/GetGlobalDt()), filename, id),
-          m_recording(false), m_data(), m_bufferPosition(0), m_bufferSize(ceil(duration/GetGlobalDt()))
+          m_recording(false), m_data(), m_bufferPosition(0),
+          m_writerThread()
 {
         setName("TriggeredH5Recorder");
 }
 
 TriggeredH5Recorder::~TriggeredH5Recorder()
 {
-        m_writerThread.join();
-        closeFile();
-        for (int i=0; i<m_numberOfInputs; i++) {
+        terminate();
+        for (int i=0; i<m_numberOfInputs; i++)
                 delete m_data[i];
-        }
 }
 
 void TriggeredH5Recorder::step()
@@ -899,7 +909,7 @@ void TriggeredH5Recorder::step()
                 for (int i=0; i<m_numberOfInputs; i++)
                         m_data[i][m_bufferPosition] = m_inputs[i];
                 m_bufferPosition++;
-                if (m_bufferPosition == m_bufferSize) {
+                if (m_bufferPosition == bufferSize()) {
                         m_recording = false;
                         // start the writing thread
                         m_writerThread.join();
@@ -933,12 +943,24 @@ void TriggeredH5Recorder::handleEvent(const Event *event)
 bool TriggeredH5Recorder::finaliseInit()
 {
         Logger(Info, "TriggeredH5Recorder::finaliseInit()\n");
+        hsize_t *dataDims, *chunkDims;
+        dataDims = new hsize_t[rank];
+        dataDims[0] = bufferSize();
+        dataDims[1] = 1;
+        chunkDims = new hsize_t[rank];
+        chunkDims[0] = chunkSize();
+        chunkDims[1] = 1;
         m_writerThread.join();
         m_bufferPosition = 0;
-        for (uint i=0; i<m_pre.size(); i++) {
-                if (!allocateForEntity(m_pre[i]))
+        for (int i=0; i<m_pre.size(); i++) {
+                if (!allocateForEntity(m_pre[i], rank, dataDims, chunkDims)) {
+                        delete dataDims;
+                        delete chunkDims;
                         return false;
+                }
         }
+        delete dataDims;
+        delete chunkDims;
         return true;
 }
 

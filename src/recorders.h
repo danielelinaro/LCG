@@ -65,7 +65,6 @@ public:
         uint numberOfChunks() const;
 
 public:
-        static const hsize_t rank;
         static const hsize_t unlimitedSize;
         static const double  fillValue;
 
@@ -80,10 +79,12 @@ protected:
         virtual void addPre(Entity *entity);
         virtual void finaliseAddPre(Entity *entity) = 0;
 
-        virtual bool allocateForEntity(Entity *entity);
+        virtual bool allocateForEntity(Entity *entity, int dataRank, const hsize_t *dataDims, const hsize_t *chunkDims);
 
         virtual bool createGroup(const std::string& groupName, hid_t *grp);
-        virtual bool createUnlimitedDataset(const std::string& datasetName, hid_t *dspace, hid_t *dset);
+        virtual bool createUnlimitedDataset(const std::string& datasetName,
+                                            int rank, const hsize_t *dataDims, const hsize_t *chunkDims,
+                                            hid_t *dspace, hid_t *dset);
 
         virtual bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
         virtual bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
@@ -134,8 +135,7 @@ public:
          * saves the data in the other buffer to file.
          */
         static const uint    numberOfBuffers;
-        static const hsize_t chunkSize;
-        static const uint    numberOfChunks;
+        static const int     rank;
 
 protected:
         virtual bool finaliseInit();
@@ -179,6 +179,9 @@ public:
         virtual void terminate();
         virtual void handleEvent(const Event *event);
 
+public:
+        static const int rank;
+
 protected:
         virtual bool finaliseInit();
         virtual void finaliseAddPre(Entity *entity);
@@ -192,8 +195,6 @@ private:
         std::vector<double*> m_data;
         // position in the buffer
         uint m_bufferPosition;
-        // the size of each buffer
-        hsize_t m_bufferSize;
         // the thread that saves the data once the buffers are full
         boost::thread m_writerThread;
 };
