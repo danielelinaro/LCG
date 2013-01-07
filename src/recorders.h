@@ -79,11 +79,12 @@ protected:
         virtual void addPre(Entity *entity);
         virtual void finaliseAddPre(Entity *entity) = 0;
 
-        virtual bool allocateForEntity(Entity *entity, int dataRank, const hsize_t *dataDims, const hsize_t *chunkDims);
+        virtual bool allocateForEntity(Entity *entity, int dataRank,
+                                       const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims);
 
         virtual bool createGroup(const std::string& groupName, hid_t *grp);
         virtual bool createUnlimitedDataset(const std::string& datasetName,
-                                            int rank, const hsize_t *dataDims, const hsize_t *chunkDims,
+                                            int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
                                             hid_t *dspace, hid_t *dset);
 
         virtual bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
@@ -134,8 +135,8 @@ public:
          * so that the realtime thread writes in one, while the thread created by H5Recorder
          * saves the data in the other buffer to file.
          */
-        static const uint    numberOfBuffers;
-        static const int     rank;
+        static const uint numberOfBuffers;
+        static const int  rank;
 
 protected:
         virtual bool finaliseInit();
@@ -165,10 +166,7 @@ private:
         boost::condition_variable m_cv;
         bool m_threadRun;
 
-        // H5 stuff
-        hsize_t m_offset;
         hsize_t m_datasetSize;
-
 };
 
 class TriggeredH5Recorder : public BaseH5Recorder {
@@ -197,6 +195,7 @@ private:
         uint m_bufferPosition;
         // the thread that saves the data once the buffers are full
         boost::thread m_writerThread;
+        hsize_t m_datasetSize[2];
 };
 
 } // namespace recorders

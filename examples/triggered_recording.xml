@@ -47,6 +47,15 @@
       </parameters>
       <connections>0,1</connections>
     </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>4</id>
+      <parameters>
+	<filename>noise.stim</filename>
+      </parameters>
+      <connections>0,1</connections>
+    </entity>
     
   </entities>
 
