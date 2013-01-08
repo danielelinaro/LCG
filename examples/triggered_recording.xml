@@ -12,8 +12,17 @@
     </entity>
 
     <entity>
-      <name>LIFNeuron</name>
+      <name>H5Recorder</name>
       <id>1</id>
+      <parameters>
+	<filename>recording.h5</filename>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>LIFNeuron</name>
+      <id>2</id>
       <parameters>
 	<C>0.08</C>
 	<tau>0.0075</tau>
@@ -23,44 +32,44 @@
 	<Vth>-50</Vth>
 	<Iext>220</Iext>
       </parameters>
-      <connections>0,2</connections>
+      <connections>0,1,3</connections>
     </entity>
 
     <entity>
       <name>EventCounter</name>
-      <id>2</id>
+      <id>3</id>
       <parameters>
 	<maxCount>100</maxCount>
 	<autoReset>true</autoReset>
 	<eventToCount>spike</eventToCount>
 	<eventToSend>trigger</eventToSend>
       </parameters>
-      <connections>0,3</connections>
-    </entity>
-
-    <entity>
-      <name>Waveform</name>
-      <id>3</id>
-      <parameters>
-	<triggered>true</triggered>
-	<filename>triggered_pulse.stim</filename>
-      </parameters>
-      <connections>0,1</connections>
+      <connections>0,4</connections>
     </entity>
 
     <entity>
       <name>Waveform</name>
       <id>4</id>
       <parameters>
+	<triggered>true</triggered>
+	<filename>triggered_pulse.stim</filename>
+      </parameters>
+      <connections>0,1,2</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
 	<filename>noise.stim</filename>
       </parameters>
-      <connections>0,1</connections>
+      <connections>0,1,2</connections>
     </entity>
     
   </entities>
 
   <simulation>
-    <tend>6</tend>
+    <tend>8.4</tend>
     <rate>20000</rate>
   </simulation>
 

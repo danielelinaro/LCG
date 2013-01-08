@@ -3,6 +3,7 @@
 *.a
 *.la
 *.m4
+*.h5
 config.*
 */.deps
 */.libs
@@ -20,3 +21,7 @@ install-sh
 libtool
 ltmain.sh
 stamp-h1
+cclamp
+test_daq
+constant_output
+zero_output

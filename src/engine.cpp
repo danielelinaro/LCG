@@ -415,7 +415,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 perror("sched_get_priority_max");
                 return;
         }
-        Logger(Debug, "The maximum priority is #%d.\n", priority);
+        Logger(Debug, "The maximum priority is %d.\n", priority);
 
 	memset(&schedp, 0, sizeof(schedp));
 	schedp.sched_priority = priority;
@@ -551,7 +551,7 @@ bool Simulate(const std::vector<Entity*>& entities, double tend)
 #endif // REALTIME_ENGINE
         thrd.join();
         if (success)
-                Logger(Debug, "The structimulation thread has terminated successfully.\n");
+                Logger(Debug, "The simulation thread has terminated successfully.\n");
         else
                 Logger(Important, "There were some problems with the simulation thread.\n");
         return success;

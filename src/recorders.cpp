@@ -3,6 +3,7 @@
 #include <time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "engine.h"
+#include "common.h"
 
 dynclamp::Entity* ASCIIRecorderFactory(string_dict& args)
 {
@@ -663,8 +664,8 @@ bool BaseH5Recorder::writeData(const std::string& datasetName, int rank, const h
 
 //~~~
 
-const uint    H5Recorder::numberOfBuffers = 2;
-const int     H5Recorder::rank            = 1;
+const uint H5Recorder::numberOfBuffers = 2;
+const int  H5Recorder::rank            = 1;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
         : BaseH5Recorder(compress, 1024, 20, filename, id), // 1024 = chunkSize and 20 = numberOfChunks
@@ -699,7 +700,7 @@ bool H5Recorder::finaliseInit()
         m_datasetSize = 0;
         
         for (int i=0; i<m_pre.size(); i++) {
-                if (!allocateForEntity(m_pre[i], rank, &bufsz, &maxbufsz, &chunksz))
+                if (!allocateForEntity(m_pre[i], H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
                         return false;
         }
 
@@ -833,7 +834,7 @@ void H5Recorder::buffersWriter()
                                 }
 
                                 // define memory space
-                                m_dataspaces[i] = H5Screate_simple(rank, &m_bufferLengths[bufferToSave], NULL);
+                                m_dataspaces[i] = H5Screate_simple(H5Recorder::rank, &m_bufferLengths[bufferToSave], NULL);
                                 if (m_dataspaces[i] < 0) {
                                         H5Sclose(filespace);
                                         throw "Unable to define memory space.";
@@ -910,6 +911,17 @@ void TriggeredH5Recorder::step()
 
 void TriggeredH5Recorder::terminate()
 {
+        if (m_recording) { // we were recording when the experiment ended, damn it!
+                Logger(Info, "TriggeredH5Recorder::terminate() called while recording.\n");
+                // fill the remaining part of the buffers with NaNs
+                for ( ; m_bufferPosition<bufferSize(); m_bufferPosition++) {
+                        for (int i=0; i<m_numberOfInputs; i++)
+                                m_data[i][m_bufferPosition] = NOT_A_NUMBER;
+                }
+                m_recording = false;
+                // start the writing thread, to save the remaining data.
+                m_writerThread = boost::thread(&TriggeredH5Recorder::buffersWriter, this); 
+        }
         m_writerThread.join();
         BaseH5Recorder::terminate();
 }
@@ -943,7 +955,7 @@ bool TriggeredH5Recorder::finaliseInit()
         m_datasetSize[0] = bufferSize();
         m_datasetSize[1] = 0;
         for (int i=0; i<m_pre.size(); i++) {
-                if (!allocateForEntity(m_pre[i], rank, dataDims, maxDataDims, chunkDims))
+                if (!allocateForEntity(m_pre[i], TriggeredH5Recorder::rank, dataDims, maxDataDims, chunkDims))
                         return false;
         }
         return true;
@@ -960,6 +972,29 @@ void TriggeredH5Recorder::buffersWriter()
 {
         Logger(Debug, "TriggeredH5Recorder::buffersWriter started.\n");
 
+#if defined(HAVE_LIBRT)
+        int priority;
+        struct sched_param schedp;
+
+        priority = sched_get_priority_max(SCHEDULER);
+        if (priority > 0) {
+                Logger(Debug, "The maximum priority is %d.\n", priority);
+	        memset(&schedp, 0, sizeof(schedp));
+	        schedp.sched_priority = priority-1;
+                if (sched_setscheduler(0, SCHEDULER, &schedp) == 0) {
+                        Logger(Debug, "Successfully set the priority of the writing thread to %d.\n", priority-1);
+                }
+                else {
+                        Logger(Info, "Unable to set the priority of the writing thread to %d: "
+                                        "it will run at the same priority of the parent thread.\n", priority-1);
+                }
+        }
+        else {
+                Logger(Info, "Unable to get maximum priority: "
+                        "the writing thread will run at the same priority of the parent thread.\n");
+        }
+#endif
+
         hid_t filespace;
         herr_t status;
 
@@ -972,7 +1007,6 @@ void TriggeredH5Recorder::buffersWriter()
 
         Logger(Debug, "Dataset size = (%dx%d).\n", m_datasetSize[0], m_datasetSize[1]);
         Logger(Debug, "Offset = (%d,%d).\n", start[0], start[1]);
-        Logger(Debug, "Time = %g sec.\n", m_datasetSize[0]*m_datasetSize[1]*GetGlobalDt());
 
         for (int i=0; i<m_numberOfInputs; i++) {
 
