@@ -312,6 +312,11 @@ void BaseH5Recorder::terminate()
         closeFile();
 }
 
+const char* BaseH5Recorder::filename() const
+{
+        return m_filename;
+}
+
 bool BaseH5Recorder::sha1(unsigned *messageDigest)
 {
         if (m_fid > 0) {

@@ -64,6 +64,7 @@ public:
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
 
+        const char* filename() const;
         bool sha1(unsigned *messageDigest);
 
 public:
