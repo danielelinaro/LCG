@@ -4,6 +4,7 @@
 #include "recorders.h"
 #include "engine.h"
 #include "common.h"
+#include "sha1.h"
 
 dynclamp::Entity* ASCIIRecorderFactory(string_dict& args)
 {
@@ -127,7 +128,8 @@ const double  BaseH5Recorder::fillValue     = 0.0;
 
 BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t bufferSize, const char *filename, uint id)
         : Recorder(id), m_fid(-1), m_bufferSize(bufferSize),
-          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets()
+          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets(),
+          m_haveMessageDigest(false)
 {
         if (filename == NULL) {
                 m_makeFilename = true;
@@ -154,7 +156,8 @@ BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t bufferSize, const char *fi
 BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t chunkSize, uint numberOfChunks, const char *filename, uint id)
         : Recorder(id), m_fid(-1), m_bufferSize(chunkSize*numberOfChunks),
           m_chunkSize(chunkSize), m_numberOfChunks(numberOfChunks),
-          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets()
+          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets(),
+          m_haveMessageDigest(false)
 {
         if (filename == NULL) {
                 m_makeFilename = true;
@@ -307,6 +310,41 @@ void BaseH5Recorder::closeFile()
 void BaseH5Recorder::terminate()
 {
         closeFile();
+}
+
+bool BaseH5Recorder::sha1(unsigned *messageDigest)
+{
+        if (m_fid > 0) {
+                Logger(Important, "The file is still open, not computing the SHA-1 digest.\n");
+                return false;
+        }
+        if (! m_haveMessageDigest) {
+                FILE *fp = fopen(m_filename, "rb");
+                if (fp == NULL) {
+                        Logger(Important, "Unable to open [%s] for computing the SHA-1 digest.\n", m_filename);
+                        return false;
+                }
+                char c;
+                SHA1 sha;
+                sha.Reset();
+                c = fgetc(fp);
+                while (!feof(fp)) {
+                    sha.Input(c);
+                    c = fgetc(fp);
+                }
+                fclose(fp);
+                if (!sha.Result(m_messageDigest)) {
+                    Logger(Important, "Could not compute SHA-1 digest for [%s]\n", m_filename);
+                    return false;
+                }
+                else {
+                    Logger(Debug, "%08X %08X %08X %08X %08X - [%s]\n", m_messageDigest[0],
+                            m_messageDigest[1], m_messageDigest[2], m_messageDigest[3], m_messageDigest[4], m_filename);
+                }
+                m_haveMessageDigest = true;
+        }
+        memcpy(messageDigest, m_messageDigest, 5*sizeof(unsigned));
+        return true;
 }
 
 void BaseH5Recorder::addPre(Entity *entity)

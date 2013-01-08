@@ -64,6 +64,8 @@ public:
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
 
+        bool sha1(unsigned *messageDigest);
+
 public:
         static const hsize_t unlimitedSize;
         static const double  fillValue;
@@ -120,6 +122,10 @@ private:
         uint m_numberOfChunks; 
         // the total size of the buffer, given by the size of each chunk times the number of chunks
         hsize_t m_bufferSize;
+
+        // SHA-1
+        bool m_haveMessageDigest;
+        unsigned m_messageDigest[5];
 };
 
 class H5Recorder : public BaseH5Recorder {
