@@ -4,6 +4,8 @@
 #include "waveform.h"
 #include "engine.h"
 
+#include "sha1.h"
+
 using namespace dynclamp;
 
 int main(int argc, char *argv[])
