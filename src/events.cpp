@@ -33,7 +33,7 @@ ThreadSafeQueue<const Event*> eventsQueue;
 void EnqueueEvent(const Event *event)
 {
         eventsQueue.push_back(event);
-        Logger(Debug, "Enqueued event sent from entity #%d.\n", event->sender()->id());
+        Logger(All, "Enqueued event sent from entity #%d.\n", event->sender()->id());
 }
 
 void ProcessEvents()
@@ -48,7 +48,7 @@ void ProcessEvents()
                 for (j=0; j<nPost; j++)
                         post[j]->handleEvent(event);
                 delete event;
-                Logger(Debug, "Deleted event sent from entity #%d.\n", event->sender()->id());
+                Logger(All, "Deleted event sent from entity #%d.\n", event->sender()->id());
         }
 }
 

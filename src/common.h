@@ -56,7 +56,8 @@ enum {
         PLUS_MINUS_ZERO_POINT_TWO
 };
 
-#define INFINITE std::numeric_limits<double>::infinity() 
+#define INFINITE     std::numeric_limits<double>::infinity() 
+#define NOT_A_NUMBER std::numeric_limits<double>::quiet_NaN() 
 
 #endif
 
