@@ -64,6 +64,8 @@ public:
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
 
+        const char* filename() const;
+
 public:
         static const hsize_t unlimitedSize;
         static const double  fillValue;

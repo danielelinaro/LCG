@@ -309,6 +309,11 @@ void BaseH5Recorder::terminate()
         closeFile();
 }
 
+const char* BaseH5Recorder::filename() const
+{
+        return m_filename;
+}
+
 void BaseH5Recorder::addPre(Entity *entity)
 {
         Entity::addPre(entity);
