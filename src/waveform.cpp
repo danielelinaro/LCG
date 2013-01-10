@@ -64,6 +64,11 @@ bool Waveform::initialise()
         return true;
 }
 
+const char* Waveform::stimulusFile() const
+{
+        return m_stimulusFile;
+}
+
 bool Waveform::setStimulusFile(const char *stimulusFile)
 {
         if (!fs::exists(stimulusFile)) {

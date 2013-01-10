@@ -279,7 +279,8 @@ void ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (in seconds)")
                         ("frequency,F", po::value<double>(&freq), "specify the sampling frequency (in Hertz)")
                         ("ntrials,n", po::value<uint>(&opt->nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
-                        ("nbatches,N", po::value<uint>(&opt->nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)");
+                        ("nbatches,N", po::value<uint>(&opt->nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
+                        ("enable-replay,r", po::value<bool>(&opt->enableReplay)->default_value(true), "enable saving of configuration and stimulus files");
 
                 po::store(po::parse_command_line(argc, argv, description), options);
                 po::notify(options);    

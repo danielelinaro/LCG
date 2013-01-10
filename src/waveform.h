@@ -16,6 +16,7 @@ public:
                  const std::string& units = "N/A", uint id = GetId());
         virtual ~Waveform();
 
+        const char* stimulusFile() const;
         bool setStimulusFile(const char *filename);
         virtual bool initialise();
 

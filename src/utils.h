@@ -44,12 +44,13 @@ typedef enum
 
 struct CommandLineOptions {
         CommandLineOptions() : tend(-1), dt(0), iti(0), ibi(0), nTrials(0), nBatches(0),
-        configFile(""), kernelFile(""), stimulusFiles() {}
+        configFile(""), kernelFile(""), stimulusFiles(), enableReplay(true) {}
         double tend, dt;
         useconds_t iti, ibi;
         uint nTrials, nBatches;
         std::string configFile, kernelFile;
         strings stimulusFiles;
+        bool enableReplay;
 };
 
 void SetLoggingLevel(LogLevel level);
