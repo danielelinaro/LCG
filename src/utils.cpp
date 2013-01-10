@@ -291,7 +291,7 @@ void ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt)
                 }
 
                 if (options.count("version")) {
-                        Logger(Info, "%s version %d\n", fs::path(argv[0]).filename().c_str(), DYNCLAMP_VERSION);
+                        Logger(Info, "%s version %s\n", fs::path(argv[0]).filename().c_str(), VERSION);
                         exit(0);
                 }
 

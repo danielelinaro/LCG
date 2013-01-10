@@ -28,8 +28,6 @@
 #define LIBNAME "libdynclamp.so"
 #endif
 
-#define DYNCLAMP_VERSION 0.1
-
 #define FILENAME_MAXLEN 1024
 
 namespace dynclamp

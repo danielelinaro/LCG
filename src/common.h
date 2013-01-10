@@ -1,6 +1,12 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#if defined(HAVE_CONFIG_H)
+#include "config.h"     // defines VERSION
+#else
+#define VERSION "0.9.1"
+#endif
+
 /*!
  * \file common.h
  * \brief Header file with common definitions
@@ -11,8 +17,8 @@
  *
  * \author Daniele Linaro <daniele.linaro@ua.ac.be>
  * \author Joao Couto <joao@tnb.ua.ac.be>
- * \version 0.1
- * \date 2012
+ * \version 0.9.1
+ * \date 2012,2013
  * 
  * \section con Contents:
  *
