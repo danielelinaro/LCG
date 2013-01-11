@@ -227,6 +227,11 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         closedir(dirp);
         fclose(fid);
 
+        // change the access mode of the hashes file to read-only
+        sprintf(path, "%s/%s", directory, HASHES_FILE);
+        chmod(path, 0444);
+
+        fid = fopen(path, "w");
         return true;
 }
 
