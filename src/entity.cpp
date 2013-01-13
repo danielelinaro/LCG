@@ -72,7 +72,7 @@ void Entity::connect(Entity *entity)
 
         if (entity == this) {
                 Logger(Critical, "Can't connect an entity to itself (entity #%d).\n", entity->id());
-                return;
+                throw "Tried to connect entity to itself.";
         }
 
         if (isPost(entity)) {

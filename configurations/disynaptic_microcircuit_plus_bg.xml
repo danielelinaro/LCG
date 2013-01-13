@@ -13,7 +13,7 @@
       <parameters>
 	<spikeThreshold>-20</spikeThreshold>
 	<V0>-65</V0>
-	<kernelFile>kernel-1.dat</kernelFile>
+	<kernelFile>kernel-0-0.dat</kernelFile>
 	<deviceFile>/dev/comedi0</deviceFile>
 	<inputSubdevice>0</inputSubdevice>
 	<outputSubdevice>1</outputSubdevice>
@@ -31,7 +31,7 @@
       <name>SynapticConnection</name>
       <id>2</id>
       <parameters>
-	<delay>1e-3</delay>
+	<delay>2e-3</delay>
 	<weight>30</weight>
       </parameters>
       <connections>3</connections>
@@ -69,21 +69,19 @@
       <name>SynapticConnection</name>
       <id>5</id>
       <parameters>
-	<delay>1e-3</delay>
+	<delay>2e-3</delay>
 	<weight>100</weight>
       </parameters>
       <connections>6</connections>
     </entity>
 
     <entity>
-      <name>TMGSynapse</name>
+      <name>Exp2Synapse</name>
       <id>6</id>
       <parameters>
 	<E>-90</E>
-	<U>0.5</U>
-	<tau1>0.003</tau1>
-	<tauRec>0.8</tauRec>
-	<tauFacil>0</tauFacil>
+	<tauRise>0.002</tauRise>
+	<tauDecay>0.008</tauDecay>
       </parameters>
       <connections>0,7</connections>
     </entity>
@@ -94,7 +92,7 @@
       <parameters>
 	<spikeThreshold>-20</spikeThreshold>
 	<V0>-65</V0>
-	<kernelFile>kernel.dat</kernelFile>
+	<kernelFile>kernel-1-1.dat</kernelFile>
 	<deviceFile>/dev/comedi0</deviceFile>
 	<inputSubdevice>0</inputSubdevice>
 	<outputSubdevice>1</outputSubdevice>

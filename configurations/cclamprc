@@ -1,0 +1,18 @@
+[AnalogInput0]
+device = /dev/comedi0
+range = [-10,+10]
+subdevice = 0
+channel = AI
+conversionFactor = 100
+reference = GRSE
+units = mV
+
+[AnalogOutput0]
+device = /dev/comedi0
+range = [-10,+10]
+subdevice = 1
+channel = AO
+conversionFactor = 0.001
+reference = GRSE
+units = pA
+
