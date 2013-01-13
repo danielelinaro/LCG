@@ -314,6 +314,32 @@ const char* BaseH5Recorder::filename() const
         return m_filename;
 }
 
+#if defined(HAVE_LIBRT)
+void BaseH5Recorder::reducePriority() const
+{
+        int priority;
+        struct sched_param schedp;
+
+        priority = sched_get_priority_max(SCHEDULER);
+        if (priority > 0) {
+                Logger(Debug, "The maximum priority is %d.\n", priority);
+	        memset(&schedp, 0, sizeof(schedp));
+	        schedp.sched_priority = priority-1;
+                if (sched_setscheduler(0, SCHEDULER, &schedp) == 0) {
+                        Logger(Debug, "Successfully set the priority of the writing thread to %d.\n", priority-1);
+                }
+                else {
+                        Logger(Info, "Unable to set the priority of the writing thread to %d: "
+                                        "it will run at the same priority of the parent thread.\n", priority-1);
+                }
+        }
+        else {
+                Logger(Info, "Unable to get maximum priority: "
+                        "the writing thread will run at the same priority of the parent thread.\n");
+        }
+}
+#endif
+
 void BaseH5Recorder::addPre(Entity *entity)
 {
         Entity::addPre(entity);
@@ -788,6 +814,11 @@ void H5Recorder::step()
 void H5Recorder::buffersWriter()
 {
         Logger(Debug, "H5Recorder::buffersWriter >> Started.\n");
+
+#if defined(HAVE_LIBRT)
+        //reducePriority();
+#endif
+
         while (m_threadRun || m_dataQueue.size() != 0) {
                 {
                         boost::unique_lock<boost::mutex> lock(m_mutex);
@@ -978,26 +1009,7 @@ void TriggeredH5Recorder::buffersWriter()
         Logger(Debug, "TriggeredH5Recorder::buffersWriter started.\n");
 
 #if defined(HAVE_LIBRT)
-        int priority;
-        struct sched_param schedp;
-
-        priority = sched_get_priority_max(SCHEDULER);
-        if (priority > 0) {
-                Logger(Debug, "The maximum priority is %d.\n", priority);
-	        memset(&schedp, 0, sizeof(schedp));
-	        schedp.sched_priority = priority-1;
-                if (sched_setscheduler(0, SCHEDULER, &schedp) == 0) {
-                        Logger(Debug, "Successfully set the priority of the writing thread to %d.\n", priority-1);
-                }
-                else {
-                        Logger(Info, "Unable to set the priority of the writing thread to %d: "
-                                        "it will run at the same priority of the parent thread.\n", priority-1);
-                }
-        }
-        else {
-                Logger(Info, "Unable to get maximum priority: "
-                        "the writing thread will run at the same priority of the parent thread.\n");
-        }
+        reducePriority();
 #endif
 
         hid_t filespace;

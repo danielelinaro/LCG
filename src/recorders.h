@@ -96,6 +96,11 @@ protected:
         virtual bool writeData(const std::string& datasetName, int rank, const hsize_t *dims,
                                const double *data, const std::string& label = "");
 
+#if defined(HAVE_LIBRT)
+        // sets the priority of the calling thread to max_priority - 1
+        virtual bool reducePriority() const;
+#endif
+
 protected:
         // the handle of the file
         hid_t m_fid;
