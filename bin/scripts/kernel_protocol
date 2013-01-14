@@ -18,6 +18,7 @@ print_help()
     echo "   -d   specify the duration of the white noise stimulation in seconds (default 10)"
     echo "   -i   specify the input channel (default 0)"
     echo "   -o   specify the output channel (default 0)"
+    echo "   -F   specify the sampling frequency (default 20000)"
     echo
 }
 
@@ -25,8 +26,12 @@ append_channel=0
 duration=10
 ai=0
 ao=0
-while getopts ":d:h" opt ; do
+F=20000
+while getopts ":d:i:o:F:h" opt ; do
     case $opt in
+	F)
+	    F=$OPTARG
+	    ;;
 	d)
 	    duration=$OPTARG
 	    ;;
@@ -63,13 +68,13 @@ else
 fi
 
 if [ -f $cclamprc ] ; then
-    sed -e "s/AI/$ai/" -e "s/AO/$ao" $cclamprc > $HOME/.cclamprc
+    sed -e "s/AI/$ai/" -e "s/AO/$ao/" $cclamprc > $HOME/.cclamprc
 fi
 
 stimfile=/tmp/white_noise.stim
 
 sed -e 's/^10/'$duration'/' $origstimfile > $stimfile
-cclamp -f $stimfile
+cclamp -f $stimfile -F $F
 datafile=`ls -lrth | tail -1 | awk '{ print $9 }'`
 extract_kernels.py $datafile
 kernelfile=${datafile%.h5}_kernel.dat
