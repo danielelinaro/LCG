@@ -315,11 +315,10 @@ const char* BaseH5Recorder::filename() const
 }
 
 #if defined(HAVE_LIBRT)
-bool BaseH5Recorder::reducePriority() const
+void BaseH5Recorder::reducePriority() const
 {
         int priority;
         struct sched_param schedp;
-
         priority = sched_get_priority_max(SCHEDULER);
         if (priority > 0) {
                 Logger(Debug, "The maximum priority is %d.\n", priority);
@@ -327,7 +326,6 @@ bool BaseH5Recorder::reducePriority() const
 	        schedp.sched_priority = priority-1;
                 if (sched_setscheduler(0, SCHEDULER, &schedp) == 0) {
                         Logger(Debug, "Successfully set the priority of the writing thread to %d.\n", priority-1);
-                        return true;
                 }
                 else {
                         Logger(Info, "Unable to set the priority of the writing thread to %d: "
@@ -338,7 +336,6 @@ bool BaseH5Recorder::reducePriority() const
                 Logger(Info, "Unable to get maximum priority: "
                         "the writing thread will run at the same priority of the parent thread.\n");
         }
-        return false;
 }
 #endif
 

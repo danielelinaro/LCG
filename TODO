@@ -1,7 +1,6 @@
 
 === Short term (and therefore relatively simple) ===
 
--) specify input and output channels in the other scripts.
 -) analog output should also be proxied in asynchronous mode.
 -) add a Logger object.
 -) see whether OU*, TimeLogger and Delay can be removed.

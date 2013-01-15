@@ -11,7 +11,7 @@ def usage():
     print('     -O    output channel')
     print('     -I    input channels (in the form 0,1 where 0 and 1 are')
     print('           the channels corresponding to the pre-synaptic and')
-    print('           post-synaptic neurons, respectively.')
+    print('           post-synaptic neurons, respectively.)')
     print('     -n    number of pulses (default 10)')
     print('     -F    sampling frequency (default 15000)')
     print('     -d    stimulation duration (default 1 ms)')
