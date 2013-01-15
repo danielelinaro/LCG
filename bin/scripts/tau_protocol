@@ -17,18 +17,28 @@ print_help()
     echo "   -h   display this help message and exit"
     echo "   -n   specify number of repetitions (default 30)"
     echo "   -i   specify interval between repetitions in seconds (default 0.5)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
 reps=30
 interval=0.5
-while getopts ":a:n:i:h" opt ; do
+ai=0
+ao=0
+while getopts ":a:n:i:I:O:h" opt ; do
     case $opt in
 	n)
 	    reps=$OPTARG
 	    ;;
 	i)
 	    interval=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -48,6 +58,6 @@ else
     stimfile=$PROTOCOLS_PATH/tau/tau.stim
 fi
 
-kernel_protocol
+kernel_protocol -I $ai -O $ao
 cclamp -f $stimfile -n $reps -i $interval
 

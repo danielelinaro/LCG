@@ -23,10 +23,12 @@ function print_help
     echo "   -1   tau_1 in a Tsodyks-Markram synapse (default 0.003 s)"
     echo "   -r   tau_rec in a Tsodyks-Markram synapse (default 0.1 s)"
     echo "   -f   tau_facil in a Tsodyks-Markram synapse (default 1 s)"
-    echo "   -I   the amplitude of the step of current (default 500 pA)"
+    echo "   -a   the amplitude of the step of current (default 500 pA)"
     echo "   -T   the duration of the step of current (default 5 s)"
     echo "   -n   the number of batches (default 2)"
     echo "   -i   the interval between batches (default 30 s)"
+    echo "   -I   the input channel (default 0)"
+    echo "   -O   the output channel (default 0)"
     echo
 }
 
@@ -42,7 +44,9 @@ I=500
 T=5
 reps=20
 interval=30
-while getopts ":c:d:E:w:U:1:r:f:I:T:n:i:h" opt ; do
+ai=0
+ao=0
+while getopts ":c:d:E:w:U:1:r:f:a:T:n:i:I:O:h" opt ; do
     case $opt in
 	c)
 	    config_file=$OPTARG
@@ -71,7 +75,7 @@ while getopts ":c:d:E:w:U:1:r:f:I:T:n:i:h" opt ; do
 	n)
 	    reps=$OPTARG
 	    ;;
-	I)
+	a)
 	    I=$OPTARG
 	    ;;
 	T)
@@ -79,6 +83,12 @@ while getopts ":c:d:E:w:U:1:r:f:I:T:n:i:h" opt ; do
 	    ;;
 	i)
 	    interval=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -120,5 +130,5 @@ sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>#' \
     -e 's/ginh_stimfile/ginh.stim/' \
     $configdir/$config_file > $config_file
 
-kernel_protocol
+kernel_protocol -I $ai -O $ao
 dclamp -c $config_file -n $reps -i $interval

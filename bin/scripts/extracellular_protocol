@@ -67,5 +67,4 @@ fi
 T=`awk '{ sum+=$1 } END { print sum }' $pulses_file`
 echo "Each trial will last $T seconds."
 sed -e 's/TEND/'$T'/' -e 's/STIMFILE/'$pulses_file'/' $config_dir/$config_file > $config_file
-#kernel_protocol
 dclamp -c $config_file -n $reps -i $interval

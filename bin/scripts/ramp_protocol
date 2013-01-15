@@ -19,6 +19,8 @@ print_help()
     echo "   -a   specify the peak of the ramp (default 500 pA)"
     echo "   -n   specify the number of repetitions (default 2)"
     echo "   -i   specify the interval between repetitions (default 30 sec)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
@@ -26,7 +28,9 @@ duration=10
 amplitude=500
 repetitions=2
 interval=30
-while getopts ":d:a:n:i:h" opt ; do
+ai=0
+ao=0
+while getopts ":d:a:n:i:I:O:h" opt ; do
     case $opt in
 	d)
 	    duration=$OPTARG
@@ -39,6 +43,12 @@ while getopts ":d:a:n:i:h" opt ; do
 	    ;;
 	i)
 	    interval=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -61,6 +71,6 @@ fi
 stimfile=/tmp/ramp.stim
 
 sed -e 's/T/'$duration'/' -e 's/A/'$amplitude'/' $origstimfile > $stimfile
-kernel_protocol
+kernel_protocol -I $ai -O $ao
 cclamp -f $stimfile -n $repetitions -i $interval
 rm $stimfile

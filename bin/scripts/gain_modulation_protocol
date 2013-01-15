@@ -22,6 +22,8 @@ function print_help
     echo "   -s   specify the current step"
     echo "   -n   specify number of batches (default 2)"
     echo "   -i   specify interval between batches in seconds (default 45)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
@@ -58,7 +60,9 @@ current_file=current.stim
 min_current=
 max_current=
 current_step=
-while getopts ":n:i:t:c:m:M:s:h" opt ; do
+ai=0
+ao=0
+while getopts ":n:i:t:c:m:M:s:I:O:h" opt ; do
     case $opt in
 	n)
 	    reps=$OPTARG
@@ -80,6 +84,12 @@ while getopts ":n:i:t:c:m:M:s:h" opt ; do
 	    ;;
 	s)
 	    current_step=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -136,7 +146,7 @@ i=1
 rm -f current.stim
 while [ $i -le $reps ] ; do
     shuffle $ncurrents
-    kernel_protocol
+    kernel_protocol -I $ai -O $ao
     j=0
     while [ $j -lt $ncurrents ] ; do
 	sed -e 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file

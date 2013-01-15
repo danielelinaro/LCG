@@ -18,7 +18,7 @@ function print_help
     echo "   -c   specify the configuration file (default fI_PID.xml)"
     echo "   -f   specify the frequency stimulus file (default frequency.stim)"
     echo "   -F   specify the maximal frequency (default 30 Hz)"
-    echo "   -I   specify the initial value of the current (default 300 pA)"
+    echo "   -a   specify the initial amplitude of the current (default 300 pA)"
     echo "   -p   specify the proportional gain of the controller (default 0.01)"
     echo "   -i   specify the integral gain of the controller (default 1)"
     echo "   -d   specify the derivative gain of the controller (default 0)"
@@ -26,6 +26,8 @@ function print_help
     echo "   -T   specify the duration of the ramp (default 30 sec)"
     echo "   -n   specify the number of batches (default 2)"
     echo "   -w   specify the interval between batches (default 60 sec)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
@@ -41,7 +43,9 @@ T=30
 reps=2
 interval=60
 F0=5
-while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
+ai=0
+ao=0
+while getopts ":c:f:F:a:p:i:d:t:T:n:w:I:O:h" opt ; do
     case $opt in
 	c)
 	    config_file=$OPTARG
@@ -52,7 +56,7 @@ while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
 	F)
 	    F=$OPTARG
 	    ;;
-	I)
+	a)
 	    I0=$OPTARG
 	    ;;
 	p)
@@ -75,6 +79,12 @@ while getopts ":c:f:F:I:p:i:d:t:T:n:w:h" opt ; do
 	    ;;
 	w)
 	    interval=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -104,6 +114,6 @@ fi
 sed -e 's/T/'$T'/' -e 's/F/'$F'/' $stimdir/$frequency_file > $frequency_file
 sed -e 's/GP/'$gp'/' -e 's/GI/'$gi'/' -e 's/GD/'$gd'/' -e 's/I0/'$I0'/' -e 's/TAU/'$tau'/' -e 's/F0/'$F0'/' -e 's/frequency\.stim/'$frequency_file'/' -e 's/TEND/'$T'/' $configdir/$config_file > $config_file
 
-kernel_protocol
+kernel_protocol -I $ai -O $ao
 dclamp -c $config_file -n $reps -i $interval
 

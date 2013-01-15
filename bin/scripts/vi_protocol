@@ -17,14 +17,11 @@ print_help()
     echo "   -h   display this help message and exit"
     echo "   -d   specify the directory where stimulus files are located"
     echo "   -n   specify number of batches (default 2)"
-    echo "   -i   specify interval between individual trials in seconds (default 10)"
-    echo "   -I   specify interval between batches of trials in seconds (default 10)"
+    echo "   -i   specify interval between individual trials in seconds (default 1)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
-
-trial_interval=1
-batch_interval=1
-reps=2
 
 if [ -z "${PROTOCOLS_PATH:-}" ] ; then
     stimdir=$HOME/protocols/vi
@@ -32,7 +29,11 @@ else
     stimdir=$PROTOCOLS_PATH/vi
 fi
 
-while getopts ":d:n:i:I:h" opt ; do
+trial_interval=1
+reps=2
+ai=0
+ao=0
+while getopts ":d:n:i:I:O:h" opt ; do
     case $opt in
 	d)
 	    if [ ! -d $OPTARG ] ; then
@@ -48,7 +49,10 @@ while getopts ":d:n:i:I:h" opt ; do
 	    trial_interval=$OPTARG
 	    ;;
 	I)
-	    batch_interval=$OPTARG
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -62,5 +66,5 @@ while getopts ":d:n:i:I:h" opt ; do
     esac
 done
 
-kernel_protocol
-cclamp -d $stimdir -i $trial_interval -I $batch_interval -N $reps
+kernel_protocol -I $ai -O $ao
+cclamp -d $stimdir -i $trial_interval -I $trial_interval -N $reps

@@ -19,6 +19,8 @@ function print_help
     echo "   -t   specify template stimulus file (default template.stim)"
     echo "   -n   specify number of repetitions (default 1)"
     echo "   -i   specify interval between repetitions in seconds (default 60)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
@@ -52,7 +54,9 @@ interval=60
 template_file=template.stim
 config_file=sinusoids.xml
 current_file=current.stim
-while getopts ":n:i:t:c:h" opt ; do
+ai=0
+ao=0
+while getopts ":n:i:t:c:I:O:h" opt ; do
     case $opt in
 	n)
 	    reps=$OPTARG
@@ -65,6 +69,12 @@ while getopts ":n:i:t:c:h" opt ; do
 	    ;;
 	c)
 	    config_file=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -90,7 +100,7 @@ while [ $i -le $reps ] ; do
     j=0
     while [ $j -lt $nfreq ] ; do
 	if [ $j -eq 0 ] ; then
-	    kernel_protocol
+	    kernel_protocol -I $ai -O $ao
 	fi
 	sed -e 's/F/'${freq[${index[$j]}]}'/' $template_file > $current_file
         sed -e 's/5061983/'$RANDOM'/' $gexc_template_file > $gexc_file

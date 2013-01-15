@@ -18,13 +18,17 @@ print_help()
     echo "   -a   specify amplitude of the stimulation in pA (default 1000)"
     echo "   -n   specify number of repetitions (default 20)"
     echo "   -i   specify interval between repetitions in seconds (default 1)"
+    echo "   -I   specify the input channel (default 0)"
+    echo "   -O   specify the output channel (default 0)"
     echo
 }
 
 reps=20
 amplitude=1000
 interval=1
-while getopts ":a:n:i:h" opt ; do
+ai=0
+ao=0
+while getopts ":a:n:i:I:O:h" opt ; do
     case $opt in
 	a)
 	    amplitude=$OPTARG
@@ -34,6 +38,12 @@ while getopts ":a:n:i:h" opt ; do
 	    ;;
 	i)
 	    interval=$OPTARG
+	    ;;
+	I)
+	    ai=$OPTARG
+	    ;;
+	O)
+	    ao=$OPTARG
 	    ;;
 	h)
 	    print_help
@@ -56,7 +66,7 @@ fi
 stimfile=/tmp/ap.stim
 
 sed -e 's/500/'$amplitude'/' $origstimfile > $stimfile
-kernel_protocol
+kernel_protocol -I $ai -O $ao
 cclamp -f $stimfile -n $reps -i $interval
 rm $stimfile
 

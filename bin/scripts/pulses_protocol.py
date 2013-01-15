@@ -8,7 +8,10 @@ def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('     -f    frequency of the stimulation')
-    print('     -o    output channel')
+    print('     -O    output channel')
+    print('     -I    input channels (in the form 0,1 where 0 and 1 are')
+    print('           the channels corresponding to the pre-synaptic and')
+    print('           post-synaptic neurons, respectively.')
     print('     -n    number of pulses (default 10)')
     print('     -F    sampling frequency (default 15000)')
     print('     -d    stimulation duration (default 1 ms)')
@@ -16,32 +19,19 @@ def usage():
     print('     -N    number of repetitions (default 10)')
     print('     -i    interval between repetitions (default 10 s)')
 
-def writeEntry(append, entry, subdevice, channel, conversion_factor, units):
-    mode = 'w'
-    if append:
-        mode = 'a'
-    with open(os.environ['HOME'] + '/.cclamprc',mode) as fid:
-        fid.write('[' + entry + ']\n')
-        fid.write('device = /dev/comedi0\n')
-        fid.write('range = [-10,+10]\n')
-        fid.write('subdevice = ' + str(subdevice) + '\n')
-        fid.write('channel = ' + str(channel) + '\n')
-        fid.write('conversionFactor = ' + str(conversion_factor) + '\n')
-        fid.write('reference = GRSE\n')
-        fid.write('units = ' + units + '\n\n')
-
-def main():
+if __name__ == '__main__':
     import getopt
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hN:n:f:F:o:d:a:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], "hN:n:f:F:d:a:I:O:", ["help", "output="])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(1)
 
     fstim = None
-    output_channel = None
+    ao = None
+    ai = []
 
     trials = 10
     npulses = 10
@@ -63,32 +53,40 @@ def main():
             fstim = float(a)
         elif o == '-F':
             fsampl = float(a)
-        elif o == '-o':
-            output_channel = int(a)
         elif o == '-d':
             stimdur = float(a)
         elif o == '-a':
             stimamp = float(a)
         elif o == '-i':
             interval = float(a)
+        elif o == '-I':
+            ai = []
+            for ch in a.split(','):
+                ai.append(int(ch))
+        elif o == '-O':
+            ao = int(a)
 
     if fstim == None:
-        print('You must specify the stimulation frequency')
+        print('You must specify the stimulation frequency.')
         usage()
         sys.exit(1)
 
-    if output_channel == None:
-        print('You must specify the output channel')
+    if len(ai) != 2:
+        print('You must specify the input channels.')
         usage()
         sys.exit(1)
 
-    writeEntry(False, 'AnalogInput0', 0, 0, 100, 'mV')
-    writeEntry(True, 'AnalogInput1', 0, 1, 100, 'mV')
-    writeEntry(True, 'AnalogOutput0', 1, output_channel, 0.001, 'pA')
+    if ao == None:
+        print('You must specify the output channel.')
+        usage()
+        sys.exit(1)
+
+    os.system('kernel_protocol -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao))
+
+    os.system('cclamprc_write -e -o -c ' + str(ao))
+    os.system('cclamprc_write -i -c ' + str(ai[0]))
+    os.system('cclamprc_write -i -c ' + str(ai[1]))
+
     dl.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
 
-    os.system('kernel_protocol -F ' + str(fsampl) + ' -i ' + str(output_channel) + ' -o ' + str(output_channel))
     os.system('cclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval))
-
-if __name__ == '__main__':
-    main()

@@ -23,6 +23,8 @@ def usage():
     print('     -n    number of repetitions (default 1).')
     print('     -N    maximum number of spikes to record (default 300).')    
     print('     -f    configuration file (default [%s]).' % templateFile)
+    print('     -I    the input channel (default 0)')
+    print('     -O    the output channel (default 0)')
     print('')
 
 def writeStimFile(filename, stimulus):
@@ -63,7 +65,7 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hR:v:V:s:d:N:n:i:f:r:', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hR:v:V:s:d:N:n:i:f:r:I:O:', ['help', 'output='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -79,6 +81,8 @@ def main():
     interval = 20        # [s]
     rate = 7000          # [Hz]
     configFile = None
+    ai = 0
+    ao = 0
 
     for o,a in opts:
         if o == '-h':
@@ -104,6 +108,10 @@ def main():
             configFile = a
         elif o == '-r':
             rate = float(a)
+        elif o == '-I':
+            ai = int(a)
+        elif o == '-O':
+            ao = int(a)
 
     if Rm <= 0:
         print('The input resistance must be positive.')
@@ -134,7 +142,7 @@ def main():
     rates_exc = np.array([rate])
     for i in range(repetitions):
         np.random.shuffle(Vm)
-        os.system('kernel_protocol')
+        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
         run(Vm, Rm, rates_exc, duration, interval, configFile)
 
 if __name__ == '__main__':
