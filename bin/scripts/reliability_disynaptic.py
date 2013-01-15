@@ -27,7 +27,8 @@ def usage():
     print('   -T   the duration of the stimulus (default 5 s)')
     print('   -n   the number of trials (default 10)')
     print('   -i   the interval between trials (default 30 s)')
-    print('')
+    print('   -I   input channel (default 0).')
+    print('   -O   output channel (default 0).\n')
 
 def writeStimFile(filename, stimulus):
     with open(filename,'w') as fid:
@@ -39,7 +40,7 @@ def writeStimFile(filename, stimulus):
 def run():
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:],'hc:E:w:r:d:T:n:i:m:s:t:', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:],'hc:E:w:r:d:T:n:i:m:s:t:I:O', ['help', 'output='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -57,7 +58,8 @@ def run():
     trials = 10     # [1]
     interval = 30   # [s]
     seed = 5061983  # [1]
-
+    ai = 0
+    ao = 0
     for o,a in opts:
         if o == '-h':
             usage()
@@ -84,6 +86,10 @@ def run():
             trials = int(a)
         elif o == '-i':
             interval = float(a)
+        elif o == '-I':
+            ai = int(a)
+        elif o == '-O':
+            ao = int(a)
 
     if I_mean == None or I_std == None or I_tau == None:
         print('You must specify the mean, the standard deviation and the\n' +
@@ -123,6 +129,7 @@ def run():
             sys.exit(2)
 
     writeStimFile('current.stim',stimulus)
+    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
 if __name__ == '__main__':

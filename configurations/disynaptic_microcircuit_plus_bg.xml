@@ -32,7 +32,7 @@
       <id>2</id>
       <parameters>
 	<delay>2e-3</delay>
-	<weight>30</weight>
+	<weight>28</weight>
       </parameters>
       <connections>3</connections>
     </entity>
@@ -70,7 +70,7 @@
       <id>5</id>
       <parameters>
 	<delay>2e-3</delay>
-	<weight>100</weight>
+	<weight>5</weight>
       </parameters>
       <connections>6</connections>
     </entity>
@@ -80,8 +80,8 @@
       <id>6</id>
       <parameters>
 	<E>-90</E>
-	<tauRise>0.002</tauRise>
-	<tauDecay>0.008</tauDecay>
+	<tauRise>0.001</tauRise>
+	<tauDecay>0.01</tauDecay>
       </parameters>
       <connections>0,7</connections>
     </entity>

@@ -23,8 +23,8 @@ def usage():
     print('     -n    number of repetitions (default 1).')
     print('     -N    maximum number of spikes to record (default 300).')    
     print('     -f    configuration file (default [%s]).' % templateFile)
-    print('     -I    the input channel (default 0)')
-    print('     -O    the output channel (default 0)')
+    print('     -I    input channel (default 0).')
+    print('     -O    output channel (default 0).')
     print('')
 
 def writeStimFile(filename, stimulus):

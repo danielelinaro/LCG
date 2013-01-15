@@ -5,7 +5,6 @@ import sys
 import glob
 import numpy as np
 import dlutils as dl
-import pylab as p
 
 def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp'):
     try:
@@ -60,7 +59,9 @@ def usage():
     print('     -d    target deflection (default 1 mV)')
     print('     -M    maximum value of the synaptic weight (default 500)')
     print('     -w    time window for extracting the peak of the PSP (default 30 ms)')
-    print('     -t    number of trials for averaging the amplitude of the PSP (default 10)\n')
+    print('     -t    number of trials for averaging the amplitude of the PSP (default 10)')
+    print('     -I    input channel (default 0).')
+    print('     -O    output channel (default 0).\n')
 
 def main():
     import getopt
@@ -78,6 +79,8 @@ def main():
     maxWeight = 50          # [a.u.]
     window = 30             # [ms]
     trials = 10
+    ai = 0
+    ao = 0
     try:
         configurationsDir = os.environ['CONFIGURATIONS_PATH']
     except:
@@ -108,6 +111,10 @@ def main():
             window = float(a)
         elif o == '-t':
             trials = int(a)
+        elif o == '-I':
+            ai = int(a)
+        elif o == '-O':
+            ao = int(a)
 
     if templateFile == None:
         print('You must specify either -e or -i.')
@@ -119,6 +126,7 @@ def main():
         usage()
         sys.exit(5)
 
+    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     weight,err,ierr,numfunc = opt.fminbound(deflection_error, minWeight, maxWeight,
                                             args = [targetDeflection, templateFile, trials, window*1e-3, dclamp],

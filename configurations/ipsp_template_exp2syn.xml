@@ -38,7 +38,7 @@
       <parameters>
 	<E>-80</E>
 	<tauRise>0.001</tauRise>
-	<tauDecay>0.008</tauDecay>
+	<tauDecay>0.01</tauDecay>
       </parameters>
       <connections>0,4</connections>
     </entity>

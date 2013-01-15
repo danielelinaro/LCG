@@ -43,14 +43,15 @@ def usage():
     print('     -i    interval between repetitions (default 1 s)')
     print('     -d    duration of the stimulation (default 10 s)')
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
-    print('     -v    maximum (depolarized) voltage (default -40 mV).\n')
-
+    print('     -v    maximum (depolarized) voltage (default -40 mV).')
+    print('     -I    input channel (default 0).')
+    print('     -O    output channel (default 0).\n')
 
 def main():
     import getopt
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hf:r:R:d:i:V:v:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], "hf:r:R:d:i:V:v:I:O:", ["help", "output="])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -64,7 +65,8 @@ def main():
     Rm = -1                # [MOhm]
     Vmin = -60             # [mV]
     Vmax = -40             # [mV]
-
+    ai = 0
+    ao = 0
     for o,a in opts:
         if o == '-h':
             usage()
@@ -83,6 +85,10 @@ def main():
             Vmin = float(a)
         elif o == '-v':
             Vmax = float(a)
+        elif o == '-I':
+            ai = int(a)
+        elif o == '-O':
+            ao = int(a)
 
     if Vmin >= Vmax:
         print('\n>>> Error: Vmin must be smaller than Vmax. <<<')
@@ -94,6 +100,7 @@ def main():
         usage()
         sys.exit(1)
 
+    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
                                           args = [targetFrequency, Rm, rate, duration, interval, dclamp],
