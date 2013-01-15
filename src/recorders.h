@@ -98,7 +98,7 @@ protected:
 
 #if defined(HAVE_LIBRT)
         // sets the priority of the calling thread to max_priority - 1
-        virtual bool reducePriority() const;
+        virtual void reducePriority() const;
 #endif
 
 protected:
