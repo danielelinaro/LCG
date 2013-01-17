@@ -28,7 +28,10 @@ namespace fs = boost::filesystem;
 #define LIF_IEXT   m_parameters["Iext"]
 #define LIF_LAMBDA m_parameters["lambda"]
 #define LIF_RL     m_parameters["Rl"]
+#ifndef REALTIME_ENGINE
+// I don't want to see ``fake'' spikes during real experiments.
 #define LIF_ARTIFICIAL_SPIKE
+#endif
 
 #define CBN_VM_PREV             m_state[1]
 #define CBN_C                   m_parameters["C"]

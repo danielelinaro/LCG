@@ -54,8 +54,8 @@
 	<inputSubdevice>0</inputSubdevice>
 	<outputSubdevice>1</outputSubdevice>
 	<inputRange>[-10,+10]</inputRange>
-	<readChannel>0</readChannel>
-	<writeChannel>0</writeChannel>
+	<readChannel>AI</readChannel>
+	<writeChannel>AO</writeChannel>
 	<inputConversionFactor>100</inputConversionFactor>
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
