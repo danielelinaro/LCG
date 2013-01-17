@@ -178,7 +178,7 @@ private:
 
 class TriggeredH5Recorder : public BaseH5Recorder {
 public:
-        TriggeredH5Recorder(double duration, bool compress = true, const char *filename = NULL, uint id = GetId());
+        TriggeredH5Recorder(double before, double after, bool compress = true, const char *filename = NULL, uint id = GetId());
         ~TriggeredH5Recorder();
         virtual void step();
         virtual void terminate();
@@ -198,8 +198,14 @@ private:
         bool m_recording;
         // the data
         std::vector<double*> m_data;
+        // a temporary buffer for unrolling the circular buffers
+        double *m_tempData;
         // position in the buffer
         uint m_bufferPosition;
+        // the number of steps to take after a trigger event is received, before writing the buffer to file
+        uint m_maxSteps;
+        // the number of steps that have been taken
+        uint m_nSteps;
         // the thread that saves the data once the buffers are full
         boost::thread m_writerThread;
         hsize_t m_datasetSize[2];

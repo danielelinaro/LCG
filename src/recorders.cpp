@@ -31,19 +31,20 @@ dynclamp::Entity* H5RecorderFactory(string_dict& args)
 dynclamp::Entity* TriggeredH5RecorderFactory(string_dict& args)
 {       
         uint id;
-        double duration;
+        double before, after;
         std::string filename;
         bool compress;
         id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "duration", &duration)) {
+        if (!dynclamp::CheckAndExtractDouble(args, "before", &before) ||
+            !dynclamp::CheckAndExtractDouble(args, "after", &after)) {
                 dynclamp::Logger(dynclamp::Critical, "Unable to build a TriggeredH5Recorder.\n");
                 return NULL;
         }
         if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
                 compress = true;
         if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::TriggeredH5Recorder(duration, compress, NULL, id);
-        return new dynclamp::recorders::TriggeredH5Recorder(duration, compress, filename.c_str(), id);
+                return new dynclamp::recorders::TriggeredH5Recorder(before, after, compress, NULL, id);
+        return new dynclamp::recorders::TriggeredH5Recorder(before, after, compress, filename.c_str(), id);
 }
 
 namespace dynclamp {
@@ -306,6 +307,7 @@ void BaseH5Recorder::closeFile()
 
 void BaseH5Recorder::terminate()
 {
+        Logger(Debug, "BaseH5Recorder::terminate()\n");
         closeFile();
 }
 
@@ -914,29 +916,34 @@ void H5Recorder::finaliseAddPre(Entity *entity)
 
 const int TriggeredH5Recorder::rank = 2;
 
-TriggeredH5Recorder::TriggeredH5Recorder(double duration, bool compress, const char *filename, uint id)
-        : BaseH5Recorder(compress, ceil(duration/GetGlobalDt()), filename, id),
+TriggeredH5Recorder::TriggeredH5Recorder(double before, double after, bool compress, const char *filename, uint id)
+        : BaseH5Recorder(compress, ceil((before+after)/GetGlobalDt()), filename, id),
           m_recording(false), m_data(), m_bufferPosition(0),
+          m_maxSteps(ceil(after/GetGlobalDt())), m_nSteps(0),
           m_writerThread()
 {
         setName("TriggeredH5Recorder");
+        m_tempData = new double[bufferSize()];
 }
 
 TriggeredH5Recorder::~TriggeredH5Recorder()
 {
+        Logger(Debug, "TriggeredH5Recorder::~TriggeredH5Recorder()\n");
         terminate();
         for (int i=0; i<m_numberOfInputs; i++)
                 delete m_data[i];
+        delete m_tempData;
 }
 
 void TriggeredH5Recorder::step()
 {
+        // store the data
+        for (int i=0; i<m_numberOfInputs; i++)
+                m_data[i][m_bufferPosition] = m_inputs[i];
+        m_bufferPosition = (m_bufferPosition + 1) % bufferSize();
         if (m_recording) {
-                // store the data
-                for (int i=0; i<m_numberOfInputs; i++)
-                        m_data[i][m_bufferPosition] = m_inputs[i];
-                m_bufferPosition++;
-                if (m_bufferPosition == bufferSize()) {
+                m_nSteps++;
+                if (m_nSteps == m_maxSteps) {
                         m_recording = false;
                         // start the writing thread
                         m_writerThread = boost::thread(&TriggeredH5Recorder::buffersWriter, this); 
@@ -946,12 +953,14 @@ void TriggeredH5Recorder::step()
 
 void TriggeredH5Recorder::terminate()
 {
+        Logger(Debug, "TriggeredH5Recorder::terminate()\n");
         if (m_recording) { // we were recording when the experiment ended, damn it!
                 Logger(Info, "TriggeredH5Recorder::terminate() called while recording.\n");
                 // fill the remaining part of the buffers with NaNs
-                for ( ; m_bufferPosition<bufferSize(); m_bufferPosition++) {
+                for ( ; m_nSteps<m_maxSteps; m_nSteps++) {
                         for (int i=0; i<m_numberOfInputs; i++)
                                 m_data[i][m_bufferPosition] = NOT_A_NUMBER;
+                        m_bufferPosition = (m_bufferPosition + 1) % bufferSize();
                 }
                 m_recording = false;
                 // start the writing thread, to save the remaining data.
@@ -969,7 +978,7 @@ void TriggeredH5Recorder::handleEvent(const Event *event)
                         m_writerThread.join();
                         Logger(Debug, "TriggeredH5Recorder::handleEvent >> started recording.\n");
                         m_recording = true;
-                        m_bufferPosition = 0;
+                        m_nSteps = 0;
                 }
                 else {
                         // we're already recording, this CAN'T happen
@@ -987,6 +996,7 @@ bool TriggeredH5Recorder::finaliseInit()
         hsize_t chunkDims[TriggeredH5Recorder::rank] = {chunkSize(), 1};
         m_writerThread.join();
         m_bufferPosition = 0;
+        m_nSteps = 0;
         m_datasetSize[0] = bufferSize();
         m_datasetSize[1] = 0;
         for (int i=0; i<m_pre.size(); i++) {
@@ -1024,6 +1034,10 @@ void TriggeredH5Recorder::buffersWriter()
         Logger(Debug, "Dataset size = (%dx%d).\n", m_datasetSize[0], m_datasetSize[1]);
         Logger(Debug, "Offset = (%d,%d).\n", start[0], start[1]);
 
+        uint offset = bufferSize() - m_bufferPosition;
+        Logger(Info, "buffer size = %d.\n", bufferSize());
+        Logger(Info, "buffer position = %d.\n", m_bufferPosition);
+        Logger(Info, "offset = %d\n", offset);
         for (int i=0; i<m_numberOfInputs; i++) {
 
                 // extend the dataset
@@ -1060,8 +1074,10 @@ void TriggeredH5Recorder::buffersWriter()
                         Logger(All, "Memory space defined.\n");
                 }
 
+                memcpy(m_tempData, m_data[i]+m_bufferPosition, offset*sizeof(double));
+                memcpy(m_tempData+offset-1, m_data[i], m_bufferPosition*sizeof(double));
                 // write data
-                status = H5Dwrite(m_datasets[i], H5T_IEEE_F64LE, m_dataspaces[i], filespace, H5P_DEFAULT, m_data[i]);
+                status = H5Dwrite(m_datasets[i], H5T_IEEE_F64LE, m_dataspaces[i], filespace, H5P_DEFAULT, m_tempData);
                 if (status < 0) {
                         H5Sclose(filespace);
                         throw "Unable to write data.";
