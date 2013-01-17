@@ -37,7 +37,7 @@ def writeStimFile(filename, stimulus):
                 fid.write(str(value)+'\t')
             fid.write('\n')
 
-def run():
+if __name__ == '__main__':
 
     try:
         opts,args = getopt.getopt(sys.argv[1:],'hc:E:w:r:d:T:n:i:m:s:t:I:O', ['help', 'output='])
@@ -71,7 +71,7 @@ def run():
         elif o == '-t':
             I_tau = float(a)
         elif o == '-c':
-            config_file = float(a)
+            config_file = a
         elif o == '-E':
             E = float(a)
         elif o == '-w':
@@ -132,5 +132,3 @@ def run():
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
-if __name__ == '__main__':
-    run()

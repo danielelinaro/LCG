@@ -66,6 +66,7 @@ if __name__ == '__main__':
         elif o == '-O':
             ao = int(a)
 
+    
     if fstim == None:
         print('You must specify the stimulation frequency.')
         usage()

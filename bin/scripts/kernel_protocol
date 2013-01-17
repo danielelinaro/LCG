@@ -28,7 +28,7 @@ duration=10
 ai=0
 ao=0
 F=20000
-while getopts ":d:I:O:F:a:h" opt ; do
+while getopts ":d:I:O:F:ah" opt ; do
     case $opt in
 	F)
 	    F=$OPTARG

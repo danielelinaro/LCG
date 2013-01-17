@@ -6,13 +6,14 @@ import glob
 import numpy as np
 import dlutils as dl
 
-def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp'):
+def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp', ai=0, ao=0):
     try:
         w = weight[0]
     except:
         w = weight
     dl.substituteStrings(templateFile, 'psp.xml',
-                         {'<weight>0</weight>': '<weight>' + str(w) + '</weight>'})
+                         {'<weight>0</weight>': '<weight>' + str(w) + '</weight>',
+                          'AI': str(ai), 'AO': str(ao)})
     # run dclamp
     os.system(dclamp + ' -c psp.xml -V 4 -n ' + str(trials))     # run dclamp
 
@@ -30,9 +31,9 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
             pre = ntt
         elif ntt['name'] == 'Waveform':
             t0 = ntt['metadata'][0][0]
-    if max(pre['data']) < -30:    # no spike in the presynaptic
-        print('>>> No spike in the presynaptic neuron. <<<')
-        sys.exit(1)
+    #if max(pre['data']) < -50:    # no spike in the presynaptic
+    #    print('>>> No spike in the presynaptic neuron. <<<')
+    #    sys.exit(1)
 
     # allocate memory
     t = np.arange(0, info['dt']*len(post['data']), info['dt'])
@@ -67,7 +68,7 @@ def main():
     import getopt
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "heid:M:w:t:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], "heid:M:w:t:I:O:", ["help", "output="])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -129,8 +130,8 @@ def main():
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     weight,err,ierr,numfunc = opt.fminbound(deflection_error, minWeight, maxWeight,
-                                            args = [targetDeflection, templateFile, trials, window*1e-3, dclamp],
-                                            xtol=1, maxfun=60, full_output=1, disp=1)
+                                            args = [targetDeflection, templateFile, trials, window*1e-3, dclamp, ai, ao],
+                                            xtol=0.5, maxfun=100, full_output=1, disp=1)
 
     print('The optimal value of the weight is %.3f (error = %.5f mV^2).' % (weight,err))
     print('The number of performed trials is %.0f.' % numfunc)
