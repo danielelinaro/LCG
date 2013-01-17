@@ -5,6 +5,7 @@
 *.la
 *.m4
 *.h5
+*.pyc
 config.*
 */.deps
 */.libs
