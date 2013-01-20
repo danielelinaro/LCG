@@ -16,11 +16,12 @@ print_help()
     echo
     echo "   -h   display this help message and exit"
     echo "   -a   specify the amplitude of the stimulation (default 100 pA)"
+    echo "   -o   specify the offset of the stimulation (default 0 pA)"
     echo "   -n   specify the number of repetitions (default 5)"
     echo "   -i   specify the interval between repetitions (default 10 sec)"
     echo "   -d   specify the duration of each trial (default 10 sec)"
-    echo "   -f   specify the starting frequency (default 1 Hz)"
-    echo "   -F   specify the end frequency (default 1000 Hz)"
+    echo "   -f   specify the starting frequency (default 0.1 Hz)"
+    echo "   -F   specify the end frequency (default 100 Hz)"
     echo "   -I   specify the input channel (default 0)"
     echo "   -O   specify the output channel (default 0)"
     echo
@@ -28,16 +29,20 @@ print_help()
 
 reps=5
 amplitude=100
+offset=0
 interval=10
 duration=10
-fstart=1
-fstop=1000
+fstart=0.1
+fstop=100
 ai=0
 ao=0
-while getopts ":a:n:i:d:f:F:I:O:h" opt ; do
+while getopts ":a:o:n:i:d:f:F:I:O:h" opt ; do
     case $opt in
 	a)
 	    amplitude=$OPTARG
+	    ;;
+	o)
+	    offset=$OPTARG
 	    ;;
 	n)
 	    reps=$OPTARG
@@ -78,9 +83,14 @@ else
     origstimfile=$PROTOCOLS_PATH/zap/zap.stim
 fi
 
+if [ ! -f $origstimfile ] ; then
+    echo "`basename $0`: $origstimfile: No such file."
+    exit 1
+fi
+
 stimfile=/tmp/zap.stim
 
-sed -e "s/T/$duration/" -e "s/I/$amplitude/" -e "s/f/$fstart/" -e "s/F/$fstop/" $origstimfile > $stimfile
+sed -e "s/T/$duration/" -e "s/I0/$offset/" -e "s/I/$amplitude/" -e "s/f/$fstart/" -e "s/F/$fstop/" $origstimfile > $stimfile
 kernel_protocol -I $ai -O $ao
 cclamp -f $stimfile -n $reps -i $interval
 rm $stimfile
