@@ -18,7 +18,7 @@ FILE *fp;
 
 size_t cols, nlines;
 uint  current_line;
-uint i,j, return_code;
+uint i, return_code;
 
  //--------------------------------------------------------------------------------------
  // Data structure containing the input file is defined and created here. 

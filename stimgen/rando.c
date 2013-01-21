@@ -108,7 +108,7 @@ return 0;
 
 int drand10()	{
         if (iseed & IB18) {
-                iseed=((iseed ^ MASK) << 1) | IB1;
+                iseed=((iseed ^ (MASK)) << 1) | IB1;
                 return 1;
         } else {
                 iseed <<= 1;
