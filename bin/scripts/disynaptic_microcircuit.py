@@ -18,6 +18,7 @@ def usage():
     print('   -h   display this help message and exit')
     print('   -f   the frequency of the stimulation pulses.')
     print('   -a   the amplitude of the stimulation pulses (in pA).')
+    print('   -w   the weight of the synaptic connection between the Martinotti cell and the post-synaptic pyramidal neuron.')
     print('   -c   the configuration file (default %s (w/o bg) or %s (with bg))' % (templateFileWithoutBg,templateFileWithBg))
     print('   -n   the number of trials (default 10)')
     print('   -i   the interval between trials (default 20 s)')
@@ -32,7 +33,7 @@ def usage():
 if __name__ == '__main__':
 
     try:
-        opts,args = getopt.getopt(sys.argv[1:],'hBf:a:c:n:i:I:O:R:F:v:', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:],'hBf:a:c:n:w:i:I:O:R:F:v:', ['help', 'output='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -41,6 +42,7 @@ if __name__ == '__main__':
     stim_freq = None
     stim_amp = None
     config_file = None
+    weight = None
     trials = 10     # [1]
     interval = 20   # [s]
     seed = 5061983  # [1]
@@ -61,6 +63,8 @@ if __name__ == '__main__':
             stim_freq = float(a)
         elif o == '-a':
             stim_amp = float(a)
+        elif o == '-w':
+            weight = float(a)
         elif o == '-c':
             config_file = a
         elif o == '-n':
@@ -79,6 +83,11 @@ if __name__ == '__main__':
             bg_freq = float(a)
         elif o == '-v':
             balanced_voltage = float(a)
+
+    if not weight:
+        print('You must specify the weight of the connection MC -> PYR (switch -w).')
+        usage()
+        sys.exit(1)
 
     if not stim_freq:
         print('You must specify the stimulation frequency (switch -f).')
@@ -117,7 +126,8 @@ if __name__ == '__main__':
     
     if os.path.isfile(template_file):
         dl.substituteStrings(template_file, config_file,
-                             {'AI_PRE': str(ai[0]), 'AI_POST': str(ai[1]),
+                             {'WGT': str(weight),
+                              'AI_PRE': str(ai[0]), 'AI_POST': str(ai[1]),
                               'AO_PRE': str(ao[0]), 'AO_POST': str(ao[1]),
                               'KERNEL_PRE': 'kernel-'+str(ai[0])+'-'+str(ao[0])+'.dat',
                               'KERNEL_POST': 'kernel-'+str(ai[1])+'-'+str(ao[1])+'.dat',

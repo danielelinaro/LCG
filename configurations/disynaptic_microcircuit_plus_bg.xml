@@ -70,7 +70,7 @@
       <id>5</id>
       <parameters>
 	<delay>2e-3</delay>
-	<weight>5</weight>
+	<weight>WGT</weight>
       </parameters>
       <connections>6</connections>
     </entity>
@@ -158,7 +158,7 @@
 
   <simulation>
     <tend>TEND</tend>
-    <rate>150000</rate>
+    <rate>15000</rate>
   </simulation>
 
 </dynamicclamp>

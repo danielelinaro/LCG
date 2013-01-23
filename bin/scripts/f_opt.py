@@ -6,10 +6,10 @@ import glob
 import numpy as np
 import dlutils as dl
 
-def frequency_error(Vbal, target, Rm, R_exc, duration=10, interval=1, dclamp='dclamp'):
+def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1, dclamp='dclamp'):
     ratio = dl.computeRatesRatio(Vbal, Rm)
     G0_exc,G0_inh,sigma_exc,sigma_inh = dl.computeSynapticBackgroundCoefficients(ratio[0], Rm, R_exc)
-    dl.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, duration, outfile='spontaneous.xml')
+    dl.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, outfile='spontaneous.xml')
     if interval > 0:
         os.system('sleep ' + str(interval))
     os.system(dclamp + ' -c spontaneous.xml -V 4')     # run dclamp
@@ -103,7 +103,7 @@ def main():
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
-                                          args = [targetFrequency, Rm, rate, duration, interval, dclamp],
+                                          args = [targetFrequency, Rm, rate, ai, ao, duration, interval, dclamp],
                                           xtol=0.5, maxfun=15, full_output=1, disp=1)
 
     print('The optimal value of the balanced voltage is %.3f mV (error = %.5f Hz^2).' % (Vbal,err))
