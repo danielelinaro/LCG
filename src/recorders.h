@@ -185,6 +185,12 @@ public:
         virtual void handleEvent(const Event *event);
 
 public:
+        /*!
+         * The number of buffers used for storing the input data: they need to be at least 2,
+         * so that the realtime thread writes in one, while the thread created by H5Recorder
+         * saves the data in the other buffer to file.
+         */
+        static const uint numberOfBuffers;
         static const int rank;
 
 protected:
@@ -192,16 +198,18 @@ protected:
         virtual void finaliseAddPre(Entity *entity);
 
 private:
-        void buffersWriter();
+        void buffersWriter(uint bufferToSave, uint bufferPosition);
 
 private:
         bool m_recording;
         // the data
-        std::vector<double*> m_data;
+        std::vector<double**> m_data;
         // a temporary buffer for unrolling the circular buffers
         double *m_tempData;
         // position in the buffer
         uint m_bufferPosition;
+        // the index of the buffer in which the main thread saves data
+        uint m_bufferInUse;
         // the number of steps to take after a trigger event is received, before writing the buffer to file
         uint m_maxSteps;
         // the number of steps that have been taken
