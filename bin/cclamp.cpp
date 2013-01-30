@@ -23,14 +23,12 @@
 
 #define CONFIG_FILE ".cclamprc"
 
-#define CCLAMP_VERSION 0.1
+#define CCLAMP_VERSION 0.9
 #define CC_BANNER \
         "\n\tCommand-line current clamp\n" \
-        "\nAuthor: Daniele Linaro (daniele@tnb.ua.ac.be)\n" \
-        "\nThis program provides the basic functionalities of the original\n" \
-        "Arbitrary Function Stimulator developed by Mike Wijnants at the\n" \
-        "Theoretical Neurobiology and Neuroengineering Laboratory at the\n" \
-        "University of Antwerp.\n\n"
+        "\nAuthor: Daniele Linaro (daniele.linaro@ua.ac.be)\n" \
+        "\nDeveloped at the Theoretical Neurobiology and Neuroengineering\n" \
+        "Laboratory of the University of Antwerp.\n\n"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -87,6 +85,7 @@ bool writeDefaultConfigurationFile()
 void parseArgs(int argc, char *argv[], CCoptions *opt)
 {
         double iti, ibi, freq;
+        int verbosity;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
         std::string caption(CC_BANNER "\nAllowed options");
@@ -94,9 +93,12 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
         po::variables_map options;
 
         try {
+                char msg[100];
+                sprintf(msg, "select verbosity level (%d for maximum, %d for minimum verbosity)", All, Critical);
                 description.add_options()
                         ("help,h", "print help message")
                         ("version,v", "print version number")
+                        ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
@@ -146,6 +148,13 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         std::cout << "ERROR: you have to specify one of [stimulus file] or [stimulus directory]. Aborting...\n";
                         exit(1);
                 }
+
+                if (verbosity < All || verbosity > Critical) {
+                        Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
+                        exit(1);
+                }
+
+                SetLoggingLevel(static_cast<LogLevel>(verbosity));
 
                 opt->dt = 1.0 / freq;
                 opt->iti = (useconds_t) (iti * 1e6);
