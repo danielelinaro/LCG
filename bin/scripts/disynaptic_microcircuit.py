@@ -13,7 +13,7 @@ def usage():
     except:
         templateFileWithoutBg = os.environ['HOME'] + '/disynaptic_microcircuit.xml'
         templateFileWithBg = os.environ['HOME'] + '/disynaptic_microcircuit_plus_bg.xml'
-    print('\nUsage: %s [option <value>]' % sys.argv[0])
+    print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('   -h   display this help message and exit')
     print('   -f   the frequency of the stimulation pulses.')

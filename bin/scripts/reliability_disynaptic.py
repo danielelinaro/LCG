@@ -13,7 +13,7 @@ def usage():
         templateFile = os.environ['CONFIGURATIONS_PATH'] + '/reliability_disynaptic_current.xml'
     except:
         templateFile = os.environ['HOME'] + '/configurations/reliability_disynaptic_current.xml'
-    print('\nUsage: %s [option <value>]' % sys.argv[0])
+    print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('   -h   display this help message and exit')
     print('   -m   the mean of the stimulation current in pA')

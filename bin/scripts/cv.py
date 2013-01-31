@@ -11,7 +11,7 @@ def usage():
         templateFile = os.environ['CONFIGURATIONS_PATH'] + '/spontaneous_plus_bg_G_long.xml'
     except:
         templateFile = os.environ['HOME'] + '/configurations/spontaneous_plus_bg_G_long.xml'
-    print('\nUsage: %s [option <value>]' % sys.argv[0])
+    print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('     -R    input resistance of the cell (in MOhm).')
     print('     -r    excitatory rate (default 7000 Hz).')
