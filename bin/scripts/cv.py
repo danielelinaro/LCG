@@ -13,6 +13,7 @@ def usage():
         templateFile = os.environ['HOME'] + '/configurations/spontaneous_plus_bg_G_long.xml'
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
+    print('     -h    display this help message and exit.')
     print('     -R    input resistance of the cell (in MOhm).')
     print('     -r    excitatory rate (default 7000 Hz).')
     print('     -V    minimum (hyperpolarized) voltage (default -50 mV).')
@@ -65,7 +66,7 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hR:v:V:s:d:N:n:i:f:r:I:O:', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hR:v:V:s:d:N:n:i:f:r:I:O:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -85,7 +86,7 @@ def main():
     ao = 0
 
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-R':

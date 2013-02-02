@@ -2,6 +2,7 @@
 
 import os
 import sys
+import getopt
 import glob
 import numpy as np
 import dlutils as dl
@@ -37,21 +38,21 @@ def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -R    input resistance of the cell in MOhm')
-    print('     -f    target frequency (default 1 Hz)')
-    print('     -r    background synaptic rate (default 7000 Hz)')
-    print('     -i    interval between repetitions (default 1 s)')
-    print('     -d    duration of the stimulation (default 10 s)')
+    print('     -h    display this help message and exit.')
+    print('     -R    input resistance of the cell in MOhm.')
+    print('     -f    target frequency (default 1 Hz).')
+    print('     -r    background synaptic rate (default 7000 Hz).')
+    print('     -i    interval between repetitions (default 1 s).')
+    print('     -d    duration of the stimulation (default 10 s).')
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
     print('     -v    maximum (depolarized) voltage (default -40 mV).')
     print('     -I    input channel (default 0).')
     print('     -O    output channel (default 0).\n')
+    print('')
 
 def main():
-    import getopt
-
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hf:r:R:d:i:V:v:I:O:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], 'hf:r:R:d:i:V:v:I:O:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -68,7 +69,7 @@ def main():
     ai = 0
     ao = 0
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-f':

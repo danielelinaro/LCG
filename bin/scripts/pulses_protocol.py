@@ -2,28 +2,29 @@
 
 import os
 import sys
+import getopt
 import dlutils as dl
 
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -f    frequency of the stimulation')
-    print('     -O    output channel')
+    print('     -h    display this help message and exit.')
+    print('     -f    frequency of the stimulation.')
+    print('     -O    output channel.')
     print('     -I    input channels (in the form 0,1 where 0 and 1 are')
     print('           the channels corresponding to the pre-synaptic and')
-    print('           post-synaptic neurons, respectively.)')
-    print('     -n    number of pulses (default 10)')
-    print('     -F    sampling frequency (default 15000)')
-    print('     -d    stimulation duration (default 1 ms)')
-    print('     -a    stimulation amplitude (default 4000 pA)')
-    print('     -N    number of repetitions (default 10)')
-    print('     -i    interval between repetitions (default 10 s)')
+    print('           post-synaptic neurons, respectively).')
+    print('     -n    number of pulses (default 10).')
+    print('     -F    sampling frequency (default 15000).')
+    print('     -d    stimulation duration (default 1 ms).')
+    print('     -a    stimulation amplitude (default 4000 pA).')
+    print('     -N    number of repetitions (default 10).')
+    print('     -i    interval between repetitions (default 10 s).')
+    print('')
 
-if __name__ == '__main__':
-    import getopt
-
+def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hN:n:f:F:d:a:I:O:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], 'hN:n:f:F:d:a:I:O:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     interval = 10
 
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-N':
@@ -91,3 +92,6 @@ if __name__ == '__main__':
     dl.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
 
     os.system('cclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval))
+
+if __name__ == '__main__':
+    main()

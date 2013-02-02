@@ -2,6 +2,7 @@
 
 import os
 import sys
+import getopt
 import glob
 import numpy as np
 import dlutils as dl
@@ -55,20 +56,20 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
 def usage():
     print('\nUsage: %s -e/-i [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
+    print('     -h    display this help message and exit.')
     print('     -e    use the template file for excitatory post-synaptic potentials.')
     print('     -i    use the template file for inhibitory post-synaptic potentials.')
-    print('     -d    target deflection (default 1 mV)')
-    print('     -M    maximum value of the synaptic weight (default 500)')
-    print('     -w    time window for extracting the peak of the PSP (default 30 ms)')
-    print('     -t    number of trials for averaging the amplitude of the PSP (default 10)')
+    print('     -d    target deflection (default 1 mV).')
+    print('     -M    maximum value of the synaptic weight (default 500).')
+    print('     -w    time window for extracting the peak of the PSP (default 30 ms).')
+    print('     -t    number of trials for averaging the amplitude of the PSP (default 10).')
     print('     -I    input channel (default 0).')
     print('     -O    output channel (default 0).\n')
+    print('')
 
 def main():
-    import getopt
-
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "heid:M:w:t:I:O:", ["help", "output="])
+        opts,args = getopt.getopt(sys.argv[1:], 'heid:M:w:t:I:O:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -89,7 +90,7 @@ def main():
     templateFile = None
 
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-e':

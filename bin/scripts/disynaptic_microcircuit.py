@@ -15,7 +15,7 @@ def usage():
         templateFileWithBg = os.environ['HOME'] + '/disynaptic_microcircuit_plus_bg.xml'
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('   -h   display this help message and exit')
+    print('   -h   display this help message and exit.')
     print('   -f   the frequency of the stimulation pulses.')
     print('   -a   the amplitude of the stimulation pulses (in pA).')
     print('   -w   the weight of the synaptic connection between the Martinotti cell and the post-synaptic pyramidal neuron.')
@@ -29,11 +29,11 @@ def usage():
     print('   -R   input resistance of the cell (in MOhm).')
     print('   -F   firing frequency of the excitatory background population.')
     print('   -v   value of voltage at which the background activity should be balanced.')
+    print('')
 
-if __name__ == '__main__':
-
+def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:],'hBf:a:c:n:w:i:I:O:R:F:v:', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:],'hBf:a:c:n:w:i:I:O:R:F:v:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     balanced_voltage = None # [mV]
 
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-B':
@@ -149,3 +149,5 @@ if __name__ == '__main__':
     os.system('kernel_protocol -a -F 15000 -I ' + str(ai[1]) + ' -O ' + str(ao[1]))
     os.system('dclamp -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
+if __name__ == '__main__':
+    main()

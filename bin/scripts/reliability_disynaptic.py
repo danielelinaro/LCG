@@ -29,6 +29,7 @@ def usage():
     print('   -i   the interval between trials (default 30 s)')
     print('   -I   input channel (default 0).')
     print('   -O   output channel (default 0).\n')
+    print('')
 
 def writeStimFile(filename, stimulus):
     with open(filename,'w') as fid:
@@ -37,10 +38,9 @@ def writeStimFile(filename, stimulus):
                 fid.write(str(value)+'\t')
             fid.write('\n')
 
-if __name__ == '__main__':
-
+def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:],'hc:E:w:r:d:T:n:i:m:s:t:I:O', ['help', 'output='])
+        opts,args = getopt.getopt(sys.argv[1:],'hc:E:w:r:d:T:n:i:m:s:t:I:O', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     ai = 0
     ao = 0
     for o,a in opts:
-        if o == '-h':
+        if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-m':
@@ -132,3 +132,5 @@ if __name__ == '__main__':
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
+if __name__ == '__main__':
+    main()
