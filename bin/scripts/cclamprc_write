@@ -90,8 +90,9 @@ fi
 
 if [ $append == "no" ] ; then
     rm -f $rcfile
-    touch $rcfile
 fi
+
+touch $rcfile
 
 if [ $input == "yes" ] ; then
     n=`grep AnalogInput $rcfile | wc -l`
