@@ -8,6 +8,13 @@
 config.*
 */.deps
 */.libs
+*.out
+*.gz
+*.aux
+*.pdf
+*.ps
+*.log
+*.dvi
 Makefile
 Makefile.in
 configure

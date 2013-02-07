@@ -1,0 +1,59 @@
+\paragraph{}
+A live cd is available in the official \href{http://www.tnb.ua.ac.be}{webpage} of \progname. You can run \progname\ from a live cd or from a usb drive and get started with your electrophysiology experiments right away. However to ensure the best performance it is recommended that you install \progname\ in the local hard drive. This can be achieved done either by installing from a live cd (see \ref{install:live_cd}) or by installing from the source (\ref{install:source}).
+
+\section{Install using the live cd}
+\label{install:live_cd}
+
+\paragraph{}
+bla bla first you have to create the live cd...
+
+\section{Installing from the source}
+\label{install:source}
+
+\paragraph{}
+\texttt{\progname}\ can be installed in a variety of linux distributions. If you are performing an installation from source you can use a distribution that makes you feel confortable. In this description we will use the stable version of Debian at the time of writing this was \emph{Squeeze 6.0}.
+\paragraph{}
+ It is recomended that you use the live cd (\ref{install:live_cd}) if you have never used Linux before. You may want to install a more recent distribution if 
+\paragraph{}
+There are several steps to the installation:
+
+\begin{enumerate}
+	\item \nameref{install:linux}
+	\item \nameref{install:kernel}]
+	\item \nameref{install:required}]
+	\item \nameref{install:program}]
+	\item \nameref{install:optional}]
+\end{enumerate}
+
+\subsection{Installing the linux distribution} 
+\label{install:linux}
+\paragraph{}
+The first step is to have a working Linux system. 
+You can download an installation cd from \href{http://www.debian.org/distrib}{debian.org}. After burning it, run the installer on the computer that you want to use to perform the electrophysiology experiments. 
+\paragraph{}
+You can install a dual-boot system so that you keep the previous system if necessary.
+
+\subsection{Patching and installing the realtime kernel} 
+\label{install:kernel}
+\paragraph{}
+This is potentialy the most dificult part of the installation. In order to achieve nanoseccond precision, \progname\ uses a kernel with realtime capabilities. Both \href{http://www.rtai.org}{RTAI} or \textbf{\href{https://rt.wiki.kernel.org/index.php/Main\_Page}{PREEMPT\_RT}} can be used. The latter is advisable since RTAI does not include support for the latest kernels which might work better with the most recent hardware.
+
+\begin{enumerate}
+\item \textbf{Check which kernels and patches are available.} The realtime patch is best installed on a plain vanilla kernel i.e. a kernel that does not have all the patches.
+Go to the \texttt{\href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the kernel.org "rt" project page}} and check which patches are available for the kernel that you wish to install. 
+\item \textbf{Download the kernel and the realtime patch}
+	\begin{verbatim}
+		wget ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.23.1.tar.bz2 
+		wget http://www.kernel.org/pub/linux/kernel/projects/rt/patch-2.6.23.1-rt11.bz2
+	\end{verbatim}
+\item \textbf{Decompress and patch the kernel} The directory /usr/src is a common place to install the linux kernel. You will need to have root access to perform these operations.
+\end{enumerate}
+
+\subsection{Installing required libraries} 
+\label{install:required}
+
+\subsection{Installing \progname} 
+\label{install:program}
+
+\subsection{Installing optional programs} 
+\label{install:optional}

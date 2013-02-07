@@ -1,0 +1,48 @@
+\documentclass[10pt,a4paper,twoside]{book}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[english]{isodate}
+\usepackage[parfill]{parskip}
+
+\usepackage{graphicx} 
+\usepackage{hyperref}
+
+\newcommand{\progname}{dclamp}
+
+\title{\textbf{\progname} \\ command-line electrophysiology \\ User manual}
+\author{Daniele Linaro \\ Jo\~ao Couto \\ Michele Giugliano}
+\date{}
+\hypersetup{
+ pdftitle = {\progname, command-line electrophysiology},
+ pdfkeywords = {electrophysiology,dynamic clamp,real-time},
+ pdfauthor = {(Daniele Linaro, Joao Couto and Michele Giugliano)}
+}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+\chapter{Getting started}
+\label{chapter:start}
+\input{chapters/getting_started}
+
+
+\chapter{Installation}
+\label{chapter:install}
+\input{chapters/installation}
+
+\chapter{Entities}
+\label{chapter:entities}
+
+\chapter{Stimulus generator}
+\label{chapter:stimgen}
+
+
+\end{document}
