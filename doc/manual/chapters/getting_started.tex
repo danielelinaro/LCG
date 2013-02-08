@@ -6,7 +6,7 @@ This chapter will help you undestanding some basic concepts related to \progname
 You need to have \progname\ installed on your system. If you are not certain whether this has been done type \texttt{which \progname} in a terminal window. In case the program has not been installed, follow the installation notes (section \ref{chapter:install}).
 
 \paragraph{}
-We assumes that you are familiarized with the Linux distribution that you are using (you need to be able of opening a terminal window at this point). Check the webpage of your linux distribution (e.g. \href{http://www.debian.org}{Debian}; \href{http://www.ubuntu.com}{Canonical Ubuntu}; \href{http://www.fedoraproject.org}{Fedora})or the \href{http://www.linux.org/tutorial}{linux.org} tutorials for help on getting started and the Advanced Bash-Scripting guide from \href{http://www.tldp.org}{The Linux Documentation Project}.
+We assumes that you are familiarised with the Linux distribution that you are using (you need to be able of opening a terminal window at this point). Check the webpage of your linux distribution (e.g. \href{http://www.debian.org}{Debian}; \href{http://www.ubuntu.com}{Canonical Ubuntu}; \href{http://www.fedoraproject.org}{Fedora})or the \href{http://www.linux.org/tutorial}{linux.org} tutorials for help on getting started and the Advanced Bash-Scripting guide from \href{http://www.tldp.org}{The Linux Documentation Project}.
 
 \paragraph{}
 Some MATLAB and Python code will be used to demonstrate the basic loading of data. Knowledge of these languages can be beneficial.
@@ -18,7 +18,7 @@ Some MATLAB and Python code will be used to demonstrate the basic loading of dat
 \paragraph{}
 \progname\ is the name of a UNIX program that interfaces with \texttt{lib\progname}\  (a library that interfaces with a realtime kernel can be used to conduct electrophysiological experiments). If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation.
 
-The most important concepts can be understood by using a computational model of a neuron. A Linear Integrate and Fire model is integrated into \progname. The initial part of this guide does not require a realtime kernel installation. 
+The most important concepts can be understood by using a computational model of a neuron. A Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}) is integrated into \progname. The initial part of this guide does not require a realtime kernel installation (see \ref{install:nokernel} for details on how to install \progname\ without a realtime kernel).
 
 \section{Configuration files}
 
@@ -26,7 +26,7 @@ The most important concepts can be understood by using a computational model of 
 A configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
 
 \paragraph{}
-The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We comunicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chapter:entities} for a description of the built in entities.
+The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We communicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chapter:entities} for a description of the built in entities.
 
 \section{Your first recording}
 

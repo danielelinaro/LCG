@@ -1,5 +1,7 @@
 \paragraph{}
-A live cd is available in the official \href{http://www.tnb.ua.ac.be}{webpage} of \progname. You can run \progname\ from a live cd or from a usb drive and get started with your electrophysiology experiments right away. However to ensure the best performance it is recommended that you install \progname\ in the local hard drive. This can be achieved done either by installing from a live cd (see \ref{install:live_cd}) or by installing from the source (\ref{install:source}).
+A live cd is available in the official \href{http://www.tnb.ua.ac.be}{webpage} of \progname. You can run \progname\ from a live cd or from a usb drive and get started with your electrophysiology experiments right away. However to ensure the best performance it is recommended that you install \progname\ in the local hard drive. This can be achieved done either by installing from a live cd - \ref{install:live_cd} or by installing from the source - \ref{install:source}.
+\paragraph{}
+It is also possible to install \progname\ without a realtime kernel, this can be useful to get familiar with the program and to test models before the experiment - \ref{install:nokernel}.
 
 \section{Install using the live cd}
 \label{install:live_cd}
@@ -11,18 +13,18 @@ bla bla first you have to create the live cd...
 \label{install:source}
 
 \paragraph{}
-\texttt{\progname}\ can be installed in a variety of linux distributions. If you are performing an installation from source you can use a distribution that makes you feel confortable. In this description we will use the stable version of Debian at the time of writing this was \emph{Squeeze 6.0}.
+\texttt{\progname}\ can be installed in a variety of linux distributions. If you are performing an installation from source you can use a distribution that makes you feel comfortable. In this description we will use the stable version of Debian at the time of writing this was \emph{Squeeze 6.0}.
 \paragraph{}
- It is recomended that you use the live cd (\ref{install:live_cd}) if you have never used Linux before. You may want to install a more recent distribution if 
+ It is recommended that you use the live cd (\ref{install:live_cd}) if you have never used Linux before. You may want to install a more recent distribution for some reason, in that case you should install from source.
 \paragraph{}
 There are several steps to the installation:
 
 \begin{enumerate}
 	\item \nameref{install:linux}
-	\item \nameref{install:kernel}]
-	\item \nameref{install:required}]
-	\item \nameref{install:program}]
-	\item \nameref{install:optional}]
+	\item \nameref{install:kernel}
+	\item \nameref{install:required}
+	\item \nameref{install:program}
+	\item \nameref{install:optional}
 \end{enumerate}
 
 \subsection{Installing the linux distribution} 
@@ -32,28 +34,157 @@ The first step is to have a working Linux system.
 You can download an installation cd from \href{http://www.debian.org/distrib}{debian.org}. After burning it, run the installer on the computer that you want to use to perform the electrophysiology experiments. 
 \paragraph{}
 You can install a dual-boot system so that you keep the previous system if necessary.
+\paragraph{}
+You may need to install tools to build the kernel. In Debian you can use (as sudo):
+\begin{lstlisting}
+apt-get update
+apt-get install build-essential binutils-dev libelf-dev libncurses5 libncurses5-dev git-core make gcc subversion libc6 libc6-dev automake libtool bison autoconf flex libgsl0-dev 
+\end{lstlisting}
 
 \subsection{Patching and installing the realtime kernel} 
 \label{install:kernel}
 \paragraph{}
-This is potentialy the most dificult part of the installation. In order to achieve nanoseccond precision, \progname\ uses a kernel with realtime capabilities. Both \href{http://www.rtai.org}{RTAI} or \textbf{\href{https://rt.wiki.kernel.org/index.php/Main\_Page}{PREEMPT\_RT}} can be used. The latter is advisable since RTAI does not include support for the latest kernels which might work better with the most recent hardware.
+This is potentialy the most dificult part of the installation. In order to achieve nanoseccond precision, \progname\ requires a kernel with realtime capabilities. Both \href{http://www.rtai.org}{RTAI} or \textbf{\href{https://rt.wiki.kernel.org/index.php/Main\_Page}{PREEMPT\_RT}} can be used. The latter is advisable since RTAI does not include support for the latest kernels which might work better with the most recent hardware.
 
 \begin{enumerate}
-\item \textbf{Check which kernels and patches are available.} The realtime patch is best installed on a plain vanilla kernel i.e. a kernel that does not have all the patches.
+	\item \textbf{Check which kernels and patches are available.} The realtime patch is best installed on a plain vanilla kernel i.e. a kernel that does not have all the patches.
 Go to the \texttt{\href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the kernel.org "rt" project page}} and check which patches are available for the kernel that you wish to install. 
-\item \textbf{Download the kernel and the realtime patch}
-	\begin{verbatim}
-		wget ftp://ftp.kernel.org/pub/linux/kernel/v2.6/linux-2.6.23.1.tar.bz2 
-		wget http://www.kernel.org/pub/linux/kernel/projects/rt/patch-2.6.23.1-rt11.bz2
-	\end{verbatim}
-\item \textbf{Decompress and patch the kernel} The directory /usr/src is a common place to install the linux kernel. You will need to have root access to perform these operations.
+
+	\item \textbf{Download the kernel and the realtime patch} The directory \textbf{/usr/src} is a common place to install the linux kernel. You will need to have root access to perform these operations.
+\begin{lstlisting}
+cd /usr/src
+wget ftp://ftp.kernel.org/pub/linux/kernel/v3.6/linux-3.6.11.tar.bz2 
+wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.6/patch-3.6.11-rt28.bz2
+\end{lstlisting}
+
+	\item \textbf{Decompress and patch the kernel} Patching the kernel will add realtime support to the kernel you have downloaded.
+\begin{lstlisting}
+tar xvf linux-3.6.11.tar.bz2
+ln -s linux-3.6.11 linux
+cd linux
+bzcat ../patch-3.6.11-rt28.bz2 | patch -p1
+\end{lstlisting}
+
+	\item \textbf{Configure the kernel} The easiest way to do this is to use the configuration file from a kernel that was previously installed in your system or from a similar installation/system.
+\begin{lstlisting}
+cp config-`uname -r` .config
+make oldconfig
+make menuconfig
+\end{lstlisting}
+
+This will evoke a user interface to configure the kernel options.
+You need to set the \texttt{Preemption mode} to \texttt{Complete Preemption (Real-Time)} in the \texttt{Processor type and features}. And disable \texttt{CPU Frequency scaling} under \texttt{Power Management and ACPI options}. Disable \texttt{Check for stack overflow} and the options under \texttt{Tracers} (the later to make the kernel smaller) in \texttt{Kernel hacking}. Additionally you should also disable 
+Safe and exit.
+
+	\item \textbf{Compile and install the kernel} This step might several minutes to hours, depending on the size of the kernel.
+\begin{lstlisting}
+make && make modules && make modules_install && make install
+\end{lstlisting}
+When the installation is completed you will need to update the boot loader.
+\begin{lstlisting}
+cd /boot
+update-initramfs -c -k 3.6.11-rt28
+update-grub
+\end{lstlisting}
+Check that grub has been updated. You should see an entry with the name of the newly installed kernel in \texttt{/etc/grub/menu.lst}. After confirmation \inlineCode{reboot} into your new kernel.
 \end{enumerate}
 
 \subsection{Installing required libraries} 
 \label{install:required}
+\textbf{\progname} makes use of several libraries:
+\begin{enumerate}
+	\item \textbf{Headers to the Boost C++ library}
+	In order for \progname\ to work you will need to install the headers to the \href{http://www.boost.org}{boost C++ library}. Only the last command needs to be ran as root.
+\begin{lstlisting}
+wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
+tar --bzip2 -xf boost_1_50_0.tar.bz2
+cd boost_1_50_0.tar.bz2
+./bootstrap.sh
+./b2 install
+\end{lstlisting}
+
+	\item \textbf{Comedi drivers}
+If you are going to use a data acquisition board (DAQ) to acquire signals you need to install the drivers that \progname\ uses to communicate with the DAQ. The required packages from\href{http://www.comedi.org}{comedi drivers} are: \texttt{comedi}, \texttt{comedilib} and \texttt{comedi\_calibrate}. You can download them from the git repositories.
+\begin{lstlisting}
+git clone git://comedi.org/git/comedi/comedi.git
+git clone git://comedi.org/git/comedi/comedilib.git
+git clone git://comedi.org/git/comedi/comedi_calibrate.git
+\end{lstlisting}
+You now need to install each of these modules, starting with comedi kernel modules:
+
+\begin{lstlisting}
+cd comedi
+./autogen.sh
+./configure --with-linuxdir=/usr/src/linux
+make
+\end{lstlisting}
+Then as root:
+
+\begin{lstlisting}
+make install
+depmod -a
+\end{lstlisting}
+Now for comedilib, the user space interface to the kernel module (run \texttt{make install} as root):
+
+\begin{lstlisting}
+cd comedilib
+./configure --prefix=/usr/local
+make
+make install
+\end{lstlisting}
+And similarly for comedi\_calibrate, the tools to calibrate the DAQ cards (install the Boost headers before this step):
+
+\begin{lstlisting}
+cd comedi_calibrate
+./configure --prefix=/usr/local
+make
+make install
+\end{lstlisting}
+
+\item \textbf{HDF5 library} 
+The \href{http://www.hdfgroup.org/HDF5/}{HDF Group} designed a set of libraries for data storage and management with high performance, efficiency and high volume/complexity in mind. \textbf{\progname} uses these libraries in the \nameref{entities:h5recorder} entity. These libraries can be installed from source or using Debian repositories (as root):
+\begin{lstlisting}
+apt-get install hdf5-tools
+\end{lstlisting}
+
+
+\end{enumerate}
 
 \subsection{Installing \progname} 
 \label{install:program}
+\paragraph{}
+Clone \progname\ from the \href{https://github.com/danielelinaro/dynclamp}{GithHub repository}. The following indications are to install system wide in \texttt{/usr/local} (need root access):
+\begin{lstlisting}
+cd /usr/local/src
+git clone https://github.com/danielelinaro/dynclamp.git
+cd dynclamp
+./autoreconf -i
+./configure --prefix=/usr/local
+make
+make install
+\end{lstlisting}
+You can install in other locations by changing the \texttt{prefix}.
+For additional configuration options type \inlineCode{./configure --help}.
 
-\subsection{Installing optional programs} 
+\subsection{Optional installs} 
 \label{install:optional}
+\begin{enumerate}
+\item \textbf{Installing \progname\ python modules and binaries}
+Some features such as the kernel estimation if you want to use Active Electrode Compensation (AEC) (\cite{Brette:2008}) require the python modules and binaries.
+Before installing \progname\ python modules, you should install \texttt{numpy}, \texttt{scipy} ,\texttt{matplotlib} and \texttt{pytables}. In Debian you can do that using apt-get (as root): 
+\begin{lstlisting}
+apt-get install python-numpy python-scipy python-matlablib python-tables
+\end{lstlisting}
+
+In \progname\ source directory type:
+\begin{lstlisting}
+cd python
+python setup.py --prefix=/usr/local
+\end{lstlisting}
+
+
+\end{enumerate}
+
+\section{Install without a realtime kernel}
+\label{install:nokernel}
+If you want to learn how to work with \progname\ or test configuration files the best way is probably to install \progname\ in your personal computer.

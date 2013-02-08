@@ -15,6 +15,9 @@ config.*
 *.ps
 *.log
 *.dvi
+*.bbl
+*.blg
+*.toc
 Makefile
 Makefile.in
 configure

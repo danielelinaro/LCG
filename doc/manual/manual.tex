@@ -1,6 +1,5 @@
 \documentclass[10pt,a4paper,twoside]{book}
 
-
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage[english]{isodate}
@@ -8,6 +7,32 @@
 
 \usepackage{graphicx} 
 \usepackage{hyperref}
+\usepackage{natbib}
+% Use listings instead of verbatim (allows word wrapping)
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{light_gray}{RGB}{230,230,230}
+\definecolor{dark_green}{RGB}{50,150,50}
+\lstset{ 
+  backgroundcolor=\color{light_gray},  
+  basicstyle = \footnotesize\ttfamily,       % the size of the fonts that are used for the code
+  breakatwhitespace = false,        % sets if automatic breaks should only happen at whitespace
+  breaklines=true,
+  % sets the caption-position to bottom
+  captionpos=b, 
+  commentstyle=\color{dark_green},
+  frame=none,                   % adds a frame around the code
+  keywordstyle=\color{blue},      % keyword style
+  language=bash,                % the language of the code
+  numbers=left,                   % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=3pt,                  % how far the line-numbers are from the code
+  numberstyle=\tiny\color{orange},  % the style that is used for the line-numbers
+  rulecolor= \color{white},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  stepnumber=1,                   % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mauve},      % string literal style
+  tabsize=4
+}
+\newcommand{\inlineCode}{\lstinline[basicstyle=\normalsize\ttfamily]}
 
 \newcommand{\progname}{dclamp}
 
@@ -33,16 +58,18 @@
 \label{chapter:start}
 \input{chapters/getting_started}
 
-
 \chapter{Installation}
 \label{chapter:install}
 \input{chapters/installation}
 
+
 \chapter{Entities}
 \label{chapter:entities}
-
+\input{chapters/entities}
 \chapter{Stimulus generator}
 \label{chapter:stimgen}
 
+\bibliography{manual}
+\bibliographystyle{apsrev}
 
 \end{document}
