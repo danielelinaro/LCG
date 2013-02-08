@@ -57,7 +57,7 @@ wget ftp://ftp.kernel.org/pub/linux/kernel/v3.6/linux-3.6.11.tar.bz2
 wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.6/patch-3.6.11-rt28.bz2
 \end{lstlisting}
 
-	\item \textbf{Decompress and patch the kernel} Patching the kernel will add realtime support to the kernel you have downloaded.
+\item \textbf{Decompress and patch the kernel} Patching the kernel will add realtime support to the kernel you have downloaded.
 \begin{lstlisting}
 tar xvf linux-3.6.11.tar.bz2
 ln -s linux-3.6.11 linux
@@ -65,18 +65,17 @@ cd linux
 bzcat ../patch-3.6.11-rt28.bz2 | patch -p1
 \end{lstlisting}
 
-	\item \textbf{Configure the kernel} The easiest way to do this is to use the configuration file from a kernel that was previously installed in your system or from a similar installation/system.
+\item \textbf{Configure the kernel} The easiest way to do this is to use the configuration file from a kernel that was previously installed in your system or from a similar installation/system.
 \begin{lstlisting}
 cp config-`uname -r` .config
 make oldconfig
 make menuconfig
 \end{lstlisting}
-
 This will evoke a user interface to configure the kernel options.
 You need to set the \texttt{Preemption mode} to \texttt{Complete Preemption (Real-Time)} in the \texttt{Processor type and features}. And disable \texttt{CPU Frequency scaling} under \texttt{Power Management and ACPI options}. Disable \texttt{Check for stack overflow} and the options under \texttt{Tracers} (the later to make the kernel smaller) in \texttt{Kernel hacking}. Additionally you should also disable 
 Safe and exit.
 
-	\item \textbf{Compile and install the kernel} This step might several minutes to hours, depending on the size of the kernel.
+\item \textbf{Compile and install the kernel} This step might several minutes to hours, depending on the size of the kernel.
 \begin{lstlisting}
 make && make modules && make modules_install && make install
 \end{lstlisting}
@@ -93,6 +92,7 @@ Check that grub has been updated. You should see an entry with the name of the n
 \label{install:required}
 \textbf{\progname} makes use of several libraries:
 \begin{enumerate}
+	\label{install:boost}
 	\item \textbf{Headers to the Boost C++ library}
 	In order for \progname\ to work you will need to install the headers to the \href{http://www.boost.org}{boost C++ library}. Only the last command needs to be ran as root.
 \begin{lstlisting}
@@ -176,15 +176,34 @@ Before installing \progname\ python modules, you should install \texttt{numpy}, 
 apt-get install python-numpy python-scipy python-matlablib python-tables
 \end{lstlisting}
 
-In \progname\ source directory type:
+In \progname\ source directory type (as root):
 \begin{lstlisting}
 cd python
-python setup.py --prefix=/usr/local
+python setup.py
 \end{lstlisting}
-
+Alternatively you can install it to another directory (by specifying a different \texttt{--prefix=PATH} option in the configuration). Do not forget to add the specified folder to the \texttt{\$PYTHONPATH} environmental variable in your \texttt{.bashrc} or \texttt{.bash\_profile} file.
 
 \end{enumerate}
 
 \section{Install without a realtime kernel}
 \label{install:nokernel}
-If you want to learn how to work with \progname\ or test configuration files the best way is probably to install \progname\ in your personal computer.
+If you want to learn how to work with \progname\ or test configuration files the best way is probably to install \progname\ in your personal computer. \textbf{\progname} works well with virtually any UNIX system (Linux, MacOS). 
+\paragraph{}
+You will need to install the \texttt{Boost} headers and the \texttt{HDF5} library (see \ref{install:required}). 
+You can follow the installation notes in the previous section - \ref{install:program}; however if you prefer to install in your home directory you can use:
+\begin{lstlisting}
+mkdir $HOME/local
+git clone https://github.com/danielelinaro/dynclamp.git
+cd dynclamp
+./autoreconf -i
+./configure --prefix=$HOME/local
+make
+make install
+\end{lstlisting}
+After this you need to include this directory in your path. This can be done by editing your \texttt{.bashrc} or \texttt{.bash\_profile} file and appending to the \texttt{PATH} and \texttt{LD\_LIBRARY\_PATH} variables.
+\begin{lstlisting}
+export PATH=$HOME/local/bin:$PATH
+export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
+\end{lstlisting}
+
+
