@@ -4,13 +4,17 @@
 \usepackage[english]{babel}
 \usepackage[english]{isodate}
 \usepackage[parfill]{parskip}
-
+\usepackage{amsthm}
 \usepackage{graphicx} 
 \usepackage{hyperref}
 \usepackage{natbib}
+\usepackage{float}
+
 % Use listings instead of verbatim (allows word wrapping)
 \usepackage{xcolor}
 \usepackage{listings}
+
+
 \definecolor{light_gray}{RGB}{230,230,230}
 \definecolor{dark_green}{RGB}{50,150,50}
 \lstset{ 
@@ -71,5 +75,7 @@
 
 \bibliography{manual}
 \bibliographystyle{apsrev}
-
+\appendix
+\chapter{Stimulus Generator Library}
+\input{stimgen/documentation}
 \end{document}
