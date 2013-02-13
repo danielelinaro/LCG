@@ -31,6 +31,7 @@
       <id>2</id>
       <parameters>
 	<tau>1</tau>
+        <initialFrequency>F0</initialFrequency>
       </parameters>
       <connections>0,3</connections>
     </entity>
