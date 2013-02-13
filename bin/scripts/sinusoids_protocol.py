@@ -167,8 +167,12 @@ def main():
             os.remove(ginh_template_file)
             dl.writeStimFile(current_file, [[duration+1,1,0,0,0,0,0,0,0,0,0,1]], True)
             R_inh = R_exc/ratio
+            # proportional
             dl.writeSinusoidallyModulatedOU('F', R_exc, dR*R_exc, input_resistance, 5, duration, 'exc', 5061983, gexc_template_file)
             dl.writeSinusoidallyModulatedOU('F', R_inh, dR*R_inh, input_resistance, 10, duration, 'inh', 7051983, ginh_template_file)
+            # fixed
+            #dl.writeSinusoidallyModulatedOU('F', R_exc, 550, input_resistance, 5, duration, 'exc', 5061983, gexc_template_file)
+            #dl.writeSinusoidallyModulatedOU('F', R_inh, 550/ratio, input_resistance, 10, duration, 'inh', 7051983, ginh_template_file)
     else:
         current = [[duration,-2,I0,0,0,0,0,0,0,1,0,1],
                    [0,-2,I1,'F',0,0,0,0,0,3,1,1],
