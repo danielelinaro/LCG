@@ -57,6 +57,44 @@
       <connections>0,3</connections>
     </entity>
 
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
+	<filename>gexc.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>6</id>
+      <parameters>
+	<filename>ginh.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,8</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>7</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>8</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
   </entities>
 
   <simulation>
