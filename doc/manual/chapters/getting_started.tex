@@ -16,22 +16,72 @@ Some MATLAB and Python code will be used to demonstrate the basic loading of dat
 \section{What is \progname?}
 
 \paragraph{}
-\progname\ is the name of a UNIX program that interfaces with \texttt{lib\progname}\  (a library that interfaces with a realtime kernel can be used to conduct electrophysiological experiments). If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation.
+\textbf{\progname} is the name of a UNIX program that interfaces with \texttt{lib\progname}\  - a C++ library that interfaces with a realtime kernel can be used to conduct electrophysiological experiments using simple stimulation protocols but also to highly complex paradigms such as hybrid networks interfaces and/or dynamic clamp. If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation.
 
-The most important concepts can be understood by using a computational model of a neuron. A Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}) is integrated into \progname. The initial part of this guide does not require a realtime kernel installation (see \ref{install:nokernel} for details on how to install \progname\ without a realtime kernel).
+\paragraph{}
+The most important concepts can be understood by using a computational model of a Neuron. A Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}) is integrated into \progname. The initial part of this guide does not require a realtime kernel installation (see \ref{install:nokernel} for details on how to install \progname\ without a realtime kernel).
+We will illustrate some basic concepts of data analysis of intracellular data using Matlab. This should allow a user that is not familiar with Matlab to understand the basics of the programming language,a although it does not intend to be a full fletched tutorial, for that use \cite{wallisch2011} or the resources at \href{http://www.mathworks.com}{The Mathworks} website. We will also try to highlight some basic UNIX commands to handle file operations but you can also use a graphical user interface to do this. 
 
 \section{Configuration files}
-
 \paragraph{}
 A configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
 
 \paragraph{}
 The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We communicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chapter:entities} for a description of the built in entities.
 
+Lets examine one of these files closely:
+
+\begin{lstlisting}
+<dynamicclamp>
+  <entities>
+    	<entity>
+      		<name>LIFNeuron</name>
+      		<id>0</id>
+      		<parameters>
+			<C>0.08</C>
+			<tau>0.0075</tau>
+			<tarp>0.0014</tarp>
+			<Er>-65.2</Er>
+			<E0>-70</E0>
+			<Vth>-50</Vth>
+			<Iext>220</Iext>
+      		</parameters>
+      		<connections></connections>
+    	</entity>
+  </entities>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
+</dynamicclamp>
+
+\end{lstlisting}
+ 
+This file is composed layers. The most general is the \texttt{<dynamicclamp>} layer; this basically tells the program that this is a configuration file. Inside this layer there are two other:
+\begin{itemize}
+\item
+\emph{ \texttt{<entities>}}  - where the entities are listed and connected to each other. Generally each \emph{ \texttt{<entity>}} has a 
+	\begin{itemize}
+	\item \emph{ \texttt{<name>}} - the global descriptor of the entitiy. 
+	\item \emph{ \texttt{<id>}} - the global identification number of an entity. This is used to connect entities and the ids have to be unique.
+	\item \emph{ \texttt{<parameters>}} - the parameters of the entity. These vary between each entity. You can use the manual section \ref{chapter:entities}.
+	\item \emph{ \texttt{<connections>}} - the global \texttt{id}s to which this entity is connected.
+	\end{itemize}
+\item
+\emph{ \texttt{<simulation>}} - where the general parameters are defined e.g. the sampling rate (\texttt{rate}) and the duration (\texttt{tend}).
+\end{itemize}
+
+\paragraph{}
+Now lets create a file called \texttt{example.xml}. Open a terminal and copy the following lines one by one:
+
+\begin{lstlisting}
+mkdir ~/tmp  # this creates a directory called tmp under your home folder (that's what the tilt is for)
+cd ~/tmp # goes inside this directory
+edit example.xml # creates and opens a file called example.xml in the current folder using gnome text editor.
+\end{lstlisting}
+now copy the example above to this file. Save and close it. You can now run the example by doing: \texttt{\progname\ -c example.xml}
+
+\paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded. In the next section you will see how you can record the data.
 \section{Your first recording}
 
-
-
-
-
-\section{Stimulation files}
+\section{Simple stimulation}
