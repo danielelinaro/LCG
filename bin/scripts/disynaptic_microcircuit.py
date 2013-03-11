@@ -4,7 +4,7 @@ import os
 import sys
 import getopt
 import numpy as np
-import dlutils as dl
+import lcg
 
 def usage():
     try:
@@ -122,10 +122,10 @@ def main():
         usage()
         sys.exit(1)
 
-    stim_dur = dl.writePulsesStimFile(f=stim_freq, dur=1, amp=stim_amp, N=15, delay=1, withRecovery=False)
+    stim_dur = lcg.writePulsesStimFile(f=stim_freq, dur=1, amp=stim_amp, N=15, delay=1, withRecovery=False)
     
     if os.path.isfile(template_file):
-        dl.substituteStrings(template_file, config_file,
+        lcg.substituteStrings(template_file, config_file,
                              {'WGT': str(weight),
                               'AI_PRE': str(ai[0]), 'AI_POST': str(ai[1]),
                               'AO_PRE': str(ao[0]), 'AO_POST': str(ao[1]),
@@ -139,9 +139,9 @@ def main():
         sys.exit(1)
 
     if with_bg:
-        ratio = dl.computeRatesRatio(balanced_voltage, input_resistance)
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = dl.computeSynapticBackgroundCoefficients(ratio, input_resistance, bg_freq)
-        dl.writeGStimFiles({'m': Gm_exc, 's': Gs_exc, 'tau': 5, 'seed': 5061983},
+        ratio = lcg.computeRatesRatio(balanced_voltage, input_resistance)
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, input_resistance, bg_freq)
+        lcg.writeGStimFiles({'m': Gm_exc, 's': Gs_exc, 'tau': 5, 'seed': 5061983},
                            {'m': Gm_inh, 's': Gs_inh, 'tau': 10, 'seed': 7051983},
                            stim_dur, 0, 0)
 

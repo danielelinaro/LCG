@@ -4,7 +4,7 @@ import os
 import sys
 import getopt
 import numpy as np
-import dlutils as dl
+import lcg
 
 duration_preamble = 2.61
 
@@ -117,7 +117,7 @@ def main():
             template_file = os.environ['HOME'] + '/configurations/reliability_disynaptic_current.xml'
         if os.path.isfile(template_file):
             config_file = 'reliability_disynaptic.xml'
-            dl.substituteStrings(template_file, config_file,
+            lcg.substituteStrings(template_file, config_file,
                                  {'<weight>0</weight>': '<weight>'+str(weight)+'</weight>',
                                   '<E>-80</E>': '<E>'+str(E)+'</E>',
                                   '<tauRise>0</tauRise>': '<tauRise>'+str(tau_r)+'</tauRise>',

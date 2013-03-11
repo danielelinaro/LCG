@@ -4,7 +4,7 @@ import os
 import sys
 import getopt
 import numpy as np
-import dlutils as dl
+import lcg
 
 stim_file = 'pulses.stim'
 
@@ -88,7 +88,7 @@ def main():
     os.system('cclamprc_write -e -i -c ' + str(ai))
     os.system('cclamprc_write -o -f 1 -u V -c ' + str(ao))
 
-    dl.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses, withRecovery=with_recovery, filename=stim_file)
+    lcg.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses, withRecovery=with_recovery, filename=stim_file)
     
     os.system('cclamp -f ' + stim_file + ' -n ' + str(repetitions) + ' -i ' + str(interval))
 

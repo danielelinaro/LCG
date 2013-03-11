@@ -4,7 +4,7 @@ import os
 import sys
 import getopt
 import numpy as np
-import dlutils as dl
+import lcg
 
 def usage():
     try:
@@ -50,8 +50,8 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
     taus = {'exc': 5, 'inh': 10}
     for rate in rates_exc:
         for V in Vm:
-            ratio = dl.computeRatesRatio(V, Rm)
-            Gm_exc,Gm_inh,Gs_exc,Gs_inh = dl.computeSynapticBackgroundCoefficients(ratio, Rm, rate)
+            ratio = lcg.computeRatesRatio(V, Rm)
+            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, Rm, rate)
             print('Vm = %g, rates = %g Hz (exc) %g Hz (inh).' % (V, rate, rate/ratio))
             conductance[1][2] = Gm_exc
             conductance[1][3] = Gs_exc
@@ -131,7 +131,7 @@ def main():
             templateFile = os.environ['HOME'] + '/configurations/in_vivo_like.xml'
         if os.path.isfile(templateFile):
             configFile = 'cv.xml'
-            dl.substituteStrings(templateFile, configFile,
+            lcg.substituteStrings(templateFile, configFile,
                                  {'<maxCount>0</maxCount>': '<maxCount>'+str(nspikes)+'</maxCount>',
                                   '<tend>0</tend>': '<tend>'+str(duration)+'</tend>'})
         else:

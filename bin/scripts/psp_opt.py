@@ -5,14 +5,14 @@ import sys
 import getopt
 import glob
 import numpy as np
-import dlutils as dl
+import lcg
 
 def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp', ai=0, ao=0):
     try:
         w = weight[0]
     except:
         w = weight
-    dl.substituteStrings(templateFile, 'psp.xml',
+    lcg.substituteStrings(templateFile, 'psp.xml',
                          {'<weight>0</weight>': '<weight>' + str(w) + '</weight>',
                           'AI': str(ai), 'AO': str(ao)})
     # run dclamp
@@ -24,7 +24,7 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
     files = files[-trials:]
 
     # read the first file to allocate memory
-    entities,info = dl.loadH5Trace(files[0])
+    entities,info = lcg.loadH5Trace(files[0])
     for ntt in entities:
         if ntt['name'] == 'RealNeuron' or ntt['id'] == 4:
             post = ntt
@@ -42,7 +42,7 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
     dV = np.zeros((trials,len(post['data'])))
     dV[0,:] = post['data'] - np.mean(post['data'][idx])
     for k in range(1,trials):
-        entities,info = dl.loadH5Trace(files[k])
+        entities,info = lcg.loadH5Trace(files[k])
         for ntt in entities:
             if ntt['name'] == 'RealNeuron' or ntt['id'] == 4:
                 dV[k,:] = ntt['data'] - np.mean(ntt['data'][idx])

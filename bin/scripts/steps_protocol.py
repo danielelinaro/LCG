@@ -3,8 +3,8 @@
 import os
 import sys
 import numpy as np
-import dlutils as dl
 import getopt
+import lcg
 
 stimuli_directory = 'stimuli'
 
@@ -90,7 +90,7 @@ def main():
 
     for i,amp in enumerate(amplitudes):
         stimulus[row][2] = amp
-        dl.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
+        lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
 
     os.system('cclamp -d ' + stimuli_directory + ' -i ' + str(interval) +
               ' -I ' + str(interval) + ' -N ' + str(nreps))

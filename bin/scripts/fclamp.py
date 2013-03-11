@@ -3,7 +3,7 @@
 import os
 import sys
 import numpy as np
-import dlutils as dl
+import lcg
 import getopt
 
 config_file = 'fclamp.xml'
@@ -103,11 +103,11 @@ def main():
             print('You must to specify the balanced voltage (-v switch).')
             sys.exit(1)
 
-        ratio = dl.computeRatesRatio(balanced_voltage, input_resistance)
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = dl.computeSynapticBackgroundCoefficients(ratio, input_resistance, R_exc)
-        dl.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao, with_bg, Gm_exc, Gs_exc, Gm_inh, Gs_inh)
+        ratio = lcg.computeRatesRatio(balanced_voltage, input_resistance)
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, input_resistance, R_exc)
+        lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao, with_bg, Gm_exc, Gs_exc, Gm_inh, Gs_inh)
     else:
-        dl.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao)
+        lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao)
 
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     os.system('dclamp -c ' + config_file + ' -n ' + str(nreps) + ' -i ' + str(interval))

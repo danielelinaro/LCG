@@ -2,8 +2,8 @@
 
 import os
 import sys
-import dlutils as dl
 import getopt
+import lcg
 
 stim_file = 'pulses.stim'
 
@@ -62,7 +62,7 @@ def main():
                 [duration,8,pulse_amplitude,pulse_frequency,pulse_duration,0,0,0,5061983,0,0,1]]
 
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
-    dl.writeStimFile(stim_file, stimulus, False)
+    lcg.writeStimFile(stim_file, stimulus, False)
     os.system('cclamp -f ' + stim_file)
 
 if __name__ == '__main__':

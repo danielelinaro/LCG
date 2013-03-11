@@ -4,7 +4,7 @@ import sys
 import os
 import getopt
 import numpy as np
-import dlutils as dl
+import lcg
 
 gexc_template_file = 'gexc_template.stim'
 gexc_file = 'gexc.stim'
@@ -238,37 +238,37 @@ def main():
                 current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,5061983,2,0,1], # OU current
                            [0,-2,opts['I_modul'],'F',0,0,0,0,0,3,1,1],
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
-            dl.writeStimFile(current_template_file, current, True)
+            lcg.writeStimFile(current_template_file, current, True)
         else:
-            ratio = dl.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
-            Gm_exc,Gm_inh,Gs_exc,Gs_inh = dl.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
+            ratio = lcg.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
+            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
             if opts['std'] == 0 and opts['tau'] == 0:
-                dl.writeSinusoidsConfig(opts['mean'], opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
+                lcg.writeSinusoidsConfig(opts['mean'], opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                         opts['ai'], opts['ao'], opts['duration'], config_file)
             else:
-                dl.writeSinusoidsConfig(opts, opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
+                lcg.writeSinusoidsConfig(opts, opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                         opts['ai'], opts['ao'], opts['duration'], config_file)
     else:
-        ratio = dl.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = dl.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
-        dl.writeSinusoidsConfig(0, 50, Gm_exc, Gs_exc, Gm_inh, Gs_inh,
+        ratio = lcg.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
+        lcg.writeSinusoidsConfig(0, 50, Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                 opts['ai'], opts['ao'], opts['duration'], config_file)
         os.remove(current_template_file)
         os.remove(gexc_template_file)
         os.remove(ginh_template_file)
-        dl.writeStimFile(current_file, [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]], True)
+        lcg.writeStimFile(current_file, [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]], True)
         opts['R_inh'] = opts['R_exc']/ratio
         # proportional
-        dl.writeSinusoidallyModulatedOU('F', opts['R_exc'], opts['dR']*opts['R_exc'],
+        lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], opts['dR']*opts['R_exc'],
                                         opts['input_resistance'], 5, opts['duration'], 'exc',
                                         5061983, gexc_template_file)
-        dl.writeSinusoidallyModulatedOU('F', opts['R_inh'], opts['dR']*opts['R_inh'],
+        lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], opts['dR']*opts['R_inh'],
                                         opts['input_resistance'], 10, opts['duration'], 'inh',
                                         7051983, ginh_template_file)
         # fixed
-        #dl.writeSinusoidallyModulatedOU('F', opts['R_exc'], 550, opts['input_resistance'],
+        #lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], 550, opts['input_resistance'],
         #                                5, opts['duration'], 'exc', 5061983, gexc_template_file)
-        #dl.writeSinusoidallyModulatedOU('F', opts['R_inh'], 550/ratio, opts['input_resistance'],
+        #lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], 550/ratio, opts['input_resistance'],
         #                                10, opts['duration'], 'inh', 7051983, ginh_template_file)
 
     cnt = 0

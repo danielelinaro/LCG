@@ -3,7 +3,7 @@
 import os
 import sys
 import getopt
-import dlutils as dl
+import lcg
 
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
@@ -89,7 +89,7 @@ def main():
     os.system('cclamprc_write -i -c ' + str(ai[0]))
     os.system('cclamprc_write -i -c ' + str(ai[1]))
 
-    dl.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
+    lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
 
     os.system('cclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval))
 

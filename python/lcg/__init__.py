@@ -19,9 +19,10 @@ __all__ = ['writeSinusoidallyModulatedOU',
            'writeSinusoidsConfig', 'writeFClampConfig', 'writeSpontaneousConfig',
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
+           'substituteStrings',
            'computeRatesRatio', 'computeSynapticBackgroundCoefficients',
            'findSpikes','loadH5Trace']
 
 import utils
-from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,findSpikes,loadH5Trace
+from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,findSpikes,loadH5Trace,substituteStrings
 
