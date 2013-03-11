@@ -24,6 +24,7 @@ How to use these functions:
 * Apply AEC compensation: V_AEC=AEC_compensate(V,I,Ke)
 '''
 
-__all__=['AEC_compensate','full_kernel','electrode_kernel']
+__all__ = ['compensate','full_kernel','electrode_kernel']
 
-from AECoffline import AEC_compensate, full_kernel, electrode_kernel
+from AECoffline import compensate, full_kernel, electrode_kernel
+

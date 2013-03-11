@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+import os
+from setuptools import setup
 
-setup(name='dclamp',
-      version='0.9',
-      description='dynclamp utilities for Python.',
-      author='Daniele Linaro and Joao Couto',
-      author_email='daniele@tnb.ua.ac.be',
-      url='http://www.tnb.ua.ac.be',
-      packages=['dclamp','AEC'],
-      scripts=['scripts/f_opt.py', 'scripts/cv.py', 'scripts/psp_opt.py', 'scripts/reliability_disynaptic.py']
-     )
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+setup(
+    name = 'lcg',
+    version = '0.9',
+    author = 'Daniele Linaro and Joao Couto',
+    author_email = 'daniele.linaro@ua.ac.be',
+    description = ('lcg module for Python.'),
+    long_description = read('README'),
+    license = 'GPL',
+    url = 'http://www.tnb.ua.ac.be',
+    packages = ['lcg','aec'],
+    )

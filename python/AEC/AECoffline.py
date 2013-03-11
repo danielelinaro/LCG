@@ -10,7 +10,7 @@ R. Brette, Z. Piwkowska, C. Monier, M. Rudolph-Lilith, J. Fournier, M. Levy, Y. 
 '''
 from scipy import convolve,optimize,zeros,mean,exp,array,arange,diff,Inf
 
-def AEC_compensate(v,i,ke):
+def compensate(v,i,ke):
     '''
     Active Electrode Compensation, done offline.
     v = recorded potential
