@@ -30,7 +30,7 @@
       <name>FrequencyEstimator</name>
       <id>2</id>
       <parameters>
-	<tau>1</tau>
+	<tau>TAU</tau>
         <initialFrequency>F0</initialFrequency>
       </parameters>
       <connections>0,3</connections>
@@ -43,7 +43,7 @@
 	<baselineCurrent>I0</baselineCurrent>
 	<gp>GP</gp>
 	<gi>GI</gi>
-	<gd>0</gd>
+	<gd>GD</gd>
       </parameters>
       <connections>0,1</connections>
     </entity>
