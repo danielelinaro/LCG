@@ -15,19 +15,29 @@ print_help()
     echo "where options are:"
     echo
     echo "   -h   display this help message and exit"
-    echo "   -n   specify number of repetitions (default 30)"
-    echo "   -i   specify interval between repetitions in seconds (default 0.5)"
-    echo "   -I   specify the input channel (default 0)"
-    echo "   -O   specify the output channel (default 0)"
+    echo "   -a   the amplitude of the pulse (default -500 pA)"
+    echo "   -d   the duration of the pulse (default 0.01 seconds)"
+    echo "   -n   the number of repetitions (default 30)"
+    echo "   -i   the interval between repetitions (default 0.5 seconds)"
+    echo "   -I   the input channel (default 0)"
+    echo "   -O   the output channel (default 0)"
     echo
 }
 
+amplitude=-500
+duration=0.01
 reps=30
 interval=0.5
 ai=0
 ao=0
-while getopts ":a:n:i:I:O:h" opt ; do
+while getopts ":a:d:n:i:I:O:h" opt ; do
     case $opt in
+	a)
+	    amplitude=$OPTARG
+	    ;;
+	d)
+	    duration=$OPTARG
+	    ;;
 	n)
 	    reps=$OPTARG
 	    ;;
@@ -53,11 +63,20 @@ while getopts ":a:n:i:I:O:h" opt ; do
 done
 
 if [ -z "${PROTOCOLS_PATH:-}" ] ; then
-    stimfile=$HOME/protocols/tau/tau.stim
+    origstimfile=$HOME/protocols/tau/tau.stim
 else
-    stimfile=$PROTOCOLS_PATH/tau/tau.stim
+    origstimfile=$PROTOCOLS_PATH/tau/tau.stim
 fi
 
+if [ ! -f $origstimfile ] ; then
+    echo "Can't find tau.stim."
+    exit 1
+fi
+
+stimfile=/tmp/tau.stim
+
+sed -e "s/-500/$amplitude/" -e "s/0.01/$duration/" $origstimfile > $stimfile
 kernel_protocol -I $ai -O $ao
 cclamp -f $stimfile -n $reps -i $interval
 
+rm $stimfile
