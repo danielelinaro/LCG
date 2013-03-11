@@ -16,4 +16,19 @@ setup(
     license = 'GPL',
     url = 'http://www.tnb.ua.ac.be',
     packages = ['lcg','aec'],
+    entry_points = {
+        'console_scripts': [
+            'Rin_protocol = lcg.Rin_protocol:main',
+            'cv = lcg.cv:main',
+            'disynaptic_microcircuit = lcg.disynaptic_microcircuit.main',
+            'extracellular_protocol = lcg.extracellular_protocol.main',
+            'f_opt = lcg.f_opt:main',
+            'fclamp = lcg.fclamp:main',
+            'psp_opt = lcg.psp_opt:main',
+            'pulses_protocol = lcg.pulses_protocol:main',
+            'reliability_disynaptic = lcg.reliability_disynaptic:main',
+            'sinusoids_protocol = lcg.sinusoids_protocol:main',
+            'steps_protocol = lcg.steps_protocol:main'
+            ]
+        }
     )

@@ -8,6 +8,11 @@
 function print_help
 {
     echo
+    echo "-------------------------------------------"
+    echo "    This script is deprecated."
+    echo "    Use sinusoids_protocol instead."
+    echo "-------------------------------------------"
+    echo
     echo "Sinusoidal current injection with background synaptic noise protocol."
     echo
     echo "Usage : `basename $0` [options <value>]"

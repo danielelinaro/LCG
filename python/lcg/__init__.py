@@ -26,3 +26,16 @@ __all__ = ['writeSinusoidallyModulatedOU',
 import utils
 from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,findSpikes,loadH5Trace,substituteStrings
 
+### the scripts
+import Rin_protocol
+import cv
+import disynaptic_microcircuit
+import extracellular_protocol
+import f_opt
+import fclamp
+import psp_opt
+import pulses_protocol
+import reliability_disynaptic
+import sinusoids_protocol
+import steps_protocol
+

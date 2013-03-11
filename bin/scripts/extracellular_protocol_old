@@ -8,6 +8,11 @@
 function print_help
 {
     echo
+    echo "-------------------------------------------"
+    echo "    This script is deprecated."
+    echo "    Use extracellular_protocol instead."
+    echo "-------------------------------------------"
+    echo
     echo "Extracellular stimulation protocol."
     echo
     echo "Usage : `basename $0` [options <value>]"
