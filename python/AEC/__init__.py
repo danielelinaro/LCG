@@ -26,5 +26,6 @@ How to use these functions:
 
 __all__ = ['compensate','full_kernel','electrode_kernel']
 
+import AECoffline
 from AECoffline import compensate, full_kernel, electrode_kernel
 

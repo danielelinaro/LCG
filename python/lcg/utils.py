@@ -1,17 +1,7 @@
-
-###
-###
-### Collection of functions used during experiments with lcg.
-###
-### Author: Daniele Linaro - daniele.linaro@ua.ac.be
-###
-###
-
 import time
 import os
 import numpy as np
 import tables as tbl
-import aec
 
 ########## Functions that write configuration files ##########
 
@@ -369,6 +359,7 @@ def computeSynapticBackgroundCoefficients(ratio, Rm=0, R_exc=7000, tau_exc=5, ta
 
 def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, fullOutput=False):
     import matplotlib.pyplot as p
+    import aec
     p.ion()
     entities,info = loadH5Trace(filename)
     Ksize = int(Kdur/info['dt'])
@@ -417,7 +408,7 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
 
     ndx = np.intersect1d(np.nonzero(t > max(stimtimes[pulse]-20e-3,0))[0], 
                          np.nonzero(t < min(stimtimes[pulse]+80e-3,t[-1]))[0])
-    Vc = aec.AEC_compensate(V[ndx],I[ndx],Ke)
+    Vc = aec.compensate(V[ndx],I[ndx],Ke)
     p.figure()
     p.plot(t[ndx]-t[ndx[0]], V[ndx], 'k', label='Recorded')
     p.plot(t[ndx]-t[ndx[0]], Vc, 'r', label='Compensated')

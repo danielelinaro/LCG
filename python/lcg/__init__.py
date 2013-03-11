@@ -1,15 +1,16 @@
 """
 
-lcg
-======
+=====
+ lcg
+=====
 
-Python tools for use with lcg.
+Collection of functions used during experiments with lcg.
 
-For a list of available names, try dir(lcg).
+Authors:
+        Daniele Linaro - daniele.linaro@ua.ac.be
+        Joao Couto - joao@tnb.ua.ac.be
 
----------------------
-
-$Id: __init__.py,v 0.1 2013/01/16 15:43:47 joao$
+----------------------------------------------------------
 
 """
 
@@ -18,10 +19,9 @@ __all__ = ['writeSinusoidallyModulatedOU',
            'writeSinusoidsConfig', 'writeFClampConfig', 'writeSpontaneousConfig',
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
-           'substituteStrings','findConfigurationFile','makeOutputFilename',
-           'computeRatesRatio', 'computeSynapticBackgroundCoefficients','computeElectrodeKernel',
-           'findSpikes',
-           'loadH5Trace','loadH5TraceV0','loadH5TraceV1','loadH5TraceV2']
+           'computeRatesRatio', 'computeSynapticBackgroundCoefficients',
+           'findSpikes','loadH5Trace']
 
-from utils import *
+import utils
+from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,findSpikes,loadH5Trace
 
