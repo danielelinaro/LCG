@@ -20,13 +20,14 @@ __all__ = ['writeSinusoidallyModulatedOU',
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
            'substituteStrings',
-           'computeRatesRatio', 'computeSynapticBackgroundCoefficients',
+           'computeRatesRatio', 'computeSynapticBackgroundCoefficients','computeElectrodeKernel',
            'findSpikes','loadH5Trace']
 
 import utils
-from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,findSpikes,loadH5Trace,substituteStrings
+from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
 
 ### the scripts
+import extract_kernels
 import Rin_protocol
 import cv
 import disynaptic_microcircuit

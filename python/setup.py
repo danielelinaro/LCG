@@ -18,10 +18,11 @@ setup(
     packages = ['lcg','aec'],
     entry_points = {
         'console_scripts': [
+            'extract_kernels = lcg.extract_kernels:main',
             'Rin_protocol = lcg.Rin_protocol:main',
             'cv = lcg.cv:main',
-            'disynaptic_microcircuit = lcg.disynaptic_microcircuit.main',
-            'extracellular_protocol = lcg.extracellular_protocol.main',
+            'disynaptic_microcircuit = lcg.disynaptic_microcircuit:main',
+            'extracellular_protocol = lcg.extracellular_protocol:main',
             'f_opt = lcg.f_opt:main',
             'fclamp = lcg.fclamp:main',
             'psp_opt = lcg.psp_opt:main',
