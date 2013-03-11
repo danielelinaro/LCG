@@ -71,7 +71,7 @@ stimfile=/tmp/white_noise.stim
 sed -e 's/^10/'$duration'/' $origstimfile > $stimfile
 cclamp -f $stimfile -F $F
 datafile=`ls -lrth | tail -1 | awk '{ print $9 }'`
-extract_kernels.py $datafile
+extract_kernels $datafile
 kernelfile=${datafile%.h5}_kernel.dat
 rm -f kernel.dat
 if [ $append_channel == "no" ] ; then
