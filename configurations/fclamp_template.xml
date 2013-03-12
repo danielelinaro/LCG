@@ -23,22 +23,12 @@
 	<outputConversionFactor>0.001</outputConversionFactor>
 	<reference>GRSE</reference>
       </parameters>
-      <connections>0,2</connections>
-    </entity>
-
-    <entity>
-      <name>FrequencyEstimator</name>
-      <id>2</id>
-      <parameters>
-	<tau>TAU</tau>
-        <initialFrequency>F0</initialFrequency>
-      </parameters>
-      <connections>0,3</connections>
+      <connections>0,4</connections>
     </entity>
 
     <entity>
       <name>PID</name>
-      <id>3</id>
+      <id>2</id>
       <parameters>
 	<baselineCurrent>I0</baselineCurrent>
 	<gp>GP</gp>
@@ -50,12 +40,22 @@
 
      <entity>
       <name>Waveform</name>
-      <id>4</id>
+      <id>3</id>
       <parameters>
 	<filename>frequency.stim</filename>
 	<units>Hz</units>
       </parameters>
-      <connections>0,3</connections>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>FrequencyEstimator</name>
+      <id>4</id>
+      <parameters>
+	<tau>TAU</tau>
+        <initialFrequency>F0</initialFrequency>
+      </parameters>
+      <connections>0,2</connections>
     </entity>
 
   </entities>

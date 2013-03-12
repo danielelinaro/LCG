@@ -15,8 +15,8 @@ def usage():
     print('     -T        Stimulation duration (default 30 s).')
     print('     -t        Time constant of the frequency estimator (default 1 s).')
     print('     -a        Amplitude of the initially injected current (default 0 pA).')
-    print('     -p        Proportional gain of the controller (default 0.01).')
-    print('     -i        Integral gain of the controller (default 0.1).')
+    print('     -p        Proportional gain of the controller (default 0.05).')
+    print('     -i        Integral gain of the controller (default 1).')
     print('     -d        Derivative gain of the controller (default 0).')
     print('     -n        Number of repetitions (default 1).')
     print('     -w        Interval between repetitions (default 30 s).')
@@ -41,8 +41,8 @@ def main():
     ai = 0
     with_bg = False
     nreps = 1
-    gp = 0.01
-    gi = 0.1
+    gp = 0.05
+    gi = 1
     gd = 0.
     duration = 30            # [s]
     tau = 1                  # [s]

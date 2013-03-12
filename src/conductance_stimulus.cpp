@@ -1,3 +1,4 @@
+#include <math.h>
 #include "conductance_stimulus.h"
 
 dynclamp::Entity* ConductanceStimulusFactory(string_dict& args)
@@ -36,7 +37,8 @@ bool ConductanceStimulus::hasNext() const
 
 void ConductanceStimulus::step()
 {
-        m_output = m_inputs[0] * (COND_E - m_neuron->output());
+        // conductances must be positive
+        m_output = (!signbit(m_inputs[0])) * m_inputs[0] * (COND_E - m_neuron->output());
 }
 
 double ConductanceStimulus::output()

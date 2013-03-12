@@ -71,6 +71,7 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
     if type(stimulus) == list and type(stimulus[0]) != list:    # a 1-dimensional list
         stimulus = [stimulus]
     with open(filename,'w') as fid:
+        preamble_dur = 0
         if addDefaultPreamble:
             preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
                         [0.01,1,-300,0,0,0,0,0,0,0,0,1],
@@ -78,6 +79,7 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
                         [0.6,1,-100,0,0,0,0,0,0,0,0,1],
                         [1,1,0,0,0,0,0,0,0,0,0,1]]
             for row in preamble:
+                preamble_dur = preamble_dur + row[0]
                 for value in row:
                     fid.write(str(value)+'\t')
                 fid.write('\n')
@@ -87,7 +89,7 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
             for value in row:
                 fid.write(str(value)+'\t')
             fid.write('\n')
-    return np.sum([row[0] for row in stimulus])
+    return preamble_dur + np.sum([row[0] for row in stimulus])
     
 def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim','ginh.stim']):
     G = [[[before,1,0,0,0,0,0,0,0,0,0,1],
