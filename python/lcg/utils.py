@@ -155,7 +155,7 @@ def writeSinusoidsConfig(bg_current, modulating_current, G0_exc, sigma_exc, G0_i
                          ai=0, ao=0, duration=30, outfile='sinusoids.xml', infile=''):
     import shutil
     writeIPlusBgGConfig(0, {'m': G0_exc, 's': sigma_exc, 'tau': 5, 'seed': 5061983},
-                        {'m': G0_inh, 's': sigma_inh, 'tau': 10, 'seed': 5061983},
+                        {'m': G0_inh, 's': sigma_inh, 'tau': 10, 'seed': 7051983},
                         ai, ao, duration, outfile, infile)
     if isinstance(bg_current, float) or isinstance(bg_current,int):
         if bg_current == 0:

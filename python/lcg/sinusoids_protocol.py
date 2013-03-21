@@ -15,41 +15,43 @@ current_file = 'current.stim'
 config_file = 'sinusoids.xml'
 
 switches = 'f:n:i:d:I:O:k:R:F:v:a:s:t:m:'
-long_switches = ['with-bg']
+long_switches = ['with-bg','exc','inh']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
     print('\nThe working modes are:\n')
-    print('  current      use a sinusoidally modulated current.')
-    print('  conductance  use sinusoidally modulated conductances.')
+    print('    current      use a sinusoidally modulated current.')
+    print('    conductance  use sinusoidally modulated conductances.')
     print('\nThe global options are:\n')
-    print('   -h   Display this help message and exit.')
-    print('   -f   Frequencies of the sinusoids (comma-separated values).')
-    print('   -n   Number of repetitions (default 1).')
-    print('   -i   Interval between trials (default 60 s).')
-    print('   -d   Duration of the stimulation (default 30 sec).')
-    print('   -I   Input channel (default 0).')
-    print('   -O   Output channel (default 0).')
-    print('   -k   Frequency at which a new kernel should be computed')
-    print('        (the default is at the beginning of each batch of frequencies).')
+    print('     -h   Display this help message and exit.')
+    print('     -f   Frequencies of the sinusoids (comma-separated values).')
+    print('     -n   Number of repetitions (default 1).')
+    print('     -i   Interval between trials (default 60 s).')
+    print('     -d   Duration of the stimulation (default 30 sec).')
+    print('     -I   Input channel (default 0).')
+    print('     -O   Output channel (default 0).')
+    print('     -k   Frequency at which a new kernel should be computed')
+    print('          (the default is at the beginning of each batch of frequencies).')
 
     print('\nThe following options are valid in the "current" working mode:\n')
-    print('   -a   Mean of the noisy component of the current (default 0 pA).')
-    print('   -s   Standard deviation of the noisy component of the current (default 0 pA).')
-    print('   -t   Time constant of the noisy component of the current (default 0 ms).')
-    print('   -m   Amplitude of the modulating current (default 30 pA).')
+    print('     -a   Mean of the noisy component of the current (default 0 pA).')
+    print('     -s   Standard deviation of the noisy component of the current (default 0 pA).')
+    print('     -t   Time constant of the noisy component of the current (default 0 ms).')
+    print('     -m   Amplitude of the modulating current (default 30 pA).')
 
     print('\nAdditionally, if the --with-bg option is specified, the following')
     print('options are accepted:\n')
-    print('   -F   Firing frequency of the excitatory background population.')
-    print('   -R   Input resistance of the cell (in MOhm).')
-    print('   -v   Value of voltage at which the background activity should be balanced.')
+    print('     -F   Firing frequency of the excitatory background population.')
+    print('     -R   Input resistance of the cell (in MOhm).')
+    print('     -v   Value of voltage at which the background activity should be balanced.')
 
     print('\nThe following options are valid in the "conductance" working mode:\n')
-    print('   -R   Input resistance of the cell (in MOhm).')
-    print('   -v   Value of voltage at which the background activity should be balanced.')
-    print('   -F   Baseline firing frequency of the excitatory background population.')
-    print('   -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
+    print('     -R   Input resistance of the cell (in MOhm).')
+    print('     -v   Value of voltage at which the background activity should be balanced.')
+    print('     -F   Baseline firing frequency of the excitatory background population.')
+    print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
+    print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
+    print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
     print('')
 
 def parseGlobalArgs():
@@ -177,14 +179,24 @@ def parseConductanceModeArgs():
 
     options = parseBackgroundArgs()
     options['dR'] =  0.1      # [fraction]
+    options['exc'] = False
+    options['inh'] = False
 
     for o,a in opts:
         if o == '-m':
             options['dR'] = float(a)
+        elif o == '--exc':
+            options['exc'] = True
+        elif o == '--inh':
+            options['inh'] = True
 
     if options['dR'] < 0:
         print('The modulating fraction must be positive.')
         sys.exit(1)
+
+    if not options['exc'] and not options['inh']:
+        print('You must specify whether you want to modulate the excitatory or the inhibitory rate, or both.')
+        sys.exit(0)
 
     return options
 
@@ -254,22 +266,31 @@ def main():
         lcg.writeSinusoidsConfig(0, 50, Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                 opts['ai'], opts['ao'], opts['duration'], config_file)
         os.remove(current_template_file)
-        os.remove(gexc_template_file)
-        os.remove(ginh_template_file)
         lcg.writeStimFile(current_file, [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]], True)
         opts['R_inh'] = opts['R_exc']/ratio
+
         # proportional
-        lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], opts['dR']*opts['R_exc'],
-                                        opts['input_resistance'], 5, opts['duration'], 'exc',
-                                        5061983, gexc_template_file)
-        lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], opts['dR']*opts['R_inh'],
-                                        opts['input_resistance'], 10, opts['duration'], 'inh',
-                                        7051983, ginh_template_file)
+        if opts['exc']:
+            os.remove(gexc_template_file)
+            lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], opts['dR']*opts['R_exc'],
+                                             opts['input_resistance'], 5, opts['duration'], 'exc',
+                                             5061983, gexc_template_file)
+
+        if opts['inh']:
+            os.remove(ginh_template_file)
+            lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], opts['dR']*opts['R_inh'],
+                                             opts['input_resistance'], 10, opts['duration'], 'inh',
+                                             7051983, ginh_template_file)
+
         # fixed
-        #lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], 550, opts['input_resistance'],
-        #                                5, opts['duration'], 'exc', 5061983, gexc_template_file)
-        #lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], 550/ratio, opts['input_resistance'],
-        #                                10, opts['duration'], 'inh', 7051983, ginh_template_file)
+        #if opts['exc']:
+        #    os.remove(gexc_template_file)
+        #    lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], 550, opts['input_resistance'],
+        #                                     5, opts['duration'], 'exc', 5061983, gexc_template_file)
+        #if opts['inh']:
+        #    os.remove(ginh_template_file)
+        #    lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], 550/ratio, opts['input_resistance'],
+        #                                     10, opts['duration'], 'inh', 7051983, ginh_template_file)
 
     cnt = 0
     tot = opts['reps']*len(opts['frequencies'])
