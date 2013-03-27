@@ -1,0 +1,74 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>AnalogInput</name>
+      <id>1</id>
+      <parameters>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<readChannel>0</readChannel>
+	<inputConversionFactor>0.001</inputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+    <entity>
+      <name>AnalogOutput</name>
+      <id>2</id>
+      <parameters>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<outputSubdevice>1</outputSubdevice>
+	<writeChannel>0</writeChannel>
+	<outputConversionFactor>100</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>AnalogOutput</name>
+      <id>3</id>
+      <parameters>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<outputSubdevice>1</outputSubdevice>
+	<writeChannel>1</writeChannel>
+	<outputConversionFactor>1</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>4</id>
+      <parameters>
+	<filename>intra.stim</filename>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>5</id>
+      <parameters>
+	<filename>extra.stim</filename>
+      </parameters>
+      <connections>0,3</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>TEND</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>
