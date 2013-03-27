@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
         std::vector<Entity*> entities;
         dynclamp::generators::Waveform *stimulus;
         CCoptions opt;
-        int i, j, k, retval = 0;
+        int i, j, k, cnt, total, retval = 0;
 
         SetLoggingLevel(Info);
 
@@ -302,11 +302,13 @@ int main(int argc, char *argv[])
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
         bool success;
+        cnt = 1;
+        total = opt.nBatches*opt.stimulusFiles.size()*opt.nTrials;
         for (i=0; i<opt.nBatches; i++) {
                 for (j=0; j<opt.stimulusFiles.size(); j++) {
                         stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
-                        for (k=0; k<opt.nTrials; k++) {
-                                Logger(Info, "\nProcessing stimulus file [%s].\n\n", opt.stimulusFiles[j].c_str());
+                        for (k=0; k<opt.nTrials; k++, cnt++) {
+                                Logger(Important, "Trial: %d of %d.\n", cnt, total);
                                 success = Simulate(entities, stimulus->duration());
                                 if (!success || KILL_PROGRAM())
                                         goto endMain;
