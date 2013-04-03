@@ -38,7 +38,7 @@ You can install a dual-boot system so that you keep the previous system if neces
 You may need to install tools to build the kernel. In Debian you can use (as sudo):
 \begin{lstlisting}
 apt-get update
-apt-get install build-essential binutils-dev libelf-dev libncurses5 libncurses5-dev git-core make gcc subversion libc6 libc6-dev automake libtool bison autoconf flex libgsl0-dev 
+apt-get install build-essential binutils-dev libelf-dev libncurses5 libncurses5-dev git-core make gcc subversion libc6 libc6-dev automake libtool bison flex autoconf flex libgsl0-dev 
 \end{lstlisting}
 
 \subsection{Patching and installing the realtime kernel} 
@@ -53,27 +53,26 @@ Go to the \texttt{\href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the
 	\item \textbf{Download the kernel and the realtime patch} The directory \textbf{/usr/src} is a common place to install the linux kernel. You will need to have root access to perform these operations.
 \begin{lstlisting}
 cd /usr/src
-wget ftp://ftp.kernel.org/pub/linux/kernel/v3.6/linux-3.6.11.tar.bz2 
-wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.6/patch-3.6.11-rt28.bz2
+wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.8.4.tar.bz2
+wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.8/patch-3.8.4-rt2.patch.bz2
 \end{lstlisting}
 
 \item \textbf{Decompress and patch the kernel} Patching the kernel will add realtime support to the kernel you have downloaded.
 \begin{lstlisting}
-tar xvf linux-3.6.11.tar.bz2
-ln -s linux-3.6.11 linux
+tar xvf linux-3.8.4.tar.bz2
+ln -s linux-3.8.4 linux
 cd linux
-bzcat ../patch-3.6.11-rt28.bz2 | patch -p1
+bzcat ../patch-3.8.4-rt2.patch.bz2 | patch -p1
 \end{lstlisting}
 
 \item \textbf{Configure the kernel} The easiest way to do this is to use the configuration file from a kernel that was previously installed in your system or from a similar installation/system.
 \begin{lstlisting}
-cp config-`uname -r` .config
+cp /boot/config-`uname -r` .config
 make oldconfig
 make menuconfig
 \end{lstlisting}
 This will evoke a user interface to configure the kernel options.
-You need to set the \texttt{Preemption mode} to \texttt{Complete Preemption (Real-Time)} in the \texttt{Processor type and features}. And disable \texttt{CPU Frequency scaling} under \texttt{Power Management and ACPI options}. Disable \texttt{Check for stack overflow} and the options under \texttt{Tracers} (the later to make the kernel smaller) in \texttt{Kernel hacking}. Additionally you should also disable 
-Safe and exit.
+You need to set the \texttt{Preemption model} to \texttt{Fully Preemptible Kernel (RT)} in the \texttt{Processor type and features}. And disable \texttt{CPU Frequency scaling} under \texttt{Power Management and ACPI options}. Disable \texttt{Check for stack overflow} and the options under \texttt{Tracers} (the later to make the kernel smaller) in \texttt{Kernel hacking}. Additionally you should also disable the \texttt{Comedi drivers} under the \texttt{Staging drivers} of the \texttt{Device drivers} menu. Safe and exit.
 
 \item \textbf{Compile and install the kernel} This step might several minutes to hours, depending on the size of the kernel.
 \begin{lstlisting}
@@ -82,7 +81,7 @@ make && make modules && make modules_install && make install
 When the installation is completed you will need to update the boot loader.
 \begin{lstlisting}
 cd /boot
-update-initramfs -c -k 3.6.11-rt28
+update-initramfs -c -k 3.8.4-rt2
 update-grub
 \end{lstlisting}
 Check that grub has been updated. You should see an entry with the name of the newly installed kernel in \texttt{/etc/grub/menu.lst}. After confirmation \inlineCode{reboot} into your new kernel.
@@ -97,8 +96,8 @@ Check that grub has been updated. You should see an entry with the name of the n
 	In order for \progname\ to work you will need to install the headers to the \href{http://www.boost.org}{boost C++ library}. Only the last command needs to be ran as root.
 \begin{lstlisting}
 wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
-tar --bzip2 -xf boost_1_50_0.tar.bz2
-cd boost_1_50_0.tar.bz2
+tar --bzip2 -xvf boost_1_53_0.tar.bz2
+cd boost_1_53_0.tar.bz2
 ./bootstrap.sh
 ./b2 install
 \end{lstlisting}
@@ -128,6 +127,7 @@ Now for comedilib, the user space interface to the kernel module (run \texttt{ma
 
 \begin{lstlisting}
 cd comedilib
+./autogen.sh
 ./configure --prefix=/usr/local
 make
 make install
@@ -136,6 +136,7 @@ And similarly for comedi\_calibrate, the tools to calibrate the DAQ cards (insta
 
 \begin{lstlisting}
 cd comedi_calibrate
+./autogen.sh
 ./configure --prefix=/usr/local
 make
 make install
@@ -147,12 +148,13 @@ Now that the drivers are installed you need to create the rules to allow the use
 \begin{lstlisting}
 
 
+
 \end{lstlisting}
 
 \item \textbf{HDF5 library} 
 The \href{http://www.hdfgroup.org/HDF5/}{HDF Group} designed a set of libraries for data storage and management with high performance, efficiency and high volume/complexity in mind. \textbf{\progname} uses these libraries in the \nameref{entities:h5recorder} entity. These libraries can be installed from source or using Debian repositories (as root):
 \begin{lstlisting}
-apt-get install hdf5-tools
+apt-get install hdf5-tools hdf5-serial-dev
 \end{lstlisting}
 
 
@@ -173,6 +175,22 @@ make install
 \end{lstlisting}
 You can install in other locations by changing the \texttt{prefix}.
 For additional configuration options type \inlineCode{./configure --help}.
+
+\paragraph{}
+Before you can use \progname\ you will need to create a realtime group and add the users to the group.
+Add the following lines to the \texttt{/etc/security/limits.conf} file (as root).
+\begin{lstlisting}
+@realtime       -       rtprio  99
+@realtime       -       memlock unlimited
+\end{lstlisting}
+Now create a group \texttt{realtime} and add the users that you want to be able to use \progname.
+
+\begin{lstlisting}
+groupadd realtime
+usermod -a -G realtime USER
+\end{lstlisting}
+
+Once you logout the changes will take effect.
 
 \subsection{Optional installs} 
 \label{install:optional}
