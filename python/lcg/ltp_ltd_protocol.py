@@ -38,16 +38,12 @@ def run_batch(repetitions, interval, stim_dur, stim_amp, hyperpolarizing_pulse, 
                                                               'AI': ai,
                                                               'AO_INTRA': ao['intra'],
                                                               'AO_EXTRA': ao['extra']})
-    stim_dur['extra'] = stim_dur['extra']*1e-3        # [s]
-        
     extra_stim = [[pre,1,0,0,0,0,0,0,0,0,0,1],
                   [stim_dur['extra'],1,stim_amp['extra'],0,0,0,0,0,0,0,0,1],
                   [post-stim_dur['extra'],1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(extracellular_stim_file, extra_stim, False)
 
     if pairing:
-        stim_dur['intra'] = stim_dur['intra']*1e-3    # [s]
-        offset = offset * 1e-3    # [s]
         intra_stim = [[pre+offset,1,0,0,0,0,0,0,0,0,0,1],
                       [stim_dur['intra'],1,stim_amp['intra'],0,0,0,0,0,0,0,0,1],
                       [post-offset-stim_dur['intra']-hyperpolarizing_pulse['dur']-0.1,1,0,0,0,0,0,0,0,0,0,1],
@@ -85,7 +81,7 @@ def main():
     pairing = False
     offset = None         # [pA]
 
-    hyperpolarizing_pulse = {'dur': 0.1,  # [s]
+    hyperpolarizing_pulse = {'dur': 0.2,  # [s]
                              'amp': -100} # [pA]
 
     for o,a in opts:
@@ -137,6 +133,11 @@ def main():
     if not interval:
         print('You must specify the period of the stimulation (-T switch).')
         sys.exit(1)
+
+    stim_dur['extra'] = stim_dur['extra']*1e-3        # [s]
+    if pairing:
+        stim_dur['intra'] = stim_dur['intra']*1e-3    # [s]
+        offset = offset * 1e-3                        # [s]
 
     if len(repetitions) == 1:
         run_batch(repetitions[0], interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, pairing, offset)

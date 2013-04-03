@@ -19,17 +19,18 @@ def usage():
     print('     -i    interval between trials (default 5 sec).')
     print('     -N    number of repetitions (default 20).')
     print('     -I    input channel (default 0).')
-    print('     -O    output channel (default 1).')
+    print('     -O    output channel for extracellular stimulation (default 1).')
     print('')
     print(' --without-recovery-pulse    do not include a recovery pulse in the stimulation.')
     print(' --compute-kernel            run a kernel protocol for the input.')
-    print(' --kernel-ao                 output channel for kernel computation (default 0).')
+    print('\nIn case the --compute-kernel option is specified, the following option is accepted:\n')
+    print('     -o    output channel for kernel computation (default 0).')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hf:n:d:a:i:N:I:O:',
-                                  ['help','compute-kernel','kernel-ao','without-recovery-pulse'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hf:n:d:a:i:N:I:O:o:',
+                                  ['help','compute-kernel','without-recovery-pulse'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -38,14 +39,13 @@ def main():
     repetitions = 20      # [1]
     interval = 5          # [s]
     ai = 0
-    ao = 1
+    ao = {'intra': 0, 'extra': 1}
     stim_freq = None      # [Hz]
     stim_dur = 0.1        # [ms]
     stim_amp = 5          # [V]
     npulses = 10
     with_recovery = True
     compute_kernel = False
-    kernel_ao = 0
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -66,11 +66,11 @@ def main():
         elif o == '-I':
             ai = int(a)
         elif o == '-O':
-            ao = int(a)
+            ao['extra'] = int(a)
+        elif o == '-o':
+            ao['intra'] = int(a)
         elif o == '--compute-kernel':
             compute_kernel = True
-        elif o == '--kernel-ao':
-            kernel_ao = int(a)
         elif o == '--without-recovery-pulse':
             with_recovery = False
 
@@ -79,14 +79,14 @@ def main():
         sys.exit(1)
 
     if compute_kernel:
-        if ao == kernel_ao:
+        if ao['intra'] == ao['extra']:
             print('The stimulation output channel [%d] should be different from the kernel output channel [%d].'
-                  % (ao, kernel_ao))
+                  % (ao['intra'], ao['extra']))
             sys.exit(1)
-        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(kernel_ao))
+        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao['intra']))
 
     os.system('cclamprc_write -e -i -c ' + str(ai))
-    os.system('cclamprc_write -o -f 1 -u V -c ' + str(ao))
+    os.system('cclamprc_write -o -f 1 -u V -c ' + str(ao['extra']))
 
     lcg.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses, withRecovery=with_recovery, filename=stim_file)
     
