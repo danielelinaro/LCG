@@ -16,6 +16,7 @@ def usage():
     print('     -h    display this help message and exit.')
     print('     -T    period of the stimulation (in s).')
     print('     -n    number of repetitions.')
+    print('     -k    period, in minutes, at which a new kernel should be computed (default 10).')
     print('     -s    duration of the extracellular stimulation (default 0.1 ms).')
     print('     -I    input channel (default 0).')
     print('     -O    output channels, in the form 0,1 where 0 and 1 are')
@@ -61,7 +62,7 @@ def run_batch(repetitions, interval, stim_dur, stim_amp, hyperpolarizing_pulse, 
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hT:n:s:D:a:d:I:O:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hT:k:n:s:D:a:d:I:O:',
                                   ['help','pairing'])
     except getopt.GetoptError, err:
         print str(err)
@@ -80,8 +81,9 @@ def main():
                 'intra': None} # [pA]
     pairing = False
     offset = None         # [pA]
+    kernel_period = 10    # [minutes]
 
-    hyperpolarizing_pulse = {'dur': 0.2,  # [s]
+    hyperpolarizing_pulse = {'dur': 0.3,  # [s]
                              'amp': -100} # [pA]
 
     for o,a in opts:
@@ -90,6 +92,8 @@ def main():
             sys.exit(0)
         elif o == '-T':
             interval = float(a)
+        elif o == '-k':
+            kernel_period = float(a)
         elif o == '-n':
             repetitions = []
             for rep in a.split(','):
@@ -110,6 +114,8 @@ def main():
             channels = a.split(',')
             ao['intra'] = channels[0]
             ao['extra'] = channels[1]
+
+    kernel_period *= 60   # convert to seconds
 
     if not repetitions:
         print('You must specify the number of repetitions (-n switch).')
@@ -144,16 +150,25 @@ def main():
     else:
         os.mkdir('01',0755)
         os.chdir('01')
-        run_batch(repetitions[0], interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, False)
+        while repetitions[0] > 0:
+            reps = min(repetitions[0],int(round(kernel_period/interval)))
+            run_batch(reps, interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, False)
+            repetitions[0] -= reps
         os.chdir('..')
         os.mkdir('02',0755)
         os.chdir('02')
-        run_batch(repetitions[1], interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, True, offset)
+        while repetitions[1] > 0:
+            reps = min(repetitions[1],int(round(kernel_period/interval)))
+            run_batch(reps, interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, True, offset)
+            repetitions[1] -= reps
         os.chdir('..')
         if len(repetitions) == 3:
             os.mkdir('03',0755)
             os.chdir('03')
-            run_batch(repetitions[2], interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, False)
+            while repetitions[2] > 0:
+                reps = min(repetitions[2],int(round(kernel_period/interval)))
+                run_batch(reps, interval, stim_dur, stim_amp, hyperpolarizing_pulse, pre, post, ai, ao, False)
+                repetitions[2] -= reps
             os.chdir('..')
         
 if __name__ == '__main__':
