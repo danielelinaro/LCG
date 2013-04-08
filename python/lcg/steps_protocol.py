@@ -16,13 +16,17 @@ def usage():
     print('     -t    tail duration (0 pA of output after the stimulation, default 1 sec)')
     print('     -n    number of repetitions of each amplitude (default 1)')
     print('     -i    interval between repetitions (default 1 s)')
+    print('\nAcquisition options:')
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
+    print('     -F    sampling frequency (default 20000)')
+    print('\nAdditional options:')
     print(' --without-preamble    do not include stability preamble.')
+    print(' --no-shuffle    do not shuffle trials.')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:', ['help','without-preamble'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:', ['help','without-preamble','no-shuffle'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -30,7 +34,9 @@ def main():
 
     ao = 0
     ai = 0
+    samplf = 20000    # [Hz]
     with_preamble = True
+    suffle = True
     nreps = 1
     duration = 1       # [s]
     interval = 1       # [s]
@@ -56,9 +62,13 @@ def main():
             ai = int(a)
         elif o == '-O':
             ao = int(a)
+        elif o == '-F':
+            samplf = float(a)
         elif o == '--without-preamble':
             with_preamble = False
-    
+        elif o == '--no-shuffle':
+            shuffle = False
+
     if len(stim_ampl) == 1:
         stim_ampl.append(stim_ampl[0])
         stim_ampl.append(1)
@@ -66,10 +76,10 @@ def main():
         print('The amplitudes must be in the form start[,stop,step].')
         sys.exit(1)
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
 
     amplitudes = np.arange(stim_ampl[0],stim_ampl[1]+1,stim_ampl[2])
-    np.random.shuffle(amplitudes)
+    if shuffle:
+        np.random.shuffle(amplitudes)
 
     try:
         os.mkdir(stimuli_directory,0755)
@@ -92,8 +102,11 @@ def main():
         stimulus[row][2] = amp
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
 
+    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
+              ' -F ' + str(samplf))
     os.system('cclamp -d ' + stimuli_directory + ' -i ' + str(interval) +
-              ' -I ' + str(interval) + ' -N ' + str(nreps))
+              ' -I ' + str(interval) + ' -N ' + str(nreps) + 
+              ' -F ' + str(samplf))
 
 if __name__ == '__main__':
     main()
