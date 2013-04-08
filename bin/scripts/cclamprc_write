@@ -18,11 +18,11 @@ print_help()
     echo "   -i   write input entry"
     echo "   -o   write output entry"
     echo "   -c   channel number"
-    echo "   -s   subdevice number (default 0 for AI, 1 for AO)"
-    echo "   -f   conversion factor (default 100 for AI, 0.001 for AO)"
-    echo "   -u   units (default mV for AI, pA for AO)"
+    echo "   -s   subdevice number (default $AI_SUBDEVICE for AI, $AO_SUBDEVICE for AO)"
+    echo "   -f   conversion factor (default $AI_CONVERSION_FACTOR for AI, $AO_CONVERSION_FACTOR for AO)"
+    echo "   -u   units (default $INPUT_UNITS for AI, $OUTPUT_UNITS for AO)"
     echo "   -e   erase existing file (default no)"
-    echo "   -r   ground reference (default GRSE)"
+    echo "   -r   ground reference (default $GROUND_REF)"
     echo
 }
 
@@ -34,7 +34,7 @@ subdevice=
 channel=
 conversion_factor=
 units=
-reference="GRSE"
+reference=$GROUND_REFERENCE
 while getopts ":eios:c:f:u:r:h" opt ; do
     case $opt in
 	e)
@@ -98,25 +98,25 @@ if [ $input == "yes" ] ; then
     n=`grep AnalogInput $rcfile | wc -l`
     header="[AnalogInput$n]"
     if [ -z "${subdevice:-}" ] ; then
-	subdevice=0
+	subdevice=$AI_SUBDEVICE
     fi
     if [ -z "${conversion_factor:-}" ] ; then
-	conversion_factor=100
+	conversion_factor=$AI_CONVERSION_FACTOR
     fi
     if [ -z "${units:-}" ] ; then
-	units="mV"
+	units=$INPUT_UNITS
     fi
 else
     n=`grep AnalogOutput $rcfile | wc -l`
     header="[AnalogOutput$n]"
     if [ -z "${subdevice:-}" ] ; then
-	subdevice=1
+	subdevice=$AO_SUBDEVICE
     fi
     if [ -z "${conversion_factor:-}" ] ; then
-	conversion_factor=0.001
+	conversion_factor=$AO_CONVERSION_FACTOR
     fi
     if [ -z "${units:-}" ] ; then
-	units="pA"
+	units=$OUTPUT_UNITS
     fi
 fi
 
