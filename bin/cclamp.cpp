@@ -35,10 +35,12 @@ namespace fs = boost::filesystem;
 using boost::property_tree::ptree;
 using namespace dynclamp;
 
+enum cclamp_mode {DEFAULT, SPONTANEOUS, TRIGGERED_RECORDER};
+
 struct CCoptions {
         useconds_t iti, ibi;
         uint nTrials, nBatches;
-        double dt;
+        double dt, tend;
         std::vector<std::string> stimulusFiles;
 };
 
@@ -84,7 +86,7 @@ bool writeDefaultConfigurationFile()
 
 void parseArgs(int argc, char *argv[], CCoptions *opt)
 {
-        double iti, ibi, freq;
+        double iti, ibi, freq, tend;
         int verbosity;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
@@ -101,6 +103,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
                         ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
                         ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
+                        ("tend,t", po::value<double>(&tend)->default_value(-1.0), "duration of recording in when no stimulus is present (sec)")
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
                         ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency")
@@ -143,6 +146,9 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                                 }
                         }
                 }
+				else if (options.count("tend")) {
+					std::cout << "No stimulus detected only recording inputs.\n";
+				}
                 else {
                         std::cout << description << "\n";
                         std::cout << "ERROR: you have to specify one of [stimulus file] or [stimulus directory]. Aborting...\n";
@@ -161,6 +167,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                 opt->ibi = (useconds_t) (ibi * 1e6);
                 opt->nTrials = nTrials;
                 opt->nBatches = nBatches;
+				opt->tend = tend;
 
         } catch (std::exception e) {
                 std::cout << e.what() << std::endl;
@@ -169,7 +176,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
 
 }
 
-bool parseConfigurationFile(std::vector<Entity*>& entities)
+bool parseConfigurationFile(std::vector<Entity*>& entities, enum cclamp_mode mode = DEFAULT)
 {
         ptree pt;
         string_dict parameters;
@@ -194,12 +201,20 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                 parameters["compress"] = "true";
                 entities.push_back( EntityFactory("H5Recorder", parameters) );
                 
-                parameters.clear();
-                parameters["id"] = "1";
-                parameters["units"] = "pA";
-                entities.push_back( EntityFactory("Waveform", parameters) );
+				switch(mode) 
+				{
+					case SPONTANEOUS:
+						Logger(Debug,"Ignoring Waveform.\n");
+						break;
+					default:
+						parameters.clear();
+						parameters["id"] = "1";
+						parameters["units"] = "pA";
+						entities.push_back( EntityFactory("Waveform", parameters) );
+						break;
+				}
 
-                int cnt = 0;
+                int AI_cnt = 0;
                 while (true) {
                         std::stringstream id;
                         id << entities.back()->id() + 1;
@@ -207,46 +222,59 @@ bool parseConfigurationFile(std::vector<Entity*>& entities)
                         parameters["id"] = id.str();
                         try {
                                 char str[64];
-                                sprintf(str, "AnalogInput%d.device", cnt);
+                                sprintf(str, "AnalogInput%d.device", AI_cnt);
                                 parameters["deviceFile"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.range", cnt);
+                                sprintf(str, "AnalogInput%d.range", AI_cnt);
                                 parameters["range"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.subdevice", cnt);
+                                sprintf(str, "AnalogInput%d.subdevice", AI_cnt);
                                 parameters["inputSubdevice"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.channel", cnt);
+                                sprintf(str, "AnalogInput%d.channel", AI_cnt);
                                 parameters["readChannel"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.conversionFactor", cnt);
+                                sprintf(str, "AnalogInput%d.conversionFactor", AI_cnt);
                                 parameters["inputConversionFactor"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.reference", cnt);
+                                sprintf(str, "AnalogInput%d.reference", AI_cnt);
                                 parameters["reference"] = pt.get<std::string>(str);
-                                sprintf(str, "AnalogInput%d.units", cnt);
+                                sprintf(str, "AnalogInput%d.units", AI_cnt);
                                 parameters["units"] = pt.get<std::string>(str);
                         } catch(...) {
                                 break;
                         }
                         entities.push_back( EntityFactory("AnalogInput", parameters) );
-                        cnt++;
+                        AI_cnt++;
                 }
+				
+				switch(mode) 
+				{
+					case SPONTANEOUS:
+						Logger(Debug, "Connecting the analog inputs [%d to %d] to the recorder.\n",
+									entities.size()-AI_cnt, entities.size());
+						for (int i=entities.size()-AI_cnt; i<entities.size(); i++)
+							entities[i]->connect(entities[0]);
+						break;
+					default:
+						std::stringstream id;
+						id << entities.back()->id() + 1;
+		                parameters.clear();
+				        parameters["id"] = id.str();
+					    parameters["deviceFile"] = pt.get<std::string>("AnalogOutput0.device");
+						parameters["outputSubdevice"] = pt.get<std::string>("AnalogOutput0.subdevice");
+						parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
+						parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
+						parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
+						parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
 
-                std::stringstream id;
-                id << entities.back()->id() + 1;
-                parameters.clear();
-                parameters["id"] = id.str();
-                parameters["deviceFile"] = pt.get<std::string>("AnalogOutput0.device");
-                parameters["outputSubdevice"] = pt.get<std::string>("AnalogOutput0.subdevice");
-                parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
-                parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
-                parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
-                parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
-
-                entities.push_back( EntityFactory("AnalogOutput", parameters) );
-                Logger(Debug, "Connecting the stimulus to the recorder.\n");
-                entities[1]->connect(entities[0]);
-                Logger(Debug, "Connecting the stimulus to the analog output.\n");
-                entities[1]->connect(entities.back());
-                Logger(Debug, "Connecting the analog inputs to the recorder.\n");
-                for (int i=2; i<entities.size()-1; i++)
-                        entities[i]->connect(entities[0]);
+						entities.push_back( EntityFactory("AnalogOutput", parameters) );
+						Logger(Debug, "Connecting the stimulus to the recorder.\n");
+						entities[1]->connect(entities[0]);
+						Logger(Debug, "Connecting the stimulus to the analog output.\n");
+						entities[1]->connect(entities.back());
+						
+						Logger(Debug, "Connecting the analog inputs [%d to %d] to the recorder.\n",
+									entities.size()-(AI_cnt+1), entities.size()-1);
+						for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
+							entities[i]->connect(entities[0]);
+						break;		
+				}      
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);
@@ -274,25 +302,36 @@ int main(int argc, char *argv[])
         dynclamp::generators::Waveform *stimulus;
         CCoptions opt;
         int i, j, k, cnt, total, retval = 0;
-
+		enum cclamp_mode mode = DEFAULT;
         SetLoggingLevel(Info);
-
-        if (! parseConfigurationFile(entities)) {
+        
+		parseArgs(argc, argv, &opt);
+		if (opt.tend > 0.0) 
+		{
+                Logger(Important, "Recording in spontaneous mode.\n");
+				mode = SPONTANEOUS;
+		}
+        if (! parseConfigurationFile(entities, mode)) {
                 writeDefaultConfigurationFile();
-                parseConfigurationFile(entities);
+                parseConfigurationFile(entities,mode);
         }
+		switch(mode)
+		{
+			case SPONTANEOUS:
+				break;	
+			default:
+		        for (i=0; i<entities.size(); i++) {
+			        if ((stimulus = dynamic_cast<dynclamp::generators::Waveform*>(entities[i])) != NULL)
+			            break;
+				}
+				if (i == entities.size()) {
+					Logger(Critical, "No stimulus present.\n");
+					retval = 1;
+					goto endMain;
+				}
+				break;
+		}
 
-        for (i=0; i<entities.size(); i++) {
-                if ((stimulus = dynamic_cast<dynclamp::generators::Waveform*>(entities[i])) != NULL)
-                        break;
-        }
-        if (i == entities.size()) {
-                Logger(Critical, "No stimulus present.\n");
-                retval = 1;
-                goto endMain;
-        }
-
-        parseArgs(argc, argv, &opt);
         SetGlobalDt(opt.dt);
 
         Logger(Info, CC_BANNER);
@@ -303,11 +342,29 @@ int main(int argc, char *argv[])
 
         bool success;
         cnt = 1;
-        total = opt.nBatches*opt.stimulusFiles.size()*opt.nTrials;
-        for (i=0; i<opt.nBatches; i++) {
-                for (j=0; j<opt.stimulusFiles.size(); j++) {
+		switch(mode)
+		{
+			case SPONTANEOUS:
+			    total = opt.nBatches*opt.nTrials;
+				for	(i=0; i<opt.nBatches; i++) {
+					    for (k=0; k<opt.nTrials; k++, cnt++) {
+                                Logger(Important, "Trial: %d of %d.\n", cnt, total);
+                                success = Simulate(entities, opt.tend);
+                                if (!success || KILL_PROGRAM())
+                                        goto endMain;
+                                if (k != opt.nTrials-1)
+                                        usleep(opt.iti);
+                        }
+					if (i != opt.nBatches-1)
+                        usleep(opt.ibi);
+				}
+				break;
+			default:
+			    total = opt.nBatches*opt.stimulusFiles.size()*opt.nTrials;
+				for	(i=0; i<opt.nBatches; i++) {
+					for (j=0; j<opt.stimulusFiles.size(); j++) {
                         stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
-                        for (k=0; k<opt.nTrials; k++, cnt++) {
+					    for (k=0; k<opt.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
                                 success = Simulate(entities, stimulus->duration());
                                 if (!success || KILL_PROGRAM())
@@ -317,10 +374,12 @@ int main(int argc, char *argv[])
                         }
                         if (j != opt.stimulusFiles.size()-1)
                                 usleep(opt.iti);
-                }
-                if (i != opt.nBatches-1)
+					}
+					if (i != opt.nBatches-1)
                         usleep(opt.ibi);
-        }
+				}
+				break;
+		}
 
 endMain:
         for (uint i=0; i<entities.size(); i++)
