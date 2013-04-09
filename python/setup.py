@@ -30,7 +30,8 @@ setup(
             'reliability_disynaptic = lcg.reliability_disynaptic:main',
             'sinusoids_protocol = lcg.sinusoids_protocol:main',
             'steps_protocol = lcg.steps_protocol:main',
-            'ltp_ltd_protocol = lcg.ltp_ltd_protocol:main'
+            'ltp_ltd_protocol = lcg.ltp_ltd_protocol:main',
+            'prc_protocol = lcg.prc_protocol:main'
             ]
         }
     )
