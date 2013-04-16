@@ -384,11 +384,11 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     K,V0 = aec.full_kernel(Vn,In,Ksize,True)
 
     # Kernels plot
-    p.figure()
+    fig = p.figure(1,figsize=[5,5],facecolor='w',edgecolor=None)
     p.plot(Kt*1e3,K*1e3,'k.-',label='Full')
     p.xlabel('t (ms)')
     p.ylabel('R (MOhm)')
-
+   
     while True:
         try:
             startTail = int(raw_input('Enter index of tail start (1 ms = %d samples): ' % int(1e-3/info['dt'])))
@@ -396,29 +396,39 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
             continue
         Ke,Km = aec.electrode_kernel(K,startTail,True)
         print('R = %g MOhm.\nV0 = %g mV.' % (np.sum(Ke*1e3),V0))
+
+        # Print kernels and compensated traces
+        p.close()
+        fig = p.figure(1,figsize=[10,5],facecolor='w',edgecolor=None)
+        plt = []
+        plt.append(fig.add_axes([0.1,0.1,0.3,0.8]))
+        
+        plt[0].plot(Kt*1e3,K*1e3,'k.-',label='Full')
+        plt[0].set_xlabel('t (ms)')
+        plt[0].set_ylabel('R (MOhm)')
+        plt.append(fig.add_axes([0.5,0.1,0.4,0.8]))
+        plt[0].plot([Kt[0]*1e3,Kt[-1]*1e3],[0,0],'g')
+        plt[0].plot(Kt*1e3,Km*1e3,'b',label='Membrane')
+        plt[0].plot(Kt[:len(Ke)]*1e3,Ke*1e3,'r',label='Electrode')
+        plt[0].set_xlabel('t (ms)')
+        plt[0].set_ylabel('R (MOhm)')
+        plt[0].legend(loc='best')
+        # AEC offline
+        ndx = np.intersect1d(np.nonzero(t > max(stimtimes[pulse]-20e-3,0))[0], 
+                             np.nonzero(t < min(stimtimes[pulse]+80e-3,t[-1]))[0])
+        Vc = aec.compensate(V[ndx],I[ndx],Ke)
+
+        plt[1].plot(t[ndx]-t[ndx[0]], V[ndx], 'k', label='Recorded')
+        plt[1].plot(t[ndx]-t[ndx[0]], Vc, 'r', label='Compensated')
+        plt[1].set_xlabel('t (ms)')
+        plt[1].set_ylabel('V (mV)')
+        plt[1].legend(loc='best')
+        fig.show()
+        # Ask user on what to do
         ok = raw_input('Ke[-1] / max(Ke) = %.2f %%. Ok? [Y/n] ' % (Ke[-1]/np.max(Ke)*100))
         if len(ok) == 0 or ok.lower() == 'y' or ok.lower() == 'yes':
             break
-
-    p.plot([Kt[0]*1e3,Kt[-1]*1e3],[0,0],'g')
-    p.plot(Kt*1e3,Km*1e3,'b',label='Membrane')
-    p.plot(Kt[:len(Ke)]*1e3,Ke*1e3,'r',label='Electrode')
-    p.xlabel('t (ms)')
-    p.ylabel('R (MOhm)')
-    p.legend(loc='best')
-    p.ioff()
-
-    ndx = np.intersect1d(np.nonzero(t > max(stimtimes[pulse]-20e-3,0))[0], 
-                         np.nonzero(t < min(stimtimes[pulse]+80e-3,t[-1]))[0])
-    Vc = aec.compensate(V[ndx],I[ndx],Ke)
-    p.figure()
-    p.plot(t[ndx]-t[ndx[0]], V[ndx], 'k', label='Recorded')
-    p.plot(t[ndx]-t[ndx[0]], Vc, 'r', label='Compensated')
-    p.xlabel('t (ms)')
-    p.ylabel('V (mV)')
-    p.legend(loc='best')
-
-    p.show()
+    p.close()
 
     if saveFile:
         np.savetxt(filename[:-3] + '_kernel.dat', Ke*1e9, '%.10e')

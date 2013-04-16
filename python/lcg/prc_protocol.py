@@ -24,7 +24,10 @@ def usage():
     print('\033[92m     -s  \033[0m  delay of the perturbation (default 1 s)')
     print('\033[92m     -A  \033[0m  amplitude of the step (default 100 pA)')
     print('\033[92m     -D  \033[0m  duration of the step (default 1.5 ms)')
-    print('\033[92m     -S  \033[0m  delay before step (does not work if preamble is used!) (1 s)\n')
+    print('\033[92m     -S  \033[0m  delay before step (does not work if preamble is used!) (1 s)')
+    print('\033[92m     --extracellular  \033[0m')
+    print(' \t Trigger extracellular stimulus (on the last AO)')
+    print(' \t Requires an extra Analog output to be specified.\n')
     print('\033[94m\tNote:\033[0m To compute the PRC for multiple cells include' + 
           '\n\t the output channels (using the -O option) '+
           'and\n\t separate the values by commas.\n')
@@ -32,11 +35,15 @@ def usage():
     print('\033[92m     --no-kernel  \033[0m   does not compute the AEC kernel.')
     print('\033[92m     --with_preamble \033[0m    includes a stability preamble.')
     print('\033[94\n\nmExamples:\033[0m')
+    print('Computes the PRC for 1 cell.')
+    print('\033[93m\tprc_protocol steps -n 80 -I 0 -O 0 -F 30000 -i 3 -d 2 -D 1 -a 150 -A 100 -s 0.75 -S 1 --no-kernel\033[0m')
     print('Computes the PRC for 2 cells simultaneously using different parameters.')
     print('\033[93m\tprc_protocol steps -n 80 -I 0,1 -O 0,1 -F 15000 -i 5 -d 2,2 -D 1,2 -a 50 -A 100,50 -s 0.8,0.3 -S 1,1.4 --no-kernel\033[0m')
+    print('Computes the PRC for 1 cell triggering an extracellular stimulus.')
+    print('\033[93m\tprc_protocol steps -n 80 -I 0 -O 0,1 -F 15000 -i 3 -d 0.2 -D 1 -a 0 -A 100 -s 0.75 -S 1 --extracellular --no-kernel\033[0m')
 modes = ['steps','frequency-clamp']
 switches = 'n:i:I:O:F:a:A:d:D:s:S:'
-long_switches = ['no-kernel','with-preamble']
+long_switches = ['no-kernel','with-preamble','extracellular']
 
 def parseGlobalArgs():
     '''
@@ -90,7 +97,8 @@ def parseStepsModeArgs(n_outputs):
                'pert_delay': [1],            # [s]
                'step_duration': [1.5],       # [s]
                'step_amplitude': [100],      # [pA]
-               'step_delay': [1]}                  # [s]
+               'step_delay': [1],            # [s]
+               'extracellular':False}
 
     for o,a in opts:
         if o == '-a':
@@ -105,6 +113,8 @@ def parseStepsModeArgs(n_outputs):
             options['pert_delay'] = [np.float(i) for i in a.split(',')]
         elif o == '-S':
             options['step_delay'] = [np.float(i) for i in a.split(',')]
+        elif o == '--extracellular':
+            options['extracellular'] = True
 
     if len(options['pert_amplitude']) < n_outputs:
         options['pert_amplitude'] = [options['pert_amplitude'][0]]*n_outputs 
@@ -146,15 +156,15 @@ def add_xml_connections(entity,connections):
 
 def create_steps_stimulus(D,d,A,a,w,s,with_preamble):
     if with_preamble:
-        stimulus = [[w,1,A[0],0,0,0,0,0,0,0,0,1],
-                    [d*1.e-3,1,A[0]+a,0,0,0,0,0,0,0,0,1],
-                    [(D-w)-d*1.e-3,1,A[0],0,0,0,0,0,0,0,0,1],
+        stimulus = [[w,1,A,0,0,0,0,0,0,0,0,1],
+                    [d*1.e-3,1,A+a,0,0,0,0,0,0,0,0,1],
+                    [(D-w-d*1.e-3),1,A,0,0,0,0,0,0,0,0,1],
                     [s,1,0,0,0,0,0,0,0,0,0,1]]
     else:
         stimulus = [[s,1,0,0,0,0,0,0,0,0,0,1],
                     [w,1,A,0,0,0,0,0,0,0,0,1],
                     [d*1.e-3,1,A+a,0,0,0,0,0,0,0,0,1],
-                    [(D-w)-d*1.e-3,1,A,0,0,0,0,0,0,0,0,1],
+                    [(D-w-d*1.e-3),1,A,0,0,0,0,0,0,0,0,1],
                     [s,1,0,0,0,0,0,0,0,0,0,1]]
         return stimulus
 
@@ -178,79 +188,99 @@ def main():
         A = opts['step_amplitude']
         w = opts['pert_delay']        
         s = opts['step_delay']
+        Ncells = len(opts['ao']) 
 
+        if opts['extracellular']:
+            opts['with_preamble'] = False
+            Ncells = len(opts['ao'])-1
+            if Ncells == 0:
+                print('Need to specify more than one AO when using the extracellular stimulus.\n')
+                sys.exit(1)
+            extracellular_file = 'extracellular_prot_%d.stim'%(opts['ao'][-1])
+            stimulus = create_steps_stimulus(D[1],d[1],0,7,w[1],s[1],opts['with_preamble'])
+            lcg.writeStimFile(extracellular_file, stimulus,opts['with_preamble'])
+            
         stim_file = list()
-        for ii in range(0,len(opts['ao'])):
+        for ii in range(0,Ncells):
             stim_file.append('prc_prot%d_%d.stim'%(opts['ai'][ii],opts['ao'][ii]))
             stimulus = create_steps_stimulus(D[ii],d[ii],A[ii],a[ii],w[ii],s[ii],opts['with_preamble'])         
             lcg.writeStimFile(stim_file[ii], stimulus, opts['with_preamble'])                
-
-        if len(opts['ao']) in [1]:
-            print("Computing PRC for channel [ai - %d, ao - %d].\n"%(opts['ai'][0],opts[ao][0]))
-            if opts['kernel']:
-                os.system('kernel_protocol -I ' + str(opts['ai'][0]) + ' -O ' + str(opts['ao'][0]) + 
-                          ' -F ' + str(opts['srate']))
-            os.system('cclamp -f ' + stim_file[0] +  ' -i ' + str(opts['interval']) +
-                      ' -I ' + str(opts['interval']) + ' -N ' + str(opts['nreps']) + 
-                      ' -F ' + str(opts['srate']))
-        else:
-            # Use dclamp; create the configuration file.
-            tmp = []
-            for f in stim_file:
-                tmp.append( np.sum(np.loadtxt(f),0)[0])
-            opts['tend'] = max(tmp)
-            root = etree.Element("dynamicclamp")
-            e_group = etree.SubElement(root,"entities")
-            simulation_parameters = etree.SubElement(root,"simulation")
-            add_xml_elements(simulation_parameters,{'rate':opts['srate'],
-                                                    'tend':opts['tend']})
-            id_cnt = 0
-            recorder = etree.SubElement(e_group,"entity")
-            add_xml_elements(recorder,{'name':'H5Recorder',
+   
+        # Use dclamp; create the configuration file.
+        tmp = []
+        for f in stim_file:
+            tmp.append( np.sum(np.loadtxt(f),0)[0])
+        opts['tend'] = max(tmp)
+        root = etree.Element("dynamicclamp")
+        e_group = etree.SubElement(root,"entities")
+        simulation_parameters = etree.SubElement(root,"simulation")
+        add_xml_elements(simulation_parameters,{'rate':opts['srate'],
+                                                'tend':opts['tend']})
+        id_cnt = 0
+        recorder = etree.SubElement(e_group,"entity")
+        add_xml_elements(recorder,{'name':'H5Recorder',
                                    'id':id_cnt})
-            add_xml_parameters(recorder,{'compress':True})        
+        add_xml_parameters(recorder,{'compress':True})        
+        id_cnt+=1
+        
+        for ii in range(Ncells):#zip(opts['ai'],opts['ao'],stim_file):
+                
+            analogInput = etree.SubElement(e_group,"entity")
+            add_xml_elements(analogInput,{'name':'AnalogInput',
+                                          'id':id_cnt})
+            add_xml_parameters(analogInput,{'deviceFile':'/dev/comedi0',
+                                            'inputSubdevice':os.environ['AI_SUBDEVICE'],
+                                            'inputRange': [-10,10],
+                                            'readChannel': opts['ai'][ii],
+                                            'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],
+                                            'reference':os.environ['GROUND_REFERENCE']})
+            add_xml_connections(analogInput,[0])
+            id_cnt+=1
+            analogOutput = etree.SubElement(e_group,"entity")
+            add_xml_elements(analogOutput,{'name':'AnalogOutput',
+                                           'id':id_cnt})
+            add_xml_parameters(analogOutput,{'deviceFile':'/dev/comedi0',
+                                             'outputSubdevice':os.environ['AO_SUBDEVICE'],
+                                             'writeChannel': opts['ao'][ii],
+                                             'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR'],
+                                             'reference':os.environ['GROUND_REFERENCE']})
+            id_cnt+=1
+            waveform = etree.SubElement(e_group,"entity")
+            add_xml_elements(waveform,{'name':'Waveform',
+                                       'id':id_cnt})
+            add_xml_parameters(waveform,{'filename':stim_file[ii],
+                                         'units':'pA'})
+            add_xml_connections(waveform,[0,id_cnt-1])
             id_cnt+=1
 
-            for ai,ao,ff in zip(opts['ai'],opts['ao'],stim_file):
-
-                analogInput = etree.SubElement(e_group,"entity")
-                add_xml_elements(analogInput,{'name':'AnalogInput',
-                                         'id':id_cnt})
-                add_xml_parameters(analogInput,{'deviceFile':'/dev/comedi0',
-                                                'inputSubdevice':os.environ['AI_SUBDEVICE'],
-                                                'inputRange': [-10,10],
-                                                'readChannel': ai,
-                                                'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],
-                                                'reference':os.environ['GROUND_REFERENCE']})
-                add_xml_connections(analogInput,[0])
-                id_cnt+=1
-                analogOutput = etree.SubElement(e_group,"entity")
-                add_xml_elements(analogOutput,{'name':'AnalogOutput',
-                                              'id':id_cnt})
-                add_xml_parameters(analogOutput,{'deviceFile':'/dev/comedi0',
-                                                'outputSubdevice':os.environ['AO_SUBDEVICE'],
-                                                'writeChannel': ao,
-                                                'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR'],
-                                                'reference':os.environ['GROUND_REFERENCE']})
-                id_cnt+=1
-                waveform = etree.SubElement(e_group,"entity")
-                add_xml_elements(waveform,{'name':'Waveform',
-                                              'id':id_cnt})
-                add_xml_parameters(waveform,{'filename':ff,
-                                             'units':'pA'})
-                add_xml_connections(waveform,[0,id_cnt-1])
-                id_cnt+=1
-            # Write configuration file
-            dclamp_tree = etree.ElementTree(root) 
-            config_file = 'prc_steps.xml'
-            dclamp_tree.write(config_file,pretty_print=True)
+        if opts['extracellular']:
+            analogOutput = etree.SubElement(e_group,"entity")
+            add_xml_elements(analogOutput,{'name':'AnalogOutput',
+                                           'id':id_cnt})
+            add_xml_parameters(analogOutput,{'deviceFile':'/dev/comedi0',
+                                             'outputSubdevice':os.environ['AO_SUBDEVICE'],
+                                             'writeChannel': opts['ao'][-1],
+                                             'outputConversionFactor':1,
+                                             'reference':os.environ['GROUND_REFERENCE']})
+            id_cnt+=1
+            waveform = etree.SubElement(e_group,"entity")
+            add_xml_elements(waveform,{'name':'Waveform',
+                                       'id':id_cnt})
+            add_xml_parameters(waveform,{'filename':extracellular_file,
+                                         'units':'pA'})
+            add_xml_connections(waveform,[0,id_cnt-1])
+            id_cnt+=1
+        # Write configuration file
+        dclamp_tree = etree.ElementTree(root) 
+        config_file = 'prc_steps.xml'
+        dclamp_tree.write(config_file,pretty_print=True)
             # Run protocol
-            if opts['kernel']:
-                for ai,ao in zip(opts['ai'],opts['ao']):
-                    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
-                              ' -F ' + str(opts['srate']) + ' -a')
-            os.system('dclamp -c ' + config_file +  ' -i ' + str(opts['interval']) +
-                      ' -I ' + str(opts['interval']) + ' -N ' + str(opts['nreps']))
+        if opts['kernel']:
+            for ai,ao in zip(opts['ai'],opts['ao']):
+                os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
+                          ' -F ' + str(opts['srate']) + ' -a')
+        os.system('dclamp -c ' + config_file +  ' -i ' + str(opts['interval']) +
+                  ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']))
         
     elif mode in ['frequency-clamp']:
 
