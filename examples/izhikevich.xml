@@ -1,0 +1,67 @@
+<dynamicclamp>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+	<filename>izhikevich_test.h5</filename>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>IzhikevichNeuron</name>
+      <id>1</id>
+      <parameters>
+	<c>-50</c>
+	<d>2</d>
+	<Vspk>30</Vspk>
+	<Iext>5</Iext>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+
+    <entity>
+      <name>SynapticConnection</name>
+      <id>2</id>
+      <parameters>
+	<delay>3e-3</delay>
+	<weight>1</weight>
+      </parameters>
+      <connections>3</connections>
+    </entity>
+
+	<entity>
+      <name>TMGSynapse</name>
+      <id>3</id>
+      <parameters>
+	<E>0</E>
+	<U>0.03</U>
+	<tau1>3e-3</tau1>
+	<tauRec>100e-3</tauRec>
+	<tauFacil>1</tauFacil>
+      </parameters>
+      <connections>0,4</connections>
+    </entity>
+
+    <entity>
+      <name>IzhikevichNeuron</name>
+      <id>4</id>
+      <parameters>
+	<a>0.01</a>
+	<b>0.25</b>
+	<Vspk>30</Vspk>
+	<Iext>1</Iext>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+  </entities>
+
+  <simulation>
+    <tend>5</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>

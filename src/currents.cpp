@@ -302,7 +302,7 @@ void HHPotassium::evolve()
         k2 = dt * (ninf-(HH_K_N+0.5*k1))/(taun*1e-3);
         k3 = dt * (ninf-(HH_K_N+0.5*k2))/(taun*1e-3);
         k4 = dt * (ninf-(HH_K_N+k3))/(taun*1e-3);
-        HH_K_N = HH_K_N + 0.1666666667 * (k1+2*k2+2*k3+k4);
+        HH_K_N = HH_K_N + ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
         */
 
         IC_FRACTION = HH_K_N*HH_K_N*HH_K_N*HH_K_N;

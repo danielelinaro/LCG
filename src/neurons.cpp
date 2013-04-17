@@ -26,6 +26,29 @@ dynclamp::Entity* LIFNeuronFactory(string_dict& args)
         return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
 }
 
+dynclamp::Entity* IzhikevichNeuronFactory(string_dict& args)
+{
+        uint id;
+        double a, b, c, d, Vspk, Iext;
+
+        id = dynclamp::GetIdFromDictionary(args);
+
+		if (! dynclamp::CheckAndExtractDouble(args, "a", &a))
+                a = 0.02;
+		if (! dynclamp::CheckAndExtractDouble(args, "b", &b))
+                b = 0.2;
+		if (! dynclamp::CheckAndExtractDouble(args, "c", &c))
+                c = -65;
+		if (! dynclamp::CheckAndExtractDouble(args, "d", &d))
+                Vspk = 2;
+		if (! dynclamp::CheckAndExtractDouble(args, "Vspk", &Vspk))
+                Vspk = 30;
+		if (! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext))
+                Iext = 0;
+
+        return new dynclamp::neurons::IzhikevichNeuron(a, b, c, d, Vspk, Iext, id);
+}
+
 dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args)
 {
         uint id;
@@ -233,6 +256,69 @@ void LIFNeuron::evolve()
         }
 }
 
+IzhikevichNeuron::IzhikevichNeuron(double a, double b, double c,
+                     double d, double Vspk, double Iext,
+                     uint id)
+        : Neuron(c, id)
+{
+        m_state.push_back(b*VM);                  // m_state[1] -> u the membrane recovery variable
+        IZH_A = a;
+        IZH_B = b;
+        IZH_C = c;
+        IZH_D = d;
+        IZH_VSPK = Vspk;
+        IZH_IEXT = Iext;
+        setName("IzhikevichNeuron");
+        setUnits("mV");
+}
+
+bool IzhikevichNeuron::initialise()
+{
+        if (! Neuron::initialise())
+                return false;
+        return true;
+}
+
+void IzhikevichNeuron::evolve()
+{
+        double t = GetGlobalTime();
+        double dt = GetGlobalDt()*1e3; //parameters for the model are in ms.
+        double Iinj = IZH_IEXT, k1, k2, k3, k4, l1, l2, l3, l4,x,y;
+        int nInputs = m_inputs.size();
+        for (int i=0; i<nInputs; i++)
+             Iinj += m_inputs[i];
+		
+        
+
+
+		// Runge-Kutta 4
+		k1 = (0.04 * VM * VM) + 5 * VM + 140 - IZH_U + Iinj;
+		l1 = IZH_A * (IZH_B * VM - IZH_U);
+		
+		x = VM + dt * 0.5 * k1; 
+		y = IZH_U + dt * 0.5 * l1;
+		k2 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
+		l2 = IZH_A * (IZH_B * x - y);
+	
+		x = VM + dt * 0.5 * k2; 
+		y = IZH_U + dt * 0.5 * l2;
+		k3 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
+		l3 = IZH_A * (IZH_B * x - y);
+	
+		x = VM + dt * k3; 
+		y = IZH_U + dt * l3;
+		k4 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
+		l4 = IZH_A * (IZH_B * x - y);
+		
+		VM = VM + dt * ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
+		IZH_U = IZH_U + dt * ONE_OVER_SIX * (l1+2*l2+2*l3+l4);
+		
+		if(VM >= IZH_VSPK) {
+                VM = IZH_C;
+				IZH_U += IZH_D;
+                emitSpike();
+        }
+}
 ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, double Iext,
                                                double area, double spikeThreshold, double V0,
                                                uint id)

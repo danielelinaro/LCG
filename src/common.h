@@ -64,6 +64,7 @@ enum {
 
 #define INFINITE     std::numeric_limits<double>::infinity() 
 #define NOT_A_NUMBER std::numeric_limits<double>::quiet_NaN() 
+#define ONE_OVER_SIX 0.16666666667
 
 #endif
 

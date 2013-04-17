@@ -19,6 +19,16 @@ namespace fs = boost::filesystem;
 
 #define VM       m_state[0]
 
+#define IZH_V	m_state[0]
+#define IZH_U	m_state[1]
+#define IZH_A   m_parameters["a"]
+#define IZH_B   m_parameters["b"]
+#define IZH_C   m_parameters["c"]
+#define IZH_D	m_parameters["d"]
+#define IZH_VSPK	m_parameters["Vspk"]
+#define IZH_IEXT	m_parameters["Iext"]
+
+
 #define LIF_C      m_parameters["C"]
 #define LIF_TAU    m_parameters["tau"]
 #define LIF_TARP   m_parameters["tarp"]
@@ -74,6 +84,40 @@ public:
          */
         LIFNeuron(double C, double tau, double tarp,
                   double Er, double E0, double Vth, double Iext,
+                  uint id = GetId());
+        virtual bool initialise();
+
+protected:
+        virtual void evolve();
+
+private:
+        double m_tPrevSpike;
+};
+
+class IzhikevichNeuron : public Neuron {
+public:
+
+        /**
+		 * If v is the membrane voltage and u the membrane recovery variable:
+         * \param a is the timescale of the recovery variable u (default 0.02).
+		 * \param b is the coupling between u and v (default 0.2).
+		 * \param c is the afterspike reset value of v (default -65).
+         * \param d is the afterspike reset of u (default 2).
+         * \param Vspk peak voltage of the spike (default 30mV).
+         * \param Iext externally applied current.
+		 * The parameters used in Izhikevich,2003 can reproduce a wide range of 
+		 * spiking behaviours. Here follow some rough examples:
+		 *		Excitatory neuron parameters
+		 *		- Regular spiking: (0.02,0.2,-65,8,30)
+		 *		- Intrinsic bursting: (0.02,0.2,-55,2,30)
+		 *		- Chattering: (0.02,0.2,-50,2,30)
+		 *		Inhibitory neuron parameters
+		 *		- Fast spiking: (0.1,0.2,-65,8,30)
+		 *		- Low threshold spiking: (0.1,0.25,-65,8,30)
+		 *		- Regular spiking: (0.02,0.2,-65,8,30)
+         */
+        IzhikevichNeuron(double a, double b, double c,
+                  double d, double Vspk, double Iext,
                   uint id = GetId());
         virtual bool initialise();
 
@@ -165,6 +209,7 @@ extern "C" {
 #endif
 
 dynclamp::Entity* LIFNeuronFactory(string_dict& args);
+dynclamp::Entity* IzhikevichNeuronFactory(string_dict& args);
 dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args);
 #ifdef HAVE_LIBCOMEDI
 dynclamp::Entity* RealNeuronFactory(string_dict& args);
