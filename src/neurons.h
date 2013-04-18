@@ -114,7 +114,10 @@ public:
 		 *		Inhibitory neuron parameters
 		 *		- Fast spiking: (0.1,0.2,-65,8,30)
 		 *		- Low threshold spiking: (0.1,0.25,-65,8,30)
-		 *		- Regular spiking: (0.02,0.2,-65,8,30)
+		 *		Thalamic relay neuron parameters
+		 *		- (0.02,0.2,-65,8,30)
+		 *		Resonator (RZ):
+		 *		- (0.1,0.26,-65,8,30)
          */
         IzhikevichNeuron(double a, double b, double c,
                   double d, double Vspk, double Iext,
