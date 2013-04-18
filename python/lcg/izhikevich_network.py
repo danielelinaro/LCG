@@ -6,6 +6,7 @@ import numpy as np
 import getopt
 import lcg
 from lxml import etree
+from numpy.random import uniform as rnd
 
 def usage():
     print('\nUsage: %s mode [option <value>]' % os.path.basename(sys.argv[0]))
@@ -53,7 +54,7 @@ def parseGlobalArgs():
                'tend':1,
                'N':[20,5,5],
                'a':[[0.019,0.021],[0.02,0.021],[0.08,0.11]],
-               'b':[10.3,20.21],[0.25,0.26],[0.2,0.21]],
+               'b':[[0.19,0.21],[0.25,0.26],[0.2,0.21]],
                'c':[[-65,-50],[-55,-65],[-65,-67]],
                'd':[[7,8],[2,4],[2,2.1]],
                'Vspk':[30,30,30],
@@ -225,16 +226,17 @@ def main():
     if mode in ['hybrid']:
         real_neuron = max(all_neurons)+1
         all_neurons.append(real_neuron)
-    
     syn = []
     for i,s in zip(range(len(neuron_id)),opts['syn']):
-        syn.append([np.random.choice(all_neurons,s) for n in neuron_id[i]])
+        idx = [np.array([all_neurons[int(rnd(max(all_neurons)))] for i in range(s)]) for n in neuron_id[i]]
+        syn.append(idx)
     syn_count = max(all_neurons)+1
 
     syn_param = [] # [synapse_id,origin,target,weight,type]
     for nn,ss,syn_type,type_weight in zip(neuron_id,syn,opts['synType'],opts['w']):
         for n,s in zip(nn,ss):
             if not opts['autapses']:
+                print n, s
                 s = s[np.where(s!=n)[0]]
             weights = np.bincount(s)
             targets = np.arange(len(weights))
@@ -245,9 +247,8 @@ def main():
                 syn_count += 2
     if mode in ['hybrid']:
         rn_syn_param = []
-        
-        s = np.random.choice(all_neurons,opts['RN_syn_n'])
-
+        s = np.array([all_neurons[int(rnd(max(all_neurons)))] for i in range(opts['RN_syn_n'])])
+        print s
         if not opts['autapses']:
             s = s[np.where(s!=real_neuron)[0]]
         weights = np.bincount(s)
@@ -284,7 +285,7 @@ def main():
                                    'deviceFile':'/dev/comedi0',
                                    'inputSubdevice':os.environ['AI_SUBDEVICE'],
                                    'outputSubdevice':os.environ['AO_SUBDEVICE'],
-                                   'inputRange': [-10,10],
+                                   'inputRange': '[-10,+10]',
                                    'readChannel': opts['ai'],
                                    'writeChannel': opts['ao'],
                                    'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],

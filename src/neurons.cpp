@@ -288,10 +288,13 @@ void IzhikevichNeuron::evolve()
         for (int i=0; i<nInputs; i++)
              Iinj += m_inputs[i];
 		
-        
+        //Euler
 
+		VM = VM + dt * ((0.04 * VM * VM) + 5 * VM + 140 - IZH_U + Iinj);
+		IZH_U = IZH_U + dt * (IZH_A * (IZH_B * VM - IZH_U));
 
 		// Runge-Kutta 4
+		/*
 		k1 = (0.04 * VM * VM) + 5 * VM + 140 - IZH_U + Iinj;
 		l1 = IZH_A * (IZH_B * VM - IZH_U);
 		
@@ -312,7 +315,7 @@ void IzhikevichNeuron::evolve()
 		
 		VM = VM + dt * ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
 		IZH_U = IZH_U + dt * ONE_OVER_SIX * (l1+2*l2+2*l3+l4);
-		
+		*/
 		if(VM >= IZH_VSPK) {
                 VM = IZH_C;
 				IZH_U += IZH_D;
