@@ -3,6 +3,7 @@
 import sys
 import os
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -202,18 +203,18 @@ def parseConductanceModeArgs():
 
 def run_frequency(f, mode, opts):
     if mode == 'current':
-        os.system('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(10000))
-                  + '/" ' +  current_template_file + ' > ' + current_file)
+        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(10000))
+                  + '/" ' +  current_template_file + ' > ' + current_file, shell=True)
         if opts['with_bg']:
-            os.system('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file)
-            os.system('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file)
-            os.system('dclamp -V 3 -c ' + config_file)
+            sub.call('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
+            sub.call('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
+            sub.call(['dclamp', '-V 3', '-c ' + config_file])
         else:
-            os.system('cclamp -V 3 -f ' + current_file)
+            sub.call(['cclamp', '-V 3', '-f ' + current_file])
     elif mode == 'conductance':
-        os.system('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file)
-        os.system('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file)
-        os.system('dclamp -V 3 -c ' + config_file)
+        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
+        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
+        sub.call(['dclamp', '-V 3', '-c ' + config_file])
 
 def main():
     mode = None
@@ -298,12 +299,12 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if cnt%opts['kernel_frequency'] == 0:
-                os.system('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']))
+                sub.call(['kernel_protocol', '-I ' + str(opts['ai']), ' -O ' + str(opts['ao'])])
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             run_frequency(f, mode, opts)
             if cnt != tot:
-                os.system('sleep ' + str(opts['interval']))
+                sub.call(['sleep', str(opts['interval'])])
 
 if __name__ == '__main__':
     main()
