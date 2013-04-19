@@ -23,7 +23,7 @@ setup(
             'cv = lcg.cv:main',
             'disynaptic_microcircuit = lcg.disynaptic_microcircuit:main',
             'extracellular_protocol = lcg.extracellular_protocol:main',
-            'f_opt = lcg.f_opt:main',
+            'fopt = lcg.fopt:main',
             'fclamp = lcg.fclamp:main',
             'psp_opt = lcg.psp_opt:main',
             'pulses_protocol = lcg.pulses_protocol:main',

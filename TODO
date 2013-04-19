@@ -1,6 +1,7 @@
 
 === Short term (and therefore relatively simple) ===
 
+-) remove useless scripts!
 -) analog output should also be proxied in asynchronous mode.
 -) add a Logger object.
 -) see whether OU*, TimeLogger and Delay can be removed.

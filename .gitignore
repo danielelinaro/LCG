@@ -26,14 +26,9 @@ missing
 ar-lib
 autogen.sh
 autom4te.cache/
-bin/dclamp
 depcomp
-examples/aec_test
 install-sh
 libtool
 ltmain.sh
 stamp-h1
-cclamp
-test_daq
-constant_output
-zero_output
+
