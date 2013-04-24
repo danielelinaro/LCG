@@ -8,8 +8,8 @@ import numpy as np
 import lcg
 
 def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1, dclamp='dclamp'):
-    ratio = lcg.computeRatesRatio(Vbal, Rm)
-    G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], Rm, R_exc)
+    ratio = lcg.computeRatesRatio(Vm=Vbal, Rin=Rm)
+    G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], R_exc, Rin=Rm)
     lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, outfile='spontaneous.xml')
     if interval > 0:
         os.system('sleep ' + str(interval))

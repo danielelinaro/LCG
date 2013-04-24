@@ -252,8 +252,8 @@ def main():
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
             lcg.writeStimFile(current_template_file, current, True)
         else:
-            ratio = lcg.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
-            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
+            ratio = lcg.computeRatesRatio(Vm=opts['balanced_voltage'], Rin=opts['input_resistance'])
+            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=opts['R_exc'], Rin=opts['input_resistance'])
             if opts['std'] == 0 and opts['tau'] == 0:
                 lcg.writeSinusoidsConfig(opts['mean'], opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                         opts['ai'], opts['ao'], opts['duration'], config_file)
@@ -261,8 +261,8 @@ def main():
                 lcg.writeSinusoidsConfig(opts, opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                         opts['ai'], opts['ao'], opts['duration'], config_file)
     else:
-        ratio = lcg.computeRatesRatio(opts['balanced_voltage'], opts['input_resistance'])
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, opts['input_resistance'], opts['R_exc'])
+        ratio = lcg.computeRatesRatio(Vm=opts['balanced_voltage'], Rin=opts['input_resistance'])
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=opts['R_exc'], Rin=opts['input_resistance'])
         lcg.writeSinusoidsConfig(0, 50, Gm_exc, Gs_exc, Gm_inh, Gs_inh,
                                 opts['ai'], opts['ao'], opts['duration'], config_file)
         os.remove(current_template_file)
