@@ -103,8 +103,8 @@ def main():
             print('You must to specify the balanced voltage (-v switch).')
             sys.exit(1)
 
-        ratio = lcg.computeRatesRatio(balanced_voltage, input_resistance)
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, input_resistance, R_exc)
+        ratio = lcg.computeRatesRatio(Vm=balanced_voltage, Rin=input_resistance)
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc, Rin=input_resistance)
         lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao, with_bg, Gm_exc, Gs_exc, Gm_inh, Gs_inh)
     else:
         lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao)

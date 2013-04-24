@@ -50,8 +50,8 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
     taus = {'exc': 5, 'inh': 10}
     for rate in rates_exc:
         for V in Vm:
-            ratio = lcg.computeRatesRatio(V, Rm)
-            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, Rm, rate)
+            ratio = lcg.computeRatesRatio(Vm=V, Rin=Rm)
+            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, rate, Rin=Rm)
             print('Vm = %g, rates = %g Hz (exc) %g Hz (inh).' % (V, rate, rate/ratio))
             conductance[1][2] = Gm_exc
             conductance[1][3] = Gs_exc

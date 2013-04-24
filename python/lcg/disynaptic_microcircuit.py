@@ -139,8 +139,8 @@ def main():
         sys.exit(1)
 
     if with_bg:
-        ratio = lcg.computeRatesRatio(balanced_voltage, input_resistance)
-        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, input_resistance, bg_freq)
+        ratio = lcg.computeRatesRatio(Vm=balanced_voltage, Rin=input_resistance)
+        Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=bg_freq, Rin=input_resistance)
         lcg.writeGStimFiles({'m': Gm_exc, 's': Gs_exc, 'tau': 5, 'seed': 5061983},
                            {'m': Gm_inh, 's': Gs_inh, 'tau': 10, 'seed': 7051983},
                            stim_dur, 0, 0)

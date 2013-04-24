@@ -239,8 +239,8 @@ def writefIStim(Imin,Imax,Istep,noisy=False):
         writeStimFile('fi_%02d.stim' % (k+1), A)
 
 def writeNoisyBackgroundConfig(filename='ou.xml', Rm=0, Vm=-57.6, R_exc=7000, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
-    ratio = computeRatesRatio(Vm, Rm, tau_exc, tau_inh, E_exc, E_inh)
-    Gm_exc,Gm_inh,Gs_exc,Gs_inh = computeSynapticBackgroundCoefficients(ratio, Rm, R_exc, tau_exc, tau_inh)
+    ratio = computeRatesRatio(Vm, Rin=Rm, tau_exc, tau_inh, E_exc, E_inh)
+    Gm_exc,Gm_inh,Gs_exc,Gs_inh = computeSynapticBackgroundCoefficients(ratio, R_exc, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh)
     fid = open(filename,'w')
     fid.write('<dynamicclamp>\n<entities>\n');
     fid.write('<ou>\n');
@@ -297,18 +297,19 @@ def substituteStrings(infile, outfile, rules):
         fid.write(line)
     fid.close()
 
-def computeRatesRatio(Vm=-57.6, Rm=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
+def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
     """
-    ratio = computeRatesRatio(Vm, Rm, tau_exc, tau_inh)
-    
     Parameters:
-    Vm - membrane potential (mV), default -57.6.
-    Rm - membrane resistance (MOhm), default 0, which means to use biophysically realistic
-         values for single channel conductances (50 and 190 pS for AMPA and GABA, respectively).
-    tau_exc - time constant of excitatory inputs (msec), default 5.
-    tau_inh - time constant of inhibitory inputs (msec), default 10.
-    E_exc - reversal potential of excitatory inputs (mV), default 0.
-    E_inh - reversal potential of inhibitory inputs (mV), default -80.
+    Vm - membrane potential (mV), at which the mean injected current is 0.
+    g0_exc - single synaptic excitatory conductance (pS).
+    g0_inh - single synaptic inhibitory conductance (pS).
+    Rin - input resistance of the cell(MOhm). If this value is not 0, g0_exc and
+         g0_inh are ignored and the values 0.02/Rm and 0.06/Rm
+         are used, respectively.
+    tau_exc - time constant of excitatory inputs (msec).
+    tau_inh - time constant of inhibitory inputs (msec).
+    E_exc - reversal potential of excitatory inputs (mV).
+    E_inh - reversal potential of inhibitory inputs (mV).
     """ 
     Vm = Vm * 1e-3         # (V)
     Rm = Rm * 1e6          # (Ohm)
@@ -316,33 +317,36 @@ def computeRatesRatio(Vm=-57.6, Rm=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80)
     tau_inh = tau_inh*1e-3 # (s)
     E_exc = E_exc * 1e-3   # (V)
     E_inh = E_inh * 1e-3   # (V)
-    
-    if Rm == 0:
-        g_exc = 50e-12     # (S)
-        g_inh = 190e-12    # (S)
-    else:
+
+    g_exc = g0_exc*1e-12   # (S)
+    g_inh = g0_inh*1e-12   # (S)
+
+    if Rm != 0.0:
         g_exc = 0.02 / Rm  # (S)
         g_inh = 0.06 / Rm  # (S)
         
     return (g_inh * tau_inh * (E_inh - Vm)) / (g_exc * tau_exc * (Vm - E_exc))
 
-def computeSynapticBackgroundCoefficients(ratio, Rm=0, R_exc=7000, tau_exc=5, tau_inh=10):
+def computeSynapticBackgroundCoefficients(ratio, R_exc=7000, g0_exc=50, g0_inh=190, N=1, Rin=0, tau_exc=5, tau_inh=10):
     """
-    Gm_exc,Gm_inh,Gs_exc,Gs_inh = 
-         computeSynapticBackgroundCoefficients(ratio, Rm, R_exc, tau_exc, tau_inh)
     Parameters:
     ratio - ratio between excitatory and inhibitory inputs.
-    Rm - membrane resistance (MOhm).
     R_exc - rate of excitatory inputs (Hz).
-    tau_exc - time constant of excitatory inputs (msec), default 5.
-    tau_inh - time constant of inhibitory inputs (msec), default 10.
+    g0_exc - single synaptic excitatory conductance (pS).
+    g0_inh - single synaptic inhibitory conductance (pS).
+    N - number of synaptic contacts.
+    Rin - input resistance of the cell(MOhm). If this value is not 0, g0_exc and
+         g0_inh are ignored and the values 0.02/Rm and 0.06/Rm
+         are used, respectively.
+    tau_exc - time constant of excitatory inputs (msec).
+    tau_inh - time constant of inhibitory inputs (msec).
     """
     Rm = Rm * 1e6              # (Ohm)
     tau_exc = tau_exc*1e-3     # (s)
     tau_inh = tau_inh*1e-3     # (s)
     if Rm == 0:
-        g_exc = 50e-12         # (S)
-        g_inh = 190e-12        # (S)
+        g_exc = N*g0_exc*1e-12   # (S)
+        g_inh = N*g0_inh*1e-12   # (S)
     else:
         g_exc = 0.02 / Rm      # (S)
         g_inh = 0.06 / Rm      # (S)
