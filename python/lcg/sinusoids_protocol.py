@@ -67,8 +67,8 @@ def parseGlobalArgs():
                'reps': 1,
                'interval': 60,   # [s]
                'duration': 30,   # [s]
+               'kernel_frequency': 0,
                'ai': 0, 'ao': 0}
-    options['kernel_frequency'] = len(options['frequencies'])
 
     for o,a in opts:
         if o == '-f':
@@ -87,6 +87,9 @@ def parseGlobalArgs():
             options['duration'] = float(a)
         elif o == '-k':
             options['kernel_frequency'] = int(a)
+
+    if options['kernel_frequency'] <= 0:
+        options['kernel_frequency'] = len(options['frequencies'])
 
     return options
 

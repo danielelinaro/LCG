@@ -1,0 +1,112 @@
+<dynamicclamp>
+  <entities>
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters><compress>true</compress></parameters>
+    </entity>
+
+    <entity>
+      <name>RealNeuron</name>
+      <id>1</id>
+      <parameters>
+	<spikeThreshold>-20</spikeThreshold>
+	<V0>-65</V0>
+	<kernelFile>kernel.dat</kernelFile>
+	<deviceFile>/dev/comedi0</deviceFile>
+	<inputSubdevice>0</inputSubdevice>
+	<outputSubdevice>1</outputSubdevice>
+	<inputRange>[-10,+10]</inputRange>
+	<readChannel>AI</readChannel>
+	<writeChannel>AO</writeChannel>
+	<inputConversionFactor>AI_CONVERSION_FACTOR</inputConversionFactor>
+	<outputConversionFactor>AO_CONVERSION_FACTOR</outputConversionFactor>
+	<reference>GRSE</reference>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>2</id>
+      <parameters>
+	<filename>gexc.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,3</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>3</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>4</id>
+      <parameters>
+	<filename>ginh.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,5</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>5</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>6</id>
+      <parameters>
+	<filename>gexc_common.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,7</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>7</id>
+      <parameters>
+	<E>0</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>8</id>
+      <parameters>
+	<filename>ginh_common.stim</filename>
+	<units>nS</units>
+      </parameters>
+      <connections>0,9</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceStimulus</name>
+      <id>9</id>
+      <parameters>
+	<E>-80</E>
+      </parameters>
+      <connections>1</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>TEND</tend>
+    <rate>20000</rate>
+  </simulation>
+
+</dynamicclamp>
