@@ -136,7 +136,7 @@ def main():
                          {'>AI<': '>'+str(opts['ai'])+'<', '>AO<': '>'+str(opts['ao'])+'<',
                           'AI_CONVERSION_FACTOR': os.environ['AI_CONVERSION_FACTOR'],
                           'AO_CONVERSION_FACTOR': os.environ['AO_CONVERSION_FACTOR'],
-                          'TEND': 5})
+                          'TEND': opts['before']+opts['duration']+opts['after']})
 
     cnt = 0
     tot = len(opts['balanced_voltages']) * len(opts['correlation_coefficients']) * opts['reps']
