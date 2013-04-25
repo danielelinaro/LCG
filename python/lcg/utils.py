@@ -239,7 +239,7 @@ def writefIStim(Imin,Imax,Istep,noisy=False):
         writeStimFile('fi_%02d.stim' % (k+1), A)
 
 def writeNoisyBackgroundConfig(filename='ou.xml', Rm=0, Vm=-57.6, R_exc=7000, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
-    ratio = computeRatesRatio(Vm, Rin=Rm, tau_exc, tau_inh, E_exc, E_inh)
+    ratio = computeRatesRatio(Vm, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh, E_exc=E_exc, E_inh=E_inh)
     Gm_exc,Gm_inh,Gs_exc,Gs_inh = computeSynapticBackgroundCoefficients(ratio, R_exc, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh)
     fid = open(filename,'w')
     fid.write('<dynamicclamp>\n<entities>\n');
