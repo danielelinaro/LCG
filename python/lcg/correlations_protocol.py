@@ -6,6 +6,7 @@ import getopt
 import numpy as np
 import lcg
 import time
+import subprocess as sub
 
 stim_files = {'gexc': 'gexc.stim', 'gexc_common': 'gexc_common.stim',
               'ginh': 'ginh.stim', 'ginh_common': 'ginh_common.stim'}
@@ -29,8 +30,7 @@ def usage():
     print('     -d   Duration of the stimulation (default 1.1 sec).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
-    print('     -k   Frequency at which a new kernel should be computed')
-    print('          (the default is just at the beginning).')
+    print('     -k   Frequency at which a new kernel should be computed (the default is just at the beginning).')
     print('     -b   Time before stimulus onset (default 0.1 sec).')
     print('     -a   Time after stimulus offset (default 0.3 sec).')
     print('')
@@ -47,7 +47,7 @@ def parseArgs():
                'interval': 2,   # [s]
                'duration': 1.1,   # [s]
                'kernel_frequency': 0,
-               'correlation_coeffs': None,
+               'correlation_coefficients': None,
                'balanced_voltages': None,
                'input_resistance': None,
                'R_exc': None,
@@ -90,17 +90,39 @@ def parseArgs():
     if not options['input_resistance']:
         print('You must specify the input resistance of the cell (-R switch).')
         sys.exit(1)
-            
+    
+    if options['input_resistance'] <= 0:
+        print('The input resistance must be positive.')
+        sys.exit(1)
+
     if not options['R_exc']:
         print('You must specify the firing frequency of the background excitatory population (-F switch).')
         sys.exit(1)
                 
+    if options['R_exc'] <= 0:
+        print('The firing frequency of the excitatory population must be positive.')
+        sys.exit(1)
+
     if not options['balanced_voltages']:
         print('You must specify the balanced voltage (-v switch)')
         sys.exit(1)
 
+    if min(options['balanced_voltages']) < -80 or max(options['balanced_voltages']) > 0:
+        plural = ''
+        if len(options['balanced_voltages']) > 1:
+            plural = 's'
+        print('The balanced voltage' + plural + ' must be between -80 and 0 mV.')
+        sys.exit(1)
+
     if not options['correlation_coefficients']:
         print('You must specify the balanced voltage (-c switch)')
+        sys.exit(1)
+
+    if min(options['correlation_coefficients']) < 0 or max(options['correlation_coefficients']) > 1:
+        plural = ''
+        if len(options['correlation_coefficients']) > 1:
+            plural = 's'
+        print('The correlation coefficient' + plural + ' must be between 0 and 1.')
         sys.exit(1)
 
     if options['kernel_frequency'] <= 0:
@@ -138,45 +160,36 @@ def main():
     for v in opts['balanced_voltages']:
         ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
         for c in opts['correlation_coefficients']:
-            gexc['m'],ginh['m'],gexc['s'],ginh['s'] = lcg.computeSynapticBackgroundCoefficients(ratio,
-                                                                                                R_exc=(1-c)*opts['R_exc'],
-                                                                                                Rin=opts['input_resistance'])
-            gexc['mc'],ginh['mc'],gexc['sc'],ginh['sc'] = lcg.computeSynapticBackgroundCoefficients(ratio,
-                                                                                                    R_exc=c*opts['R_exc'],
-                                                                                                    Rin=opts['input_resistance'])
-
+            gexc['m'],ginh['m'],gexc['s'],ginh['s'] = lcg.computeSynapticBackgroundCoefficients(
+                ratio,R_exc=(1-c)*opts['R_exc'],Rin=opts['input_resistance'])
+            gexc['mc'],ginh['mc'],gexc['sc'],ginh['sc'] = lcg.computeSynapticBackgroundCoefficients(
+                ratio,R_exc=c*opts['R_exc'],Rin=opts['input_resistance'])
             for k in range(opts['reps']):
-                if cnt%opts['kernel_frequency'] == 0:
-                    sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
-                cnt = cnt+1
-
                 stim[1][2] = gexc['m']
                 stim[1][3] = gexc['s']
                 stim[1][4] = 5
                 stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
                 lcg.writeStimFile(stim_files['gexc'], stim, False)
-                
                 stim[1][2] = ginh['m']
                 stim[1][3] = ginh['s']
                 stim[1][4] = 10
                 stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
                 lcg.writeStimFile(stim_files['ginh'], stim, False)
-                
                 stim[1][2] = gexc['mc']
                 stim[1][3] = gexc['sc']
                 stim[1][4] = 5
                 stim[1][8] = exc_seeds[k]
                 lcg.writeStimFile(stim_files['gexc_common'], stim, False)
-                
                 stim[1][2] = ginh['mc']
                 stim[1][3] = ginh['sc']
                 stim[1][4] = 10
                 stim[1][8] = inh_seeds[k]
                 lcg.writeStimFile(stim_files['ginh_common'], stim, False)
-
+                if cnt%opts['kernel_frequency'] == 0:
+                    sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+                cnt = cnt+1
                 sub.call('dclamp -V 4 -c ' + config_file, shell=True)
                 sub.call(['sleep', str(opts['interval'])])
-                
                 if cnt%10 == 0:
                     print('[%02d/%02d]' % (cnt,tot))
 
