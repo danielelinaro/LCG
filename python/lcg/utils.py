@@ -304,7 +304,7 @@ def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh
     g0_exc - single synaptic excitatory conductance (pS).
     g0_inh - single synaptic inhibitory conductance (pS).
     Rin - input resistance of the cell(MOhm). If this value is not 0, g0_exc and
-         g0_inh are ignored and the values 0.02/Rm and 0.06/Rm
+         g0_inh are ignored and the values 0.02/Rin and 0.06/Rin
          are used, respectively.
     tau_exc - time constant of excitatory inputs (msec).
     tau_inh - time constant of inhibitory inputs (msec).
@@ -312,7 +312,7 @@ def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh
     E_inh - reversal potential of inhibitory inputs (mV).
     """ 
     Vm = Vm * 1e-3         # (V)
-    Rm = Rm * 1e6          # (Ohm)
+    Rin = Rin * 1e6          # (Ohm)
     tau_exc = tau_exc*1e-3 # (s)
     tau_inh = tau_inh*1e-3 # (s)
     E_exc = E_exc * 1e-3   # (V)
@@ -321,9 +321,9 @@ def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh
     g_exc = g0_exc*1e-12   # (S)
     g_inh = g0_inh*1e-12   # (S)
 
-    if Rm != 0.0:
-        g_exc = 0.02 / Rm  # (S)
-        g_inh = 0.06 / Rm  # (S)
+    if Rin != 0.0:
+        g_exc = 0.02 / Rin  # (S)
+        g_inh = 0.06 / Rin  # (S)
         
     return (g_inh * tau_inh * (E_inh - Vm)) / (g_exc * tau_exc * (Vm - E_exc))
 
@@ -336,20 +336,20 @@ def computeSynapticBackgroundCoefficients(ratio, R_exc=7000, g0_exc=50, g0_inh=1
     g0_inh - single synaptic inhibitory conductance (pS).
     N - number of synaptic contacts.
     Rin - input resistance of the cell(MOhm). If this value is not 0, g0_exc and
-         g0_inh are ignored and the values 0.02/Rm and 0.06/Rm
+         g0_inh are ignored and the values 0.02/Rin and 0.06/Rin
          are used, respectively.
     tau_exc - time constant of excitatory inputs (msec).
     tau_inh - time constant of inhibitory inputs (msec).
     """
-    Rm = Rm * 1e6              # (Ohm)
+    Rin = Rin * 1e6              # (Ohm)
     tau_exc = tau_exc*1e-3     # (s)
     tau_inh = tau_inh*1e-3     # (s)
-    if Rm == 0:
+    if Rin == 0:
         g_exc = N*g0_exc*1e-12   # (S)
         g_inh = N*g0_inh*1e-12   # (S)
     else:
-        g_exc = 0.02 / Rm      # (S)
-        g_inh = 0.06 / Rm      # (S)
+        g_exc = 0.02 / Rin      # (S)
+        g_inh = 0.06 / Rin      # (S)
 
     R_inh = R_exc/ratio;
     G_exc = g_exc * tau_exc * R_exc;
