@@ -13,8 +13,8 @@ def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1
     G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], R_exc, Rin=Rm)
     lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, outfile='spontaneous.xml')
     if interval > 0:
-        sub.call(['sleep ', str(interval)])
-    sub.call([dclamp, '-c spontaneous.xml', '-V 4'])     # run dclamp
+        sub.call(['sleep', str(interval)])
+    sub.call(dclamp + ' -c spontaneous.xml -V 4', shell=True)     # run dclamp
     files = glob.glob('*.h5')
     files.sort()
     files = files[-1]
