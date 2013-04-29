@@ -15,8 +15,8 @@ current_template_file = 'current_template.stim'
 current_file = 'current.stim'
 config_file = 'sinusoids.xml'
 
-switches = 'f:n:i:d:I:O:k:R:F:v:a:s:t:m:'
-long_switches = ['with-bg','exc','inh']
+switches = 'f:n:i:d:I:O:k:R:r:F:v:a:s:t:m:'
+long_switches = ['with-bg','exc','inh','no-kernel']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
@@ -31,8 +31,10 @@ def usage():
     print('     -d   Duration of the stimulation (default 30 sec).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
+    print('     -F   sampling frequency (default 20000).')
     print('     -k   Frequency at which a new kernel should be computed')
     print('          (the default is at the beginning of each batch of frequencies).')
+    print('     --no-kernel  does not compute the kernel.')
 
     print('\nThe following options are valid in the "current" working mode:\n')
     print('     -a   Mean of the noisy component of the current (default 0 pA).')
@@ -42,14 +44,14 @@ def usage():
 
     print('\nAdditionally, if the --with-bg option is specified, the following')
     print('options are accepted:\n')
-    print('     -F   Firing frequency of the excitatory background population.')
+    print('     -r   Firing frequency of the excitatory background population.')
     print('     -R   Input resistance of the cell (in MOhm).')
     print('     -v   Value of voltage at which the background activity should be balanced.')
 
     print('\nThe following options are valid in the "conductance" working mode:\n')
     print('     -R   Input resistance of the cell (in MOhm).')
     print('     -v   Value of voltage at which the background activity should be balanced.')
-    print('     -F   Baseline firing frequency of the excitatory background population.')
+    print('     -r   Baseline firing frequency of the excitatory background population.')
     print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
     print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
     print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
@@ -68,6 +70,8 @@ def parseGlobalArgs():
                'interval': 60,   # [s]
                'duration': 30,   # [s]
                'kernel_frequency': 0,
+               'kernel': True,
+               'srate' : 20000,
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -83,8 +87,12 @@ def parseGlobalArgs():
             options['ai'] = int(a)
         elif o == '-O':
             options['ao'] = int(a)
+        elif o == '-F':
+            options['srate'] = float(a)
         elif o == '-d':
             options['duration'] = float(a)
+        elif o == '--no-kernel':
+            options['kernel'] = False
         elif o == '-k':
             options['kernel_frequency'] = int(a)
 
@@ -211,13 +219,13 @@ def run_frequency(f, mode, opts):
         if opts['with_bg']:
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-            sub.call(['dclamp', '-V 3', '-c ' + config_file])
+            sub.call('dclamp' + ' -V 3' + ' -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
         else:
-            sub.call(['cclamp', '-V 3', '-f ' + current_file])
+            sub.call('cclamp' + ' -V 3' + ' -f ' + current_file + ' -F '+ str(opts['srate']),shell=True)
     elif mode == 'conductance':
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-        sub.call(['dclamp', '-V 3', '-c ' + config_file])
+        sub.call('dclamp '+ '-V 3 '+ '-c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
 
 def main():
     mode = None
@@ -301,8 +309,8 @@ def main():
     for i in range(opts['reps']):
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
-            if cnt%opts['kernel_frequency'] == 0:
-                sub.call(['kernel_protocol', '-I ' + str(opts['ai']), ' -O ' + str(opts['ao'])])
+            if cnt%opts['kernel_frequency'] == 0 and opts['kernel']:
+                sub.call(['kernel_protocol', '-I ' + str(opts['ai']), ' -O ' + str(opts['ao']) + ' -F '+ str(opts['srate'])])
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             run_frequency(f, mode, opts)

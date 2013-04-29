@@ -19,6 +19,7 @@ print_help()
     echo "   -I   specify the input channel (default 0)"
     echo "   -O   specify the output channel (default 0)"
     echo "   -F   specify the sampling frequency (default 20000)"
+    echo "   -H   specify the holding current (default 0pA)"
     echo "   -a   append channel numbers to the kernel.dat file (default no)"
     echo
 }
@@ -28,7 +29,9 @@ duration=10
 ai=0
 ao=0
 F=20000
-while getopts ":d:I:O:F:ah" opt ; do
+H=0
+
+while getopts ":d:I:O:F:H:ah" opt ; do
     case $opt in
 	F)
 	    F=$OPTARG
@@ -41,6 +44,9 @@ while getopts ":d:I:O:F:ah" opt ; do
 	    ;;
 	O)
 	    ao=$OPTARG
+	    ;;
+	H)
+	    H=$OPTARG
 	    ;;
 	a)
 	    append_channel="yes"
@@ -69,7 +75,7 @@ cclamprc_write -o -c $ao
 stimfile=/tmp/white_noise.stim
 
 sed -e 's/^10/'$duration'/' $origstimfile > $stimfile
-cclamp -f $stimfile -F $F
+cclamp -f $stimfile -F $F -H $H
 datafile=`ls -lrth | tail -1 | awk '{ print $9 }'`
 extract_kernels $datafile
 kernelfile=${datafile%.h5}_kernel.dat

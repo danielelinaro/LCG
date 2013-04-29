@@ -16,13 +16,15 @@ def usage():
     print('     -D    total duration (default 60 s)')
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
+    print('     -F    sampling frequency (default 20000 Hz)')
+
     print('\nThe option --poisson allows to specify that the intervals between')
     print('pulses should be distributed as a Poisson distribution.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:f:D:I:O:', ['help','poisson'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:f:D:I:O:F:', ['help','poisson'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -34,6 +36,7 @@ def main():
     duration = 60           # [s]
     ai = 0
     ao = 0
+    srate = 20000
     poisson = False
 
     for o,a in opts:
@@ -52,6 +55,8 @@ def main():
             ai = int(a)
         elif o == '-O':
             ao = int(a)
+        elif o == '-F':
+            srate = int(a)
         elif o == '--poisson':
             poisson = True
     
@@ -61,9 +66,9 @@ def main():
     stimulus = [[1,1,0,0,0,0,0,0,5061983,0,0,1],
                 [duration,8,pulse_amplitude,pulse_frequency,pulse_duration,0,0,0,5061983,0,0,1]]
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
+    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + ' -F '+ str(srate))
     lcg.writeStimFile(stim_file, stimulus, False)
-    os.system('cclamp -f ' + stim_file)
+    os.system('cclamp -f ' + stim_file + ' -F '+ str(srate))
 
 if __name__ == '__main__':
     main()
