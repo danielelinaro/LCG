@@ -116,10 +116,9 @@ def main():
             else:
                 os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
                           ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]))
-        
+
         os.system('cclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
-                  ' -I ' + str(ai) + ' -O ' + str(ao) + ' -n ' + str(opts['nreps']) +
-                  ' -F ' + opts('srate') + ' -H ' + str(opts['holding']))
+                  ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]))
 
 if __name__ == '__main__':
     main()
