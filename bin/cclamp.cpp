@@ -80,7 +80,7 @@ bool writeDefaultConfigurationFile()
 
         fclose(fid);
 
-        Logger(Info, "Successfully saved default configuration file in [%s].\n", configFile);
+        Logger(Critical, "Successfully saved default configuration file in [%s].\n", configFile);
         return true;
 }
 
@@ -276,9 +276,9 @@ bool parseConfigurationFile(std::vector<Entity*>& entities, double hold_value = 
 						for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
 							entities[i]->connect(entities[0]);
 
-						Logger(Info,"Using %f as a holding value.\n",hold_value);
 						if(hold_value != 0.0)
 						{
+							Logger(Debug,"Using %f as a holding value.\n",hold_value);
 							std::stringstream hold_value_str;
 							hold_value_str << hold_value;
 							std::stringstream id;
