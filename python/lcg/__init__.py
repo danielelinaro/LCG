@@ -34,7 +34,7 @@ import Rin_protocol
 import cv
 import disynaptic_microcircuit
 import extracellular_protocol
-import f_opt
+import fopt
 import fclamp
 import psp_opt
 import pulses_protocol

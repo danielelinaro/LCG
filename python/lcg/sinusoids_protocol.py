@@ -34,7 +34,7 @@ def usage():
     print('     -F   sampling frequency (default 20000).')
     print('     -k   Frequency at which a new kernel should be computed')
     print('          (the default is at the beginning of each batch of frequencies).')
-    print('     --no-kernel  does not compute the kernel.')
+    print(' --no-kernel  Do not compute the kernel.')
 
     print('\nThe following options are valid in the "current" working mode:\n')
     print('     -a   Mean of the noisy component of the current (default 0 pA).')
@@ -70,8 +70,8 @@ def parseGlobalArgs():
                'interval': 60,   # [s]
                'duration': 30,   # [s]
                'kernel_frequency': 0,
-               'kernel': True,
-               'srate' : 20000,
+               'compute_kernel': True,
+               'srate' : 20000,  # [Hz]
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -92,9 +92,13 @@ def parseGlobalArgs():
         elif o == '-d':
             options['duration'] = float(a)
         elif o == '--no-kernel':
-            options['kernel'] = False
+            options['compute_kernel'] = False
         elif o == '-k':
             options['kernel_frequency'] = int(a)
+
+    if not options['compute_kernel'] and options['kernel_frequency'] > 0:
+        print('You specified both the --no-kernel option and a kernel frequency. Since this does not make sense, I cowardly refuse to continue.')
+        sys.exit(1)
 
     if options['kernel_frequency'] <= 0:
         options['kernel_frequency'] = len(options['frequencies'])
@@ -214,18 +218,18 @@ def parseConductanceModeArgs():
 
 def run_frequency(f, mode, opts):
     if mode == 'current':
-        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(10000))
+        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(10000), shell=True)
                   + '/" ' +  current_template_file + ' > ' + current_file, shell=True)
         if opts['with_bg']:
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-            sub.call('dclamp' + ' -V 3' + ' -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
+            sub.call('dclamp -V 3 -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
         else:
-            sub.call('cclamp' + ' -V 3' + ' -f ' + current_file + ' -F '+ str(opts['srate']),shell=True)
+            sub.call('cclamp -V 3 -f ' + current_file + ' -F '+ str(opts['srate']),shell=True)
     elif mode == 'conductance':
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-        sub.call('dclamp '+ '-V 3 '+ '-c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
+        sub.call('dclamp -V 3 -c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
 
 def main():
     mode = None
@@ -309,8 +313,8 @@ def main():
     for i in range(opts['reps']):
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
-            if cnt%opts['kernel_frequency'] == 0 and opts['kernel']:
-                sub.call(['kernel_protocol', '-I ' + str(opts['ai']), ' -O ' + str(opts['ao']) + ' -F '+ str(opts['srate'])])
+            if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
+                sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + ' -F '+ str(opts['srate']), shell=True)
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             run_frequency(f, mode, opts)
