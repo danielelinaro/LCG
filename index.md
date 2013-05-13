@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: modernist
 title: Welcome
 ---
 
