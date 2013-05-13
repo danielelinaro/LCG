@@ -1,6 +1,7 @@
 
 === Short term (and therefore relatively simple) ===
 
+-) control output trimming in comedi_io.cpp
 -) remove useless scripts!
 -) analog output should also be proxied in asynchronous mode.
 -) add a Logger object.

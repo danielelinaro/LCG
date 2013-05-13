@@ -471,11 +471,11 @@ void RealNeuron::evolve()
         size_t nInputs = m_inputs.size();
         for (int i=0; i<nInputs; i++)
                 m_Iinj += m_inputs[i];
-#ifndef TRIM_ANALOG_OUTPUT
+//#ifndef TRIM_ANALOG_OUTPUT
         /*** BE SAFE! ***/
         if (m_Iinj < -10000)
                 m_Iinj = -10000;
-#endif
+//#endif
         // read current value of the membrane potential
         double Vr = m_input.read();
         // inject the total input current into the neuron
