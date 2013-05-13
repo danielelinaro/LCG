@@ -69,5 +69,4 @@ do
     let id++
 done
 sed -e 's#<tend>0</tend>#<tend>'$duration'</tend>#' $end >> $configfile
-dclamp -c $configfile
-#rm $configfile
+lcg -c $configfile

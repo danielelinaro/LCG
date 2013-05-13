@@ -131,4 +131,4 @@ sed -e 's#<delay>.*</delay>#<delay>'$delay'</delay>#' \
     $configdir/$config_file > $config_file
 
 kernel_protocol -I $ai -O $ao
-dclamp -c $config_file -n $reps -i $interval
+lcg -c $config_file -n $reps -i $interval

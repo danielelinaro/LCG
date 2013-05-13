@@ -2,7 +2,7 @@
 AC_PREREQ([2.61])
 
 # init autoconf, automake and libtool
-AC_INIT([dynclamp], [0.9.1], [daniele.linaro@ua.ac.be])
+AC_INIT([lcg], [0.9.1], [daniele.linaro@ua.ac.be])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([src/utils.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -74,7 +74,6 @@ AC_ARG_WITH([asynchronous-io],
        	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
        	    [with_asynchronous_io=yes],[echo "WARNING: using synchronous I/O."])
 
-with_examples=no
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 if test "$with_examples" = "yes" ; then
         AC_CONFIG_FILES([examples/Makefile])

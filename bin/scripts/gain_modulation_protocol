@@ -150,7 +150,7 @@ while [ $i -le $reps ] ; do
     j=0
     while [ $j -lt $ncurrents ] ; do
 	sed -e 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file
-	dclamp -c $config_file
+	lcg -c $config_file
 	let j++
 	if [ $j -ne $ncurrents ] ; then
 	    sleep $interval

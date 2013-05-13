@@ -46,5 +46,4 @@ fi
 configfile=/tmp/spontaneous.xml
 
 sed -e 's#<tend>0</tend>#<tend>'$duration'</tend>#' $origconfigfile > $configfile
-dclamp -c $configfile
-rm $configfile
+lcg -c $configfile

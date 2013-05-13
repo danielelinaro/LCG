@@ -115,5 +115,5 @@ sed -e 's/T/'$T'/' -e 's/F/'$F'/' $stimdir/$frequency_file > $frequency_file
 sed -e 's/AI/'$ai'/' -e 's/AO/'$ao'/' -e 's/GP/'$gp'/' -e 's/GI/'$gi'/' -e 's/GD/'$gd'/' -e 's/I0/'$I0'/' -e 's/TAU/'$tau'/' -e 's/F0/'$F0'/' -e 's/frequency\.stim/'$frequency_file'/' -e 's/TEND/'$T'/' $configdir/$config_file > $config_file
 
 kernel_protocol -I $ai -O $ao
-dclamp -c $config_file -n $reps -i $interval
+lcg -c $config_file -n $reps -i $interval
 
