@@ -19,7 +19,7 @@ body {
 }
 
 .wrapper {
-  width: 640px;
+  width: 800px;
   margin: 0 auto;
   background: #DEDEDE;
   -moz-border-radius: 8px;
@@ -39,7 +39,7 @@ header, section, footer {
 }
 
 a {
-  color: #069;
+  color: #FF7F00;
   text-decoration: none;
 }
 
@@ -80,7 +80,7 @@ header h1 {
   text-shadow: rgba(255, 255, 255, 0.9) 0 1px 0;
 }
 header h2 {
-  width: 400px;
+  width: 500px;
 }
 header.without-description h1 {
   margin: 10px 0;
@@ -125,7 +125,7 @@ header ul {
   -webkit-box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
   -o-box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
   box-shadow: inset rgba(255, 255, 255, 0.45) 0 1px 0, inset rgba(0, 0, 0, 0.2) 0 -1px 0;
-  width: 240px;
+  width: 250px;
 }
 header ul:before {
   content: '';
