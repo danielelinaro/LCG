@@ -1,4 +1,4 @@
-<dynamicclamp>
+<lcg>
   <entities>
     <entity>
       <name>H5Recorder</name>
@@ -27,4 +27,4 @@
     <rate>20000</rate>
   </simulation>
 
-</dynamicclamp>
+</lcg>

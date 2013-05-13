@@ -242,7 +242,7 @@ def writeNoisyBackgroundConfig(filename='ou.xml', Rm=0, Vm=-57.6, R_exc=7000, ta
     ratio = computeRatesRatio(Vm, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh, E_exc=E_exc, E_inh=E_inh)
     Gm_exc,Gm_inh,Gs_exc,Gs_inh = computeSynapticBackgroundCoefficients(ratio, R_exc, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh)
     fid = open(filename,'w')
-    fid.write('<dynamicclamp>\n<entities>\n');
+    fid.write('<lcg>\n<entities>\n');
     fid.write('<ou>\n');
     fid.write('<G0>%g</G0>\n' % Gm_exc);
     fid.write('<sigma>%g</sigma>\n' % Gs_exc);
@@ -255,7 +255,7 @@ def writeNoisyBackgroundConfig(filename='ou.xml', Rm=0, Vm=-57.6, R_exc=7000, ta
     fid.write('<tau>%g</tau>\n' % (tau_inh*1e-3));
     fid.write('<E>%g</E>\n' % E_inh);
     fid.write('</ou>\n');
-    fid.write('</entities>\n</dynamicclamp>\n');
+    fid.write('</entities>\n</lcg>\n');
     fid.close()
 
 ########## Utility functions ##########

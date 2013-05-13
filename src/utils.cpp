@@ -377,17 +377,17 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
 
                 /*** simulation time and time step ***/
                 try {
-                        *tend = pt.get<double>("dynamicclamp.simulation.tend");
+                        *tend = pt.get<double>("lcg.simulation.tend");
                 } catch(...) {
                         *tend = -1;
                 }
 
                 try {
-                        *dt = pt.get<double>("dynamicclamp.simulation.dt");
+                        *dt = pt.get<double>("lcg.simulation.dt");
                 } catch(...) {
                         *dt = -1;
                         try {
-                                *dt = 1.0 / pt.get<double>("dynamicclamp.simulation.rate");
+                                *dt = 1.0 / pt.get<double>("lcg.simulation.rate");
                         } catch(...) {
                                 Logger(Info, "dt = %g sec.\n", *dt);
                         }
@@ -397,7 +397,7 @@ bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                 SetRunTime(*tend);
 
                 /*** entities ***/
-                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("dynamicclamp.entities")) {
+                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("lcg.entities")) {
                         string_dict args;
                         name = ntt.second.get<std::string>("name");
                         id = ntt.second.get<uint>("id");

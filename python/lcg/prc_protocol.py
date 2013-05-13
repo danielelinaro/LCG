@@ -211,7 +211,7 @@ def main():
         for f in stim_file:
             tmp.append( np.sum(np.loadtxt(f),0)[0])
         opts['tend'] = max(tmp)
-        root = etree.Element("dynamicclamp")
+        root = etree.Element("lcg")
         e_group = etree.SubElement(root,"entities")
         simulation_parameters = etree.SubElement(root,"simulation")
         add_xml_elements(simulation_parameters,{'rate':opts['srate'],
@@ -288,7 +288,7 @@ def main():
         threshold = -30
         kernel_file = 'kernel.dat'
         # Generate configuration file
-        root = etree.Element("dynamicclamp")
+        root = etree.Element("lcg")
         e_group = etree.SubElement(root,"entities")
         simulation_parameters = etree.SubElement(root,"simulation")
         add_xml_elements(simulation_parameters,{'rate':srate,

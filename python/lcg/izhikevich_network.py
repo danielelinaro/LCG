@@ -262,7 +262,7 @@ def main():
         rn_syn_p = np.array(rn_syn_param)
     syn_p = np.array(syn_param)
     
-    root = etree.Element("dynamicclamp")
+    root = etree.Element("lcg")
     e_group = etree.SubElement(root,"entities")
     simulation_parameters = etree.SubElement(root,"simulation")
     add_xml_elements(simulation_parameters,{'rate':opts['srate'],

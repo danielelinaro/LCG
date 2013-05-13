@@ -11,7 +11,7 @@ class lcg_xml():
         '''
         Initializes a configuration_file.
         '''
-        self.root = etree.Element('dynamicclamp')
+        self.root = etree.Element('lcg')
         self.entities = etree.SubElement(self.root,'entities')
         self.simulation = etree.SubElement(self.root,'simulation')
         self._add_elements(self.simulation,{'rate':srate,

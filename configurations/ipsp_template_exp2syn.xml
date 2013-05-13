@@ -1,4 +1,4 @@
-<dynamicclamp>
+<lcg>
   <entities>
 
     <entity>
@@ -80,4 +80,4 @@
     <rate>20000</rate>
   </simulation>
 
-</dynamicclamp>
+</lcg>
