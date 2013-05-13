@@ -1,7 +1,7 @@
-LDADD = ../stimgen/libstimgen.la ../src/libdynclamp.la
+LDADD = ../stimgen/libstimgen.la ../src/liblcg.la
 AM_CPPFLAGS = -I../stimgen -I../src -I.
-bin_PROGRAMS = dclamp
-dclamp_SOURCES = dclamp.cpp
+bin_PROGRAMS = lcg
+lcg_SOURCES = lcg.cpp
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
@@ -15,10 +15,8 @@ cclamp_SOURCES = cclamp.cpp
 zero_output_SOURCES = zero_output.cpp
 constant_output_SOURCES = constant_output.cpp
 test_daq_SOURCES = test_daq.cpp
-
 endif
 if ANALOGY
 noinst_PROGRAMS = analogy_test
 analogy_test_SOURCES = analogy_test.cpp
 endif
-

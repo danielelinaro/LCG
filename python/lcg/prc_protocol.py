@@ -206,7 +206,7 @@ def main():
             stimulus = create_steps_stimulus(D[ii],d[ii],A[ii],a[ii],w[ii],s[ii],opts['with_preamble'])         
             lcg.writeStimFile(stim_file[ii], stimulus, opts['with_preamble'])                
    
-        # Use dclamp; create the configuration file.
+        # Use lcg; create the configuration file.
         tmp = []
         for f in stim_file:
             tmp.append( np.sum(np.loadtxt(f),0)[0])
@@ -271,15 +271,15 @@ def main():
             add_xml_connections(waveform,[0,id_cnt-1])
             id_cnt+=1
         # Write configuration file
-        dclamp_tree = etree.ElementTree(root) 
+        xml_tree = etree.ElementTree(root) 
         config_file = 'prc_steps.xml'
-        dclamp_tree.write(config_file,pretty_print=True)
+        xml_tree.write(config_file,pretty_print=True)
             # Run protocol
         if opts['kernel']:
             for ai,ao in zip(opts['ai'],opts['ao']):
                 os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
                           ' -F ' + str(opts['srate']) + ' -a')
-        os.system('dclamp -c ' + config_file +  ' -i ' + str(opts['interval']) +
+        os.system(lcg.common.prog_name +' -c ' + config_file +  ' -i ' + str(opts['interval']) +
                   ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']))
         
     elif mode in ['frequency-clamp']:
@@ -320,8 +320,8 @@ def main():
                                    'reference':os.environ['GROUND_REFERENCE']})
         
         # Write configuration file
-        dclamp_tree = etree.ElementTree(root) 
-        dclamp_tree.write('tmp.xml',pretty_print=True)
+        xml_tree = etree.ElementTree(root) 
+        xml_tree.write('tmp.xml',pretty_print=True)
         sys.exit(1)
 
     else:

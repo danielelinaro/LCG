@@ -58,7 +58,7 @@ def run_batch(repetitions, interval, stim_dur, stim_amp, hyperpolarizing_pulse, 
     lcg.writeStimFile(intracellular_stim_file, intra_stim, False)
 
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao['intra']))
-    os.system('dclamp -c '+ config_file + ' -n ' + str(repetitions) + ' -i ' + str(interval-(pre+post)))
+    os.system(lcg.common.prog_name + ' -c '+ config_file + ' -n ' + str(repetitions) + ' -i ' + str(interval-(pre+post)))
 
 def main():
     try:

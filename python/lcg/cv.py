@@ -61,7 +61,7 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
             conductance[1][3] = Gs_inh
             conductance[1][4] = taus['inh']
             writeStimFile('ginh.stim', conductance)
-            os.system('dclamp -V 3 -c ' + configFile)
+            os.system(lcg.common.prog_name + ' -V 3 -c ' + configFile)
             os.system('sleep ' + str(interval))
 
 def main():

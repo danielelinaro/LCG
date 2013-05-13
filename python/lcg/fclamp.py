@@ -110,7 +110,7 @@ def main():
         lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao)
 
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
-    os.system('dclamp -c ' + config_file + ' -n ' + str(nreps) + ' -i ' + str(interval))
+    os.system(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(nreps) + ' -i ' + str(interval))
 
 if __name__ == '__main__':
     main()

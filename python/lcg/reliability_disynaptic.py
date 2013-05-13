@@ -130,7 +130,7 @@ def main():
 
     writeStimFile('current.stim',stimulus)
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
-    os.system('dclamp -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
+    os.system(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
 if __name__ == '__main__':
     main()

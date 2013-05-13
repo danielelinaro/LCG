@@ -16,7 +16,7 @@
 
 #include "sha1.h"
 
-#define DCLAMP_DIR    ".dclamp"
+#define DCLAMP_DIR    ".lcg"
 #define TMP_DIR       ".tmp"
 #define REPLAY_SCRIPT "replay"
 #define HASHES_FILE   "hashes.sha"
@@ -150,7 +150,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                 }
         }
 
-        // write a very simple script that runs dclamp again with the options used for calling it now
+        // write a very simple script that runs lcg again with the options used for calling it now
         sprintf(path, "%s/%s", directory, REPLAY_SCRIPT);
         FILE *fid = fopen(path, "w");
         if (fid == NULL) {
@@ -173,7 +173,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                         }
                 }
         }
-        fprintf(fid, "-r 0\n"); // turn enable replay off, so that a .dclamp directory is not created when replaying the experiment
+        fprintf(fid, "-r 0\n"); // turn enable replay off, so that a .lcg directory is not created when replaying the experiment
         fclose(fid);
         chmod(path, 0755);
         Logger(Debug, "Written file [%s/%s].\n", directory, REPLAY_SCRIPT);

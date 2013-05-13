@@ -338,14 +338,14 @@ def main():
             tauRise = 0.1e-3
             tauDecay = 10e-3
         add_exponential_synapse(e_group,s_id,s_t,delay,s_w,E,tauRise,tauDecay,[s_t])
-    dclamp_tree = etree.ElementTree(root) 
+    xml_tree = etree.ElementTree(root) 
     config_file = 'izhikevich_net.xml'
-    dclamp_tree.write(config_file,pretty_print=True)
+    xml_tree.write(config_file,pretty_print=True)
     # Run protocol 
     if opts['kernel']:
         os.system('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + 
                   ' -F ' + str(opts['srate']) + ' -a')
-    os.system('dclamp -c ' + config_file +  ' -i ' + str(opts['interval']) +
+    os.system(lcg.common.prog_name + ' -c ' + config_file +  ' -i ' + str(opts['interval']) +
               ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']))
     
 

@@ -147,7 +147,7 @@ def main():
 
     os.system('kernel_protocol -a -F 15000 -I ' + str(ai[0]) + ' -O ' + str(ao[0]))
     os.system('kernel_protocol -a -F 15000 -I ' + str(ai[1]) + ' -O ' + str(ao[1]))
-    os.system('dclamp -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
+    os.system(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
 
 if __name__ == '__main__':
     main()

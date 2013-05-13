@@ -188,7 +188,7 @@ def main():
                 if cnt%opts['kernel_frequency'] == 0:
                     sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
                 cnt = cnt+1
-                sub.call('dclamp -V 4 -c ' + config_file, shell=True)
+                sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
                 sub.call(['sleep', str(opts['interval'])])
                 if cnt%10 == 0:
                     print('[%02d/%02d]' % (cnt,tot))

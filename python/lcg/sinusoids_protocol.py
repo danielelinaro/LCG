@@ -223,13 +223,13 @@ def run_frequency(f, mode, opts):
         if opts['with_bg']:
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
             sub.call('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-            sub.call('dclamp -V 3 -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
+            sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
         else:
             sub.call('cclamp -V 3 -f ' + current_file + ' -F '+ str(opts['srate']),shell=True)
     elif mode == 'conductance':
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
         sub.call('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-        sub.call('dclamp -V 3 -c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
+        sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
 
 def main():
     mode = None

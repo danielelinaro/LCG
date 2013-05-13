@@ -7,7 +7,7 @@ import glob
 import numpy as np
 import lcg
 
-def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dclamp='dclamp', ai=0, ao=0):
+def deflection_error(weight, target, templateFile, trials=10, window=30e-3, ai=0, ao=0):
     try:
         w = weight[0]
     except:
@@ -15,8 +15,7 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, dcla
     lcg.substituteStrings(templateFile, 'psp.xml',
                          {'<weight>0</weight>': '<weight>' + str(w) + '</weight>',
                           'AI': str(ai), 'AO': str(ao)})
-    # run dclamp
-    os.system(dclamp + ' -c psp.xml -V 4 -n ' + str(trials))     # run dclamp
+    os.system(lcg.common.prog_name + ' -c psp.xml -V 4 -n ' + str(trials))
 
     # get the file list
     files = glob.glob('*.h5')
@@ -75,7 +74,6 @@ def main():
         usage()
         sys.exit(1)
 
-    dclamp = 'dclamp'
     targetDeflection = 1    # [mV]
     minWeight = 0           # [a.u.]
     maxWeight = 50          # [a.u.]
@@ -131,7 +129,7 @@ def main():
     os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     weight,err,ierr,numfunc = opt.fminbound(deflection_error, minWeight, maxWeight,
-                                            args = [targetDeflection, templateFile, trials, window*1e-3, dclamp, ai, ao],
+                                            args = [targetDeflection, templateFile, trials, window*1e-3, ai, ao],
                                             xtol=0.5, maxfun=100, full_output=1, disp=1)
 
     print('The optimal value of the weight is %.3f (error = %.5f mV^2).' % (weight,err))
