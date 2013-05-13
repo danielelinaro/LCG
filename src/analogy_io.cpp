@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sstream>
 
-namespace dynclamp {
+namespace lcg {
 
 #ifdef ASYNCHRONOUS_INPUT
 //std::map<std::string,AnalogyAnalogInputProxy*> proxies;
@@ -697,7 +697,7 @@ uint AnalogyAnalogIO::reference() const
 //                comedi_from_physical(data*m_outputConversionFactor, &m_converter));
 //}
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // HAVE_LIBANALOGY
 

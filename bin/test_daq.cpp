@@ -20,9 +20,9 @@
 #include "comedi_io.h"
 #endif
 
-using namespace dynclamp;
-using namespace dynclamp::generators;
-using namespace dynclamp::recorders;
+using namespace lcg;
+using namespace lcg::generators;
+using namespace lcg::recorders;
 
 int main()
 {

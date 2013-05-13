@@ -3,25 +3,25 @@
 
 #ifdef ANALOG_IO
 
-dynclamp::Entity* AnalogInputFactory(string_dict& args)
+lcg::Entity* AnalogInputFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, range, reference, id;
         std::string deviceFile, rangeStr, referenceStr, units;
         double inputConversionFactor;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
-             ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor)) {
-                dynclamp::Logger(dynclamp::Debug, "AnalogInputFactory: missing parameter.\n");
+        if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
+             ! lcg::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor)) {
+                lcg::Logger(lcg::Debug, "AnalogInputFactory: missing parameter.\n");
                 string_dict::iterator it;
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
+                lcg::Logger(lcg::Critical, "Unable to build an analog input.\n");
                 return NULL;
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "range", rangeStr)) {
+        if (! lcg::CheckAndExtractValue(args, "range", rangeStr)) {
                 range = PLUS_MINUS_TEN;
         }
         else {
@@ -46,13 +46,13 @@ dynclamp::Entity* AnalogInputFactory(string_dict& args)
                         range = PLUS_MINUS_ZERO_POINT_TWO;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", rangeStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
+                        lcg::Logger(lcg::Critical, "Unknown input range: [%s].\n", rangeStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build an analog input.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+        if (! lcg::CheckAndExtractValue(args, "reference", referenceStr)) {
                 reference = GRSE;
         }
         else {
@@ -63,41 +63,41 @@ dynclamp::Entity* AnalogInputFactory(string_dict& args)
                         reference = NRSE;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog input.\n");
+                        lcg::Logger(lcg::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build an analog input.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
+        if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "mV";
         }
 
-        return new dynclamp::AnalogInput(deviceFile.c_str(), inputSubdevice, readChannel,
+        return new lcg::AnalogInput(deviceFile.c_str(), inputSubdevice, readChannel,
                                          inputConversionFactor, range, reference, units, id);
 }
 
-dynclamp::Entity* AnalogIOFactory(string_dict& args)
+lcg::Entity* AnalogIOFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, inputRange, outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, rangeStr, referenceStr, units;
         double inputConversionFactor, outputConversionFactor;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
-             ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
-             ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor)) {
-                dynclamp::Logger(dynclamp::Debug, "AnalogIOFactory: missing parameter.\n");
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an analog IO.\n");
+        if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
+             ! lcg::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
+             ! lcg::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor)) {
+                lcg::Logger(lcg::Debug, "AnalogIOFactory: missing parameter.\n");
+                lcg::Logger(lcg::Critical, "Unable to build an analog IO.\n");
                 return NULL;
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "inputRange", rangeStr)) {
+        if (! lcg::CheckAndExtractValue(args, "inputRange", rangeStr)) {
                 inputRange = PLUS_MINUS_TEN;
         }
         else {
@@ -122,13 +122,13 @@ dynclamp::Entity* AnalogIOFactory(string_dict& args)
                         inputRange = PLUS_MINUS_ZERO_POINT_TWO;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", rangeStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog IO.\n");
+                        lcg::Logger(lcg::Critical, "Unknown input range: [%s].\n", rangeStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build an analog IO.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+        if (! lcg::CheckAndExtractValue(args, "reference", referenceStr)) {
                 reference = GRSE;
         }
         else {
@@ -139,38 +139,38 @@ dynclamp::Entity* AnalogIOFactory(string_dict& args)
                         reference = NRSE;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog IO.\n");
+                        lcg::Logger(lcg::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build an analog IO.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
+        if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "mV";
         }
 
-        return new dynclamp::AnalogIO(deviceFile.c_str(), inputSubdevice, readChannel,
+        return new lcg::AnalogIO(deviceFile.c_str(), inputSubdevice, readChannel,
                                       inputConversionFactor, outputSubdevice,
                                       writeChannel, outputConversionFactor, inputRange, reference, units, id);
 }
 
-dynclamp::Entity* AnalogOutputFactory(string_dict& args)
+lcg::Entity* AnalogOutputFactory(string_dict& args)
 {
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr, units;
         double outputConversionFactor;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
-             ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an analog output.\n");
+        if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
+             ! lcg::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor)) {
+                lcg::Logger(lcg::Critical, "Unable to build an analog output.\n");
                 return NULL;
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+        if (! lcg::CheckAndExtractValue(args, "reference", referenceStr)) {
                 reference = GRSE;
         }
         else {
@@ -181,21 +181,21 @@ dynclamp::Entity* AnalogOutputFactory(string_dict& args)
                         reference = NRSE;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build an analog output.\n");
+                        lcg::Logger(lcg::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build an analog output.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "units", units)) {
+        if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "pA";
         }
 
-        return new dynclamp::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
+        return new lcg::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
                                           outputConversionFactor, reference, units, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint readChannel, double inputConversionFactor,
@@ -334,7 +334,7 @@ double AnalogIO::output()
         return m_data;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // ANALOG_IO
 

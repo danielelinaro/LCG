@@ -11,7 +11,7 @@
 
 #define FILE_CONSTRUCTOR
 
-using namespace dynclamp;
+using namespace lcg;
 
 int main()
 {

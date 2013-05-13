@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    entity.h
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -32,17 +32,17 @@
 #include "utils.h"
 #include "events.h"
 
-namespace dynclamp
+namespace lcg
 {
 
 class Entity;
 
 /*!
  * \class Entity
- * \brief Base abstract class for (almost) all objects in dynclamp
+ * \brief Base abstract class for (almost) all objects in lcg
  *
  * Entities are the basic building blocks of experiments and/or simulations
- * performed with dynclamp. The main characteristics of an Entity are the
+ * performed with lcg. The main characteristics of an Entity are the
  * following:
  *  - it has multiple inputs but <b>only one</b> output. This simplifies
  *    significantly the connectivity between entities, but can also result
@@ -57,7 +57,7 @@ class Entity;
  *    and store them and then compute their output. This prevents problems
  *    related to the way entities are actually connected.
  *
- * Every new class added to dynclamp should inherit from Entity, in order to
+ * Every new class added to lcg should inherit from Entity, in order to
  * be simulated properly.
  */
 class Entity

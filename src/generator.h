@@ -3,7 +3,7 @@
 
 #include "entity.h"
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -19,7 +19,7 @@ public:
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif
 

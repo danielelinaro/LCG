@@ -9,7 +9,7 @@
 #define SYN_G m_state[0]
 #define SYN_E m_parameters["E"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace neurons {
 class Neuron;
@@ -100,7 +100,7 @@ protected:
 
 } // namespace synapses
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -109,9 +109,9 @@ protected:
 extern "C" {
 #endif
 
-dynclamp::Entity* ExponentialSynapseFactory(string_dict& args);
-dynclamp::Entity* Exp2SynapseFactory(string_dict& args);
-dynclamp::Entity* TMGSynapseFactory(string_dict& args);
+lcg::Entity* ExponentialSynapseFactory(string_dict& args);
+lcg::Entity* Exp2SynapseFactory(string_dict& args);
+lcg::Entity* TMGSynapseFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

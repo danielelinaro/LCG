@@ -4,7 +4,7 @@
 #include "entity.h"
 #include "utils.h"
 
-namespace dynclamp {
+namespace lcg {
 
 #define PID_BASELINE m_parameters["baseline"]
 #define PID_GP       m_parameters["gp"]
@@ -42,7 +42,7 @@ private:
         double m_errpPrev;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -51,7 +51,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PIDFactory(string_dict& args);
+lcg::Entity* PIDFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

@@ -33,7 +33,7 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using boost::property_tree::ptree;
-using namespace dynclamp;
+using namespace lcg;
 
 enum cclamp_mode {DEFAULT, SPONTANEOUS, TRIGGERED_RECORDER};
 
@@ -321,7 +321,7 @@ int main(int argc, char *argv[])
         }
 
         std::vector<Entity*> entities;
-        dynclamp::generators::Waveform *stimulus;
+        lcg::generators::Waveform *stimulus;
         CCoptions opt;
         int i, j, k, cnt, total, retval = 0;
 		enum cclamp_mode mode = DEFAULT;
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
 				break;	
 			default:
 		        for (i=0; i<entities.size(); i++) {
-			        if ((stimulus = dynamic_cast<dynclamp::generators::Waveform*>(entities[i])) != NULL)
+			        if ((stimulus = dynamic_cast<lcg::generators::Waveform*>(entities[i])) != NULL)
 			            break;
 				}
 				if (i == entities.size()) {

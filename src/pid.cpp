@@ -1,24 +1,24 @@
 #include "pid.h"
 #include "engine.h"
 
-dynclamp::Entity* PIDFactory(string_dict& args)
+lcg::Entity* PIDFactory(string_dict& args)
 {
         uint id;
         double baseline, gp, gi, gd;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "baselineCurrent", &baseline) ||
-             ! dynclamp::CheckAndExtractDouble(args, "gp", &gp) ||
-             ! dynclamp::CheckAndExtractDouble(args, "gi", &gi)) {
-                dynclamp::Logger(dynclamp::Critical, "PID(%d): Unable to build. Need to specify baselineCurrent, gp, and gi.\n", id);
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "baselineCurrent", &baseline) ||
+             ! lcg::CheckAndExtractDouble(args, "gp", &gp) ||
+             ! lcg::CheckAndExtractDouble(args, "gi", &gi)) {
+                lcg::Logger(lcg::Critical, "PID(%d): Unable to build. Need to specify baselineCurrent, gp, and gi.\n", id);
                 return NULL;
         }
-        if (! dynclamp::CheckAndExtractDouble(args, "gd", &gd))
+        if (! lcg::CheckAndExtractDouble(args, "gd", &gd))
                 gd = 0.0;
-        return new dynclamp::PID(baseline, gp, gi, gd, id);
+        return new lcg::PID(baseline, gp, gi, gd, id);
         
 }
 
-namespace dynclamp {
+namespace lcg {
 
 PID::PID(double baseline, double gp, double gi, double gd, uint id)
         : Entity(id)
@@ -78,5 +78,5 @@ void PID::handleEvent(const Event *event)
     }
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

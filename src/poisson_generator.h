@@ -8,7 +8,7 @@
 
 #define POISSON_RATE m_parameters["rate"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -31,7 +31,7 @@ private:
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -40,7 +40,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PoissonFactory(string_dict& args);
+lcg::Entity* PoissonFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

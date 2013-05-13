@@ -1,19 +1,19 @@
 #include <math.h>
 #include "conductance_stimulus.h"
 
-dynclamp::Entity* ConductanceStimulusFactory(string_dict& args)
+lcg::Entity* ConductanceStimulusFactory(string_dict& args)
 {
         uint id;
         double E;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance stimulus.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "E", &E)) {
+                lcg::Logger(lcg::Critical, "Unable to build a conductance stimulus.\n");
                 return NULL;
         }
-        return new dynclamp::generators::ConductanceStimulus(E, id);
+        return new lcg::generators::ConductanceStimulus(E, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -61,7 +61,7 @@ void ConductanceStimulus::addPost(Entity *entity)
 }
 
 
-} // namespace dynclamp
+} // namespace lcg
 
 } // namespace generators
 

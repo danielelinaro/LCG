@@ -7,7 +7,7 @@
 
 #define LABEL_LEN       30
 
-namespace dynclamp {
+namespace lcg {
 class Entity;
 }
 
@@ -23,7 +23,7 @@ typedef std::map<std::string,double> double_dict;
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef dynclamp::Entity* (*Factory)(string_dict&);
+typedef lcg::Entity* (*Factory)(string_dict&);
 #ifdef __cplusplus
 }
 #endif

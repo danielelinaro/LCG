@@ -2,28 +2,28 @@
 #include "periodic_pulse.h"
 #include "engine.h"
 
-dynclamp::Entity* PeriodicPulseFactory(string_dict& args)
+lcg::Entity* PeriodicPulseFactory(string_dict& args)
 {
         uint id;
         double frequency, duration, amplitude;
         std::string units;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency) ||
-             ! dynclamp::CheckAndExtractDouble(args, "duration", &duration) ||
-             ! dynclamp::CheckAndExtractDouble(args, "amplitude", &amplitude)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build PeriodicPulse.\n");
+        if ( ! lcg::CheckAndExtractDouble(args, "frequency", &frequency) ||
+             ! lcg::CheckAndExtractDouble(args, "duration", &duration) ||
+             ! lcg::CheckAndExtractDouble(args, "amplitude", &amplitude)) {
+                lcg::Logger(lcg::Critical, "Unable to build PeriodicPulse.\n");
                 return NULL;
         }
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "units", units))
+        if ( ! lcg::CheckAndExtractValue(args, "units", units))
                 units = "pA";
 
-        return new dynclamp::generators::PeriodicPulse(frequency, duration, amplitude, units, id);
+        return new lcg::generators::PeriodicPulse(frequency, duration, amplitude, units, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -121,5 +121,5 @@ void PeriodicPulse::setDuration(double duration)
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 

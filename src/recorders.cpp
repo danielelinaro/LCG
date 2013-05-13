@@ -5,49 +5,49 @@
 #include "engine.h"
 #include "common.h"
 
-dynclamp::Entity* ASCIIRecorderFactory(string_dict& args)
+lcg::Entity* ASCIIRecorderFactory(string_dict& args)
 {
         uint id;
         std::string filename;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::ASCIIRecorder((const char *) NULL, id);
-        return new dynclamp::recorders::ASCIIRecorder(filename.c_str(), id);
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractValue(args, "filename", filename))
+                return new lcg::recorders::ASCIIRecorder((const char *) NULL, id);
+        return new lcg::recorders::ASCIIRecorder(filename.c_str(), id);
 }
 
-dynclamp::Entity* H5RecorderFactory(string_dict& args)
+lcg::Entity* H5RecorderFactory(string_dict& args)
 {       
         uint id;
         std::string filename;
         bool compress;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractBool(args, "compress", &compress))
                 compress = true;
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::H5Recorder(compress, NULL, id);
-        return new dynclamp::recorders::H5Recorder(compress, filename.c_str(), id);
+        if (!lcg::CheckAndExtractValue(args, "filename", filename))
+                return new lcg::recorders::H5Recorder(compress, NULL, id);
+        return new lcg::recorders::H5Recorder(compress, filename.c_str(), id);
 }
 
-dynclamp::Entity* TriggeredH5RecorderFactory(string_dict& args)
+lcg::Entity* TriggeredH5RecorderFactory(string_dict& args)
 {       
         uint id;
         double before, after;
         std::string filename;
         bool compress;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "before", &before) ||
-            !dynclamp::CheckAndExtractDouble(args, "after", &after)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a TriggeredH5Recorder.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "before", &before) ||
+            !lcg::CheckAndExtractDouble(args, "after", &after)) {
+                lcg::Logger(lcg::Critical, "Unable to build a TriggeredH5Recorder.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractBool(args, "compress", &compress))
+        if (!lcg::CheckAndExtractBool(args, "compress", &compress))
                 compress = true;
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
-                return new dynclamp::recorders::TriggeredH5Recorder(before, after, compress, NULL, id);
-        return new dynclamp::recorders::TriggeredH5Recorder(before, after, compress, filename.c_str(), id);
+        if (!lcg::CheckAndExtractValue(args, "filename", filename))
+                return new lcg::recorders::TriggeredH5Recorder(before, after, compress, NULL, id);
+        return new lcg::recorders::TriggeredH5Recorder(before, after, compress, filename.c_str(), id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace recorders {
 
@@ -1104,5 +1104,5 @@ void TriggeredH5Recorder::buffersWriter(uint bufferToSave, uint bufferPosition)
 
 } // namespace recorders
 
-} // namespace dynclamp
+} // namespace lcg
 

@@ -5,24 +5,24 @@
 #include <string>
 #include <sstream>
 
-dynclamp::Entity* OUcurrentFactory(string_dict& args)
+lcg::Entity* OUcurrentFactory(string_dict& args)
 {
         uint id;
         ullong seed;
         double sigma, tau, I0, interval[2];
         std::string intervalStr;
-        id = dynclamp::GetIdFromDictionary(args);
-        seed = dynclamp::GetSeedFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "sigma", &sigma) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
-             ! dynclamp::CheckAndExtractDouble(args, "I0", &I0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a OUcurrent.\n");
+        id = lcg::GetIdFromDictionary(args);
+        seed = lcg::GetSeedFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "sigma", &sigma) ||
+             ! lcg::CheckAndExtractDouble(args, "tau", &tau) ||
+             ! lcg::CheckAndExtractDouble(args, "I0", &I0)) {
+                lcg::Logger(lcg::Critical, "Unable to build a OUcurrent.\n");
                 return NULL;
         }
-        if (dynclamp::CheckAndExtractValue(args, "interval", intervalStr)) {
+        if (lcg::CheckAndExtractValue(args, "interval", intervalStr)) {
                 size_t stop = intervalStr.find(",",0);
                 if (stop == intervalStr.npos) {
-                        dynclamp::Logger(dynclamp::Critical, "Error in the definition of the interval "
+                        lcg::Logger(lcg::Critical, "Error in the definition of the interval "
                                         "(which should be composed of two comma-separated values).\n");
                         return NULL;
                 }
@@ -34,51 +34,51 @@ dynclamp::Entity* OUcurrentFactory(string_dict& args)
                         std::stringstream ss(intervalStr.substr(stop+1));
                         ss >> interval[1];
                 }
-                dynclamp::Logger(dynclamp::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
+                lcg::Logger(lcg::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
         }
         else {
-                interval[0] = dynclamp::largeInterval[0];
-                interval[1] = dynclamp::largeInterval[1];
+                interval[0] = lcg::largeInterval[0];
+                interval[1] = lcg::largeInterval[1];
         }
-        return new dynclamp::OUcurrent(sigma, tau, I0, seed, interval, id);
+        return new lcg::OUcurrent(sigma, tau, I0, seed, interval, id);
 }
 
-dynclamp::Entity* OUconductanceFactory(string_dict& args)
+lcg::Entity* OUconductanceFactory(string_dict& args)
 {
         uint id;
         ullong seed;
         double sigma, tau, E, G0, interval[2];
         std::string intervalStr;
-        id = dynclamp::GetIdFromDictionary(args);
-        seed = dynclamp::GetSeedFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "sigma", &sigma) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
-             ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "G0", &G0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a OUconductance.\n");
+        id = lcg::GetIdFromDictionary(args);
+        seed = lcg::GetSeedFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "sigma", &sigma) ||
+             ! lcg::CheckAndExtractDouble(args, "tau", &tau) ||
+             ! lcg::CheckAndExtractDouble(args, "E", &E) ||
+             ! lcg::CheckAndExtractDouble(args, "G0", &G0)) {
+                lcg::Logger(lcg::Critical, "Unable to build a OUconductance.\n");
                 return NULL;
         }
-        dynclamp::Logger(dynclamp::Debug, "G0 = %g sigma = %g tau = %g E = %g\n", G0, sigma, tau, E);
-        if (dynclamp::CheckAndExtractValue(args, "interval", intervalStr)) {
+        lcg::Logger(lcg::Debug, "G0 = %g sigma = %g tau = %g E = %g\n", G0, sigma, tau, E);
+        if (lcg::CheckAndExtractValue(args, "interval", intervalStr)) {
                 size_t stop = intervalStr.find(",",0);
                 if (stop == intervalStr.npos) {
-                        dynclamp::Logger(dynclamp::Critical, "Error in the definition of the interval"
+                        lcg::Logger(lcg::Critical, "Error in the definition of the interval"
                                         "(which should be composed of two comma-separated values.\n");
                         return NULL;
                 }
                 std::stringstream ss0(intervalStr.substr(0,stop)), ss1(intervalStr.substr(stop+1));
                 ss0 >> interval[0];
                 ss1 >> interval[1];
-                dynclamp::Logger(dynclamp::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
+                lcg::Logger(lcg::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
         }
         else {
-                interval[0] = dynclamp::largeInterval[0];
-                interval[1] = dynclamp::largeInterval[1];
+                interval[0] = lcg::largeInterval[0];
+                interval[1] = lcg::largeInterval[1];
         }
-        return new dynclamp::OUconductance(sigma, tau, E, G0, seed, interval, id);
+        return new lcg::OUconductance(sigma, tau, E, G0, seed, interval, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 OU::OU(double sigma, double tau, double eta0, ullong seed, double interval[2], uint id)
         : DynamicalEntity(id), m_randn(0, 1, seed)
@@ -160,5 +160,5 @@ void OUconductance::addPost(Entity *entity)
         }
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

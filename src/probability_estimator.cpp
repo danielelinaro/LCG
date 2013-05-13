@@ -2,25 +2,25 @@
 #include "engine.h"
 #include <math.h>
 
-dynclamp::Entity* ProbabilityEstimatorFactory(string_dict& args)
+lcg::Entity* ProbabilityEstimatorFactory(string_dict& args)
 {
         uint id;
         double tau, initialProbability, stimulationFrequency, window;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
-            ! dynclamp::CheckAndExtractDouble(args, "stimulationFrequency", &stimulationFrequency) ||            
-            ! dynclamp::CheckAndExtractDouble(args, "window", &window)) {
-                dynclamp::Logger(dynclamp::Critical, "ProbabilityEstimator(%d): Unable to build.\n", id);
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractDouble(args, "tau", &tau) ||
+            ! lcg::CheckAndExtractDouble(args, "stimulationFrequency", &stimulationFrequency) ||            
+            ! lcg::CheckAndExtractDouble(args, "window", &window)) {
+                lcg::Logger(lcg::Critical, "ProbabilityEstimator(%d): Unable to build.\n", id);
                 return NULL;
                 
         }
-        if (! dynclamp::CheckAndExtractDouble(args, "initialProbability", &initialProbability))
+        if (! lcg::CheckAndExtractDouble(args, "initialProbability", &initialProbability))
                 initialProbability = 0.5;
-        return new dynclamp::ProbabilityEstimator(tau, stimulationFrequency, window, initialProbability, id);
+        return new lcg::ProbabilityEstimator(tau, stimulationFrequency, window, initialProbability, id);
         
 }
 
-namespace dynclamp {
+namespace lcg {
 
 ProbabilityEstimator::ProbabilityEstimator(double tau, double stimulationFrequency, double window, double initialProbability, uint id)
         : Entity(id)
@@ -98,5 +98,5 @@ void ProbabilityEstimator::emitTrigger() const
         emitEvent(new TriggerEvent(this));
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

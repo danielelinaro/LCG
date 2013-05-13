@@ -5,7 +5,7 @@
 #include "types.h"
 #include "utils.h"
 
-namespace dynclamp
+namespace lcg
 {
 
 class DynamicalEntity;

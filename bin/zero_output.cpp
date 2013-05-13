@@ -13,7 +13,7 @@ namespace fs = boost::filesystem;
 #include "common.h"
 #include "types.h"
 #include "utils.h"
-using namespace dynclamp;
+using namespace lcg;
 
 int main(int argc, char *argv[])
 {

@@ -4,7 +4,7 @@
 #include "entity.h"
 #include "utils.h"
 
-namespace dynclamp {
+namespace lcg {
 
 class Trigger : public Entity {
 public:
@@ -31,7 +31,7 @@ private:
         double m_tNextTrigger;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -40,7 +40,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PeriodicTriggerFactory(string_dict& args);
+lcg::Entity* PeriodicTriggerFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

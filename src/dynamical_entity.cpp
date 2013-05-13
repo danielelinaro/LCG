@@ -1,6 +1,6 @@
 #include "dynamical_entity.h"
 
-namespace dynclamp {
+namespace lcg {
 
 DynamicalEntity::DynamicalEntity(uint id)
         : Entity(id)
@@ -18,5 +18,5 @@ void DynamicalEntity::step()
         evolve();
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

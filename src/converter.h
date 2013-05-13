@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    converter.h
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -31,7 +31,7 @@
 #include <string>
 #include "entity.h"
 
-namespace dynclamp {
+namespace lcg {
 
 /*!
  * \class Converter
@@ -70,7 +70,7 @@ private:
         double m_previousInput;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -79,7 +79,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConverterFactory(string_dict& args);
+lcg::Entity* ConverterFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

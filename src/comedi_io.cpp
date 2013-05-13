@@ -9,7 +9,7 @@
 #include <sstream>
 #include <errno.h>
 
-namespace dynclamp {
+namespace lcg {
 
 #ifdef ASYNCHRONOUS_IO
 std::map<std::string,ComediAnalogIOProxy*> proxies;
@@ -712,7 +712,7 @@ void ComediAnalogOutputHardCal::write(double data)
         comedi_data_write(m_device, m_subdevice, m_channels[0], m_range, m_aref, sample);
 }
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // HAVE_LIBCOMEDI
 

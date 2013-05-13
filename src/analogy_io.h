@@ -13,7 +13,7 @@
 #include "entity.h"
 #include "common.h"
 
-namespace dynclamp {
+namespace lcg {
 
 //class AnalogyAnalogInputProxy;
 
@@ -187,7 +187,7 @@ protected:
 //        double m_outputConversionFactor;
 //};
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // HAVE_LIBANALOGY
 

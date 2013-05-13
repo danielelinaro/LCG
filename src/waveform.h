@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "generator.h"
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -56,7 +56,7 @@ private:
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -65,7 +65,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* WaveformFactory(string_dict& args);
+lcg::Entity* WaveformFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

@@ -6,25 +6,25 @@
 #include "engine.h"
 namespace fs = boost::filesystem;
 
-dynclamp::Entity* WaveformFactory(string_dict& args)
+lcg::Entity* WaveformFactory(string_dict& args)
 {
         uint id;
         bool triggered;
         std::string filename, units;
         const char *filenamePtr;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (dynclamp::CheckAndExtractValue(args, "filename", filename))
+        id = lcg::GetIdFromDictionary(args);
+        if (lcg::CheckAndExtractValue(args, "filename", filename))
                 filenamePtr = filename.c_str();
         else
                 filenamePtr = NULL;
-        if (!dynclamp::CheckAndExtractBool(args, "triggered", &triggered))
+        if (!lcg::CheckAndExtractBool(args, "triggered", &triggered))
                 triggered = false;
-        if (!dynclamp::CheckAndExtractValue(args, "units", units))
+        if (!lcg::CheckAndExtractValue(args, "units", units))
                 units = "N/A";
-        return new dynclamp::generators::Waveform(filenamePtr, triggered, units, id);
+        return new lcg::generators::Waveform(filenamePtr, triggered, units, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -224,5 +224,5 @@ void Waveform::terminate()
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 

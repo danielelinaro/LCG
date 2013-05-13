@@ -39,7 +39,7 @@ using boost::property_tree::ptree;
 #define YELLOW "[33m"
 #define NORMAL "[00m"
 
-namespace dynclamp
+namespace lcg
 {
 
 LogLevel verbosity = Info;
@@ -528,5 +528,5 @@ bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::st
 
         return false;
 }
-} // namespace dynclamp
+} // namespace lcg
 

@@ -6,7 +6,7 @@
 #include "utils.h"
 #include "events.h"
 
-namespace dynclamp {
+namespace lcg {
 
 class EventCounter : public Entity {
 public:
@@ -38,7 +38,7 @@ private:
         EventType m_eventToSend;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -47,7 +47,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* EventCounterFactory(string_dict& args);
+lcg::Entity* EventCounterFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

@@ -1,6 +1,6 @@
 #include "analogy_io.h"
 
-using namespace dynclamp;
+using namespace lcg;
 
 int main()
 {

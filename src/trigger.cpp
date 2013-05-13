@@ -1,19 +1,19 @@
 #include "trigger.h"
 #include "engine.h"
 
-dynclamp::Entity* PeriodicTriggerFactory(string_dict& args)
+lcg::Entity* PeriodicTriggerFactory(string_dict& args)
 {
         uint id;
         double frequency;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "frequency", &frequency)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a periodic trigger.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "frequency", &frequency)) {
+                lcg::Logger(lcg::Critical, "Unable to build a periodic trigger.\n");
                 return NULL;
         }
-        return new dynclamp::PeriodicTrigger(frequency, id);
+        return new lcg::PeriodicTrigger(frequency, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 Trigger::Trigger(uint id) : Entity(id)
 {
@@ -74,5 +74,5 @@ void PeriodicTrigger::setPeriod(double period)
         m_period = period;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

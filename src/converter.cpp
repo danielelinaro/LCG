@@ -1,19 +1,19 @@
 #include "converter.h"
 
-dynclamp::Entity* ConverterFactory(string_dict& args)
+lcg::Entity* ConverterFactory(string_dict& args)
 {
         uint id;
         std::string parameterName;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractValue(args, "parameterName", parameterName)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a Converter.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractValue(args, "parameterName", parameterName)) {
+                lcg::Logger(lcg::Critical, "Unable to build a Converter.\n");
                 return NULL;
         }
-        return new dynclamp::Converter(parameterName, id);
+        return new lcg::Converter(parameterName, id);
         
 }
 
-namespace dynclamp {
+namespace lcg {
 
 Converter::Converter(std::string parameterName, uint id)
         : Entity(id), m_parameterName(parameterName) 
@@ -48,5 +48,5 @@ bool Converter::initialise()
         return true;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

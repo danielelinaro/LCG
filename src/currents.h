@@ -5,7 +5,7 @@
 #include "neurons.h"
 #include "randlib.h"
 
-namespace dynclamp {
+namespace lcg {
 
 namespace ionic_currents {
 
@@ -230,7 +230,7 @@ private:
 
 } // namespace ionic_currents
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -240,16 +240,16 @@ extern "C" {
 #endif
 
 ///// DETERMINISTIC /////
-dynclamp::Entity* HHSodiumFactory(string_dict& args);
-dynclamp::Entity* HHPotassiumFactory(string_dict& args);
-dynclamp::Entity* HH2SodiumFactory(string_dict& args);
-dynclamp::Entity* HH2PotassiumFactory(string_dict& args);
-dynclamp::Entity* MCurrentFactory(string_dict& args);
-dynclamp::Entity* TCurrentFactory(string_dict& args);
+lcg::Entity* HHSodiumFactory(string_dict& args);
+lcg::Entity* HHPotassiumFactory(string_dict& args);
+lcg::Entity* HH2SodiumFactory(string_dict& args);
+lcg::Entity* HH2PotassiumFactory(string_dict& args);
+lcg::Entity* MCurrentFactory(string_dict& args);
+lcg::Entity* TCurrentFactory(string_dict& args);
 
 ///// STOCHASTIC /////
-dynclamp::Entity* HHSodiumCNFactory(string_dict& args);
-dynclamp::Entity* HHPotassiumCNFactory(string_dict& args);
+lcg::Entity* HHSodiumCNFactory(string_dict& args);
+lcg::Entity* HHPotassiumCNFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

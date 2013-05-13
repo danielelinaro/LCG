@@ -2,24 +2,24 @@
 #include "delay.h"
 #include "engine.h"
 
-dynclamp::Entity* DelayFactory(string_dict& args)
+lcg::Entity* DelayFactory(string_dict& args)
 {
         uint id, nSamples;
         double delay;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractUnsignedInteger(args, "nSamples", &nSamples)) {
-                if (dynclamp::CheckAndExtractDouble(args, "delay", &delay)) {
-                        return new dynclamp::Delay(delay, id);
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractUnsignedInteger(args, "nSamples", &nSamples)) {
+                if (lcg::CheckAndExtractDouble(args, "delay", &delay)) {
+                        return new lcg::Delay(delay, id);
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build a delay.\n");
+                        lcg::Logger(lcg::Critical, "Unable to build a delay.\n");
                         return NULL;
                 }
         }
-        return new dynclamp::Delay(nSamples, id);
+        return new lcg::Delay(nSamples, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 Delay::Delay(uint nSamples, uint id)
         : Entity(id), m_bufferPosition(0)
@@ -71,5 +71,5 @@ double Delay::output()
         return m_buffer[(m_bufferPosition+1) % m_bufferLength];
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

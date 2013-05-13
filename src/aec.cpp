@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    aec.cpp
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -24,7 +24,7 @@
 #include "utils.h"
 #include "aec.h"
 
-namespace dynclamp {
+namespace lcg {
 
 AEC::AEC(const char *kernelFile)
 {
@@ -145,5 +145,5 @@ bool AEC::hasKernel() const
         return m_withKernel;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

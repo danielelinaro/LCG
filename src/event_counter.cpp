@@ -2,56 +2,56 @@
 #include "engine.h"
 #include <boost/algorithm/string.hpp>
 
-dynclamp::Entity* EventCounterFactory(string_dict& args)
+lcg::Entity* EventCounterFactory(string_dict& args)
 {
         uint id, maxCount;
         bool autoReset;
         std::string eventToSendStr, eventToCountStr;
-        dynclamp::EventType eventToSend, eventToCount;
+        lcg::EventType eventToSend, eventToCount;
 
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractUnsignedInteger(args, "maxCount", &maxCount)) {
-                dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unable to build. Need to specify maxCount.\n", id);
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractUnsignedInteger(args, "maxCount", &maxCount)) {
+                lcg::Logger(lcg::Critical, "EventCounter(%d): Unable to build. Need to specify maxCount.\n", id);
                 return NULL;
         }
 
-        if (! dynclamp::CheckAndExtractBool(args, "autoReset", &autoReset)) {
+        if (! lcg::CheckAndExtractBool(args, "autoReset", &autoReset)) {
                 autoReset = true;
         }
-        if (dynclamp::CheckAndExtractValue(args, "eventToCount", eventToCountStr)) {
+        if (lcg::CheckAndExtractValue(args, "eventToCount", eventToCountStr)) {
                 int i=0;
-                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToCountStr, dynclamp::eventTypeNames[i]))
+                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToCountStr, lcg::eventTypeNames[i]))
                     i++;
                 if (i == NUMBER_OF_EVENT_TYPES) {
-                    dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unknown eventToCount type [%s].\n", id, eventToCountStr.c_str());
+                    lcg::Logger(lcg::Critical, "EventCounter(%d): Unknown eventToCount type [%s].\n", id, eventToCountStr.c_str());
                     return NULL;
                 }
-                eventToCount = static_cast<dynclamp::EventType>(i);
-				if (eventToCount == dynclamp::RESET) {
-                    dynclamp::Logger(dynclamp::Debug, "EventCounter(%d): Counting RESET events.\n", id);
+                eventToCount = static_cast<lcg::EventType>(i);
+				if (eventToCount == lcg::RESET) {
+                    lcg::Logger(lcg::Debug, "EventCounter(%d): Counting RESET events.\n", id);
 					autoReset = false;
 				}
 			}
         else {
-                eventToCount = dynclamp::SPIKE;
+                eventToCount = lcg::SPIKE;
         }
-        if (dynclamp::CheckAndExtractValue(args, "eventToSend", eventToSendStr)) {
+        if (lcg::CheckAndExtractValue(args, "eventToSend", eventToSendStr)) {
                 int i=0;
-                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToSendStr, dynclamp::eventTypeNames[i]))
+                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToSendStr, lcg::eventTypeNames[i]))
                     i++;
                 if (i == NUMBER_OF_EVENT_TYPES) {
-                    dynclamp::Logger(dynclamp::Critical, "EventCounter(%d): Unknown eventToSend type [%s].\n", id, eventToSendStr.c_str());
+                    lcg::Logger(lcg::Critical, "EventCounter(%d): Unknown eventToSend type [%s].\n", id, eventToSendStr.c_str());
                     return NULL;
                 }
-                eventToSend = static_cast<dynclamp::EventType>(i);
+                eventToSend = static_cast<lcg::EventType>(i);
         }
         else {
-                eventToSend = dynclamp::TRIGGER;
+                eventToSend = lcg::TRIGGER;
         }
-        return new dynclamp::EventCounter(maxCount, autoReset, eventToCount, eventToSend, id);
+        return new lcg::EventCounter(maxCount, autoReset, eventToCount, eventToSend, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 EventCounter::EventCounter(uint maxCount, bool autoReset, EventType eventToCount, EventType eventToSend, uint id)
         : Entity(id), m_maxCount(maxCount), m_autoReset(autoReset), m_eventToCount(eventToCount), m_eventToSend(eventToSend)
@@ -166,5 +166,5 @@ void EventCounter::dispatch()
         }
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

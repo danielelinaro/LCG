@@ -7,7 +7,7 @@
 #include "config.h"
 #endif
 
-namespace dynclamp {
+namespace lcg {
 
 class TimeLogger : public Entity {
 public:
@@ -19,7 +19,7 @@ private:
         double m_time;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -28,7 +28,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* TimeLoggerFactory(string_dict& args);
+lcg::Entity* TimeLoggerFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

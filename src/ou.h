@@ -20,7 +20,7 @@
 
 #define OU_E     m_parameters["E"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace neurons {
 class Neuron;
@@ -70,8 +70,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* OUcurrentFactory(string_dict& args);
-dynclamp::Entity* OUconductanceFactory(string_dict& args);
+lcg::Entity* OUcurrentFactory(string_dict& args);
+lcg::Entity* OUconductanceFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

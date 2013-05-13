@@ -21,9 +21,9 @@
 #define REPLAY_SCRIPT "replay"
 #define HASHES_FILE   "hashes.sha"
 
-using namespace dynclamp;
-using namespace dynclamp::generators;
-using namespace dynclamp::recorders;
+using namespace lcg;
+using namespace lcg::generators;
+using namespace lcg::recorders;
 
 int cp(const char *to, const char *from)
 {
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
 
         double tend, dt;
         std::vector<Entity*> entities;
-        dynclamp::generators::Waveform *stimulus;
+        lcg::generators::Waveform *stimulus;
 
         if (!ParseConfigurationFile(opt.configFile, entities, &tend, &dt)) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
         bool success;
         if (opt.stimulusFiles.size() > 0) {
                 for (int i=0; i<entities.size(); i++) {
-                        if ((stimulus = dynamic_cast<dynclamp::generators::Waveform*>(entities[i])) != NULL)
+                        if ((stimulus = dynamic_cast<lcg::generators::Waveform*>(entities[i])) != NULL)
                                 break;
                 }
 

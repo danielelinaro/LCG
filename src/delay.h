@@ -4,7 +4,7 @@
 #include "entity.h"
 #include "utils.h"
 
-namespace dynclamp {
+namespace lcg {
 
 class Delay : public Entity {
 public:
@@ -34,7 +34,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* DelayFactory(string_dict& args);
+lcg::Entity* DelayFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

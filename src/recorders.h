@@ -13,7 +13,7 @@
 #include "utils.h"
 #include "entity.h"
 
-namespace dynclamp {
+namespace lcg {
 
 namespace recorders {
 
@@ -221,7 +221,7 @@ private:
 
 } // namespace recorders
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -230,9 +230,9 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ASCIIRecorderFactory(string_dict& args);
-dynclamp::Entity* H5RecorderFactory(string_dict& args);
-dynclamp::Entity* TriggeredH5RecorderFactory(string_dict& args);
+lcg::Entity* ASCIIRecorderFactory(string_dict& args);
+lcg::Entity* H5RecorderFactory(string_dict& args);
+lcg::Entity* TriggeredH5RecorderFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

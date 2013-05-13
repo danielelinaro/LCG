@@ -2,26 +2,26 @@
 #include "engine.h"
 #include <math.h>
 
-dynclamp::Entity* FrequencyEstimatorFactory(string_dict& args)
+lcg::Entity* FrequencyEstimatorFactory(string_dict& args)
 {
         uint id;
         double tau;
         double initialFrequency;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractDouble(args, "tau", &tau)) {
-                dynclamp::Logger(dynclamp::Critical, "FrequencyEstimator(%d): Unable to build. Need to specify tau.\n", id);
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractDouble(args, "tau", &tau)) {
+                lcg::Logger(lcg::Critical, "FrequencyEstimator(%d): Unable to build. Need to specify tau.\n", id);
                 return NULL;
                 
         }
-        if (! dynclamp::CheckAndExtractDouble(args, "initialFrequency", &initialFrequency))
+        if (! lcg::CheckAndExtractDouble(args, "initialFrequency", &initialFrequency))
                 initialFrequency = 0.0;
         else
-                dynclamp::Logger(dynclamp::Info, "FrequencyEstimator(%d): Initialized at %f Hz.\n", id, initialFrequency);
-        return new dynclamp::FrequencyEstimator(tau,initialFrequency, id);
+                lcg::Logger(lcg::Info, "FrequencyEstimator(%d): Initialized at %f Hz.\n", id, initialFrequency);
+        return new lcg::FrequencyEstimator(tau,initialFrequency, id);
         
 }
 
-namespace dynclamp {
+namespace lcg {
 
 FrequencyEstimator::FrequencyEstimator(double tau, double initialFrequency, uint id)
         : Entity(id)
@@ -95,5 +95,5 @@ void FrequencyEstimator::emitTrigger() const
         emitEvent(new TriggerEvent(this));
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

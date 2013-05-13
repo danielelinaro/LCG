@@ -7,7 +7,7 @@
 #define FE_TAU m_parameters["tau"]
 #define FE_F0  m_parameters["f0"]
 
-namespace dynclamp {
+namespace lcg {
 
 class FrequencyEstimator : public Entity {
 public:
@@ -27,7 +27,7 @@ private:
         double m_frequency;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -36,7 +36,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* FrequencyEstimatorFactory(string_dict& args);
+lcg::Entity* FrequencyEstimatorFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

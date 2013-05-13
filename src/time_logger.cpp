@@ -1,13 +1,13 @@
 #include "time_logger.h"
 #include "engine.h"
 
-dynclamp::Entity* TimeLoggerFactory(string_dict& args)
+lcg::Entity* TimeLoggerFactory(string_dict& args)
 {
-        uint id = dynclamp::GetIdFromDictionary(args);
-        return new dynclamp::TimeLogger(id);
+        uint id = lcg::GetIdFromDictionary(args);
+        return new lcg::TimeLogger(id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 TimeLogger::TimeLogger(uint id)
         : Entity(id)
@@ -36,5 +36,5 @@ double TimeLogger::output()
         return m_time;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

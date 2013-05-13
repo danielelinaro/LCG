@@ -8,7 +8,7 @@
 #include <boost/call_traits.hpp>
 #include <boost/noncopyable.hpp>
 
-namespace dynclamp {
+namespace lcg {
 
 template <typename T>
 class ThreadSafeQueue : private boost::noncopyable

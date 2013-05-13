@@ -4,35 +4,35 @@
 #include <stdio.h>
 #include <string>
 
-dynclamp::Entity* ConstantFactory(string_dict& args)
+lcg::Entity* ConstantFactory(string_dict& args)
 {
         uint id;
         double value;
         std::string units;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "value", &value)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a Constant.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "value", &value)) {
+                lcg::Logger(lcg::Critical, "Unable to build a Constant.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractValue(args, "units", units))
+        if (!lcg::CheckAndExtractValue(args, "units", units))
                 units = "N/A";
-        return new dynclamp::Constant(value, units, id);
+        return new lcg::Constant(value, units, id);
 }
 
-dynclamp::Entity* ConstantFromFileFactory(string_dict& args)
+lcg::Entity* ConstantFromFileFactory(string_dict& args)
 {
         uint id;
         std::string filename, units;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractValue(args, "filename", filename))
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractValue(args, "filename", filename))
                 filename = LOGFILE;
-        if (!dynclamp::CheckAndExtractValue(args, "units", units))
+        if (!lcg::CheckAndExtractValue(args, "units", units))
                 units = "N/A";
-        dynclamp::Logger(dynclamp::Info, "ConstantFromFile: using file [%s].\n", filename.c_str());
-        return new dynclamp::ConstantFromFile(filename, units, id);
+        lcg::Logger(lcg::Info, "ConstantFromFile: using file [%s].\n", filename.c_str());
+        return new lcg::ConstantFromFile(filename, units, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 Constant::Constant(double value, const std::string& units, uint id)
         : Entity(id)
@@ -92,5 +92,5 @@ bool ConstantFromFile::initialise()
         return true;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

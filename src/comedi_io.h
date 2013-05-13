@@ -25,7 +25,7 @@
  */
 #define OVERSAMPLING_FACTOR 1
 
-namespace dynclamp {
+namespace lcg {
 
 /**
  * \brief Base class for analog I/O with Comedi.
@@ -215,7 +215,7 @@ private:
         double m_outputConversionFactor;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // HAVE_LIBCOMEDI
 

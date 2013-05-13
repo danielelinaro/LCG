@@ -53,7 +53,7 @@ namespace fs = boost::filesystem;
 #define CBN_GL_NS               m_parameters["gl_ns"]
 #define CBN_COEFF               m_parameters["coeff"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace neurons {
 
@@ -201,7 +201,7 @@ private:
 
 } // namespace neurons
 
-} // namespace dynclamp
+} // namespace lcg
 
 
 /***
@@ -211,11 +211,11 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* LIFNeuronFactory(string_dict& args);
-dynclamp::Entity* IzhikevichNeuronFactory(string_dict& args);
-dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args);
+lcg::Entity* LIFNeuronFactory(string_dict& args);
+lcg::Entity* IzhikevichNeuronFactory(string_dict& args);
+lcg::Entity* ConductanceBasedNeuronFactory(string_dict& args);
 #ifdef HAVE_LIBCOMEDI
-dynclamp::Entity* RealNeuronFactory(string_dict& args);
+lcg::Entity* RealNeuronFactory(string_dict& args);
 #endif
 	
 #ifdef __cplusplus

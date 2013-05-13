@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    events.cpp
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -25,7 +25,7 @@
 #include "thread_safe_queue.h"
 #include "engine.h"
 
-namespace dynclamp {
+namespace lcg {
 
 /*! The queue where events are stored. */
 ThreadSafeQueue<const Event*> eventsQueue;
@@ -132,5 +132,5 @@ StopRunEvent::StopRunEvent(const Entity *sender)
 	TerminateTrial();
 }
 
-} // namespace dynclamp
+} // namespace lcg
 

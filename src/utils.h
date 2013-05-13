@@ -23,14 +23,14 @@
 #endif // HAVE_LIBLXRT
 
 #if defined(__APPLE__)
-#define LIBNAME "libdynclamp.dylib"
+#define LIBNAME "liblcg.dylib"
 #elif defined(__linux__)
-#define LIBNAME "libdynclamp.so"
+#define LIBNAME "liblcg.so"
 #endif
 
 #define FILENAME_MAXLEN 1024
 
-namespace dynclamp
+namespace lcg
 {
 
 class Entity;
@@ -87,6 +87,6 @@ Entity* EntityFactory(const char *name, string_dict& args);
  */
 bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::string& unitsOut);
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif

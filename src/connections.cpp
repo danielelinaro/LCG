@@ -3,41 +3,41 @@
 #include "common.h"
 #include "synapses.h"
 
-dynclamp::Entity* ConnectionFactory(string_dict& args)
+lcg::Entity* ConnectionFactory(string_dict& args)
 {
         uint id;
         double delay;
 
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a Connection.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractDouble(args, "delay", &delay)) {
+                lcg::Logger(lcg::Critical, "Unable to build a Connection.\n");
                 return NULL;
         }
 
-        return new dynclamp::Connection(delay, id);
+        return new lcg::Connection(delay, id);
 }
 
-dynclamp::Entity* SynapticConnectionFactory(string_dict& args)
+lcg::Entity* SynapticConnectionFactory(string_dict& args)
 {
         uint id;
         double delay, weight;
 
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay) ||
-            ! dynclamp::CheckAndExtractDouble(args, "weight", &weight)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a SynapticConnection.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractDouble(args, "delay", &delay) ||
+            ! lcg::CheckAndExtractDouble(args, "weight", &weight)) {
+                lcg::Logger(lcg::Critical, "Unable to build a SynapticConnection.\n");
                 return NULL;
         }
 
-        return new dynclamp::SynapticConnection(delay, weight, id);
+        return new lcg::SynapticConnection(delay, weight, id);
 }
 
-dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args)
+lcg::Entity* VariableDelayConnectionFactory(string_dict& args)
 {
-        return new dynclamp::VariableDelayConnection(dynclamp::GetIdFromDictionary(args));
+        return new lcg::VariableDelayConnection(lcg::GetIdFromDictionary(args));
 }
 
-namespace dynclamp {
+namespace lcg {
 
 bool CompareFirst(const std::pair<double,Event*>& p1, 
                   const std::pair<double,Event*>& p2)
@@ -173,5 +173,5 @@ void VariableDelayConnection::addPre(Entity *entity)
         }
 }
 
-}//namespace dynclamp
+}//namespace lcg
 

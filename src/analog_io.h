@@ -14,7 +14,7 @@
 #include "analogy_io.h"
 #endif
 
-namespace dynclamp {
+namespace lcg {
 
 class AnalogInput : public Entity {
 public:
@@ -81,7 +81,7 @@ private:
 #endif
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -90,9 +90,9 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* AnalogInputFactory(string_dict& args);
-dynclamp::Entity* AnalogOutputFactory(string_dict& args);
-dynclamp::Entity* AnalogIOFactory(string_dict& args);
+lcg::Entity* AnalogInputFactory(string_dict& args);
+lcg::Entity* AnalogOutputFactory(string_dict& args);
+lcg::Entity* AnalogIOFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

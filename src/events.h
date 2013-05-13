@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    events.h
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -31,13 +31,13 @@
  * \brief Contains the definition of the base class Event and of some derived classes.
  */
 
-namespace dynclamp {
+namespace lcg {
 
 class Entity;
 
 /*! This enumeration defines the various types of events that can be sent and received by entities. */
 typedef enum {
-        /*! A spike event is emitted by an object that inherits from dynclamp::neurons::Neuron
+        /*! A spike event is emitted by an object that inherits from lcg::neurons::Neuron
          * and is used to inform the receiver that the threshold for spiking was crossed. */
         SPIKE = 0,
         /*!
@@ -198,7 +198,7 @@ void EnqueueEvent(const Event *event);
  */
 void ProcessEvents();
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif
 

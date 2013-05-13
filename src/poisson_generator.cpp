@@ -4,21 +4,21 @@
 #include "poisson_generator.h"
 #include "engine.h"
 
-dynclamp::Entity* PoissonFactory(string_dict& args)
+lcg::Entity* PoissonFactory(string_dict& args)
 {
         uint id;
         double rate;
         ullong seed;
-        id = dynclamp::GetIdFromDictionary(args);
-        seed = dynclamp::GetSeedFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "rate", &rate)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a Poisson generator.\n");
+        id = lcg::GetIdFromDictionary(args);
+        seed = lcg::GetSeedFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "rate", &rate)) {
+                lcg::Logger(lcg::Critical, "Unable to build a Poisson generator.\n");
                 return NULL;
         }
-        return new dynclamp::generators::Poisson(rate, seed, id);
+        return new lcg::generators::Poisson(rate, seed, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 extern ThreadSafeQueue<Event*> eventsQueue;
 
@@ -63,5 +63,5 @@ void Poisson::calculateTimeNextSpike()
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 

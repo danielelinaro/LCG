@@ -1,6 +1,6 @@
 /*=========================================================================
  *
- *   Program:     dynclamp
+ *   Program:     lcg
  *   Filename:    aec.h
  *
  *   Copyright (C) 2012 Daniele Linaro
@@ -30,7 +30,7 @@
 
 #include <stddef.h>
 
-namespace dynclamp {
+namespace lcg {
 
 /*!
  * \class AEC
@@ -134,7 +134,7 @@ private:
         bool m_withKernel;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif
 

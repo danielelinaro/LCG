@@ -10,7 +10,7 @@
 #define PE_F    m_parameters["frequency"]
 #define PE_T    m_parameters["period"]
 
-namespace dynclamp {
+namespace lcg {
 
 class ProbabilityEstimator : public Entity {
 public:
@@ -30,7 +30,7 @@ private:
         bool m_flag;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -39,7 +39,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ProbabilityEstimatorFactory(string_dict& args);
+lcg::Entity* ProbabilityEstimatorFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

@@ -2,139 +2,139 @@
 #include "currents.h"
 #include "engine.h"
 
-dynclamp::Entity* HHSodiumFactory(string_dict& args)
+lcg::Entity* HHSodiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH sodium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH sodium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.12;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = 50;
-        return new dynclamp::ionic_currents::HHSodium(area, gbar, E, id);
+        return new lcg::ionic_currents::HHSodium(area, gbar, E, id);
 }
 
-dynclamp::Entity* HHPotassiumFactory(string_dict& args)
+lcg::Entity* HHPotassiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH potassium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH potassium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.036;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = -77;
-        return new dynclamp::ionic_currents::HHPotassium(area, gbar, E, id);
+        return new lcg::ionic_currents::HHPotassium(area, gbar, E, id);
 }
 
-dynclamp::Entity* HH2SodiumFactory(string_dict& args)
+lcg::Entity* HH2SodiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, vtraub, temperature;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH2 sodium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH2 sodium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.003;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = 50;
-        if (!dynclamp::CheckAndExtractDouble(args, "vtraub", &vtraub))
+        if (!lcg::CheckAndExtractDouble(args, "vtraub", &vtraub))
                 vtraub = -63;
-        if (!dynclamp::CheckAndExtractDouble(args, "temperature", &temperature))
+        if (!lcg::CheckAndExtractDouble(args, "temperature", &temperature))
                 temperature = 36;
-        return new dynclamp::ionic_currents::HH2Sodium(area, gbar, E, vtraub, temperature, id);
+        return new lcg::ionic_currents::HH2Sodium(area, gbar, E, vtraub, temperature, id);
 }
 
-dynclamp::Entity* HH2PotassiumFactory(string_dict& args)
+lcg::Entity* HH2PotassiumFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, vtraub, temperature;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH2 potassium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH2 potassium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.005;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = -90;
-        if (!dynclamp::CheckAndExtractDouble(args, "vtraub", &vtraub))
+        if (!lcg::CheckAndExtractDouble(args, "vtraub", &vtraub))
                 vtraub = -63;
-        if (!dynclamp::CheckAndExtractDouble(args, "temperature", &temperature))
+        if (!lcg::CheckAndExtractDouble(args, "temperature", &temperature))
                 temperature = 36;
-        return new dynclamp::ionic_currents::HH2Potassium(area, gbar, E, vtraub, temperature, id);
+        return new lcg::ionic_currents::HH2Potassium(area, gbar, E, vtraub, temperature, id);
 }
 
-dynclamp::Entity* MCurrentFactory(string_dict& args)
+lcg::Entity* MCurrentFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, taumax, temperature;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH2 potassium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH2 potassium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.005;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = -90;
-        if (!dynclamp::CheckAndExtractDouble(args, "taumax", &taumax))
+        if (!lcg::CheckAndExtractDouble(args, "taumax", &taumax))
                 taumax = 1000;
-        if (!dynclamp::CheckAndExtractDouble(args, "temperature", &temperature))
+        if (!lcg::CheckAndExtractDouble(args, "temperature", &temperature))
                 temperature = 36;
-        return new dynclamp::ionic_currents::MCurrent(area, gbar, E, taumax, temperature, id);
+        return new lcg::ionic_currents::MCurrent(area, gbar, E, taumax, temperature, id);
 }
 
-dynclamp::Entity* HHSodiumCNFactory(string_dict& args)
+lcg::Entity* HHSodiumCNFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, gamma;
         ullong seed;
-        id = dynclamp::GetIdFromDictionary(args);
-        seed = dynclamp::GetSeedFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy sodium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        seed = lcg::GetSeedFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH noisy sodium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.12;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = 50;
-        if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
+        if (!lcg::CheckAndExtractDouble(args, "gamma", &gamma))
                 gamma = 10;
-        return new dynclamp::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id);
+        return new lcg::ionic_currents::HHSodiumCN(area, seed, gbar, E, gamma, id);
 }
 
-dynclamp::Entity* HHPotassiumCNFactory(string_dict& args)
+lcg::Entity* HHPotassiumCNFactory(string_dict& args)
 {
         uint id;
         double area, gbar, E, gamma;
         ullong seed;
-        id = dynclamp::GetIdFromDictionary(args);
-        seed = dynclamp::GetSeedFromDictionary(args);
-        if (!dynclamp::CheckAndExtractDouble(args, "area", &area)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an HH noisy potassium current.\n");
+        id = lcg::GetIdFromDictionary(args);
+        seed = lcg::GetSeedFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH noisy potassium current.\n");
                 return NULL;
         }
-        if (!dynclamp::CheckAndExtractDouble(args, "gbar", &gbar))
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
                 gbar = 0.036;
-        if (!dynclamp::CheckAndExtractDouble(args, "E", &E))
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
                 E = -77;
-        if (!dynclamp::CheckAndExtractDouble(args, "gamma", &gamma))
+        if (!lcg::CheckAndExtractDouble(args, "gamma", &gamma))
                 gamma = 10;
-        return new dynclamp::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id);
+        return new lcg::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace ionic_currents {
 
@@ -701,5 +701,5 @@ void HHPotassiumCN::evolve()
 
 } // namespace ionic_currents
 
-} // namespace dynclamp
+} // namespace lcg
 

@@ -4,7 +4,7 @@
 #include "entity.h"
 #include "common.h"
 
-namespace dynclamp
+namespace lcg
 {
 
 class Constant : public Entity
@@ -39,8 +39,8 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConstantFactory(string_dict& args);
-dynclamp::Entity* ConstantFromFileFactory(string_dict& args);
+lcg::Entity* ConstantFactory(string_dict& args);
+lcg::Entity* ConstantFromFileFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

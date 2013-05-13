@@ -13,7 +13,7 @@
  */
 
 /*!
- * \mainpage A Dynamic Clamp library and toolbox (dynclamp)
+ * \mainpage A Dynamic Clamp library and toolbox (lcg)
  *
  * \author Daniele Linaro <daniele.linaro@ua.ac.be>
  * \author Joao Couto <joao@tnb.ua.ac.be>
@@ -42,16 +42,16 @@
  */
 
 /*!
- * \namespace dynclamp
+ * \namespace lcg
  * \brief Main namespace that contains all classes and the utility functions of the toolbox.
  */
-namespace dynclamp {
+namespace lcg {
 
 }
 
 #include <limits>
 
-#define LOGFILE                 "/tmp/dynclamp.txt"
+#define LOGFILE                 "/tmp/lcg.txt"
 #define TRIM_ANALOG_OUTPUT
 
 // WHY is this enumeration here???

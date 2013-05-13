@@ -2,63 +2,63 @@
 #include "engine.h"
 #include <sstream>
 
-dynclamp::Entity* SobolDelayFactory(string_dict& args)
+lcg::Entity* SobolDelayFactory(string_dict& args)
 {
         uint id, startSample;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractUnsignedInteger(args, "startSample", &startSample))
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractUnsignedInteger(args, "startSample", &startSample))
                 startSample = 0;
-		dynclamp::Logger(dynclamp::Important, "Using start sample [%d].\n", startSample);
-        return new dynclamp::SobolDelay(startSample, id);
+		lcg::Logger(lcg::Important, "Using start sample [%d].\n", startSample);
+        return new lcg::SobolDelay(startSample, id);
 }
 
-dynclamp::Entity* PhasicDelayFactory(string_dict& args)
+lcg::Entity* PhasicDelayFactory(string_dict& args)
 {
         uint id;
         double delay;
-        id = dynclamp::GetIdFromDictionary(args);
-        if (! dynclamp::CheckAndExtractDouble(args, "delay", &delay)) {
-                dynclamp::Logger(dynclamp::Important, "PhasicDelay(%d): Using a phasic delay of zero!\n", id);
+        id = lcg::GetIdFromDictionary(args);
+        if (! lcg::CheckAndExtractDouble(args, "delay", &delay)) {
+                lcg::Logger(lcg::Important, "PhasicDelay(%d): Using a phasic delay of zero!\n", id);
                 delay = 0.0;
         }
-        return new dynclamp::PhasicDelay(delay, id);
+        return new lcg::PhasicDelay(delay, id);
 }
 
-dynclamp::Entity* RandomDelayFactory(string_dict& args)
+lcg::Entity* RandomDelayFactory(string_dict& args)
 {
         uint id;
         ullong seed;
         std::string intervalStr;
         double interval[2], mean, stddev;
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if (! dynclamp::CheckAndExtractUnsignedLongLong(args, "seed", &seed))
+        if (! lcg::CheckAndExtractUnsignedLongLong(args, "seed", &seed))
                 seed = time(NULL);
 
-        if (dynclamp::CheckAndExtractValue(args, "interval", intervalStr)) {
+        if (lcg::CheckAndExtractValue(args, "interval", intervalStr)) {
                 size_t stop = intervalStr.find(",",0);
                 if (stop == intervalStr.npos) {
-                        dynclamp::Logger(dynclamp::Critical, "Error in the definition of the interval "
+                        lcg::Logger(lcg::Critical, "Error in the definition of the interval "
                                         "(which should be composed of two comma-separated values).\n");
                         return NULL;
                 }
                 std::stringstream ss0(intervalStr.substr(0,stop)), ss1(intervalStr.substr(stop+1));
                 ss0 >> interval[0];
                 ss1 >> interval[1];
-                dynclamp::Logger(dynclamp::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
-                return new dynclamp::RandomDelay(interval, seed, id);
+                lcg::Logger(lcg::Debug, "Interval = [%g,%g].\n", interval[0], interval[1]);
+                return new lcg::RandomDelay(interval, seed, id);
         }
 
-        if (dynclamp::CheckAndExtractDouble(args, "mean", &mean) &&
-                 dynclamp::CheckAndExtractDouble(args, "stddev", &stddev)) {
-                return new dynclamp::RandomDelay(mean, stddev, seed, id);
+        if (lcg::CheckAndExtractDouble(args, "mean", &mean) &&
+                 lcg::CheckAndExtractDouble(args, "stddev", &stddev)) {
+                return new lcg::RandomDelay(mean, stddev, seed, id);
         }
         
-        dynclamp::Logger(dynclamp::Important, "Unable to build a RandomDelay.\n");
+        lcg::Logger(lcg::Important, "Unable to build a RandomDelay.\n");
         return NULL;
 }
 
-namespace dynclamp {
+namespace lcg {
 
 Functor::Functor(uint id) : Entity(id)
 {
@@ -172,5 +172,5 @@ double RandomDelay::operator()()
         return delay;
 }
 
-}//namespace dynclamp
+}//namespace lcg
 

@@ -3,50 +3,50 @@
 #include "engine.h"
 #include "neurons.h"
 
-dynclamp::Entity* ExponentialSynapseFactory(string_dict& args)
+lcg::Entity* ExponentialSynapseFactory(string_dict& args)
 {
         uint id;
         double E, tau;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build an exponential synapse.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "E", &E) ||
+             ! lcg::CheckAndExtractDouble(args, "tau", &tau)) {
+                lcg::Logger(lcg::Critical, "Unable to build an exponential synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::ExponentialSynapse(E, tau, id);
+        return new lcg::synapses::ExponentialSynapse(E, tau, id);
 }
 
-dynclamp::Entity* Exp2SynapseFactory(string_dict& args)
+lcg::Entity* Exp2SynapseFactory(string_dict& args)
 {        
         uint id;
         double E, tau[2];
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauDecay", &tau[1])) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a biexponential synapse.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "E", &E) ||
+             ! lcg::CheckAndExtractDouble(args, "tauRise", &tau[0]) ||
+             ! lcg::CheckAndExtractDouble(args, "tauDecay", &tau[1])) {
+                lcg::Logger(lcg::Critical, "Unable to build a biexponential synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::Exp2Synapse(E, tau, id);
+        return new lcg::synapses::Exp2Synapse(E, tau, id);
 }
 
-dynclamp::Entity* TMGSynapseFactory(string_dict& args)
+lcg::Entity* TMGSynapseFactory(string_dict& args)
 {
         uint id;
         double E, U, tau[3];
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "E", &E) ||
-             ! dynclamp::CheckAndExtractDouble(args, "U", &U) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau1", &tau[0]) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tauFacil", &tau[2])) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a Tsodyks-Markram synapse.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "E", &E) ||
+             ! lcg::CheckAndExtractDouble(args, "U", &U) ||
+             ! lcg::CheckAndExtractDouble(args, "tau1", &tau[0]) ||
+             ! lcg::CheckAndExtractDouble(args, "tauRec", &tau[1]) ||
+             ! lcg::CheckAndExtractDouble(args, "tauFacil", &tau[2])) {
+                lcg::Logger(lcg::Critical, "Unable to build a Tsodyks-Markram synapse.\n");
                 return NULL;
         }
-        return new dynclamp::synapses::TMGSynapse(E, U, tau, id);
+        return new lcg::synapses::TMGSynapse(E, U, tau, id);
 }
 
-namespace dynclamp {
+namespace lcg {
 
 namespace synapses {
 
@@ -236,5 +236,5 @@ void TMGSynapse::handleSpike(double weight)
 
 } // namespace synapses
 
-} // namespace dynclamp
+} // namespace lcg
 

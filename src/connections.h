@@ -5,7 +5,7 @@
 #include "functors.h"
 #include <list>
 
-namespace dynclamp {
+namespace lcg {
 
 class Connection : public Entity
 {
@@ -58,9 +58,9 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConnectionFactory(string_dict& args);
-dynclamp::Entity* SynapticConnectionFactory(string_dict& args);
-dynclamp::Entity* VariableDelayConnectionFactory(string_dict& args);
+lcg::Entity* ConnectionFactory(string_dict& args);
+lcg::Entity* SynapticConnectionFactory(string_dict& args);
+lcg::Entity* VariableDelayConnectionFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

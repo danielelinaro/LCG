@@ -23,7 +23,7 @@
 #include <errno.h>
 #endif // HAVE_LIBRT
 
-namespace dynclamp {
+namespace lcg {
 
 double globalT;
 double globalDt = SetGlobalDt(1.0/20e3);
@@ -239,7 +239,7 @@ stopRT:
 
 #elif defined(HAVE_LIBANALOGY)
 
-RT_TASK dynclamp_rt_task;
+RT_TASK lcg_rt_task;
 
 class TaskArgs {
 public:
@@ -317,7 +317,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         // Avoids memory swapping for this program
         mlockall(MCL_CURRENT | MCL_FUTURE);
         
-        flag = rt_task_create(&dynclamp_rt_task, "dynclamp", 0, 99, T_CPU(3) | T_JOINABLE);
+        flag = rt_task_create(&lcg_rt_task, "lcg", 0, 99, T_CPU(3) | T_JOINABLE);
         // Create the task
         if (flag != 0) {
                 Logger(Critical, "Unable to create the real-time task (err = %d).\n", flag);
@@ -326,15 +326,15 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         Logger(Debug, "Successfully created the real-time task.\n");
 
         // Start the task
-        flag = rt_task_start(&dynclamp_rt_task, RTSimulationTask, &cookie);
+        flag = rt_task_start(&lcg_rt_task, RTSimulationTask, &cookie);
         if (flag != 0) {
                 Logger(Critical, "Unable to start the real-time task (err = %d).\n", flag);
-                rt_task_delete(&dynclamp_rt_task);
+                rt_task_delete(&lcg_rt_task);
         }
         Logger(Debug, "Successfully started the real-time task.\n");
 
         // Wait for the task to finish
-        flag = rt_task_join(&dynclamp_rt_task);
+        flag = rt_task_join(&lcg_rt_task);
         if (flag == 0) {
                 // There's no need to delete the task if we've joined successfully
                 Logger(Debug, "Successfully joined with the child task.\n");
@@ -343,7 +343,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 Logger(Important, "Unable to join with the child task.\n");
                 // Delete the task
                 Logger(Debug, "Deleting the task.\n");
-                rt_task_delete(&dynclamp_rt_task);
+                rt_task_delete(&lcg_rt_task);
         }
 
         Logger(Debug, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
@@ -557,6 +557,6 @@ bool Simulate(const std::vector<Entity*>& entities, double tend)
         return success;
 }
 
-} // namespace dynclamp
+} // namespace lcg
 
 

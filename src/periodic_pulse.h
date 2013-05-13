@@ -8,7 +8,7 @@
 #define PP_AMPLITUDE    m_parameters["amplitude"]
 #define PP_PERIOD       m_parameters["period"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -37,7 +37,7 @@ private:
 
 } // namespace generators
 
-} // namespace dynclamp
+} // namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -46,7 +46,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* PeriodicPulseFactory(string_dict& args);
+lcg::Entity* PeriodicPulseFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

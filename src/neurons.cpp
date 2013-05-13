@@ -5,98 +5,98 @@
 #include "engine.h"
 #include <stdio.h>
 
-dynclamp::Entity* LIFNeuronFactory(string_dict& args)
+lcg::Entity* LIFNeuronFactory(string_dict& args)
 {
         uint id;
         double C, tau, tarp, Er, E0, Vth, Iext;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractDouble(args, "C", &C) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tau", &tau) ||
-             ! dynclamp::CheckAndExtractDouble(args, "tarp", &tarp) ||
-             ! dynclamp::CheckAndExtractDouble(args, "Er", &Er) ||
-             ! dynclamp::CheckAndExtractDouble(args, "E0", &E0) ||
-             ! dynclamp::CheckAndExtractDouble(args, "Vth", &Vth) ||
-             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a LIF neuron.\n");
+        if ( ! lcg::CheckAndExtractDouble(args, "C", &C) ||
+             ! lcg::CheckAndExtractDouble(args, "tau", &tau) ||
+             ! lcg::CheckAndExtractDouble(args, "tarp", &tarp) ||
+             ! lcg::CheckAndExtractDouble(args, "Er", &Er) ||
+             ! lcg::CheckAndExtractDouble(args, "E0", &E0) ||
+             ! lcg::CheckAndExtractDouble(args, "Vth", &Vth) ||
+             ! lcg::CheckAndExtractDouble(args, "Iext", &Iext)) {
+                lcg::Logger(lcg::Critical, "Unable to build a LIF neuron.\n");
                 return NULL;
         }
 
-        return new dynclamp::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
+        return new lcg::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
 }
 
-dynclamp::Entity* IzhikevichNeuronFactory(string_dict& args)
+lcg::Entity* IzhikevichNeuronFactory(string_dict& args)
 {
         uint id;
         double a, b, c, d, Vspk, Iext;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-		if (! dynclamp::CheckAndExtractDouble(args, "a", &a))
+		if (! lcg::CheckAndExtractDouble(args, "a", &a))
                 a = 0.02;
-		if (! dynclamp::CheckAndExtractDouble(args, "b", &b))
+		if (! lcg::CheckAndExtractDouble(args, "b", &b))
                 b = 0.2;
-		if (! dynclamp::CheckAndExtractDouble(args, "c", &c))
+		if (! lcg::CheckAndExtractDouble(args, "c", &c))
                 c = -65;
-		if (! dynclamp::CheckAndExtractDouble(args, "d", &d))
+		if (! lcg::CheckAndExtractDouble(args, "d", &d))
                 Vspk = 2;
-		if (! dynclamp::CheckAndExtractDouble(args, "Vspk", &Vspk))
+		if (! lcg::CheckAndExtractDouble(args, "Vspk", &Vspk))
                 Vspk = 30;
-		if (! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext))
+		if (! lcg::CheckAndExtractDouble(args, "Iext", &Iext))
                 Iext = 0;
 
-        return new dynclamp::neurons::IzhikevichNeuron(a, b, c, d, Vspk, Iext, id);
+        return new lcg::neurons::IzhikevichNeuron(a, b, c, d, Vspk, Iext, id);
 }
 
-dynclamp::Entity* ConductanceBasedNeuronFactory(string_dict& args)
+lcg::Entity* ConductanceBasedNeuronFactory(string_dict& args)
 {
         uint id;
         double C, gl, El, Iext, area, spikeThreshold, V0;
-        id = dynclamp::GetIdFromDictionary(args);
-        if ( ! dynclamp::CheckAndExtractDouble(args, "C", &C) ||
-             ! dynclamp::CheckAndExtractDouble(args, "gl", &gl) ||
-             ! dynclamp::CheckAndExtractDouble(args, "El", &El) ||
-             ! dynclamp::CheckAndExtractDouble(args, "Iext", &Iext) ||
-             ! dynclamp::CheckAndExtractDouble(args, "area", &area) ||
-             ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
-             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a conductance based neuron.\n");
+        id = lcg::GetIdFromDictionary(args);
+        if ( ! lcg::CheckAndExtractDouble(args, "C", &C) ||
+             ! lcg::CheckAndExtractDouble(args, "gl", &gl) ||
+             ! lcg::CheckAndExtractDouble(args, "El", &El) ||
+             ! lcg::CheckAndExtractDouble(args, "Iext", &Iext) ||
+             ! lcg::CheckAndExtractDouble(args, "area", &area) ||
+             ! lcg::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
+             ! lcg::CheckAndExtractDouble(args, "V0", &V0)) {
+                lcg::Logger(lcg::Critical, "Unable to build a conductance based neuron.\n");
                 return NULL;
         }
 
-        return new dynclamp::neurons::ConductanceBasedNeuron(C, gl, El, Iext, area, spikeThreshold, V0, id);
+        return new lcg::neurons::ConductanceBasedNeuron(C, gl, El, Iext, area, spikeThreshold, V0, id);
 }
 
 #ifdef HAVE_LIBCOMEDI
 
-dynclamp::Entity* RealNeuronFactory(string_dict& args)
+lcg::Entity* RealNeuronFactory(string_dict& args)
 {
         uint inputSubdevice, outputSubdevice, readChannel, writeChannel, inputRange, reference, id;
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
         bool holdLastValue, adaptiveThreshold;
 
-        id = dynclamp::GetIdFromDictionary(args);
+        id = lcg::GetIdFromDictionary(args);
 
-        if ( ! dynclamp::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
-             ! dynclamp::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
-             ! dynclamp::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
-             ! dynclamp::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
-             ! dynclamp::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
-             ! dynclamp::CheckAndExtractDouble(args, "V0", &V0)) {
-                dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
+        if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "outputSubdevice", &outputSubdevice) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "readChannel", &readChannel) ||
+             ! lcg::CheckAndExtractUnsignedInteger(args, "writeChannel", &writeChannel) ||
+             ! lcg::CheckAndExtractDouble(args, "inputConversionFactor", &inputConversionFactor) ||
+             ! lcg::CheckAndExtractDouble(args, "outputConversionFactor", &outputConversionFactor) ||
+             ! lcg::CheckAndExtractDouble(args, "spikeThreshold", &spikeThreshold) ||
+             ! lcg::CheckAndExtractDouble(args, "V0", &V0)) {
+                lcg::Logger(lcg::Critical, "Unable to build a real neuron.\n");
                 return NULL;
         }
 
 
-        if (! dynclamp::CheckAndExtractValue(args, "kernelFile", kernelFile))
+        if (! lcg::CheckAndExtractValue(args, "kernelFile", kernelFile))
                 kernelFile = "";
 
-        if (! dynclamp::CheckAndExtractValue(args, "inputRange", inputRangeStr)) {
+        if (! lcg::CheckAndExtractValue(args, "inputRange", inputRangeStr)) {
                 inputRange = PLUS_MINUS_TEN;
         }
         else {
@@ -121,13 +121,13 @@ dynclamp::Entity* RealNeuronFactory(string_dict& args)
                         inputRange = PLUS_MINUS_ZERO_POINT_TWO;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown input range: [%s].\n", inputRangeStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
+                        lcg::Logger(lcg::Critical, "Unknown input range: [%s].\n", inputRangeStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build a real neuron.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractValue(args, "reference", referenceStr)) {
+        if (! lcg::CheckAndExtractValue(args, "reference", referenceStr)) {
                 reference = GRSE;
         }
         else {
@@ -138,19 +138,19 @@ dynclamp::Entity* RealNeuronFactory(string_dict& args)
                         reference = NRSE;
                 }
                 else {
-                        dynclamp::Logger(dynclamp::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
-                        dynclamp::Logger(dynclamp::Critical, "Unable to build a real neuron.\n");
+                        lcg::Logger(lcg::Critical, "Unknown reference mode: [%s].\n", referenceStr.c_str());
+                        lcg::Logger(lcg::Critical, "Unable to build a real neuron.\n");
                         return NULL;
                 }
         }
 
-        if (! dynclamp::CheckAndExtractBool(args, "holdLastValue", &holdLastValue))
+        if (! lcg::CheckAndExtractBool(args, "holdLastValue", &holdLastValue))
                 holdLastValue = false;
 
-        if (! dynclamp::CheckAndExtractBool(args, "adaptiveThreshold", &adaptiveThreshold))
+        if (! lcg::CheckAndExtractBool(args, "adaptiveThreshold", &adaptiveThreshold))
                 adaptiveThreshold = false;
 
-        return new dynclamp::neurons::RealNeuron(spikeThreshold, V0,
+        return new lcg::neurons::RealNeuron(spikeThreshold, V0,
                                                  deviceFile.c_str(),
                                                  inputSubdevice, outputSubdevice, readChannel, writeChannel,
                                                  inputConversionFactor, outputConversionFactor,
@@ -161,7 +161,7 @@ dynclamp::Entity* RealNeuronFactory(string_dict& args)
 
 #endif
 
-namespace dynclamp {
+namespace lcg {
 
 extern ThreadSafeQueue<Event*> eventsQueue;
 
@@ -527,5 +527,5 @@ const double* RealNeuron::metadata(size_t *dims, char *label) const
 
 } // namespace neurons
 
-} // namespace dynclamp
+} // namespace lcg
 

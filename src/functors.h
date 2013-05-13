@@ -5,7 +5,7 @@
 #include "entity.h"
 #include "randlib.h"
 
-namespace dynclamp {
+namespace lcg {
 
 /** 
 * @class Functor
@@ -88,7 +88,7 @@ private:
         double m_coeffs[2];
 };
 
-} //namespace dynclamp
+} //namespace lcg
 
 /***
  *   FACTORY METHODS
@@ -97,9 +97,9 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* SobolDelayFactory(string_dict& args);
-dynclamp::Entity* PhasicDelayFactory(string_dict& args);
-dynclamp::Entity* RandomDelayFactory(string_dict& args);
+lcg::Entity* SobolDelayFactory(string_dict& args);
+lcg::Entity* PhasicDelayFactory(string_dict& args);
+lcg::Entity* RandomDelayFactory(string_dict& args);
         
 #ifdef __cplusplus
 }

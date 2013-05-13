@@ -9,7 +9,7 @@
 
 #define COND_E  m_parameters["E"]
 
-namespace dynclamp {
+namespace lcg {
 
 namespace generators {
 
@@ -27,7 +27,7 @@ private:
         neurons::Neuron *m_neuron;
 };
 
-} // namespace dynclamp
+} // namespace lcg
 
 } // namespace generators
 
@@ -38,7 +38,7 @@ private:
 extern "C" {
 #endif
 
-dynclamp::Entity* ConductanceStimulusFactory(string_dict& args);
+lcg::Entity* ConductanceStimulusFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

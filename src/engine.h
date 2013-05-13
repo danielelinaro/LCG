@@ -9,7 +9,7 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
-namespace dynclamp {
+namespace lcg {
 
 double SetGlobalDt(double dt);
 bool Simulate(const std::vector<Entity*>& entities, double tend);
@@ -63,7 +63,7 @@ void KillProgram();
 /*! Stops the execution of the current trial. */
 void TerminateTrial();
 
-} // namespace dynclamp
+} // namespace lcg
 
 #endif // ENGINE_H
 
