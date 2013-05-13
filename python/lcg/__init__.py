@@ -21,10 +21,12 @@ __all__ = ['writeSinusoidallyModulatedOU',
            'writeGStimFiles','writeStimFile',
            'substituteStrings',
            'computeRatesRatio', 'computeSynapticBackgroundCoefficients','computeElectrodeKernel',
-           'findSpikes','loadH5Trace']
+           'findSpikes','loadH5Trace',
+           'lcg_xml']
 
 import utils
 from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
+from lcg_xml import lcg_xml
 
 ### the scripts
 import extract_kernels

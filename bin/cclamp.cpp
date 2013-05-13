@@ -40,7 +40,7 @@ enum cclamp_mode {DEFAULT, SPONTANEOUS, TRIGGERED_RECORDER};
 struct CCoptions {
         useconds_t iti, ibi;
         uint nTrials, nBatches;
-        double dt, tend;
+        double dt, tend, hold_value;
         std::vector<std::string> stimulusFiles;
 };
 
@@ -80,13 +80,13 @@ bool writeDefaultConfigurationFile()
 
         fclose(fid);
 
-        Logger(Info, "Successfully saved default configuration file in [%s].\n", configFile);
+        Logger(Critical, "Successfully saved default configuration file in [%s].\n", configFile);
         return true;
 }
 
 void parseArgs(int argc, char *argv[], CCoptions *opt)
 {
-        double iti, ibi, freq, tend;
+        double iti, ibi, freq, tend, hold_value;
         int verbosity;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
@@ -107,6 +107,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
                         ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
                         ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency")
+                        ("hold-value,H", po::value<double>(&hold_value)->default_value(0), "specify the hold value (default 0 pA)")
                         ("stimfile,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
                         ("stimdir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
 
@@ -168,6 +169,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                 opt->nTrials = nTrials;
                 opt->nBatches = nBatches;
 				opt->tend = tend;
+				opt->hold_value = hold_value;
 
         } catch (std::exception e) {
                 std::cout << e.what() << std::endl;
@@ -176,7 +178,7 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
 
 }
 
-bool parseConfigurationFile(std::vector<Entity*>& entities, enum cclamp_mode mode = DEFAULT)
+bool parseConfigurationFile(std::vector<Entity*>& entities, double hold_value = 0.0, enum cclamp_mode mode = DEFAULT)
 {
         ptree pt;
         string_dict parameters;
@@ -273,8 +275,28 @@ bool parseConfigurationFile(std::vector<Entity*>& entities, enum cclamp_mode mod
 									entities.size()-(AI_cnt+1), entities.size()-1);
 						for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
 							entities[i]->connect(entities[0]);
-						break;		
-				}      
+
+						if(hold_value != 0.0)
+						{
+							Logger(Debug,"Using %f as a holding value.\n",hold_value);
+							std::stringstream hold_value_str;
+							hold_value_str << hold_value;
+							std::stringstream id;
+							id << entities.back()->id() + 1;
+							parameters.clear();
+							parameters["id"] = id.str();
+							parameters["units"] = "pA";
+							parameters["value"] = hold_value_str.str();
+							entities.push_back( EntityFactory("Constant", parameters) );
+							Logger(Debug, "Connecting the constant to the [%d to %d] to the recorder.\n",
+									entities.size(), 0);
+							entities.back()->connect(entities[0]);
+							Logger(Debug, "Connecting the constant to the analog output.\n");
+							entities.back()->connect(entities[entities.size()-2]);
+						}   
+						break;
+					
+				}   	
 
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);
@@ -311,9 +333,9 @@ int main(int argc, char *argv[])
                 Logger(Important, "Recording in spontaneous mode.\n");
 				mode = SPONTANEOUS;
 		}
-        if (! parseConfigurationFile(entities, mode)) {
+        if (! parseConfigurationFile(entities, opt.hold_value, mode)) {
                 writeDefaultConfigurationFile();
-                parseConfigurationFile(entities,mode);
+                parseConfigurationFile(entities, opt.hold_value, mode);
         }
 		switch(mode)
 		{
@@ -337,7 +359,8 @@ int main(int argc, char *argv[])
         Logger(Info, CC_BANNER);
         Logger(Info, "Number of batches: %d.\n", opt.nBatches);
         Logger(Info, "Number of trials: %d.\n", opt.nTrials);
-        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
+        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 2e-6);
+        Logger(Info, "Holding current: %g pA.\n", opt.hold_value);
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
 
         bool success;

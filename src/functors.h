@@ -27,11 +27,12 @@ public:
 class SobolDelay : public Functor
 {
 public:
-        SobolDelay(uint id = GetId());
+        SobolDelay(uint startSample = 0, uint id = GetId());
         virtual bool initialise();
         virtual double operator()();
 private:
         int m_numberOfSobolSequences;
+		uint m_startSample;
 };
 
 /**

@@ -4,7 +4,12 @@
 
 dynclamp::Entity* SobolDelayFactory(string_dict& args)
 {
-        return new dynclamp::SobolDelay(dynclamp::GetIdFromDictionary(args));
+        uint id, startSample;
+        id = dynclamp::GetIdFromDictionary(args);
+        if (! dynclamp::CheckAndExtractUnsignedInteger(args, "startSample", &startSample))
+                startSample = 0;
+		dynclamp::Logger(dynclamp::Important, "Using start sample [%d].\n", startSample);
+        return new dynclamp::SobolDelay(startSample, id);
 }
 
 dynclamp::Entity* PhasicDelayFactory(string_dict& args)
@@ -73,8 +78,8 @@ bool Functor::initialise()
         return true;
 }
 
-SobolDelay::SobolDelay(uint id)
-        : Functor(id), m_numberOfSobolSequences(-1)
+SobolDelay::SobolDelay(uint startSample, uint id)
+        : Functor(id), m_numberOfSobolSequences(-1), m_startSample(startSample)
 {
         setName("SobolDelay");
         setUnits("s");
@@ -85,6 +90,8 @@ bool SobolDelay::initialise()
         m_numberOfSobolSequences = -1;
         sobseq(&m_numberOfSobolSequences, NULL);
         m_numberOfSobolSequences = 1;
+		for (uint i=0; i<m_startSample; i++)
+			this->operator()();
         return true;
 }
 
