@@ -120,7 +120,7 @@ def parseBackgroundArgs():
     for o,a in opts:
         if o == '-R':
             options['input_resistance'] = float(a)
-        elif o == '-F':
+        elif o == '-r':
             options['R_exc'] = float(a)
         elif o == '-v':
             options['balanced_voltage'] = float(a)
@@ -130,7 +130,7 @@ def parseBackgroundArgs():
         sys.exit(1)
             
     if not options['R_exc']:
-        print('You must specify the firing frequency of the background excitatory population (-F switch).')
+        print('You must specify the firing frequency of the background excitatory population (-r switch).')
         sys.exit(1)
                 
     if not options['balanced_voltage']:
