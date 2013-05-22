@@ -5,7 +5,6 @@
 -) remove useless scripts!
 -) analog output should also be proxied in asynchronous mode.
 -) add a Logger object.
--) see whether OU*, TimeLogger and Delay can be removed.
 -) finish to add the ionic currents for LTS neurons.
 -) Add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
 
