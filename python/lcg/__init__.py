@@ -28,6 +28,7 @@ import common
 import utils
 from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
 from lcg_xml import lcg_xml
+import entities
 
 ### the scripts
 import extract_kernels
