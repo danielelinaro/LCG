@@ -14,8 +14,7 @@ Authors:
 
 """
 
-__all__ = ['writeSinusoidallyModulatedOU',
-           'writePulsesStimFile','writeIPlusBgGConfig', 'writeGainModulationConfig',
+__all__ = ['writePulsesStimFile','writeIPlusBgGConfig', 'writeGainModulationConfig',
            'writeSinusoidsConfig', 'writeFClampConfig', 'writeSpontaneousConfig',
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
@@ -26,7 +25,7 @@ __all__ = ['writeSinusoidallyModulatedOU',
 
 import common
 import utils
-from utils import writeSinusoidallyModulatedOU,writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
+from utils import writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
 from config_writer import XMLConfigurationFile
 import entities
 

@@ -5,23 +5,6 @@ import tables as tbl
 
 ########## Functions that write configuration files ##########
 
-def writeSinusoidallyModulatedOU(f, r0, dr, Rin, tau, dur, type, seed, outfile):
-    if type == 'exc':
-        g = 0.02/Rin*1e3   # [nS]
-    elif type == 'inh':
-        g = 0.06/Rin*1e3   # [nS]
-    else:
-        print("Unknown type [%s]: allowed values are 'exc' or 'inh'." % type)
-        return -1
-    tau_ms = tau   # [ms]
-    tau = tau*1e-3 # [s]
-    G = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
-         [dur,-3,0,1,tau_ms,0,0,1,seed,2,0,1], # OU
-         [0,-3,g**2*tau/2*dr,f,0,g**2*tau/2*r0,0,0,0,3,2,0.5], # sine that sets the variance
-         [0,-3,g*tau*dr,f,0,g*tau*r0,0,0,0,3,1,1], # sine that sets the mean
-         [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
-    return writeStimFile(outfile, G, False)
-
 def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.

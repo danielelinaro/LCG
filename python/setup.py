@@ -34,7 +34,8 @@ setup(
             'prc_protocol = lcg.prc_protocol:main',
             'izhikevich_network = lcg.izhikevich_network:main',
             'correlations_protocol = lcg.correlations_protocol:main',
-            'ou_protocol = lcg.ou_protocol:main'
+            'ou_protocol = lcg.ou_protocol:main',
+            'fi_pid = lcg.fi_pid:main'
             ]
         }
     )

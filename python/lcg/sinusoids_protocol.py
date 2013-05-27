@@ -7,13 +7,12 @@ import subprocess as sub
 import numpy as np
 import lcg
 
-gexc_template_file = 'gexc_template.stim'
-gexc_file = 'gexc.stim'
-ginh_template_file = 'ginh_template.stim'
-ginh_file = 'ginh.stim'
-current_template_file = 'current_template.stim'
 current_file = 'current.stim'
+gexc_file = 'gexc.stim'
+ginh_file = 'ginh.stim'
 config_file = 'sinusoids.xml'
+random_seed = 5061983
+frequency_value = 7051983
 
 switches = 'f:n:i:d:I:O:k:R:r:F:v:a:s:t:m:'
 long_switches = ['with-bg','exc','inh','no-kernel']
@@ -71,7 +70,7 @@ def parseGlobalArgs():
                'duration': 30,   # [s]
                'kernel_frequency': 0,
                'compute_kernel': True,
-               'srate' : 20000,  # [Hz]
+               'sampling_rate' : 20000,  # [Hz]
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -88,7 +87,7 @@ def parseGlobalArgs():
         elif o == '-O':
             options['ao'] = int(a)
         elif o == '-F':
-            options['srate'] = float(a)
+            options['sampling_rate'] = float(a)
         elif o == '-d':
             options['duration'] = float(a)
         elif o == '--no-kernel':
@@ -216,20 +215,50 @@ def parseConductanceModeArgs():
 
     return options
 
-def run_frequency(f, mode, opts):
-    if mode == 'current':
-        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(10000), shell=True)
-                  + '/" ' +  current_template_file + ' > ' + current_file, shell=True)
-        if opts['with_bg']:
-            sub.call('sed -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
-            sub.call('sed -e "s/5061983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-            sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['srate']), shell=True)
-        else:
-            sub.call('cclamp -V 3 -f ' + current_file + ' -F '+ str(opts['srate']),shell=True)
-    elif mode == 'conductance':
-        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/5061983/' + str(np.random.poisson(1000)) + '/" ' + gexc_template_file + ' > ' + gexc_file, shell=True)
-        sub.call('sed -e "s/F/' + str(f) + '/" -e "s/7051983/' + str(np.random.poisson(10000)) + '/" ' + ginh_template_file + ' > ' + ginh_file, shell=True)
-        sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['srate']),shell=True)
+def writeConfigurationFile(options):
+    config = lcg.XMLConfigurationFile(options['sampling_rate'],options['duration'])
+    config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
+    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile='/dev/comedi',
+                                              inputSubdevice=os.environ['AI_SUBDEVICE'],
+                                              outputSubdevice=os.environ['AO_SUBDEVICE'],
+                                              readChannel=options['ai'], writeChannel=options['ao'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REF'],
+                                              kernelFile='kernel.dat'))
+    config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
+    config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename=gexc_file, units='nS'))
+    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,6), filename=ginh_file, units='nS'))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=5, connections=(1), E=0))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=6, connections=(1), E=-80))
+    config.write(config_file)
+
+def replaceValue(stimulus, old_value, new_value=None):
+    idx = np.nonzero(np.array(stimulus) == old_value)
+    for r in idx[0]:
+        for c in idx[1]:
+            if new_value:
+                stimulus[r][c] = new_value
+            else:
+                stimulus[r][c] = int(np.random.uniform(high=10000))
+    return stimulus
+
+def createSinusoidallyModOU(f, r0, dr, Rin, tau, dur, type, seed):
+    if type == 'exc':
+        g = 0.02/Rin*1e3   # [nS]
+    elif type == 'inh':
+        g = 0.06/Rin*1e3   # [nS]
+    else:
+        print("Unknown type [%s]: allowed values are 'exc' or 'inh'." % type)
+        return -1
+    tau_ms = tau   # [ms]
+    tau = tau*1e-3 # [s]
+    G = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
+         [dur,-3,0,1,tau_ms,0,0,1,seed,2,0,1], # OU
+         [0,-3,g**2*tau/2*dr,f,0,g**2*tau/2*r0,0,0,0,3,2,0.5], # sine that sets the variance
+         [0,-3,g*tau*dr,f,0,g*tau*r0,0,0,0,3,1,1], # sine that sets the mean
+         [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
+    return G
 
 def main():
     mode = None
@@ -250,74 +279,79 @@ def main():
     else:
         opts = dict(parseConductanceModeArgs(), **opts)
 
-    if mode == 'current':
-        if not opts['with_bg']:
-            if opts['mean'] == 0 and opts['std'] == 0 and opts['tau'] == 0:
-                # we have only the sinusoidal modulating current
-                current = [[opts['duration'],3,opts['I_modul'],'F',0,0,0,0,0,0,0,1],
-                           [1,1,0,0,0,0,0,0,0,0,0,1]]
-            elif opts['tau'] == 0:
-                # sinusoid on top of a DC current
-                current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
-                           [0,-2,opts['I_modul'],'F',0,0,0,0,0,3,1,1],
-                           [1,1,0,0,0,0,0,0,0,0,0,1]]
-            else:
-                # sinusoid on top of a noisy (OU) current
-                current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,5061983,2,0,1], # OU current
-                           [0,-2,opts['I_modul'],'F',0,0,0,0,0,3,1,1],
-                           [1,1,0,0,0,0,0,0,0,0,0,1]]
-            lcg.writeStimFile(current_template_file, current, True)
-        else:
-            ratio = lcg.computeRatesRatio(Vm=opts['balanced_voltage'], Rin=opts['input_resistance'])
-            Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=opts['R_exc'], Rin=opts['input_resistance'])
-            if opts['std'] == 0 and opts['tau'] == 0:
-                lcg.writeSinusoidsConfig(opts['mean'], opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
-                                        opts['ai'], opts['ao'], opts['duration'], config_file)
-            else:
-                lcg.writeSinusoidsConfig(opts, opts['I_modul'], Gm_exc, Gs_exc, Gm_inh, Gs_inh,
-                                        opts['ai'], opts['ao'], opts['duration'], config_file)
-    else:
+    if (mode == 'current' and opts['with_bg']) or mode == 'conductance':
         ratio = lcg.computeRatesRatio(Vm=opts['balanced_voltage'], Rin=opts['input_resistance'])
         Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=opts['R_exc'], Rin=opts['input_resistance'])
-        lcg.writeSinusoidsConfig(0, 50, Gm_exc, Gs_exc, Gm_inh, Gs_inh,
-                                opts['ai'], opts['ao'], opts['duration'], config_file)
-        os.remove(current_template_file)
-        lcg.writeStimFile(current_file, [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]], True)
+    else:
+        # no background conductances, it will be a current-clamp experiment
+        gexc = None
+        ginh = None
+
+    if mode == 'current':
+        if opts['with_bg']:
+            # background conductances only
+            gexc = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                    [opts['duration'],2,Gm_exc,Gs_exc,5,0,0,1,random_seed,0,0,1],
+                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+            ginh = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                    [opts['duration'],2,Gm_inh,Gs_inh,10,0,0,1,random_seed,0,0,1],
+                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+            
+        if opts['mean'] == 0 and opts['std'] == 0 and opts['tau'] == 0:
+            # sinusoidal modulating current only
+            current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+        elif opts['tau'] == 0:
+            # sinusoid on top of a DC current
+            current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
+                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+        else:
+            # sinusoid on top of a noisy (OU) current
+            current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
+                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+    else:
+        # current just for the preamble
+        current = [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]]
+        # conductances
         opts['R_inh'] = opts['R_exc']/ratio
-
-        # proportional
         if opts['exc']:
-            os.remove(gexc_template_file)
-            lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], opts['dR']*opts['R_exc'],
-                                             opts['input_resistance'], 5, opts['duration'], 'exc',
-                                             5061983, gexc_template_file)
-
+            gexc = createSinusoidallyModOU(frequency_value, opts['R_exc'], opts['dR']*opts['R_exc'],
+                                              opts['input_resistance'], 5, opts['duration'], 'exc', random_seed)
+        else:
+            gexc = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                    [opts['duration'],2,Gm_exc,Gs_exc,5,0,0,1,random_seed,0,0,1],
+                    [1,1,0,0,0,0,0,0,0,0,0,1]]
         if opts['inh']:
-            os.remove(ginh_template_file)
-            lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], opts['dR']*opts['R_inh'],
-                                             opts['input_resistance'], 10, opts['duration'], 'inh',
-                                             7051983, ginh_template_file)
+            ginh = createSinusoidallyModOU(frequency_value, opts['R_inh'], opts['dR']*opts['R_inh'],
+                                              opts['input_resistance'], 10, opts['duration'], 'inh', random_seed)
+        else:
+            ginh = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                    [opts['duration'],2,Gm_inh,Gs_inh,10,0,0,1,random_seed,0,0,1],
+                    [1,1,0,0,0,0,0,0,0,0,0,1]]
 
-        # fixed
-        #if opts['exc']:
-        #    os.remove(gexc_template_file)
-        #    lcg.writeSinusoidallyModulatedOU('F', opts['R_exc'], 550, opts['input_resistance'],
-        #                                     5, opts['duration'], 'exc', 5061983, gexc_template_file)
-        #if opts['inh']:
-        #    os.remove(ginh_template_file)
-        #    lcg.writeSinusoidallyModulatedOU('F', opts['R_inh'], 550/ratio, opts['input_resistance'],
-        #                                     10, opts['duration'], 'inh', 7051983, ginh_template_file)
-
+    if gexc and ginh:
+        writeConfigurationFile(opts)
+        
     cnt = 0
     tot = opts['reps']*len(opts['frequencies'])
     for i in range(opts['reps']):
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + ' -F '+ str(opts['srate']), shell=True)
+                sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + ' -F '+ str(opts['sampling_rate']), shell=True)
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
-            run_frequency(f, mode, opts)
+            
+            lcg.writeStimFile(current_file, replaceValue(replaceValue(current, random_seed), frequency_value, f), addDefaultPreamble=True)
+            if gexc and ginh:
+                lcg.writeStimFile(gexc_file, replaceValue(replaceValue(gexc, random_seed), frequency_value, f))
+                lcg.writeStimFile(ginh_file, replaceValue(replaceValue(ginh, random_seed), frequency_value, f))
+                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
+            else:
+                sub.call('cclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']),shell=True)
+
             if cnt != tot:
                 sub.call(['sleep', str(opts['interval'])])
 
