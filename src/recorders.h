@@ -13,14 +13,31 @@
 #include "utils.h"
 #include "entity.h"
 
+#define COMMENT_LENGTH 1024
 namespace lcg {
 
 namespace recorders {
 
+struct Comment {
+        Comment(time_t tstamp, const char *msg) {
+                struct tm* now = localtime(&tstamp);
+                sprintf(m_msg, "%04d-%02d-%02d %02d:%02d:%02d >>> ", now->tm_year+1900, now->tm_mon+1, now->tm_mday,
+                                now->tm_hour, now->tm_min, now->tm_sec);
+                strncpy(m_msg+24, msg, COMMENT_LENGTH-24);
+        }
+        char m_msg[COMMENT_LENGTH];
+};
+
 class Recorder : public Entity {
 public:
         Recorder(uint id = GetId());
+        virtual ~Recorder();
         virtual double output();
+        void addComment(const char *message, time_t *timestamp = NULL);
+protected:
+        virtual void deleteComments();
+protected:
+        std::deque<Comment*> m_comments;
 };
 
 class ASCIIRecorder : public Recorder {
@@ -47,6 +64,7 @@ private:
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
 #define INFO_GROUP       "/Info"
+#define COMMENTS_GROUP   "/Comments"
 #define DATA_DATASET     "Data"
 #define METADATA_DATASET "Metadata"
 #define PARAMETERS_GROUP "Parameters"
@@ -96,6 +114,8 @@ protected:
         virtual bool writeData(const std::string& datasetName, int rank, const hsize_t *dims,
                                const double *data, const std::string& label = "");
 
+        virtual void writeComments();
+
 #if defined(HAVE_LIBRT)
         // sets the priority of the calling thread to max_priority - 1
         virtual void reducePriority() const;
@@ -116,6 +136,7 @@ protected:
 
         // H5 stuff
         hid_t m_infoGroup;
+        hid_t m_commentsGroup;
         std::vector<hid_t> m_groups;
         std::vector<hid_t> m_dataspaces;
         std::vector<hid_t> m_datasets;

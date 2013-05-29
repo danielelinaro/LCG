@@ -51,14 +51,36 @@ namespace lcg {
 
 namespace recorders {
 
-Recorder::Recorder(uint id) : Entity(id)
+Recorder::Recorder(uint id) : Entity(id), m_comments()
 {
         setName("Recorder");
+}
+
+Recorder::~Recorder()
+{
+        deleteComments();
+}
+
+void Recorder::deleteComments()
+{
+        std::deque<Comment*>::iterator it;
+        for (it=m_comments.begin(); it!=m_comments.end(); it++)
+                delete *it;
 }
 
 double Recorder::output()
 {
         return 0.0;
+}
+
+void Recorder::addComment(const char *message, time_t *timestamp)
+{
+        time_t tstamp;
+        if (timestamp == NULL)
+                tstamp = time(NULL);
+        else
+                tstamp = *timestamp;
+        m_comments.push_back(new Comment(tstamp, message));
 }
 
 ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
@@ -276,16 +298,7 @@ bool BaseH5Recorder::openFile()
         if(m_fid < 0)
                 return false;
 
-        time_t now;
-        char buf[26];
-        std::stringstream timestamp;
-        time(&now);
-        ctime_r(&now, buf);
-        // to remove newline at the end of the string returned by ctime
-        buf[24] = 0;
-        timestamp << "File created on " << buf << ".";
-        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
-
+        addComment("Opened file.");
         return true;
 }
 
@@ -294,12 +307,16 @@ void BaseH5Recorder::closeFile()
         Logger(All, "--- BaseH5Recorder::closeFile() ---\n");
         if (m_fid != -1) {
                 writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
+                addComment("Closed file.");
+                writeComments();
                 for (int i=0; i<m_numberOfInputs; i++) {
                         H5Dclose(m_datasets[i]);
                         H5Sclose(m_dataspaces[i]);
                 }
                 for (int i=0; i<m_groups.size(); i++)
                         H5Gclose(m_groups[i]);
+                //H5Gclose(m_infoGroup);
+                //H5Gclose(m_commentsGroup);
                 H5Fclose(m_fid);
                 m_fid = -1;
         }
@@ -314,6 +331,35 @@ void BaseH5Recorder::terminate()
 const char* BaseH5Recorder::filename() const
 {
         return m_filename;
+}
+
+void BaseH5Recorder::writeComments()
+{
+        char tag[4], buf[26];
+        int i = 1;
+        if (!createGroup(COMMENTS_GROUP, &m_commentsGroup)) {
+                Logger(Important, "Unable to create group for comments.\n");
+                return;
+        }
+        while (m_comments.size() > 0) {
+                Comment *c = m_comments.front();
+                sprintf(tag, "%03d", i);
+                writeStringAttribute(m_commentsGroup, tag, c->m_msg);
+                m_comments.pop_front();
+                delete c;
+                i++;
+        }
+        /*
+        time_t now;
+        std::stringstream timestamp;
+        time(&now);
+        ctime_r(&now, buf);
+        // to remove newline at the end of the string returned by ctime
+        buf[24] = 0;
+        timestamp << "File created on " << buf << ".";
+        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
+        */
+
 }
 
 #if defined(HAVE_LIBRT)
