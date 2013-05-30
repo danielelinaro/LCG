@@ -4,6 +4,7 @@
 #include "entity.h"
 #include "utils.h"
 #include "common.h"
+#include "recorders.h"
 
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
@@ -35,7 +36,53 @@ double globalTimeOffset = 0.0;
 double realtimeDt;
 #endif
 
-////// SIGNAL HANDLING CODE - START /////
+////// COMMENTS HANDLING CODE - START //////
+bool readingComment = false;
+boost::condition_variable commentsCV;
+boost::mutex commentsMutex;
+boost::thread commentsThread;
+
+void CommentsReader(recorders::Recorder *rec)
+{
+        Logger(Debug, "CommentsReader started.\n");
+        char c, msg[COMMENT_LENGTH];
+        time_t now;
+        while (!TERMINATE_TRIAL()) {
+                if ((c = getchar()) == 'c') {
+                        boost::unique_lock<boost::mutex> lock(commentsMutex);
+                        readingComment = true;
+                        getchar(); // remove the newline character
+                        now = time(NULL);
+                        Logger(Critical, "Enter comment: ");
+                        std::cin.getline(msg, COMMENT_LENGTH);
+                        rec->addComment(msg, &now);
+                        readingComment = false;
+                }
+                commentsCV.notify_all();
+        }
+}
+
+void StartCommentsReaderThread(std::vector<Entity*>& entities)
+{
+        int i=0;
+        recorders::Recorder *rec = NULL;
+        while (i < entities.size() && (rec = dynamic_cast<recorders::Recorder*>(entities[i])) == NULL)
+                i++;
+        if (rec != NULL)
+                commentsThread = boost::thread(CommentsReader, rec);
+}
+
+void StopCommentsReaderThread()
+{
+        boost::unique_lock<boost::mutex> lock(commentsMutex);
+        while (readingComment)
+                commentsCV.wait(lock);
+        commentsThread.interrupt();
+}
+
+////// COMMENTS HANDLING CODE - END //////
+
+////// SIGNAL HANDLING CODE - START //////
 
 bool programRun = true; 
 bool trialRun = false; 
@@ -75,11 +122,11 @@ bool SetupSignalCatching()
         return true;
 }
 
-////// SIGNAL HANDLING CODE - END /////
+////// SIGNAL HANDLING CODE - END //////
 
 void SetTrialRun(bool value)
 {
-        Logger(Debug, "SetTrialRun(bool)\n");
+        Logger(Debug, "SetTrialRun(%s)\n", value ? "True" : "False");
         boost::mutex::scoped_lock lock(trialRunMutex);
         trialRun = value;
 }
@@ -220,6 +267,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         Logger(Debug, "Finished the main loop.\n");
         Logger(Debug, "Terminating all entities.\n");
 
+        SetTrialRun(false);
+
+        StopCommentsReaderThread();
+
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
 
@@ -298,6 +349,10 @@ void RTSimulationTask(void *cookie)
 
         Logger(Debug, "Finished the main loop.\n");
         Logger(Debug, "Terminating all entities.\n");
+
+        SetTrialRun(false);
+
+        StopCommentsReaderThread();
 
         for (i=0; i<nEntities; i++)
                 arg->entity(i)->terminate();
@@ -487,6 +542,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                         ((double) now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC)) - GetGlobalTimeOffset());
         }
 
+        SetTrialRun(false);
+
+        StopCommentsReaderThread();
+
         // Stop all entities
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
@@ -525,6 +584,11 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend, bool *re
                 for (i=0; i<nEntities; i++)
                         entities[i]->step();
         }
+
+        SetTrialRun(false);
+
+        StopCommentsReaderThread();
+
         for (i=0; i<nEntities; i++)
                 entities[i]->terminate();
 
@@ -532,28 +596,33 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend, bool *re
 }
 
 #endif // HAVE_LIBLXRT
-
-
-bool Simulate(const std::vector<Entity*>& entities, double tend)
+ 
+bool Simulate(std::vector<Entity*>& entities, double tend)
 {
         bool success;
 
         SetTrialRun(true);
 	ResetGlobalTime();
+
+        StartCommentsReaderThread(entities);
+
 #ifdef HAVE_LIBRT
         if (!CheckPrivileges())
                 return success;
 #endif
 #ifdef REALTIME_ENGINE
-        boost::thread thrd(RTSimulation, entities, tend, &success);
+        boost::thread simulationThread(RTSimulation, entities, tend, &success);
 #else
-        boost::thread thrd(NonRTSimulation, entities, tend, &success);
+        boost::thread simulationThread(NonRTSimulation, entities, tend, &success);
 #endif // REALTIME_ENGINE
-        thrd.join();
+
+        simulationThread.join();
+
         if (success)
                 Logger(Debug, "The simulation thread has terminated successfully.\n");
         else
                 Logger(Important, "There were some problems with the simulation thread.\n");
+
         return success;
 }
 

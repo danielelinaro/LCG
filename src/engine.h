@@ -11,8 +11,12 @@
 
 namespace lcg {
 
+namespace recorders {
+class Recorder;
+}
+
 double SetGlobalDt(double dt);
-bool Simulate(const std::vector<Entity*>& entities, double tend);
+bool Simulate(std::vector<Entity*>& entities, double tend);
 
 extern double globalT;
 extern double globalDt;
