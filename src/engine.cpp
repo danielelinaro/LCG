@@ -45,7 +45,7 @@ boost::thread commentsThread;
 void CommentsReader(recorders::Recorder *rec)
 {
         Logger(Debug, "CommentsReader started.\n");
-        char c, msg[COMMENT_LENGTH];
+        char c, msg[COMMENT_MAXLEN];
         time_t now;
         while (!TERMINATE_TRIAL()) {
                 if ((c = getchar()) == 'c') {
@@ -54,7 +54,7 @@ void CommentsReader(recorders::Recorder *rec)
                         getchar(); // remove the newline character
                         now = time(NULL);
                         Logger(Critical, "Enter comment: ");
-                        std::cin.getline(msg, COMMENT_LENGTH);
+                        std::cin.getline(msg, COMMENT_MAXLEN);
                         rec->addComment(msg, &now);
                         readingComment = false;
                 }

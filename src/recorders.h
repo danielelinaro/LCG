@@ -12,8 +12,7 @@
 
 #include "utils.h"
 #include "entity.h"
-
-#define COMMENT_LENGTH 1024
+#include "common.h"
 
 namespace lcg {
 
@@ -32,13 +31,13 @@ public:
                 }
                 sprintf(m_msg, "%d-%02d-%02d %02d:%02d:%02d >>> ", now->tm_year+1900, now->tm_mon+1, now->tm_mday,
                                 now->tm_hour, now->tm_min, now->tm_sec);
-                strncpy(m_msg+24, msg, COMMENT_LENGTH-24);
+                strncpy(m_msg+24, msg, COMMENT_MAXLEN-24);
         }
         const char *message() const {
                 return m_msg;
         }
 private:
-        char m_msg[COMMENT_LENGTH];
+        char m_msg[COMMENT_MAXLEN];
 };
 
 class Recorder : public Entity {

@@ -31,6 +31,7 @@ using boost::property_tree::ptree;
 #include "entity.h"
 #include "types.h"
 #include "engine.h"
+#include "common.h"
 
 /* colors */
 #define ESC ''

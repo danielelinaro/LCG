@@ -28,8 +28,6 @@
 #define LIBNAME "liblcg.so"
 #endif
 
-#define FILENAME_MAXLEN 1024
-
 namespace lcg
 {
 

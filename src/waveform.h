@@ -5,6 +5,7 @@
 #include "types.h"
 #include "utils.h"
 #include "generator.h"
+#include "common.h"
 
 namespace lcg {
 
