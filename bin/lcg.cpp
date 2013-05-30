@@ -141,13 +141,13 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                 Logger(Debug, "Created directory [%s].\n", directory);
         }
         else {
-                if (errno == EEXIST) {
+                // either the directory exists already or there's been an error: in both
+                // cases, we stop here.
+                if (errno == EEXIST)
                         Logger(Debug, "mkdir: [%s]: directory exists.\n", directory);
-                }
-                else {
+                else
                         Logger(Important, "mkdir: [%s]: %s.\n", directory, strerror(errno));
-                        return false;
-                }
+                //return false;
         }
 
         // write a very simple script that runs lcg again with the options used for calling it now
@@ -199,7 +199,23 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         // compute the hash for the H5 file and for all files in the directory
         unsigned md[5];
         sprintf(path, "%s/%s", directory, HASHES_FILE);
+
+        struct stat buf;
+        if (stat(path, &buf) == 0) {
+                // the file already exists, we need to change its access mode
+                chmod(path, 0644);
+                Logger(Debug, "[%s] already exists, changing its access mode to 0644\n", path);
+        }
+
         fid = fopen(path, "w");
+        if (fid == NULL) {
+                Logger(Important, "Unable to create hashes file [%s].\n", path);
+                return false;
+        }
+        else {
+                Logger(Debug, "Successfully created hashes file [%s].\n", path);
+        }
+
         if (rec != NULL) {
                 if (sha1(rec->filename(), md))
                         fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
@@ -211,6 +227,9 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         if (dirp == NULL) {
                 Logger(Important, "Unable to open directory [%s] for traversing the files.\n", directory);
                 return false;
+        }
+        else {
+                Logger(Debug, "Traversing the files in directory [%s].\n", directory);
         }
 
         struct dirent *dp;
@@ -231,7 +250,6 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         sprintf(path, "%s/%s", directory, HASHES_FILE);
         chmod(path, 0444);
 
-        fid = fopen(path, "w");
         return true;
 }
 
