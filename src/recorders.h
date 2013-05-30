@@ -14,17 +14,30 @@
 #include "entity.h"
 
 #define COMMENT_LENGTH 1024
+
 namespace lcg {
 
 namespace recorders {
 
-struct Comment {
-        Comment(time_t tstamp, const char *msg) {
-                struct tm* now = localtime(&tstamp);
-                sprintf(m_msg, "%04d-%02d-%02d %02d:%02d:%02d >>> ", now->tm_year+1900, now->tm_mon+1, now->tm_mday,
+class Comment {
+public:
+        Comment(const char *msg, const time_t *tstamp = NULL) {
+                struct tm* now;
+                if (tstamp) {
+                        now = localtime(tstamp);
+                }
+                else {
+                        time_t ts = time(NULL);
+                        now = localtime(&ts);
+                }
+                sprintf(m_msg, "%d-%02d-%02d %02d:%02d:%02d >>> ", now->tm_year+1900, now->tm_mon+1, now->tm_mday,
                                 now->tm_hour, now->tm_min, now->tm_sec);
                 strncpy(m_msg+24, msg, COMMENT_LENGTH-24);
         }
+        const char *message() const {
+                return m_msg;
+        }
+private:
         char m_msg[COMMENT_LENGTH];
 };
 
@@ -33,7 +46,7 @@ public:
         Recorder(uint id = GetId());
         virtual ~Recorder();
         virtual double output();
-        void addComment(const char *message, time_t *timestamp = NULL);
+        void addComment(const char *message, const time_t *timestamp = NULL);
 protected:
         virtual void deleteComments();
 protected:

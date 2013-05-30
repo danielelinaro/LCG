@@ -73,14 +73,9 @@ double Recorder::output()
         return 0.0;
 }
 
-void Recorder::addComment(const char *message, time_t *timestamp)
+void Recorder::addComment(const char *message, const time_t *timestamp)
 {
-        time_t tstamp;
-        if (timestamp == NULL)
-                tstamp = time(NULL);
-        else
-                tstamp = *timestamp;
-        m_comments.push_back(new Comment(tstamp, message));
+        m_comments.push_back(new Comment(message, timestamp));
 }
 
 ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
@@ -335,7 +330,7 @@ const char* BaseH5Recorder::filename() const
 
 void BaseH5Recorder::writeComments()
 {
-        char tag[4], buf[26];
+        char tag[4];
         int i = 1;
         if (!createGroup(COMMENTS_GROUP, &m_commentsGroup)) {
                 Logger(Important, "Unable to create group for comments.\n");
@@ -344,22 +339,11 @@ void BaseH5Recorder::writeComments()
         while (m_comments.size() > 0) {
                 Comment *c = m_comments.front();
                 sprintf(tag, "%03d", i);
-                writeStringAttribute(m_commentsGroup, tag, c->m_msg);
+                writeStringAttribute(m_commentsGroup, tag, c->message());
                 m_comments.pop_front();
                 delete c;
                 i++;
         }
-        /*
-        time_t now;
-        std::stringstream timestamp;
-        time(&now);
-        ctime_r(&now, buf);
-        // to remove newline at the end of the string returned by ctime
-        buf[24] = 0;
-        timestamp << "File created on " << buf << ".";
-        writeStringAttribute(m_fid, "Timestamp", timestamp.str());
-        */
-
 }
 
 #if defined(HAVE_LIBRT)
