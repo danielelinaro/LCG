@@ -310,8 +310,6 @@ void BaseH5Recorder::closeFile()
                 }
                 for (int i=0; i<m_groups.size(); i++)
                         H5Gclose(m_groups[i]);
-                //H5Gclose(m_infoGroup);
-                //H5Gclose(m_commentsGroup);
                 H5Fclose(m_fid);
                 m_fid = -1;
         }
