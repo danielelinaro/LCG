@@ -37,10 +37,11 @@ using namespace lcg;
 
 enum cclamp_mode {DEFAULT, SPONTANEOUS, TRIGGERED_RECORDER};
 
-struct CCoptions {
+struct options {
+        options() : iti(0), ibi(0), nTrials(0), nBatches(0), holdValue(0), stimulusFiles() {}
         useconds_t iti, ibi;
         uint nTrials, nBatches;
-        double dt, tend, hold_value;
+        double holdValue;
         std::vector<std::string> stimulusFiles;
 };
 
@@ -84,9 +85,9 @@ bool writeDefaultConfigurationFile()
         return true;
 }
 
-void parseArgs(int argc, char *argv[], CCoptions *opt)
+void parseArgs(int argc, char *argv[], options *opts)
 {
-        double iti, ibi, freq, tend, hold_value;
+        double iti, ibi, holdValue;
         int verbosity;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
@@ -101,13 +102,12 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         ("help,h", "print help message")
                         ("version,v", "print version number")
                         ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
-                        ("iti,i", po::value<double>(&iti)->default_value(0.25), "specify inter-trial interval (default: 0.25 sec)")
-                        ("ibi,I", po::value<double>(&ibi)->default_value(0.25), "specify inter-batch interval (default: 0.25 sec)")
-                        ("tend,s", po::value<double>(&tend)->default_value(-1.0), "duration of recording without stimulus (sec)")
-                        ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "specify the number of trials (how many times a stimulus is repeated)")
-                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1), "specify the number of trials (how many times a batch of stimuli is repeated)")
-                        ("frequency,F", po::value<double>(&freq)->default_value(20000), "specify the sampling frequency")
-                        ("hold-value,H", po::value<double>(&hold_value)->default_value(0), "specify the hold value (default 0 pA)")
+                        ("iti,i", po::value<double>(&iti), "inter-trial interval")
+                        ("ibi,I", po::value<double>(&ibi)->default_value(0), "inter-batch interval (default: same as inter-trial interval)")
+                        ("ntrials,n", po::value<uint>(&nTrials)->default_value(1), "number of trials (how many times a stimulus is repeated)")
+                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1),
+                         "specify the number of trials (how many times a batch of stimuli is repeated)")
+                        ("hold-value,H", po::value<double>(&holdValue)->default_value(0), "specify the hold value")
                         ("stimfile,f", po::value<std::string>(&stimfile), "specify the stimulus file to use")
                         ("stimdir,d", po::value<std::string>(&stimdir), "specify the directory where stimulus files are located");
 
@@ -124,17 +124,12 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         exit(0);
                 }
 
-                if (freq <= 0) {
-                        std::cerr << "The sampling frequency must be positive.\n";
-                        exit(1);
-                }
-
                 if (options.count("stimfile")) {
                         if (!fs::exists(stimfile)) {
                                 std::cout << "Stimulus file \"" << stimfile << "\" not found. Aborting...\n";
                                 exit(1);
                         }
-                        opt->stimulusFiles.push_back(stimfile);
+                        opts->stimulusFiles.push_back(stimfile);
                 }
                 else if (options.count("stimdir")) {
                         if (!fs::exists(stimdir)) {
@@ -143,13 +138,13 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
                         }
                         for (fs::directory_iterator it(stimdir); it != fs::directory_iterator(); it++) {
                                 if (! fs::is_directory(it->status())) {
-                                        opt->stimulusFiles.push_back(it->path().string());
+                                        opts->stimulusFiles.push_back(it->path().string());
                                 }
                         }
                 }
-				else if (options.count("tend")) {
-					std::cout << "No stimulus detected only recording inputs.\n";
-				}
+		else if (options.count("tend")) {
+		        std::cout << "No stimulus detected only recording inputs.\n";
+		}
                 else {
                         std::cout << description << "\n";
                         std::cout << "ERROR: you have to specify one of [stimulus file] or [stimulus directory]. Aborting...\n";
@@ -163,22 +158,21 @@ void parseArgs(int argc, char *argv[], CCoptions *opt)
 
                 SetLoggingLevel(static_cast<LogLevel>(verbosity));
 
-                opt->dt = 1.0 / freq;
-                opt->iti = (useconds_t) (iti * 1e6);
-                opt->ibi = (useconds_t) (ibi * 1e6);
-                opt->nTrials = nTrials;
-                opt->nBatches = nBatches;
-				opt->tend = tend;
-				opt->hold_value = hold_value;
+                opts->dt = 1.0 / freq;
+                opts->iti = (useconds_t) (iti * 1e6);
+                opts->ibi = (useconds_t) (ibi * 1e6);
+                opts->nTrials = nTrials;
+                opts->nBatches = nBatches;
+		opts->tend = tend;
+		opts->holdValue = holdValue;
 
         } catch (std::exception e) {
                 std::cout << e.what() << std::endl;
                 exit(2);
         }
-
 }
 
-bool parseConfigurationFile(std::vector<Entity*>& entities, double hold_value = 0.0, enum cclamp_mode mode = DEFAULT)
+bool parseConfigurationFile(std::vector<Entity*>& entities, double holdValue=0.0, enum cclamp_mode mode=DEFAULT)
 {
         ptree pt;
         string_dict parameters;
@@ -276,17 +270,17 @@ bool parseConfigurationFile(std::vector<Entity*>& entities, double hold_value = 
 						for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
 							entities[i]->connect(entities[0]);
 
-						if(hold_value != 0.0)
+						if(holdValue != 0.0)
 						{
-							Logger(Debug,"Using %f as a holding value.\n",hold_value);
-							std::stringstream hold_value_str;
-							hold_value_str << hold_value;
+							Logger(Debug,"Using %f as a holding value.\n",holdValue);
+							std::stringstream holdValue_str;
+							holdValue_str << holdValue;
 							std::stringstream id;
 							id << entities.back()->id() + 1;
 							parameters.clear();
 							parameters["id"] = id.str();
 							parameters["units"] = "pA";
-							parameters["value"] = hold_value_str.str();
+							parameters["value"] = holdValue_str.str();
 							entities.push_back( EntityFactory("Constant", parameters) );
 							Logger(Debug, "Connecting the constant to the [%d to %d] to the recorder.\n",
 									entities.size(), 0);
@@ -328,14 +322,14 @@ int main(int argc, char *argv[])
         SetLoggingLevel(Info);
         
 		parseArgs(argc, argv, &opt);
-		if (opt.tend > 0.0) 
+		if (opts.tend > 0.0) 
 		{
                 Logger(Important, "Recording in spontaneous mode.\n");
 				mode = SPONTANEOUS;
 		}
-        if (! parseConfigurationFile(entities, opt.hold_value, mode)) {
+        if (! parseConfigurationFile(entities, opts.holdValue, mode)) {
                 writeDefaultConfigurationFile();
-                parseConfigurationFile(entities, opt.hold_value, mode);
+                parseConfigurationFile(entities, opts.holdValue, mode);
         }
 		switch(mode)
 		{
@@ -354,52 +348,52 @@ int main(int argc, char *argv[])
 				break;
 		}
 
-        SetGlobalDt(opt.dt);
+        SetGlobalDt(opts.dt);
 
         Logger(Info, CC_BANNER);
-        Logger(Info, "Number of batches: %d.\n", opt.nBatches);
-        Logger(Info, "Number of trials: %d.\n", opt.nTrials);
-        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opt.iti * 2e-6);
-        Logger(Info, "Holding current: %g pA.\n", opt.hold_value);
-        Logger(Info, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
+        Logger(Info, "Number of batches: %d.\n", opts.nBatches);
+        Logger(Info, "Number of trials: %d.\n", opts.nTrials);
+        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opts.iti * 2e-6);
+        Logger(Info, "Holding current: %g pA.\n", opts.holdValue);
+        Logger(Info, "Inter-batch interval: %g sec.\n", (double) opts.ibi * 1e-6);
 
         bool success;
         cnt = 1;
 		switch(mode)
 		{
 			case SPONTANEOUS:
-			    total = opt.nBatches*opt.nTrials;
-				for	(i=0; i<opt.nBatches; i++) {
-					    for (k=0; k<opt.nTrials; k++, cnt++) {
+			    total = opts.nBatches*opts.nTrials;
+				for	(i=0; i<opts.nBatches; i++) {
+					    for (k=0; k<opts.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                success = Simulate(entities, opt.tend);
+                                success = Simulate(entities, opts.tend);
                                 if (!success || KILL_PROGRAM())
                                         goto endMain;
-                                if (k != opt.nTrials-1)
-                                        usleep(opt.iti);
+                                if (k != opts.nTrials-1)
+                                        usleep(opts.iti);
                         }
-					if (i != opt.nBatches-1)
-                        usleep(opt.ibi);
+					if (i != opts.nBatches-1)
+                        usleep(opts.ibi);
 				}
 				break;
 			default:
-			    total = opt.nBatches*opt.stimulusFiles.size()*opt.nTrials;
-				for	(i=0; i<opt.nBatches; i++) {
-					for (j=0; j<opt.stimulusFiles.size(); j++) {
-                        stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
-					    for (k=0; k<opt.nTrials; k++, cnt++) {
+			    total = opts.nBatches*opts.stimulusFiles.size()*opts.nTrials;
+				for	(i=0; i<opts.nBatches; i++) {
+					for (j=0; j<opts.stimulusFiles.size(); j++) {
+                        stimulus->setStimulusFile(opts.stimulusFiles[j].c_str());
+					    for (k=0; k<opts.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
                                 success = Simulate(entities, stimulus->duration());
                                 if (!success || KILL_PROGRAM())
                                         goto endMain;
-                                if (k != opt.nTrials-1)
-                                        usleep(opt.iti);
+                                if (k != opts.nTrials-1)
+                                        usleep(opts.iti);
                         }
-                        if (j != opt.stimulusFiles.size()-1)
-                                usleep(opt.iti);
+                        if (j != opts.stimulusFiles.size()-1)
+                                usleep(opts.iti);
 					}
-					if (i != opt.nBatches-1)
-                        usleep(opt.ibi);
+					if (i != opts.nBatches-1)
+                        usleep(opts.ibi);
 				}
 				break;
 		}

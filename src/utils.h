@@ -38,17 +38,6 @@ typedef enum
         All = 0, Debug, Info, Important, Critical
 } LogLevel;
 
-struct CommandLineOptions {
-        CommandLineOptions() : tend(-1), dt(0), iti(0), ibi(0), nTrials(0), nBatches(0),
-        configFile(""), kernelFile(""), stimulusFiles(), enableReplay(true) {}
-        double tend, dt;
-        useconds_t iti, ibi;
-        uint nTrials, nBatches;
-        std::string configFile, kernelFile;
-        strings stimulusFiles;
-        bool enableReplay;
-};
-
 void SetLoggingLevel(LogLevel level);
 LogLevel GetLoggingLevel();
 #ifdef NDEBUG
@@ -74,9 +63,6 @@ bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsi
 bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, unsigned long long *value);
 bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value);
 void MakeFilename(char *filename, const char *extension);
-
-void ParseCommandLineOptions(int argc, char *argv[], CommandLineOptions *opt);
-bool ParseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt);
 
 Entity* EntityFactory(const char *name, string_dict& args);
 

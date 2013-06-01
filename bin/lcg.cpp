@@ -16,6 +16,16 @@
 
 #include "sha1.h"
 
+#include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/foreach.hpp>
+
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+using boost::property_tree::ptree;
+
 #define DCLAMP_DIR    ".lcg"
 #define TMP_DIR       ".tmp"
 #define REPLAY_SCRIPT "replay"
@@ -24,6 +34,192 @@
 using namespace lcg;
 using namespace lcg::generators;
 using namespace lcg::recorders;
+
+struct options {
+        options() : iti(0), nTrials(0), configFile(""), enableReplay(true) {}
+        useconds_t iti;
+        uint nTrials;
+        std::string configFile;
+        bool enableReplay;
+};
+
+void parseArgs(int argc, char *argv[], options *opts)
+{
+        double iti;
+        int verbosity;
+        std::string configfile;
+        po::options_description description("Usage: lcg [options].\nAllowed options");
+        po::variables_map options;
+
+        try {
+                char msg[100];
+                sprintf(msg, "select verbosity level (%d for maximum, %d for minimum verbosity)", All, Critical);
+                description.add_options()
+                        ("help,h", "print help message")
+                        ("version,v", "print version number")
+                        ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
+                        ("config-file,c", po::value<std::string>(&configfile), "configuration file")
+                        ("iti,i", po::value<double>(&iti)->default_value(0), "inter-trial interval (in seconds)")
+                        ("ntrials,n", po::value<uint>(&opts->nTrials)->default_value(1), "number of trials")
+                        ("enable-replay,r", po::value<bool>(&opts->enableReplay)->default_value(true),
+                         "enable saving of configuration and stimulus files");
+
+                po::store(po::parse_command_line(argc, argv, description), options);
+                po::notify(options);    
+
+                if (verbosity < All || verbosity > Critical) {
+                        Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
+                        exit(1);
+                }
+
+                SetLoggingLevel(static_cast<LogLevel>(verbosity));
+
+                if (options.count("help")) {
+                        std::cout << description << "\n";
+                        exit(0);
+                }
+
+                if (options.count("version")) {
+                        Logger(Info, "%s version %s\n", fs::path(argv[0]).filename().c_str(), VERSION);
+                        exit(0);
+                }
+
+                if (!options.count("config-file")) {
+                        Logger(Critical, "No configuration file specified.\n");
+                        exit(1);
+                }
+                else if (!fs::exists(configfile)) {
+                        Logger(Critical, "%s: no such file.\n", configfile.c_str());
+                        exit(1);
+                }
+                else {
+                        opts->configFile = configfile;
+                }
+
+                if (options.count("iti"))
+                        opts->iti = (useconds_t) (iti * 1e6);
+
+                if (opts->nTrials > 1 && opts->iti <= 0) {
+                        Logger(Critical, "The inter-trial duration must be greater than 0 seconds.\n");
+                        exit(1);
+                }
+
+        }
+        catch (std::exception e) {
+                Logger(Critical, "Missing argument or unknown option.\n");
+                exit(1);
+        }
+}
+
+bool parseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
+{
+        ptree pt;
+        uint id;
+        std::string name, conn;
+        std::map< uint, std::vector<uint> > connections;
+        std::map< uint, Entity* > ntts;
+
+        try {
+                read_xml(filename, pt);
+
+                /*** simulation time and time step ***/
+                try {
+                        *tend = pt.get<double>("lcg.simulation.tend");
+                } catch(...) {
+                        *tend = -1;
+                }
+
+                try {
+                        *dt = pt.get<double>("lcg.simulation.dt");
+                } catch(...) {
+                        *dt = -1;
+                        try {
+                                *dt = 1.0 / pt.get<double>("lcg.simulation.rate");
+                        } catch(...) {
+                                Logger(Info, "dt = %g sec.\n", *dt);
+                        }
+                }
+
+                SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
+                SetRunTime(*tend);
+
+                /*** entities ***/
+                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("lcg.entities")) {
+                        string_dict args;
+                        name = ntt.second.get<std::string>("name");
+                        id = ntt.second.get<uint>("id");
+                        if (ntts.count(id) == 1) {
+                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
+                                entities.clear();
+                                return false;
+                        }
+                        args["id"] = ntt.second.get<std::string>("id");
+                        BOOST_FOREACH(ptree::value_type &pars, ntt.second.get_child("parameters")) {
+                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
+                                        args[pars.first] = std::string(pars.second.data());
+                        }
+                        try {
+                                conn = ntt.second.get<std::string>("connections");
+                                // this test allows to have <connections></connections> in the configuration file
+                                if (conn.length() > 0) {
+                                        connections[id] = std::vector<uint>();
+                                        size_t start=0, stop;
+                                        int post;
+                                        Logger(Debug, "Entity #%d is connected to entities", id);
+                                        while ((stop = conn.find(",",start)) != conn.npos) {
+                                                std::stringstream ss(conn.substr(start,stop-start));
+                                                ss >> post;
+                                                connections[id].push_back(post);
+                                                start = stop+1;
+                                                Logger(Debug, " #%d", post);
+                                        }
+                                        std::stringstream ss(conn.substr(start,stop-start));
+                                        ss >> post;
+                                        connections[id].push_back(post);
+                                        Logger(Debug, " #%d.\n", post);
+                                }
+                        } catch(std::exception e) {
+                                Logger(Debug, "No connections for entity #%d.\n", id);
+                        }
+                        Entity *entity;
+                        try {
+                                entity = EntityFactory(name.c_str(), args);
+                                if (entity == NULL)
+                                        throw "Entity factory is missing";
+                        } catch(const char *err) {
+                                Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
+                                for (int i=0; i<entities.size(); i++)
+                                        delete entities[i];
+                                entities.clear();
+                                return false;
+                        }
+                        entities.push_back(entity);
+                        ntts[id] = entity;
+                }
+
+                EntitySorter sorter;
+                std::sort(entities.begin(), entities.end(), sorter);
+
+                /*** connections ***/
+                uint idPre, idPost;
+                for (int i=0; i<entities.size(); i++) {
+                        idPre = entities[i]->id();
+                        Logger(Debug, "Id = %d.\n", idPre);
+                        for (int j=0; j<connections[idPre].size(); j++) {
+                                idPost = connections[idPre][j];
+                                entities[i]->connect(ntts[idPost]);
+                                Logger(Debug, "Connecting entity #%d to entity #%d.\n", idPre, idPost);
+                        }
+                }
+
+        } catch(std::exception e) {
+                Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
+                entities.clear();
+                return false;
+        }
+
+        return true;
+}
 
 int cp(const char *to, const char *from)
 {
@@ -255,108 +451,40 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
 
 int main(int argc, char *argv[])
 {
-        CommandLineOptions opt;
+        options opts;
 
         if (!SetupSignalCatching()) {
                 Logger(Critical, "Unable to setup signal catching functionalities. Aborting.\n");
                 exit(1);
         }
 
-        ParseCommandLineOptions(argc, argv, &opt);
+        parseArgs(argc, argv, &opts);
 
-        if (opt.configFile.compare("") == 0) {
-                Logger(Critical, "No configuration file specified. Aborting.\n");
-                exit(1);
-        }
-
+        bool success;
         double tend, dt;
         std::vector<Entity*> entities;
         lcg::generators::Waveform *stimulus;
 
-        if (!ParseConfigurationFile(opt.configFile, entities, &tend, &dt)) {
+        if (!parseConfigurationFile(opts.configFile, entities, &tend, &dt)) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
 
-        Logger(Debug, "opt.tend = %g sec.\n", opt.tend);
-        if (opt.tend != -1)
-                // the duration specified in the command line has precedence over the one in the configuration file
-                tend = opt.tend;
-
-        if (opt.dt != -1)
-                // the timestep specified in the command line has precedence over the one in the configuration file
-                dt = opt.dt;
-        if (dt == -1) {
-                dt = 1.0 / 20000;
-                Logger(Debug, "Using default timestep (%g sec -> %g Hz).\n", dt, 1.0/dt);
-        }
-
         SetGlobalDt(dt);
 
-        Logger(Debug, "Number of trials: %d.\n", opt.nTrials);
-        Logger(Debug, "Inter-trial interval: %g sec.\n", (double) opt.iti * 1e-6);
+        Logger(Debug, "Number of trials: %d.\n", opts.nTrials);
+        Logger(Debug, "Inter-trial interval: %g sec.\n", (double) opts.iti * 1e-6);
 
-        bool success;
-        if (opt.stimulusFiles.size() > 0) {
-                for (int i=0; i<entities.size(); i++) {
-                        if ((stimulus = dynamic_cast<lcg::generators::Waveform*>(entities[i])) != NULL)
-                                break;
-                }
-
-                if (stimulus == NULL) {
-                        Logger(Critical, "You need to have at least one Stimulus in your configuration "
-                                         "file if you specify a stimulus file. Aborting.\n");
+        for (int i=0; i<opts.nTrials; i++) {
+                Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
+                ResetGlobalTime();
+                success = Simulate(entities,tend);
+                if (!success || KILL_PROGRAM())
                         goto endMain;
-                }
-
-                Logger(Debug, "Number of batches: %d.\n", opt.nBatches);
-                Logger(Debug, "Inter-batch interval: %g sec.\n", (double) opt.ibi * 1e-6);
-
-                for (int i=0; i<opt.nBatches; i++) {
-                        for (int j=0; j<opt.stimulusFiles.size(); j++) {
-                                stimulus->setStimulusFile(opt.stimulusFiles[j].c_str());
-                                for (int k=0; k<opt.nTrials; k++) {
-                                        Logger(Debug, "Batch: %d, stimulus: %d, trial: %d. (of %d,%d,%d).\n",
-                                                i+1, j+1, k+1, opt.nBatches, opt.stimulusFiles.size(), opt.nTrials);
-                                        ResetGlobalTime();
-                                        success = Simulate(entities,stimulus->duration());
-                                        if (!success || KILL_PROGRAM())
-                                                goto endMain;
-                                        if (k != opt.nTrials-1)
-                                                usleep(opt.iti);
-                                        if (KILL_PROGRAM())
-                                                goto endMain;
-                                }
-                                if (j != opt.stimulusFiles.size()-1)
-                                        usleep(opt.iti);
-                                if (KILL_PROGRAM())
-                                        goto endMain;
-                        }
-                        if (i != opt.nBatches-1)
-                                usleep(opt.ibi);
-                        if (KILL_PROGRAM())
-                                goto endMain;
-                }
-
-        }
-        else {
-                if (tend == -1) {
-                        Logger(Critical, "The duration of the simulation was not specified. Aborting.\n");
-                        exit(1);
-                }
-                for (int i=0; i<opt.nTrials; i++) {
-                        Logger(Important, "Trial: %d of %d.\n", i+1, opt.nTrials);
-                        ResetGlobalTime();
-                        success = Simulate(entities,tend);
-                        if (!success || KILL_PROGRAM())
-                                goto endMain;
-                        if (i != opt.nTrials-1)
-                                usleep(opt.iti);
-                        if (KILL_PROGRAM())
-                                goto endMain;
-                        if (opt.enableReplay)
-                                Store(argc, argv, entities);
-                }
+                if (opts.enableReplay)
+                        Store(argc, argv, entities);
+                if (i != opts.nTrials-1)
+                        usleep(opts.iti);
         }
 
 endMain:
