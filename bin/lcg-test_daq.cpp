@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <vector>
 #include "entity.h"
@@ -23,8 +24,19 @@ using namespace lcg;
 using namespace lcg::generators;
 using namespace lcg::recorders;
 
-int main()
+int main(int argc, char *argv[])
 {
+        if (argc > 1) {
+                if (strcmp(argv[1],"-h") == 0) {
+                        printf("This program tests the DAQ card.\nUsage: lcg-test_daq\n");
+                        exit(0);
+                }
+                else {
+                        printf("%s: unknown option.\n", argv[1]);
+                        exit(1);
+                }
+        }
+
 #ifdef HAVE_LIBCOMEDI
 
         SetGlobalDt(1./20000);

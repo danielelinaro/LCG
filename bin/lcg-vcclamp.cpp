@@ -88,7 +88,7 @@ void parseArgs(int argc, char *argv[], options *opts)
         int verbosity;
         uint nTrials, nBatches;
         std::string stimfile, stimdir;
-        std::string caption("\nUsage: cclamp [options]\n\nAllowed options");
+        std::string caption("\nUsage: git-vcclamp [options]\n\nAllowed options");
         po::options_description description(caption);
         po::variables_map options;
 

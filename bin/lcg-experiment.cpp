@@ -48,7 +48,7 @@ void parseArgs(int argc, char *argv[], options *opts)
         double iti;
         int verbosity;
         std::string configfile;
-        po::options_description description("\nUsage: lcg [options]\n\nAllowed options");
+        po::options_description description("\nUsage: lcg-experiment [options]\n\nAllowed options");
         po::variables_map options;
 
         try {

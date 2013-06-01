@@ -31,20 +31,20 @@ int main(int argc, char *argv[])
         try {
                 description.add_options()
                         ("help,h", "print help message")
-                        ("device,d", po::value<std::string>(&deviceFile)->default_value("/dev/comedi0"),
+                        ("device,d", po::value<std::string>(&deviceFile)->default_value(getenv("COMEDI_DEVICE")),
                          "specify the path of the device")
-                        ("subdevice,s", po::value<uint>(&subdevice)->default_value(1),
+                        ("subdevice,s", po::value<uint>(&subdevice)->default_value(atoi(getenv("AO_SUBDEVICE"))),
                          "specify output subdevice")
-                        ("channel,c", po::value<uint>(&channel)->default_value(0),
+                        ("channel,c", po::value<uint>(&channel)->default_value(atoi(getenv("AO_CHANNEL"))),
                          "specify output channel")
                         ("value,v", po::value<double>(&value)->default_value(0.0),
                          "specify value to output (in pA)")
-                        ("factor,f", po::value<double>(&conversionFactor)->default_value(0.001),
+                        ("factor,f", po::value<double>(&conversionFactor)->default_value(atof(getenv("AO_CONVERSION_FACTOR"))),
                          "specify conversion factor (in V/pA)")
-                        ("reference,r", po::value<std::string>(&refStr)->default_value("grse"),
+                        ("reference,r", po::value<std::string>(&refStr)->default_value(getenv("GROUND_REFERENCE")),
                          "specify reference type: allowed values are "
-                         "'grse' for ground-referenced single ended or "
-                         "'nrse' for non-referenced single ended.");
+                         "'GRSE' for ground-referenced single ended or "
+                         "'NRSE' for non-referenced single ended.");
 
                 po::store(po::parse_command_line(argc, argv, description), options);
                 po::notify(options);    
@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
                         exit(1);
                 }
 
-                if (boost::iequals(refStr, "grse")) {
+                if (boost::iequals(refStr, "GRSE")) {
                         ref = AREF_GROUND;
                 }
-                else if (boost::iequals(refStr, "nrse")) {
+                else if (boost::iequals(refStr, "NRSE")) {
                         ref = AREF_COMMON;
                 }
                 else {

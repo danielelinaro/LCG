@@ -9,7 +9,7 @@ def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('     -a    stimulation amplitudes (-300,50,50).')
-    print('     -d    stimulation duration (default 2 sec).')
+    print('     -d    stimulation duration (default 3 sec).')
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
     print('     -F    sampling frequency (default 20000)')
