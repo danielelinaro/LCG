@@ -67,4 +67,4 @@ while getopts ":d:n:i:I:O:h" opt ; do
 done
 
 kernel_protocol -I $ai -O $ao
-cclamp -d $stimdir -i $trial_interval -I $trial_interval -N $reps
+cclamp -D $stimdir -i $trial_interval -I $trial_interval -N $reps
