@@ -7,7 +7,6 @@
 #include "engine.h"
 #include "utils.h"
 #include "delay.h"
-#include "time_logger.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -75,7 +74,6 @@ int main()
                 entities.back()->connect(entities[2]);
 #endif // TWO_CHANNELS
 
-                entities.push_back( new TimeLogger() );
                 entities.push_back( new H5Recorder(false, "daq_test.h5") );
         
                 // connect entities to the recorder
