@@ -29,13 +29,14 @@ setup(
             'pulses_protocol = lcg.pulses_protocol:main',
             'reliability_disynaptic = lcg.reliability_disynaptic:main',
             'sinusoids_protocol = lcg.sinusoids_protocol:main',
-            'steps_protocol = lcg.steps_protocol:main',
+            'lcg-steps = lcg.steps_protocol:main',
             'ltp_ltd_protocol = lcg.ltp_ltd_protocol:main',
             'prc_protocol = lcg.prc_protocol:main',
             'izhikevich_network = lcg.izhikevich_network:main',
             'correlations_protocol = lcg.correlations_protocol:main',
             'ou_protocol = lcg.ou_protocol:main',
-            'fi_pid = lcg.fi_pid:main',
+            'lcg-fi = lcg.fi_pid:main',
+            'lcg-vi = lcg.vi_protocol:main',
             'lcg-kernel = lcg.kernel:main'
             ]
         }

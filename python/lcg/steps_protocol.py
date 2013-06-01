@@ -21,13 +21,13 @@ def usage():
     print('     -O    output channel (default 0)')
     print('     -F    sampling frequency (default 20000)')
     print('\nAdditional options:')
-    print(' --without-preamble    do not include stability preamble.')
-    print(' --no-shuffle    do not shuffle trials.')
-    print(' --no-kernel     do not compute the electrode kernel.')
+    print(' --with-preamble   include stability preamble.')
+    print(' --no-shuffle      do not shuffle trials.')
+    print(' --no-kernel       do not compute the electrode kernel.')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:', ['help','without-preamble','no-shuffle','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:', ['help','with-preamble','no-shuffle','no-kernel'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -36,7 +36,7 @@ def main():
     ao = 0
     ai = 0
     samplf = 20000    # [Hz]
-    with_preamble = True
+    with_preamble = False
     shuffle = True
     kernel = True
     nreps = 1
@@ -66,8 +66,8 @@ def main():
             ao = int(a)
         elif o == '-F':
             samplf = float(a)
-        elif o == '--without-preamble':
-            with_preamble = False
+        elif o == '--with-preamble':
+            with_preamble = True
         elif o == '--no-shuffle':
             shuffle = False
         elif o == '--no-kernel':
