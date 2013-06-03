@@ -4,6 +4,7 @@ import os
 import sys
 import getopt
 import lcg
+import subprocess as sub
 
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))

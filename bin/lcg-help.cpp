@@ -15,7 +15,7 @@ const char lcg_usage_string[] =
         "   experiment    performs a (possibly) hybrid or closed loop experiment\n"
         "                 described in an XML configuration file\n"
         "   vcclamp       performs a voltage or current clamp experiment using\n"
-        "                 a stim file\n"
+        "                 a stimulus file\n"
         "   annotate      adds comments into an existing H5 file\n\n"
         "Type 'lcg help <command>' for more information on a specific command.\n";
 
@@ -27,12 +27,18 @@ static struct option longopts[] = {
 
 void usage()
 {
-        printf(lcg_usage_string);
+        printf("%s\n", lcg_usage_string);
 }
 
-void parseArgs(int argc, char *argv[])
+void parse_args(int argc, char *argv[])
 {
         int ch;
+
+        if (argc == 1) {
+                usage();
+                exit(0);
+        }
+
         while ((ch = getopt_long(argc, argv, "vh", longopts, NULL)) != -1) {
                 switch(ch) {
                 case 'v':
@@ -54,7 +60,7 @@ int main(int argc, char *argv[])
                 system(cmd);
         }
         else {
-                parseArgs(argc, argv);
+                parse_args(argc, argv);
         }
         return 0;
 }
