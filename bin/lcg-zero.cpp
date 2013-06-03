@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
         po::variables_map options;
         std::string deviceFile, refStr;
         uint subdevice, channel, ref;
+        bool resetAll = true;
 
         try {
                 description.add_options()
@@ -49,6 +50,9 @@ int main(int argc, char *argv[])
                         std::cout << description << "\n";
                         exit(0);
                 }
+
+                if (options.count("channel"))
+                        resetAll = false;
 
                 if (!fs::exists(deviceFile)) {
                         std::cout << "Device file \"" << deviceFile << "\" not found. Aborting...\n";
@@ -81,7 +85,7 @@ int main(int argc, char *argv[])
         calibrationFile = comedi_get_default_calibration_path(device);
         calibration = comedi_parse_calibration_file(calibrationFile);
 
-        if (channel == -1) {
+        if (resetAll) {
                 int nChannels = comedi_get_n_channels(device, subdevice);
                 for (int ch=0; ch<nChannels; ch++) {
                         Logger(Info, "Outputting 0.0 on device [%s], subdevice [%d], channel [%d].\n", deviceFile.c_str(), subdevice, ch);
