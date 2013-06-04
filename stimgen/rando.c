@@ -10,6 +10,8 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "rando.h"
 
 long rand49_idum=-77531;
@@ -62,6 +64,17 @@ long mysrand49(long seed) {
 } // end mysrand49()
 //----------------------------------------------------------------
 
+//----------------------------------------------------------------
+long hw_rand(void) {
+        long seed;
+        int nbytes = 0, fd = open("/dev/urandom",O_RDONLY);
+        if (fd == -1)
+                return time(NULL);
+        read(fd, (void *) &seed, sizeof(long));
+        close(fd);
+        return seed;
+} // end hw_rand()
+//----------------------------------------------------------------
 
 //----------------------------------------------------------------
 float gauss()	{

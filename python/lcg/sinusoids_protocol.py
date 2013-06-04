@@ -218,13 +218,13 @@ def parseConductanceModeArgs():
 def writeConfigurationFile(options):
     config = lcg.XMLConfigurationFile(options['sampling_rate'],options['duration'])
     config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
-    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile='/dev/comedi',
+    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
                                               inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
                                               outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REF'],
+                                              inputRange=os.environ('RANGE'), reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename=gexc_file, units='nS'))

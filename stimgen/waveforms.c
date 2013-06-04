@@ -38,7 +38,7 @@ long oldseed;
         if (vector[FIXSEED])
                 oldseed = mysrand49((long) vector[MYSEED]);
         else
-                oldseed = mysrand49(time(NULL));
+                oldseed = mysrand49(hw_rand());
 
  switch ((uint) vector[CODE])   // Main decision stage to rule out the requested subwvform type (gauss, DC, etc..).
     {
