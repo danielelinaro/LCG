@@ -102,8 +102,9 @@ def writeFiles(options):
 def main():
     opts = parseArgs()
     writeFiles(opts)
-    sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
-    sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(opts['trials']) + ' -i ' + str(opts['interval']), shell=True)
+    sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+    sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(opts['trials']) +
+             ' -i ' + str(opts['interval']), shell=True)
 
 if __name__ == '__main__':
     main()

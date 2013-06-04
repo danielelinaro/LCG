@@ -3,13 +3,14 @@ import os
 import sys
 import numpy as np
 import getopt
+import subprocess as sub
 import lcg
 from time import sleep
 
 def usage():
-    print('\nUsage: %s mode [option <value>]' % os.path.basename(sys.argv[0]))
-    print('This script injects an ornstein-uhlenbeck noise process into the neuron')
-    print('\n\033[94mThe global options are:\033[0m')
+    print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
+    print('This script injects an Ornstein-Uhlenbeck noise process into the neuron')
+    print('\n\033[94mAvailable options are:\033[0m')
     print('\033[92m     -n  \033[0m  number of repetitions (default 1)')
     print('\033[92m     -i  \033[0m  interval between repetitions (default 60 s)')
     print('\033[92m     -s  \033[0m  standard deviation (default 135 pA)')
@@ -116,25 +117,25 @@ def main():
         lcg.writeStimFile(stim_file[ii], stimulus, opts['preamble'])                
     for ai,ao,stim in zip(opts['ai'],opts['ao'],stim_file):
         if opts['kernel']:
-            os.system('constant_output -s ' + os.environ['AO_SUBDEVICE'] +
+            sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
                       ' -c ' + str(ao) + ' -v ' + str(opts['holding'][0]) + 
-                      ' -f ' + os.environ['AO_CONVERSION_FACTOR'])
+                      ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
             if not opts['holding'][0] in [0]:
                 sleep(2)
             if ncells>1:
-                os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
-                          ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]) + ' -a')
+                sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + 
+                         ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]) + ' -a', shell=True)
             else:
-                os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
-                          ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]))
+                sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + 
+                         ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]), shell=True)
     
-        os.system('constant_output -s ' + os.environ['AO_SUBDEVICE'] +
-                  ' -c ' + str(ao) + ' -v ' + str(opts['holding'][1]) + 
-                  ' -f ' + os.environ['AO_CONVERSION_FACTOR'])
+        sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
+                 ' -c ' + str(ao) + ' -v ' + str(opts['holding'][1]) + 
+                 ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
         if not opts['holding'][0] == opts['holding'][1]:
             sleep(2)
-        os.system('cclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
-                  ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][1]))
+        sub.call('lcg vcclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
+                 ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][1]), shell=True)
 
 if __name__ == '__main__':
     main()

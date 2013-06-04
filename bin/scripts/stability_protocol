@@ -58,8 +58,8 @@ else
     stimfile=$PROTOCOLS_PATH/stability/stability.stim
 fi
 
-kernel_protocol -I $ai -O $ao
-cclamp -f $stimfile -n $reps -i $interval
+lcg kernel -I $ai -O $ao
+lcg vcclamp -f $stimfile -n $reps -i $interval
 
 if [ -d stability ] ; then
     mv *.h5 stability

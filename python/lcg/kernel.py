@@ -69,7 +69,7 @@ def main():
 
     sub.call('cclamprc_write -e -i -c ' + str(ai), shell=True)
     sub.call('cclamprc_write -o -c ' + str(ao), shell=True)
-    sub.call('cclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
+    sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
     files = glob.glob('*.h5')
     files.sort()
     data_file = files[-1]

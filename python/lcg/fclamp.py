@@ -5,6 +5,7 @@ import sys
 import numpy as np
 import lcg
 import getopt
+import subprocess as sub
 
 config_file = 'fclamp.xml'
 
@@ -109,8 +110,8 @@ def main():
     else:
         lcg.writeFClampConfig(target_F, I0, duration, gp, gi, gd, tau, config_file, ai, ao)
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
-    os.system(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(nreps) + ' -i ' + str(interval))
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
+    sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(nreps) + ' -i ' + str(interval), shell=True)
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -83,14 +84,14 @@ def main():
             print('The stimulation output channel [%d] should be different from the kernel output channel [%d].'
                   % (ao['intra'], ao['extra']))
             sys.exit(1)
-        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao['intra']))
+        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao['intra']), shell=True)
 
-    os.system('cclamprc_write -e -i -c ' + str(ai))
-    os.system('cclamprc_write -o -f 1 -u V -c ' + str(ao['extra']))
+    sub.call('cclamprc_write -e -i -c ' + str(ai), shell=True)
+    sub.call('cclamprc_write -o -f 1 -u V -c ' + str(ao['extra']), shell=True)
 
     lcg.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses, withRecovery=with_recovery, filename=stim_file)
     
-    os.system('cclamp -f ' + stim_file + ' -n ' + str(repetitions) + ' -i ' + str(interval))
+    sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(repetitions) + ' -i ' + str(interval))
 
 if __name__ == '__main__':
     main()

@@ -6,4 +6,4 @@
 ###
 
 # the name of the executable
-prog_name = 'lcg'
+prog_name = 'lcg experiment'

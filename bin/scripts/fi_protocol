@@ -66,8 +66,8 @@ if [ -z "${stimdir:-}" ] ; then
     exit 0
 fi
 
-kernel_protocol -I $ai -O $ao
-cclamp -D $stimdir -i $trial_interval -I $trial_interval -N $reps
+lcg kernel -I $ai -O $ao
+lcg vcclamp -D $stimdir -i $trial_interval -I $trial_interval -N $reps
 mv *.h5 $stimdir
 mv *_kernel.dat $stimdir
 

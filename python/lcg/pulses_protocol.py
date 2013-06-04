@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import lcg
 
 def usage():
@@ -83,15 +84,15 @@ def main():
         usage()
         sys.exit(1)
 
-    os.system('kernel_protocol -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao))
+    sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao), shell=True)
 
-    os.system('cclamprc_write -e -o -c ' + str(ao))
-    os.system('cclamprc_write -i -c ' + str(ai[0]))
-    os.system('cclamprc_write -i -c ' + str(ai[1]))
+    sub.call('cclamprc_write -e -o -c ' + str(ao), shell=True)
+    sub.call('cclamprc_write -i -c ' + str(ai[0]), shell=True)
+    sub.call('cclamprc_write -i -c ' + str(ai[1]), shell=True)
 
     lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
 
-    os.system('cclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval))
+    sub.call('lcg vcclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
 
 if __name__ == '__main__':
     main()

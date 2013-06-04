@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -129,8 +130,8 @@ def main():
             sys.exit(2)
 
     writeStimFile('current.stim',stimulus)
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
-    os.system(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
+    sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
 
 if __name__ == '__main__':
     main()

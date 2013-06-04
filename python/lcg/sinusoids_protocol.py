@@ -340,17 +340,19 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + ' -F '+ str(opts['sampling_rate']), shell=True)
+                sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
+                         ' -F '+ str(opts['sampling_rate']), shell=True)
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             
-            lcg.writeStimFile(current_file, replaceValue(replaceValue(current, random_seed), frequency_value, f), addDefaultPreamble=True)
+            lcg.writeStimFile(current_file, replaceValue(replaceValue(current, random_seed),
+                                                         frequency_value, f), addDefaultPreamble=True)
             if gexc and ginh:
                 lcg.writeStimFile(gexc_file, replaceValue(replaceValue(gexc, random_seed), frequency_value, f))
                 lcg.writeStimFile(ginh_file, replaceValue(replaceValue(ginh, random_seed), frequency_value, f))
                 sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
             else:
-                sub.call('cclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']),shell=True)
+                sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
 
             if cnt != tot:
                 sub.call(['sleep', str(opts['interval'])])

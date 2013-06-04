@@ -66,5 +66,5 @@ while getopts ":d:n:i:I:O:h" opt ; do
     esac
 done
 
-kernel_protocol -I $ai -O $ao
-cclamp -D $stimdir -i $trial_interval -I $trial_interval -N $reps
+lcg kernel -I $ai -O $ao
+lcg vcclamp -D $stimdir -i $trial_interval -I $trial_interval -N $reps

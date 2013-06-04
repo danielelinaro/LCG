@@ -46,4 +46,4 @@ fi
 configfile=/tmp/spontaneous.xml
 
 sed -e 's#<tend>0</tend>#<tend>'$duration'</tend>#' $origconfigfile > $configfile
-lcg -c $configfile
+lcg experiment -c $configfile

@@ -4,6 +4,7 @@ import os
 import sys
 import numpy as np
 import getopt
+import subprocess as sub
 import lcg
 
 stimuli_directory = 'stimuli'
@@ -106,11 +107,9 @@ def main():
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
 
     if kernel:
-        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
-                  ' -F ' + str(samplf))
-    os.system('cclamp -d ' + stimuli_directory + ' -i ' + str(interval) +
-              ' -I ' + str(interval) + ' -N ' + str(nreps) + 
-              ' -F ' + str(samplf))
+        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(samplf), shell=True)
+    sub.call('lcg vcclamp -d ' + stimuli_directory + ' -i ' + str(interval) +
+              ' -I ' + str(interval) + ' -N ' + str(nreps) + ' -F ' + str(samplf), shell=True)
 
 if __name__ == '__main__':
     main()

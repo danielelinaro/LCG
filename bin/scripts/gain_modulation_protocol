@@ -146,11 +146,11 @@ i=1
 rm -f current.stim
 while [ $i -le $reps ] ; do
     shuffle $ncurrents
-    kernel_protocol -I $ai -O $ao
+    lcg kernel -I $ai -O $ao
     j=0
     while [ $j -lt $ncurrents ] ; do
 	sed -e 's/I/'${I[${index[$j]}]}'/' $template_file > $current_file
-	lcg -c $config_file
+	lcg experiment -c $config_file
 	let j++
 	if [ $j -ne $ncurrents ] ; then
 	    sleep $interval

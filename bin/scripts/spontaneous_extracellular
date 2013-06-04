@@ -69,4 +69,4 @@ do
     let id++
 done
 sed -e 's#<tend>0</tend>#<tend>'$duration'</tend>#' $end >> $configfile
-lcg -c $configfile
+lcg experiment -c $configfile

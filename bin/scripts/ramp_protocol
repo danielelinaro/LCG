@@ -71,6 +71,6 @@ fi
 stimfile=/tmp/ramp.stim
 
 sed -e 's/T/'$duration'/' -e 's/A/'$amplitude'/' $origstimfile > $stimfile
-kernel_protocol -I $ai -O $ao
-cclamp -f $stimfile -n $repetitions -i $interval
+lcg kernel -I $ai -O $ao
+lcg vcclamp -f $stimfile -n $repetitions -i $interval
 rm $stimfile

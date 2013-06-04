@@ -91,6 +91,6 @@ fi
 stimfile=/tmp/zap.stim
 
 sed -e "s/T/$duration/" -e "s/I0/$offset/" -e "s/I/$amplitude/" -e "s/f/$fstart/" -e "s/F/$fstop/" $origstimfile > $stimfile
-kernel_protocol -I $ai -O $ao
-cclamp -f $stimfile -n $reps -i $interval
+lcg kernel -I $ai -O $ao
+lcg vcclamp -f $stimfile -n $reps -i $interval
 rm $stimfile

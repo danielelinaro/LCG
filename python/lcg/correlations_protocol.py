@@ -186,7 +186,7 @@ def main():
                 stim[1][8] = inh_seeds[k]
                 lcg.writeStimFile(stim_files['ginh_common'], stim, False)
                 if cnt%opts['kernel_frequency'] == 0:
-                    sub.call('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+                    sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
                 cnt = cnt+1
                 sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
                 sub.call(['sleep', str(opts['interval'])])

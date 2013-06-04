@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import lcg
 
 stim_file = 'pulses.stim'
@@ -66,9 +67,9 @@ def main():
     stimulus = [[1,1,0,0,0,0,0,0,5061983,0,0,1],
                 [duration,8,pulse_amplitude,pulse_frequency,pulse_duration,0,0,0,5061983,0,0,1]]
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + ' -F '+ str(srate))
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F '+ str(srate), shell=True)
     lcg.writeStimFile(stim_file, stimulus, False)
-    os.system('cclamp -f ' + stim_file + ' -F '+ str(srate))
+    sub.call('lcg vcclamp -f ' + stim_file + ' -F '+ str(srate), shell=True)
 
 if __name__ == '__main__':
     main()

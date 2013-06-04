@@ -101,7 +101,7 @@ def main():
         usage()
         sys.exit(1)
 
-    sub.call(['kernel_protocol', '-I ' + str(ai), '-O ' + str(ao)])
+    sub.call('lcg kernel -I ' + str(ai) + '-O ' + str(ao), shell=True)
     import scipy.optimize as opt
     Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
                                           args = [targetFrequency, Rm, rate, ai, ao, duration, interval],

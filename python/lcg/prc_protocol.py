@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+
 import os
 import sys
 import numpy as np
 import getopt
+import subprocess as sub
 import lcg
 from lxml import etree
 
@@ -277,10 +279,10 @@ def main():
             # Run protocol
         if opts['kernel']:
             for ai,ao in zip(opts['ai'],opts['ao']):
-                os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao) + 
-                          ' -F ' + str(opts['srate']) + ' -a')
-        os.system(lcg.common.prog_name +' -c ' + config_file +  ' -i ' + str(opts['interval']) +
-                  ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']))
+                sub.call('lcg kernel ' + str(ai) + ' -O ' + str(ao) + 
+                         ' -F ' + str(opts['srate']) + ' -a', shell=True)
+        sub.call(lcg.common.prog_name +' -c ' + config_file +  ' -i ' + str(opts['interval']) +
+                 ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']), shell=True)
         
     elif mode in ['frequency-clamp']:
 

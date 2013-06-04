@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -145,9 +146,9 @@ def main():
                            {'m': Gm_inh, 's': Gs_inh, 'tau': 10, 'seed': 7051983},
                            stim_dur, 0, 0)
 
-    os.system('kernel_protocol -a -F 15000 -I ' + str(ai[0]) + ' -O ' + str(ao[0]))
-    os.system('kernel_protocol -a -F 15000 -I ' + str(ai[1]) + ' -O ' + str(ao[1]))
-    os.system(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval))
+    sub.call('lcg kernel -a -F 15000 -I ' + str(ai[0]) + ' -O ' + str(ao[0]), shell=True)
+    sub.call('lcg kernel -a -F 15000 -I ' + str(ai[1]) + ' -O ' + str(ao[1]), shell=True)
+    sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -57,8 +58,9 @@ def run_batch(repetitions, interval, stim_dur, stim_amp, hyperpolarizing_pulse, 
 
     lcg.writeStimFile(intracellular_stim_file, intra_stim, False)
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao['intra']))
-    os.system(lcg.common.prog_name + ' -c '+ config_file + ' -n ' + str(repetitions) + ' -i ' + str(interval-(pre+post)))
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao['intra']), shell=True)
+    sub.call(lcg.common.prog_name + ' -c '+ config_file + ' -n ' + str(repetitions) +
+             ' -i ' + str(interval-(pre+post)), shell=True)
 
 def main():
     try:

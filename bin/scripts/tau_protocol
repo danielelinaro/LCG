@@ -76,7 +76,7 @@ fi
 stimfile=/tmp/tau.stim
 
 sed -e "s/-500/$amplitude/" -e "s/0.01/$duration/" $origstimfile > $stimfile
-kernel_protocol -I $ai -O $ao
-cclamp -f $stimfile -n $reps -i $interval
+lcg kernel -I $ai -O $ao
+lcg vcclamp -f $stimfile -n $reps -i $interval
 
 rm $stimfile

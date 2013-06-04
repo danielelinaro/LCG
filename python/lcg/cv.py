@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import numpy as np
 import lcg
 
@@ -61,8 +62,8 @@ def run(Vm, Rm, rates_exc, duration=300, interval=0, configFile='cv.xml'):
             conductance[1][3] = Gs_inh
             conductance[1][4] = taus['inh']
             writeStimFile('ginh.stim', conductance)
-            os.system(lcg.common.prog_name + ' -V 3 -c ' + configFile)
-            os.system('sleep ' + str(interval))
+            sub.call(lcg.common.prog_name + ' -V 3 -c ' + configFile, shell=True)
+            sub.call('sleep ' + str(interval), shell=True)
 
 def main():
     try:
@@ -143,7 +144,7 @@ def main():
     rates_exc = np.array([rate])
     for i in range(repetitions):
         np.random.shuffle(Vm)
-        os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
+        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
         run(Vm, Rm, rates_exc, duration, interval, configFile)
 
 if __name__ == '__main__':

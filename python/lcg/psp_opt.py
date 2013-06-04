@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import glob
 import numpy as np
 import lcg
@@ -15,7 +16,7 @@ def deflection_error(weight, target, templateFile, trials=10, window=30e-3, ai=0
     lcg.substituteStrings(templateFile, 'psp.xml',
                          {'<weight>0</weight>': '<weight>' + str(w) + '</weight>',
                           'AI': str(ai), 'AO': str(ao)})
-    os.system(lcg.common.prog_name + ' -c psp.xml -V 4 -n ' + str(trials))
+    sub.call(lcg.common.prog_name + ' -c psp.xml -V 4 -n ' + str(trials), shell=True)
 
     # get the file list
     files = glob.glob('*.h5')
@@ -126,7 +127,7 @@ def main():
         usage()
         sys.exit(5)
 
-    os.system('kernel_protocol -I ' + str(ai) + ' -O ' + str(ao))
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao))
     import scipy.optimize as opt
     weight,err,ierr,numfunc = opt.fminbound(deflection_error, minWeight, maxWeight,
                                             args = [targetDeflection, templateFile, trials, window*1e-3, ai, ao],

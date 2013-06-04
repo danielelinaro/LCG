@@ -1,9 +1,10 @@
-
 #!/usr/bin/env python
+
 import os
 import sys
 import numpy as np
 import getopt
+import subprocess as sub
 import lcg
 from lxml import etree
 from numpy.random import uniform as rnd
@@ -343,12 +344,10 @@ def main():
     xml_tree.write(config_file,pretty_print=True)
     # Run protocol 
     if opts['kernel']:
-        os.system('kernel_protocol -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + 
-                  ' -F ' + str(opts['srate']) + ' -a')
-    os.system(lcg.common.prog_name + ' -c ' + config_file +  ' -i ' + str(opts['interval']) +
-              ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']))
-    
-
+        sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + 
+                 ' -F ' + str(opts['srate']) + ' -a', shell=True)
+    sub.call(lcg.common.prog_name + ' -c ' + config_file +  ' -i ' + str(opts['interval']) +
+             ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']), shell=True)
 
 if __name__ == '__main__':
     main()
