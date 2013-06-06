@@ -56,6 +56,13 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
     with open(filename,'w') as fid:
         preamble_dur = 0
         if addDefaultPreamble:
+            ### preamble for small cells
+            #preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
+            #            [0.01,1,-200,0,0,0,0,0,0,0,0,1],
+            #            [0.5,1,0,0,0,0,0,0,0,0,0,1],
+            #            [0.6,1,-50,0,0,0,0,0,0,0,0,1],
+            #            [1,1,0,0,0,0,0,0,0,0,0,1]]
+            ### preamble for larger cells
             preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
                         [0.01,1,-300,0,0,0,0,0,0,0,0,1],
                         [0.5,1,0,0,0,0,0,0,0,0,0,1],

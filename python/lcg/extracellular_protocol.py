@@ -91,7 +91,7 @@ def main():
 
     lcg.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses, withRecovery=with_recovery, filename=stim_file)
     
-    sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(repetitions) + ' -i ' + str(interval))
+    sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(repetitions) + ' -i ' + str(interval), shell=True)
 
 if __name__ == '__main__':
     main()

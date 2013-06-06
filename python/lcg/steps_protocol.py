@@ -108,7 +108,7 @@ def main():
 
     if kernel:
         sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(samplf), shell=True)
-    sub.call('lcg vcclamp -d ' + stimuli_directory + ' -i ' + str(interval) +
+    sub.call('lcg vcclamp -D ' + stimuli_directory + ' -i ' + str(interval) +
               ' -I ' + str(interval) + ' -N ' + str(nreps) + ' -F ' + str(samplf), shell=True)
 
 if __name__ == '__main__':
