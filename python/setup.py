@@ -36,6 +36,7 @@ setup(
             'correlations_protocol = lcg.correlations_protocol:main',
             'ou_protocol = lcg.ou_protocol:main',
             'lcg-fi = lcg.fi_pid:main',
+            'lcg-ap = lcg.ap:main',
             'lcg-vi = lcg.vi_protocol:main',
             'lcg-kernel = lcg.kernel:main',
             'lcg-rate-steps = lcg.rate_steps:main'
