@@ -74,6 +74,10 @@ def main():
     files.sort()
     data_file = files[-1]
     lcg.computeElectrodeKernel(data_file)
+    try:
+        os.remove('kernel' + suffix + '.dat')
+    except:
+        pass
     os.symlink(data_file[:-3] + '_kernel.dat', 'kernel' + suffix + '.dat')
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 import os
 import sys
 import getopt
+import subprocess as sub
 import lcg
 
 config_file = 'fi_pid.xml'
@@ -22,8 +23,8 @@ def usage():
     print('     -n    Number of repetitions (default 1).')
     print('     -w    Interval between repetitions (default 60 sec).')
     print('     -F    Sampling rate (default 20000 Hz).')
-    print('     -I    input channel (default 0).')
-    print('     -O    output channel (default 0).')
+    print('     -I    Input channel (default 0).')
+    print('     -O    Output channel (default 0).')
     print('')
 
 def parseArgs():
@@ -79,13 +80,13 @@ def writeFiles(options):
     # XML configuration file
     config = lcg.XMLConfigurationFile(options['sampling_rate'],options['duration'])
     config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
-    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0,4), spikeThreshold=-20, V0=-65, deviceFile='/dev/comedi',
+    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0,4), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
                                               inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
                                               outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REF'],
+                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.PID(id=2, connections=(0,1), baseline=options['amplitude'],
                                        gp=options['gp'], gi=options['gi'], gd=options['gd']))

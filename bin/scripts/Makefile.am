@@ -1,2 +1,2 @@
-bin_SCRIPTS = ap_protocol fi_protocol kernel_protocol tau_protocol vi_protocol stability_protocol gain_modulation_protocol spontaneous_recorder ramp_protocol fi_pid_protocol reliability_autaptic spontaneous_extracellular cclamprc_write zap_protocol
+bin_SCRIPTS = fi_protocol stability_protocol gain_modulation_protocol spontaneous_recorder reliability_autaptic spontaneous_extracellular cclamprc_write zap_protocol
 

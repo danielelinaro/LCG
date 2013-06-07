@@ -23,7 +23,7 @@ def usage():
     print('     -h   Display this help message and exit.')
     print('     -v   Values of voltage at which the background activity should be balanced (comma-separated values).')
     print('     -c   Correlation coefficients (comma-separated values).')
-    print('     -F   Firing frequency of the excitatory background population.')
+    print('     -F   Firing frequency of the excitatory background population (default 7000 Hz).')
     print('     -R   Input resistance of the cell (in MOhm).')
     print('     -n   Number of repetitions (default 100).')
     print('     -i   Interval between trials (default 2 s).')
@@ -50,7 +50,7 @@ def parseArgs():
                'correlation_coefficients': None,
                'balanced_voltages': None,
                'input_resistance': None,
-               'R_exc': None,
+               'R_exc': 7000,
                'before': 0.1, 'after': 0.3, # [s]
                'ai': 0, 'ao': 0}
 
@@ -95,10 +95,6 @@ def parseArgs():
         print('The input resistance must be positive.')
         sys.exit(1)
 
-    if not options['R_exc']:
-        print('You must specify the firing frequency of the background excitatory population (-F switch).')
-        sys.exit(1)
-                
     if options['R_exc'] <= 0:
         print('The firing frequency of the excitatory population must be positive.')
         sys.exit(1)

@@ -45,14 +45,9 @@ def main():
                 add_duration = False
             cmd = cmd + ' ' + o + ' ' + a
 
-    if add_amplitudes:
-        cmd += ' -a -300,50,50'
-
-    if add_duration:
-        cmd += ' -d 3'
-
-    if with_preamble:
-        cmd += ' --with-preamble'
+    if add_amplitudes: cmd += ' -a -300,50,50'
+    if add_duration: cmd += ' -d 3'
+    if with_preamble: cmd += ' --with-preamble'
 
     sub.call(cmd, shell=True)
 

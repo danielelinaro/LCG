@@ -252,7 +252,7 @@ class PeriodicPulse (Entity):
 class PID (Entity):
     def __init__(self, id, connections, baseline, gp, gi, gd=0.0):
         Entity.__init__(self, 'PID', id, connections)
-        self.add_parameter('baseline', baseline)
+        self.add_parameter('baselineCurrent', baseline)
         self.add_parameter('gp', gp)
         self.add_parameter('gi', gi)
         self.add_parameter('gd', gd)
