@@ -125,12 +125,14 @@ static int write_default_configuration_file()
 static void parse_args(int argc, char *argv[], options *opts)
 {
         int ch;
-        double sampling_rate;
         struct stat buf;
         double ibi = -1;
         DIR *dirp;
         struct dirent *dp;
+        // default values
         opts->iti = 0;
+        opts->nTrials = opts->nBatches = 1;
+        opts->dt = 1./20000;
         while ((ch = getopt_long(argc, argv, "hvV:F:f:n:N:i:I:H:d:D:", longopts, NULL)) != -1) {
                 switch(ch) {
                 case 'h':
@@ -147,12 +149,11 @@ static void parse_args(int argc, char *argv[], options *opts)
                         SetLoggingLevel(static_cast<LogLevel>(atoi(optarg)));
                         break;
                 case 'F':
-                        sampling_rate = atof(optarg);
-                        if (sampling_rate <= 0) {
+                        if (atof(optarg) <= 0) {
                                 Logger(Critical, "The sampling frequency must be positive.\n");
                                 exit(1);
                         }
-                        opts->dt = 1./sampling_rate;
+                        opts->dt = 1./atof(optarg);
                         break;
                 case 'n':
                         opts->nTrials = atoi(optarg);
