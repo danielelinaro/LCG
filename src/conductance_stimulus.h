@@ -8,6 +8,8 @@
 #include "neurons.h"
 
 #define COND_E  m_parameters["E"]
+#define NMDA_COND_K1 m_parameters["K1"]
+#define NMDA_COND_K2 m_parameters["K2"]
 
 namespace lcg {
 
@@ -22,9 +24,15 @@ public:
         virtual double output();
 protected:
         virtual void addPost(Entity *entity);
-private:
+protected:
         double m_output;
         neurons::Neuron *m_neuron;
+};
+
+class NMDAConductanceStimulus : public ConductanceStimulus {
+public:
+        NMDAConductanceStimulus(double E, double K1, double K2, uint id = GetId());
+        virtual void step();
 };
 
 } // namespace lcg
@@ -39,6 +47,7 @@ extern "C" {
 #endif
 
 lcg::Entity* ConductanceStimulusFactory(string_dict& args);
+lcg::Entity* NMDAConductanceStimulusFactory(string_dict& args);
 	
 #ifdef __cplusplus
 }

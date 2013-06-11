@@ -106,6 +106,13 @@ class ConductanceStimulus (Entity):
         Entity.__init__(self, 'ConductanceStimulus', id, connections)
         self.add_parameter('E', E)
 
+class NMDAConductanceStimulus (Entity):
+    def __init__(self, id, connections, E, K1, K2):
+        Entity.__init__(self, 'NMDAConductanceStimulus', id, connections)
+        self.add_parameter('E', E)
+        self.add_parameter('K1', K1)
+        self.add_parameter('K2', K2)
+
 class LIFNeuron (Entity):
     def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext):
         Entity.__init__(self, 'LIFNeuron', id, connections)
