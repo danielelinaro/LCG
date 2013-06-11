@@ -1,13 +1,17 @@
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <string.h>
+#include <errno.h>
+#include <dirent.h>
 
 #include <vector>
 #include <string>
 #include <iostream>
 #include <sstream>
 
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -23,8 +27,6 @@
 
 #define CONFIG_FILE ".cclamprc"
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 using boost::property_tree::ptree;
 using namespace lcg;
 
@@ -36,26 +38,64 @@ struct options {
                 stimulusFiles(), mode(DEFAULT) {}
         double tend, dt;
         useconds_t iti, ibi;
-        uint nTrials, nBatches;
+        int nTrials, nBatches;
         double holdValue;
         std::vector<std::string> stimulusFiles;
         recording_mode mode;
 };
 
-bool writeDefaultConfigurationFile()
+static struct option longopts[] = {
+        {"help", no_argument, NULL, 'h'},
+        {"version", no_argument, NULL, 'v'},
+        {"verbosity", required_argument, NULL, 'V'},
+        {"frequency", required_argument, NULL, 'F'},
+        {"iti", required_argument, NULL, 'i'},
+        {"ibi", required_argument, NULL, 'I'},
+        {"ntrials", required_argument, NULL, 'n'},
+        {"nbatches", required_argument, NULL, 'N'},
+        {"hold-value", required_argument, NULL, 'H'},
+        {"duration", required_argument, NULL, 'd'},
+        {"stimfile", required_argument, NULL, 'f'},
+        {"stimdir", required_argument, NULL, 'D'},
+        {NULL, 0, NULL, 0}
+};
+
+const char lcg_vcclamp_usage_string[] =
+        "This program performs voltage or current clamp experiments using stim-files.\n\n"
+        "Usage: lcg vcclamp [<options> ...]\n"
+        "where options are:\n"
+        "   -h, --help         Print this help message.\n"
+        "   -v, --version      Print the program version.\n"
+        "   -V, --verbosity    Verbosity level (0 for maximum, 4 for minimum verbosity).\n"
+        "   -F, --frequency    Sampling rate (default 20000 Hz).\n"
+        "   -i, --iti          Inter-trial interval.\n"
+        "   -I, --ibi          Inter-batch interval (default same as inter-trial interval).\n"
+        "   -n, --ntrials      Number of trials (how many times a stimulus is repeated, default 1).\n"
+        "   -N, --nbatches     Number of batches (how many times a group of stimuli is repeated, default 1).\n"
+        "   -H, --hold-value   Holding value (default 0).\n"
+        "   -d, --duration     Duration of the recording (without a stimulus file).\n"
+        "   -f, --stimfile     Stimulus file.\n"
+        "   -D, --stimdir      Directory containing the stimulus files.\n";
+
+static void usage()
+{
+        printf("%s\n", lcg_vcclamp_usage_string);
+}
+
+static int write_default_configuration_file()
 {
         char *home, configFile[60] = {0};
         FILE *fid;
         home = getenv("HOME");
         if (home == NULL) {
                 Logger(Critical, "Unable to get HOME environment variable.\n");
-                return false;
+                return -1;
         }
         sprintf(configFile, "%s/%s", home, CONFIG_FILE);
         fid = fopen(configFile, "w");
         if (fid == NULL) {
                 Logger(Critical, "Unable to open [%s].\n", configFile);
-                return false;
+                return -1;
         }
 
         fprintf(fid, "[AnalogInput0]\n");
@@ -79,139 +119,157 @@ bool writeDefaultConfigurationFile()
         fclose(fid);
 
         Logger(Critical, "Successfully saved default configuration file in [%s].\n", configFile);
-        return true;
+        return 0;
 }
 
-void parseArgs(int argc, char *argv[], options *opts)
+static void parse_args(int argc, char *argv[], options *opts)
 {
-        double iti, ibi, holdValue, samplingRate, tend;
-        int verbosity;
-        uint nTrials, nBatches;
-        std::string stimfile, stimdir;
-        std::string caption("\nUsage: git-vcclamp [options]\n\nAllowed options");
-        po::options_description description(caption);
-        po::variables_map options;
-
-        try {
-                char msg[100];
-                sprintf(msg, "select verbosity level (%d for maximum, %d for minimum verbosity)", All, Critical);
-                description.add_options()
-                        ("help,h", "print help message")
-                        ("version,v", "print version number")
-                        ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
-                        ("frequency,F", po::value<double>(&samplingRate)->default_value(20000.), "sampling rate")
-                        ("iti,i", po::value<double>(&iti), "inter-trial interval")
-                        ("ibi,I", po::value<double>(&ibi)->default_value(0),
-                         "inter-batch interval (default: same as inter-trial interval)")
-                        ("ntrials,n", po::value<uint>(&nTrials)->default_value(1),
-                         "number of trials (how many times a stimulus is repeated)")
-                        ("nbatches,N", po::value<uint>(&nBatches)->default_value(1),
-                         "number of batches (how many times a batch of stimuli is repeated)")
-                        ("hold-value,H", po::value<double>(&holdValue)->default_value(0), "holding value")
-                        ("duration,d", po::value<double>(&tend), "duration of the recording")
-                        ("stimfile,f", po::value<std::string>(&stimfile), "stimulus file")
-                        ("stimdir,D", po::value<std::string>(&stimdir), "directory containing the stimulus files");
-
-                po::store(po::parse_command_line(argc, argv, description), options);
-                po::notify(options);    
-
-                if (options.count("help")) {
-                        std::cout << description << "\n";
+        int ch;
+        double sampling_rate;
+        struct stat buf;
+        double ibi = -1;
+        DIR *dirp;
+        struct dirent *dp;
+        opts->iti = 0;
+        while ((ch = getopt_long(argc, argv, "hvV:F:f:n:N:i:I:H:d:D:", longopts, NULL)) != -1) {
+                switch(ch) {
+                case 'h':
+                        usage();
                         exit(0);
-                }
-
-                if (options.count("version")) {
-                        Logger(Info, "%s version %s.\n", fs::path(argv[0]).filename().c_str(), "1");
+                case 'v':
+                        printf("lcg vcclamp version %s", VERSION);
                         exit(0);
-                }
-
-                if (options.count("stimfile")) {
-                        if (!fs::exists(stimfile)) {
-                                Logger(Critical, "%s: no such file.\n", stimfile.c_str());
+                case 'V':
+                        if (atoi(optarg) < All || atoi(optarg) > Critical) {
+                                Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
                                 exit(1);
                         }
-                        opts->stimulusFiles.push_back(stimfile);
-                }
-                else if (options.count("stimdir")) {
-                        if (!fs::exists(stimdir)) {
-                                Logger(Critical, "%s: no such directory.\n", stimdir.c_str());
+                        SetLoggingLevel(static_cast<LogLevel>(atoi(optarg)));
+                        break;
+                case 'F':
+                        sampling_rate = atof(optarg);
+                        if (sampling_rate <= 0) {
+                                Logger(Critical, "The sampling frequency must be positive.\n");
                                 exit(1);
                         }
-                        for (fs::directory_iterator it(stimdir); it != fs::directory_iterator(); it++) {
-                                if (! fs::is_directory(it->status())) {
-                                        opts->stimulusFiles.push_back(it->path().string());
-                                }
-                        }
-                        if (opts->stimulusFiles.size() == 0) {
-                                Logger(Critical, "%s: empty directory.\n", stimdir.c_str());
+                        opts->dt = 1./sampling_rate;
+                        break;
+                case 'n':
+                        opts->nTrials = atoi(optarg);
+                        if (opts->nTrials <= 0) {
+                                Logger(Critical, "The number of trials must be greater than zero.\n");
                                 exit(1);
                         }
-                }
-		else if (options.count("duration")) {
-                        opts->tend = tend;
+                        break;
+                case 'N':
+                        opts->nBatches = atoi(optarg);
+                        if (opts->nBatches <= 0) {
+                                Logger(Critical, "The number of batches must be greater than zero.\n");
+                                exit(1);
+                        }
+                        break;
+                case 'i':
+                        if (atof(optarg) < 0) {
+                                Logger(Critical, "The inter-trial interval must be not negative.\n");
+                                exit(1);
+                        }
+                        opts->iti = (useconds_t) (1e6 * atof(optarg));
+                        break;
+                case 'I':
+                        if (atof(optarg) < 0) {
+                                Logger(Critical, "The inter-batch interval must be not negative.\n");
+                                exit(1);
+                        }
+                        opts->ibi = (useconds_t) (1e6 * atof(optarg));
+                        break;
+                case 'H':
+                        opts->holdValue = atof(optarg);
+                        break;
+                case 'd':
+                        if (opts->stimulusFiles.size() != 0) {
+                                Logger(Critical, "You cannot specify -d and either -f or -D simultaneously.\n");
+                                exit(1);
+                        }
+                        opts->tend = atof(optarg);
+                        if (opts->tend <= 0) {
+                                Logger(Critical, "The duration of the recording must be positive.\n");
+                                exit(1);
+                        }
                         opts->mode = SPONTANEOUS;
-		        Logger(Debug, "No stimulus specified, recording only.\n");
-                        if (holdValue != 0.)
-                                Logger(Important, "Ignoring the holding value.\n");
-		}
-                else {
-                        Logger(Critical, "You must specify either a stimulus file (-f switch) or "
-                                         "a directory containing stimulus files (-D switch). In "
-                                         "alternative, you can use the -d switch to simply record.\n");
+                        break;
+                case 'D':
+                        if (opts->tend != 0) {
+                                Logger(Critical, "You cannot specify -d and either -f or -D simultaneously.\n");
+                                exit(1);
+                        }
+                        if (opts->stimulusFiles.size() != 0) {
+                                Logger(Critical, "You cannot specify -f and -D simultaneously.\n");
+                                exit(1);
+                        }
+                        dirp = opendir(optarg);
+                        if (dirp == NULL) {
+                                Logger(Critical, "%s: %s.\n", optarg, strerror(errno));
+                                exit(1);
+                        }
+                        while ((dp = readdir(dirp)) != NULL) {
+                                if (dp->d_name[0] != '.')
+                                        opts->stimulusFiles.push_back(dp->d_name);
+                        }
+                        closedir(dirp);
+                        break;
+                case 'f':
+                        if (opts->tend != 0) {
+                                Logger(Critical, "You cannot specify -d and either -f or -D simultaneously.\n");
+                                exit(1);
+                        }
+                        if (opts->stimulusFiles.size() != 0) {
+                                Logger(Critical, "You cannot specify -f and -D simultaneously.\n");
+                                exit(1);
+                        }
+                        if (stat(optarg, &buf) == -1) {
+                                Logger(Critical, "%s: %s.\n", optarg, strerror(errno));
+                                exit(1);
+                        }
+                        opts->stimulusFiles.push_back(optarg);
+                        break;
+                default:
+                        Logger(Critical, "Enter 'lcg help vcclamp' for help on how to use this program.\n");
                         exit(1);
                 }
-
-                if (verbosity < All || verbosity > Critical) {
-                        Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
-                        exit(1);
-                }
-
-                SetLoggingLevel(static_cast<LogLevel>(verbosity));
-
-                if (samplingRate <= 0) {
-                        Logger(Critical, "The sampling rate must be positive.\n");
-                        exit(1);
-                }
-
-                if (nTrials > 1 && !options.count("iti")) {
-                        Logger(Critical, "You must specify the interval between repetitions (-i switch).\n");
-                        exit(1);
-                }
-                else {
-                        opts->iti = (useconds_t) (iti * 1e6);
-                        opts->ibi = (useconds_t) (iti * 1e6);
-                }
-
-                if (options.count("ibi"))
-                        opts->ibi = (useconds_t) (ibi * 1e6);
-
-                opts->dt = 1.0 / samplingRate;
-                opts->nTrials = nTrials;
-                opts->nBatches = nBatches;
-		opts->holdValue = holdValue;
-
-        } catch (std::exception e) {
-                std::cout << e.what() << std::endl;
-                exit(2);
         }
+        if (opts->tend == 0 && opts->stimulusFiles.size() == 0) {
+                SetLoggingLevel(Info);
+                Logger(Info, "You must specify one of the following three options:\n"
+                                 "   -d, --duration     Duration of the recording (without a stimulus file).\n"
+                                 "   -f, --stimfile     Stimulus file.\n"
+                                 "   -D, --stimdir      Directory containing the stimulus files.\n");
+                exit(1);
+        }
+        if (opts->iti == 0 && (opts->nTrials > 1 || opts->stimulusFiles.size() > 1)) {
+                Logger(Critical, "You must specify the inter-trial interval (-i switch).\n");
+                exit(1);
+        }
+        if (ibi < 0)
+                opts->ibi = opts->iti;
 }
 
-bool parseConfigurationFile(std::vector<Entity*>& entities, const options *opts)
+static int parse_configuration_file(std::vector<Entity*>& entities, const options *opts)
 {
         ptree pt;
         string_dict parameters;
+        struct stat buf;
         char *home, configFile[60] = {0};
 
         home = getenv("HOME");
         if (home == NULL) {
                 Logger(Critical, "Unable to get HOME environment variable.\n");
-                return false;
+                return -1;
         }
         sprintf(configFile, "%s/%s", home, CONFIG_FILE);
 
-        if (! fs::exists(configFile)) {
-                Logger(Critical, "Configuration file [%s] not found.\n", configFile);
-                return false;
+        if (stat(configFile, &buf) == -1) {
+                Logger(Critical, "%s: %s\n", configFile, strerror(errno));
+                return -1;
         }
 
         read_ini(configFile, pt);
@@ -313,10 +371,10 @@ bool parseConfigurationFile(std::vector<Entity*>& entities, const options *opts)
 		}   	
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);
-                return false;
+                return -1;
         }
         Logger(Debug, "Successfully parsed configuration file [%s].\n", configFile);
-        return true;
+        return 0;
 }
 
 int main(int argc, char *argv[])
@@ -337,11 +395,11 @@ int main(int argc, char *argv[])
 
         SetLoggingLevel(Info);
         
-	parseArgs(argc, argv, &opts);
+	parse_args(argc, argv, &opts);
 
-        if (! parseConfigurationFile(entities, &opts)) {
-                writeDefaultConfigurationFile();
-                parseConfigurationFile(entities, &opts);
+        if (parse_configuration_file(entities, &opts) != 0) {
+                write_default_configuration_file();
+                parse_configuration_file(entities, &opts);
         }
 
         if (opts.mode == DEFAULT) {
