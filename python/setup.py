@@ -33,7 +33,7 @@ setup(
             'lcg-ltpltd = lcg.ltp_ltd:main',
             'prc_protocol = lcg.prc_protocol:main',
             'izhikevich_network = lcg.izhikevich_network:main',
-            'lcg-correlations = lcg.correlations_protocol:main',
+            'lcg-correlations = lcg.correlations:main',
             'lcg-ou = lcg.ou_protocol:main',
             'lcg-fi = lcg.fi_pid:main',
             'lcg-ap = lcg.ap:main',

@@ -1,9 +1,10 @@
+#include <stdio.h>
+#include <sys/stat.h>
 #include "neurons.h"
 #include "events.h"
 #include "thread_safe_queue.h"
 #include "utils.h"
 #include "engine.h"
-#include <stdio.h>
 
 lcg::Entity* LIFNeuronFactory(string_dict& args)
 {
@@ -410,7 +411,9 @@ bool RealNeuron::initialise()
             ! m_output.initialise())
                 return false;
 
-        if (m_holdLastValue && fs::exists(LOGFILE)) {
+        struct stat buf;
+
+        if (m_holdLastValue && stat(LOGFILE,&buf) != -1) {
                 FILE *fid = fopen(LOGFILE, "r");
                 if (fid == NULL) {
                         Logger(Important, "Unable to open [%s].\n", LOGFILE);

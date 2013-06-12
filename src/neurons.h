@@ -10,8 +10,6 @@
 
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
-#include <boost/filesystem.hpp>
-namespace fs = boost::filesystem;
 #include "analog_io.h"
 #include "aec.h"
 #endif // HAVE_LIBCOMEDI
