@@ -2,13 +2,11 @@
 #define RECORDERS_H
 
 #include <stdio.h>
-
+#include <pthread.h>
+#include <hdf5.h>
 #include <vector>
 #include <queue>
-
 #include <boost/thread.hpp>
-
-#include "hdf5.h"
 
 #include "utils.h"
 #include "entity.h"
@@ -185,7 +183,7 @@ protected:
 private:
         void startWriterThread();
         void stopWriterThread();
-        void buffersWriter();
+        static void* buffersWriter(void *arg);
 
 private:
         // the data
@@ -198,12 +196,12 @@ private:
         // the length of each buffer
         hsize_t *m_bufferLengths;
         // the thread that continuosly waits for data to save
-        boost::thread m_writerThread;
+        pthread_t m_writerThread;
         // the index of the buffer in which the main thread saves data
         uint m_bufferInUse;
         // multithreading stuff for controlling access to the queue m_dataQueue;
-        boost::mutex m_mutex;
-        boost::condition_variable m_cv;
+        pthread_mutex_t m_mutex;
+        pthread_cond_t m_cv;
         bool m_threadRun;
 
         hsize_t m_datasetSize;

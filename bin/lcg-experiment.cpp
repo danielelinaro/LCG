@@ -76,6 +76,8 @@ void parse_args(int argc, char *argv[], options *opts)
         int ch;
         struct stat buf;
         double iti = -1;
+        // default values
+        opts->nTrials = 1;
         while ((ch = getopt_long(argc, argv, "hvV:c:n:i:r", longopts, NULL)) != -1) {
                 switch(ch) {
                 case 'h':
@@ -110,7 +112,7 @@ void parse_args(int argc, char *argv[], options *opts)
                                 Logger(Critical, "%s: %s.\n", optarg, strerror(errno));
                                 exit(1);
                         }
-                        strncmp(opts->configFile, optarg, FILENAME_MAXLEN);
+                        strncpy(opts->configFile, optarg, FILENAME_MAXLEN);
                         break;
                 case 'r':
                         opts->enableReplay = false;
