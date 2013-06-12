@@ -1,14 +1,14 @@
-#include <iostream>
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
-#include <boost/algorithm/string.hpp>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <getopt.h>
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 
 #include <comedilib.h>
 #include "common.h"
@@ -16,100 +16,129 @@ namespace fs = boost::filesystem;
 #include "utils.h"
 using namespace lcg;
 
+struct options {
+        options() {
+                strncpy(device, getenv("COMEDI_DEVICE"), FILENAME_MAXLEN);
+                subdevice = atoi(getenv("AO_SUBDEVICE"));
+                channel = -1;   // all channels
+                reference = strncmp(getenv("GROUND_REFERENCE"), "NRSE", 5) ? AREF_GROUND : AREF_COMMON;
+                value = 0.0;
+                factor = atof(getenv("AO_CONVERSION_FACTOR"));
+        }
+        char device[FILENAME_MAXLEN];
+        uint subdevice, reference;
+        int channel;
+        double value, factor;
+};
+
+static struct option longopts[] = {
+        {"help", no_argument, NULL, 'h'},
+        {"device", required_argument, NULL, 'd'},
+        {"subdevice", required_argument, NULL, 's'},
+        {"channel", required_argument, NULL, 'c'},
+        {"reference", required_argument, NULL, 'r'},
+        {"value", required_argument, NULL, 'v'},
+        {"factor", required_argument, NULL, 'f'},
+        {NULL, 0, NULL, 0}
+};
+
+const char lcg_output_usage_string[] =
+        "This program outputs a constant value to a certain channel of the DAQ board.\n\n"
+        "Usage: lcg output [<options> ...]\n"
+        "where options are:\n"
+        "   -h, --help       Print this help message and exit.\n"
+        "   -v, --value      Constant value to output.\n"
+        "   -f, --factor     Conversion factor.\n"
+        "   -d, --device     Path of the DAQ device.\n"
+        "   -s, --subdevice  Subdevice number.\n"
+        "   -c, --channel    Channel number (if not specified, all channels are reset).\n"
+        "   -r, --reference  Ground reference (either GRSE or NRSE).\n";
+
+void usage()
+{
+        printf("%s\n", lcg_output_usage_string);
+}
+
+void parse_args(int argc, char *argv[], options *opts)
+{
+        int ch;
+        struct stat buf;
+        while ((ch = getopt_long(argc, argv, "hd:s:c:r:v:f:", longopts, NULL)) != -1) {
+                switch(ch) {
+                case 'h':
+                        usage();
+                        exit(0);
+                case 's':
+                        opts->subdevice = atoi(optarg);
+                        break;
+                case 'c':
+                        opts->channel = atoi(optarg);
+                        break;
+                case 'r':
+                        if (strncmp(optarg, "NRSE", 5) == 0) {
+                                opts->reference = AREF_GROUND;
+                        }
+                        else if (strncmp(optarg, "GRSE", 5) == 0) {
+                                opts->reference = AREF_COMMON;
+                        }
+                        else {
+                                Logger(Critical, "%s: unknown reference mode.\n", optarg);
+                                exit(1);
+                        }
+                        break;
+                case 'd':
+                        if (stat(optarg, &buf) == -1) {
+                                Logger(Critical, "%s: %s\n", optarg, strerror(errno));
+                                exit(1);
+                        }
+                        strncmp(opts->device, optarg, FILENAME_MAXLEN);
+                        break;
+                case 'v':
+                        opts->value = atof(optarg);
+                        break;
+                case 'f':
+                        opts->factor = atof(optarg);
+                        if (opts->factor <= 0.) {
+                                Logger(Critical, "The conversion factor must be positive.\n");
+                                exit(1);
+                        }
+                        break;
+                default:
+                        Logger(Critical, "Enter 'lcg help output' for help on how to use this program.\n");
+                        exit(1);
+                }
+        }
+}
+
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_LIBCOMEDI
-
-        po::options_description description(
-                        "\nThis program outputs a constant value to a specified channel of the DAQ board.\n\n"
-                        "Allowed options are");
-        po::variables_map options;
-        std::string deviceFile, refStr;
-        uint subdevice, channel, ref;
-        double value, conversionFactor;
-
-        try {
-                description.add_options()
-                        ("help,h", "print help message")
-                        ("device,d", po::value<std::string>(&deviceFile)->default_value(getenv("COMEDI_DEVICE")),
-                         "specify the path of the device")
-                        ("subdevice,s", po::value<uint>(&subdevice)->default_value(atoi(getenv("AO_SUBDEVICE"))),
-                         "specify output subdevice")
-                        ("channel,c", po::value<uint>(&channel)->default_value(atoi(getenv("AO_CHANNEL"))),
-                         "specify output channel")
-                        ("value,v", po::value<double>(&value)->default_value(0.0),
-                         "specify value to output (in pA)")
-                        ("factor,f", po::value<double>(&conversionFactor)->default_value(atof(getenv("AO_CONVERSION_FACTOR"))),
-                         "specify conversion factor (in V/pA)")
-                        ("reference,r", po::value<std::string>(&refStr)->default_value(getenv("GROUND_REFERENCE")),
-                         "specify reference type: allowed values are "
-                         "'GRSE' for ground-referenced single ended or "
-                         "'NRSE' for non-referenced single ended.");
-
-                po::store(po::parse_command_line(argc, argv, description), options);
-                po::notify(options);    
-
-                if (options.count("help")) {
-                        std::cout << description << "\n";
-                        exit(0);
-                }
-
-                if (!fs::exists(deviceFile)) {
-                        std::cout << "Device file \"" << deviceFile << "\" not found. Aborting...\n";
-                        exit(1);
-                }
-
-                if (boost::iequals(refStr, "GRSE")) {
-                        ref = AREF_GROUND;
-                }
-                else if (boost::iequals(refStr, "NRSE")) {
-                        ref = AREF_COMMON;
-                }
-                else {
-                        Logger(Critical, "Unknown reference type [%s].\n", refStr.c_str());
-                        exit(1);
-                }
-
-        } catch (std::exception e) {
-                std::cout << e.what() << std::endl;
-                exit(1);
-        }
-
-        uint range = 0;
+        FILE *fid;
         comedi_t *device;
-        char *calibrationFile;
+        char *calibration_file;
         comedi_calibration_t *calibration;
         comedi_polynomial_t converter;
+        options opts;
 
-        Logger(Info, "Outputting %g on device [%s], subdevice [%d], channel [%d].\n", value, deviceFile.c_str(), subdevice, channel);
+        parse_args(argc, argv, &opts);
 
-        device = comedi_open(deviceFile.c_str());
-        calibrationFile = comedi_get_default_calibration_path(device);
-        calibration = comedi_parse_calibration_file(calibrationFile);
-        comedi_get_softcal_converter(subdevice, channel, range, COMEDI_FROM_PHYSICAL, calibration, &converter);
-        comedi_data_write(device, subdevice, channel, range, ref, comedi_from_physical(value*conversionFactor, &converter));
+        Logger(Info, "Outputting %g on device [%s], subdevice [%d], channel [%d].\n", opts.value, opts.device, opts.subdevice, opts.channel);
+
+        device = comedi_open(opts.device);
+        calibration_file = comedi_get_default_calibration_path(device);
+        calibration = comedi_parse_calibration_file(calibration_file);
+        comedi_get_softcal_converter(opts.subdevice, opts.channel, 0, COMEDI_FROM_PHYSICAL, calibration, &converter);
+        comedi_data_write(device, opts.subdevice, opts.channel, 0, opts.reference, comedi_from_physical(opts.value*opts.factor, &converter));
 
         comedi_cleanup_calibration(calibration);
-        free(calibrationFile);
+        free(calibration_file);
         comedi_close(device);
 
-#else
-
-        std::cout << "This program requires the Comedi library." << std::endl;
-
-#endif
-
-#ifdef ANALOG_IO
-        FILE *fid = fopen(LOGFILE,"w");
+        fid = fopen(LOGFILE,"w");
         if (fid != NULL) {
-                fprintf(fid, "%lf", value);
+                fprintf(fid, "%lf", opts.value);
                 fclose(fid);
-                Logger(Info, "Saved output value to [%s].\n", LOGFILE);
         }
-        else {
-                Logger(Critical, "Unable to save output value to [%s].\n", LOGFILE);
-        }
-#endif
+
         return 0;
 }
 

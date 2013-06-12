@@ -51,8 +51,8 @@ void parse_args(int argc, char *argv[], options *opts)
                         break;
                 case 'h':
                 default:
-                        usage();
-                        exit(0);
+                        Logger(Critical, "Enter 'lcg help annotate' for help on how to use this program.\n");
+                        exit(1);
                 }
         }
 }

@@ -1,10 +1,12 @@
 #include <sstream>
-#include <boost/filesystem.hpp>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
 #include "waveform.h"
 #include "generate_trial.h"
 #include "events.h"
 #include "engine.h"
-namespace fs = boost::filesystem;
 
 lcg::Entity* WaveformFactory(string_dict& args)
 {
@@ -71,8 +73,9 @@ const char* Waveform::stimulusFile() const
 
 bool Waveform::setStimulusFile(const char *stimulusFile)
 {
-        if (!fs::exists(stimulusFile)) {
-                Logger(Critical, "%s: no such file.\n", stimulusFile);
+        struct stat buf;
+        if (stat(stimulusFile, &buf) == -1) {
+                Logger(Critical, "%s: %s.\n", stimulusFile, strerror(errno));
                 return false;
         }
         strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);

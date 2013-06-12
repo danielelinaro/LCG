@@ -50,9 +50,6 @@ AC_CHECK_LIB([hdf5], [H5Fcreate], [], [AC_MSG_ERROR([HDF5 library missing.])])
 AC_CHECK_LIB([hdf5_hl], [H5LTmake_dataset_double], [], [AC_MSG_ERROR([HDF5 library missing.])])
 AC_LANG_CPLUSPLUS
 AC_CHECK_LIB([boost_thread], [main], [], [AC_MSG_ERROR([BOOST thread library missing.])])
-AC_CHECK_LIB([boost_program_options], [main], [], [AC_MSG_ERROR([BOOST program_options library missing.])])
-AC_CHECK_LIB([boost_system], [main], [], [AC_MSG_ERROR([BOOST system library missing.])])
-AC_CHECK_LIB([boost_filesystem], [main], [], [AC_MSG_ERROR([BOOST filesystem library missing.])])
 
 # defines
 LIB_CURRENT=0
@@ -68,7 +65,7 @@ AC_ARG_WITH([examples],
 	    [AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
 AC_ARG_WITH([output-reset],
-      	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on a realtime system)])],
+	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on a realtime system)])],
        	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AC_ARG_WITH([asynchronous-io],
        	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
@@ -88,6 +85,7 @@ with_rt=no
 with_rtai=no
 with_rtlinux=no
 with_xenomai=no
+
 if test `expr $host_os : 'linux'` -eq 5 ; then
    
    ### real time ###

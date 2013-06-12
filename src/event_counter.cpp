@@ -1,6 +1,6 @@
+#include <strings.h>
 #include "event_counter.h"
 #include "engine.h"
-#include <boost/algorithm/string.hpp>
 
 lcg::Entity* EventCounterFactory(string_dict& args)
 {
@@ -20,7 +20,7 @@ lcg::Entity* EventCounterFactory(string_dict& args)
         }
         if (lcg::CheckAndExtractValue(args, "eventToCount", eventToCountStr)) {
                 int i=0;
-                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToCountStr, lcg::eventTypeNames[i]))
+                while(i < NUMBER_OF_EVENT_TYPES && strcasecmp(eventToCountStr.c_str(), lcg::eventTypeNames[i].c_str()))
                     i++;
                 if (i == NUMBER_OF_EVENT_TYPES) {
                     lcg::Logger(lcg::Critical, "EventCounter(%d): Unknown eventToCount type [%s].\n", id, eventToCountStr.c_str());
@@ -37,7 +37,7 @@ lcg::Entity* EventCounterFactory(string_dict& args)
         }
         if (lcg::CheckAndExtractValue(args, "eventToSend", eventToSendStr)) {
                 int i=0;
-                while(i < NUMBER_OF_EVENT_TYPES && !boost::iequals(eventToSendStr, lcg::eventTypeNames[i]))
+                while(i < NUMBER_OF_EVENT_TYPES && strcasecmp(eventToSendStr.c_str(), lcg::eventTypeNames[i].c_str()))
                     i++;
                 if (i == NUMBER_OF_EVENT_TYPES) {
                     lcg::Logger(lcg::Critical, "EventCounter(%d): Unknown eventToSend type [%s].\n", id, eventToSendStr.c_str());

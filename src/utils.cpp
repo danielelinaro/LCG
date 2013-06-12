@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -14,10 +15,6 @@
 #include <sstream>
 #include <algorithm>
 #include <vector>
-
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
-namespace fs = boost::filesystem;
 
 #include "utils.h"
 #include "events.h"
@@ -131,17 +128,17 @@ ullong GetSeedFromDictionary(string_dict& args)
         return s;
 }
 
-bool CheckAndExtractValue(string_dict& dict, const std::string& key, std::string& value)
+bool CheckAndExtractValue(string_dict& dict, const char *key, std::string& value)
 {
         if (dict.count(key)) {
                 value = dict[key];
                 return true;
         }
-        Logger(Debug, "The required parameter [%s] is missing.\n", key.c_str());
+        Logger(Critical, "The required parameter [%s] is missing.\n", key);
         return false;
 }
 
-bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *value)
+bool CheckAndExtractDouble(string_dict& dict, const char *key, double *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -150,7 +147,7 @@ bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *va
         return true;
 }
 
-bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *value)
+bool CheckAndExtractInteger(string_dict& dict, const char *key, int *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -159,7 +156,7 @@ bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *valu
         return true;
 }
 
-bool CheckAndExtractLong(string_dict& dict, const std::string& key, long *value)
+bool CheckAndExtractLong(string_dict& dict, const char *key, long *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -168,7 +165,7 @@ bool CheckAndExtractLong(string_dict& dict, const std::string& key, long *value)
         return true;
 }
 
-bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, long long *value)
+bool CheckAndExtractLongLong(string_dict& dict, const char *key, long long *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
@@ -177,7 +174,7 @@ bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, long lon
         return true;
 }
 
-bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, unsigned int *value)
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const char *key, unsigned int *value)
 {
         int i;
         if (!CheckAndExtractInteger(dict, key, &i) || i < 0)
@@ -186,7 +183,7 @@ bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, u
         return true;
 }
 
-bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsigned long *value)
+bool CheckAndExtractUnsignedLong(string_dict& dict, const char *key, unsigned long *value)
 {
         long l;
         if (!CheckAndExtractLong(dict, key, &l) || l < 0)
@@ -195,7 +192,7 @@ bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsi
         return true;
 }
 
-bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, unsigned long long *value)
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const char *key, unsigned long long *value)
 {
         long long l;
         if (!CheckAndExtractLongLong(dict, key, &l) || l < 0)
@@ -204,14 +201,14 @@ bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, 
         return true;
 }
 
-bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value)
+bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value)
 {
         std::string str;
         if (!CheckAndExtractValue(dict, key, str))
                 return false;
-        if (boost::iequals(str, "true"))
+        if (strncasecmp(str.c_str(), "true", 5) == 0)
                 *value = true;
-        else if (boost::iequals(str, "false"))
+        else if (strncasecmp(str.c_str(), "false", 6) == 0)
                 *value = false;
         else
                 return false;
@@ -224,6 +221,7 @@ void MakeFilename(char *filename, const char *extension)
         struct tm * timeInfo;
         int extensionLen, cnt;
         char *base;
+        struct stat buf;
 
         extensionLen = strlen(extension);
 
@@ -239,7 +237,7 @@ void MakeFilename(char *filename, const char *extension)
         sprintf(filename, "%s.%s", base, extension);
 
         cnt = 1;
-        while (fs::exists(filename)) {
+        while (stat(filename, &buf) != -1) {
                 sprintf(filename, "%s-%02d.%s", base, cnt, extension);
                 cnt++;
         }
@@ -286,15 +284,15 @@ close_lib:
         return entity;
 }
 
-bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::string& unitsOut)
+bool ConvertUnits(double x, double *y, const char *unitsIn, const char *unitsOut)
 {
-        if (boost::equals(unitsIn, unitsOut)) {
+        if (strcasecmp(unitsIn, unitsOut) == 0) {
                 *y = x;
                 return true;
         }
 
-        if ((boost::equals(unitsIn, "s") && boost::equals(unitsOut, "Hz")) ||
-            (boost::equals(unitsIn, "Hz") && boost::equals(unitsOut, "s"))) {
+        if ((strncasecmp(unitsIn, "s", 2) == 0 && strncasecmp(unitsOut, "Hz", 3) == 0) ||
+            (strncasecmp(unitsIn, "Hz", 3) == 0 && strncasecmp(unitsOut, "s", 2) == 0)) {
                 *y = 1.0 / x;
                 return true;
         }

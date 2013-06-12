@@ -8,6 +8,7 @@
 #include <sys/uio.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <getopt.h>
 #include "entity.h"
 #include "utils.h"
 #include "waveform.h"
@@ -16,14 +17,10 @@
 
 #include "sha1.h"
 
-#include <boost/program_options.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
 using boost::property_tree::ptree;
 
 #define DCLAMP_DIR    ".lcg"
@@ -36,82 +33,105 @@ using namespace lcg::generators;
 using namespace lcg::recorders;
 
 struct options {
-        options() : iti(0), nTrials(0), configFile(""), enableReplay(true) {}
+        options() : iti(0), nTrials(0), enableReplay(true) {
+                configFile[0] = '\0';
+        }
         useconds_t iti;
         uint nTrials;
-        std::string configFile;
+        char configFile[FILENAME_MAXLEN];
         bool enableReplay;
 };
 
-void parseArgs(int argc, char *argv[], options *opts)
+static struct option longopts[] = {
+        {"help", no_argument, NULL, 'h'},
+        {"version", no_argument, NULL, 'v'},
+        {"verbosity", required_argument, NULL, 'V'},
+        {"frequency", required_argument, NULL, 'F'},
+        {"iti", required_argument, NULL, 'i'},
+        {"ntrials", required_argument, NULL, 'n'},
+        {"disable-replay", no_argument, NULL, 'r'},
+        {"config-file", required_argument, NULL, 'c'},
+        {NULL, 0, NULL, 0}
+};
+
+const char lcg_vcclamp_usage_string[] =
+        "This program performs closed loop, hybrid, dynamic-clamp experiments: you name it, we got it...\n\n"
+        "Usage: lcg experiment [<options> ...]\n"
+        "where options are:\n"
+        "   -h, --help            Print this help message.\n"
+        "   -v, --version         Print the program version.\n"
+        "   -V, --verbosity       Verbosity level (0 for maximum, 4 for minimum verbosity).\n"
+        "   -i, --iti             Inter-trial interval.\n"
+        "   -n, --ntrials         Number of trials (how many times a stimulus is repeated, default 1).\n"
+        "   -c, --config-file     Configuration file.\n"
+        "   -r, --disable-replay  Disable metadata writing in the directory .lcg.\n";
+
+static void usage()
 {
-        double iti;
-        int verbosity;
-        std::string configfile;
-        po::options_description description("\nUsage: lcg-experiment [options]\n\nAllowed options");
-        po::variables_map options;
-
-        try {
-                char msg[100];
-                sprintf(msg, "select verbosity level (%d for maximum, %d for minimum verbosity)", All, Critical);
-                description.add_options()
-                        ("help,h", "print help message")
-                        ("version,v", "print version number")
-                        ("verbosity,V", po::value<int>(&verbosity)->default_value(Info), msg)
-                        ("config-file,c", po::value<std::string>(&configfile), "configuration file")
-                        ("iti,i", po::value<double>(&iti)->default_value(0), "inter-trial interval (in seconds)")
-                        ("ntrials,n", po::value<uint>(&opts->nTrials)->default_value(1), "number of trials")
-                        ("enable-replay,r", po::value<bool>(&opts->enableReplay)->default_value(true),
-                         "enable saving of configuration and stimulus files");
-
-                po::store(po::parse_command_line(argc, argv, description), options);
-                po::notify(options);    
-
-                if (verbosity < All || verbosity > Critical) {
-                        Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
-                        exit(1);
-                }
-
-                SetLoggingLevel(static_cast<LogLevel>(verbosity));
-
-                if (options.count("help")) {
-                        std::cout << description << "\n";
-                        exit(0);
-                }
-
-                if (options.count("version")) {
-                        Logger(Info, "%s version %s\n", fs::path(argv[0]).filename().c_str(), VERSION);
-                        exit(0);
-                }
-
-                if (!options.count("config-file")) {
-                        Logger(Critical, "No configuration file specified.\n");
-                        exit(1);
-                }
-                else if (!fs::exists(configfile)) {
-                        Logger(Critical, "%s: no such file.\n", configfile.c_str());
-                        exit(1);
-                }
-                else {
-                        opts->configFile = configfile;
-                }
-
-                if (options.count("iti"))
-                        opts->iti = (useconds_t) (iti * 1e6);
-
-                if (opts->nTrials > 1 && opts->iti <= 0) {
-                        Logger(Critical, "The inter-trial duration must be greater than 0 seconds.\n");
-                        exit(1);
-                }
-
-        }
-        catch (std::exception e) {
-                Logger(Critical, "Missing argument or unknown option.\n");
-                exit(1);
-        }
+        printf("%s\n", lcg_vcclamp_usage_string);
 }
 
-bool parseConfigurationFile(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
+void parse_args(int argc, char *argv[], options *opts)
+{
+        int ch;
+        struct stat buf;
+        double iti = -1;
+        while ((ch = getopt_long(argc, argv, "hvV:c:n:i:r", longopts, NULL)) != -1) {
+                switch(ch) {
+                case 'h':
+                        usage();
+                        exit(0);
+                case 'v':
+                        printf("lcg experiment version %s.\n", VERSION);
+                        exit(0);
+                case 'V':
+                        if (atoi(optarg) < All || atoi(optarg) > Critical) {
+                                Logger(Important, "The verbosity level must be between %d and %d.\n", All, Critical);
+                                exit(1);
+                        }
+                        SetLoggingLevel(static_cast<LogLevel>(atoi(optarg)));
+                        break;
+                case 'n':
+                        opts->nTrials = atoi(optarg);
+                        if (opts->nTrials <= 0) {
+                                Logger(Critical, "The number of trials must be greater than zero.\n");
+                                exit(1);
+                        }
+                        break;
+                case 'i':
+                        iti = atof(optarg);
+                        if (iti < 0) {
+                                Logger(Critical, "The inter-trial interval must be non-negative.\n");
+                                exit(1);
+                        }
+                        break;
+                case 'c':
+                        if (stat(optarg, &buf) == -1) {
+                                Logger(Critical, "%s: %s.\n", optarg, strerror(errno));
+                                exit(1);
+                        }
+                        strncmp(opts->configFile, optarg, FILENAME_MAXLEN);
+                        break;
+                case 'r':
+                        opts->enableReplay = false;
+                        break;
+                default:
+                        Logger(Critical, "Enter 'lcg help experiment' for help on how to use this program.\n");
+                        exit(1);
+                }
+        }
+        if (strlen(opts->configFile) == 0) {
+                Logger(Critical, "You must specify a configuration file.\n");
+                exit(1);
+        }
+        if (opts->nTrials > 1 && iti < 0) {
+                Logger(Critical, "You must specify the duration of the inter-trial interval.\n");
+                exit(1);
+        }
+        opts->iti = (useconds_t) (1e6 * iti);
+}
+
+int parse_configuration_file(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
 {
         ptree pt;
         uint id;
@@ -151,7 +171,7 @@ bool parseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                         if (ntts.count(id) == 1) {
                                 Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
                                 entities.clear();
-                                return false;
+                                return -1;
                         }
                         args["id"] = ntt.second.get<std::string>("id");
                         BOOST_FOREACH(ptree::value_type &pars, ntt.second.get_child("parameters")) {
@@ -191,7 +211,7 @@ bool parseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
                                 for (int i=0; i<entities.size(); i++)
                                         delete entities[i];
                                 entities.clear();
-                                return false;
+                                return -1;
                         }
                         entities.push_back(entity);
                         ntts[id] = entity;
@@ -215,10 +235,10 @@ bool parseConfigurationFile(const std::string& filename, std::vector<Entity*>& e
         } catch(std::exception e) {
                 Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
                 entities.clear();
-                return false;
+                return -1;
         }
 
-        return true;
+        return 0;
 }
 
 int cp(const char *to, const char *from)
@@ -275,12 +295,12 @@ out_error:
         return -1;
 }
 
-bool sha1(const char *filename, unsigned *messageDigest)
+int sha1(const char *filename, unsigned *messageDigest)
 {
         FILE *fp = fopen(filename, "rb");
         if (fp == NULL) {
                 Logger(Important, "Unable to open [%s] for computing the SHA-1 digest.\n", filename);
-                return false;
+                return -1;
         }
         char c;
         SHA1 sha;
@@ -293,12 +313,12 @@ bool sha1(const char *filename, unsigned *messageDigest)
         fclose(fp);
         if (!sha.Result(messageDigest)) {
             Logger(Important, "Could not compute SHA-1 digest for [%s]\n", filename);
-            return false;
+            return -1;
         }
-        return true;
+        return 0;
 }
 
-bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
+int store(int argc, char *argv[], const std::vector<Entity*>& entities)
 {
         int flag, i;
         char directory[1024] = {0}, path[1024] = {0}, configFile[1024] = {0};
@@ -314,7 +334,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                 }
                 else {
                         Logger(Important, "mkdir: [%s]: %s.\n", DCLAMP_DIR, strerror(errno));
-                        return false;
+                        return -1;
                 }
         }
         
@@ -339,11 +359,13 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         else {
                 // either the directory exists already or there's been an error: in both
                 // cases, we stop here.
-                if (errno == EEXIST)
+                if (errno == EEXIST) {
                         Logger(Debug, "mkdir: [%s]: directory exists.\n", directory);
-                else
+                }
+                else {
                         Logger(Important, "mkdir: [%s]: %s.\n", directory, strerror(errno));
-                //return false;
+                        return -1;
+                }
         }
 
         // write a very simple script that runs lcg again with the options used for calling it now
@@ -351,7 +373,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         FILE *fid = fopen(path, "w");
         if (fid == NULL) {
                 Logger(Important, "Unable to create file [%s].\n", path);
-                return false;
+                return -1;
         }
         fprintf(fid, "#!/bin/bash\n");
         for (i=0; i<argc; i++) {
@@ -365,7 +387,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                         else {
                                 Logger(Important, "Unable to copy configuration file [%s] to directory [%s].\n",
                                                 argv[i+1], directory);
-                                return false;
+                                return -1;
                         }
                 }
         }
@@ -386,7 +408,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
                         else {
                                 Logger(Important, "Unable to copy file [%s] to directory [%s].\n",
                                                 wave->stimulusFile(), directory);
-                                return false;
+                                return -1;
                         }
                         continue;
                 }
@@ -406,14 +428,14 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         fid = fopen(path, "w");
         if (fid == NULL) {
                 Logger(Important, "Unable to create hashes file [%s].\n", path);
-                return false;
+                return -1;
         }
         else {
                 Logger(Debug, "Successfully created hashes file [%s].\n", path);
         }
 
         if (rec != NULL) {
-                if (sha1(rec->filename(), md))
+                if (sha1(rec->filename(), md) == 0)
                         fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
                 else
                         Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", rec->filename());
@@ -422,7 +444,8 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         DIR *dirp = opendir(directory);
         if (dirp == NULL) {
                 Logger(Important, "Unable to open directory [%s] for traversing the files.\n", directory);
-                return false;
+                fclose(fid);
+                return -1;
         }
         else {
                 Logger(Debug, "Traversing the files in directory [%s].\n", directory);
@@ -432,7 +455,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         while ((dp = readdir(dirp)) != NULL) {
                 if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
                         sprintf(path, "%s/%s", directory, dp->d_name);
-                        if (sha1(path, md))
+                        if (sha1(path, md) == 0)
                                 fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], dp->d_name);
                         else
                                 Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", path);
@@ -446,7 +469,7 @@ bool Store(int argc, char *argv[], const std::vector<Entity*>& entities)
         sprintf(path, "%s/%s", directory, HASHES_FILE);
         chmod(path, 0444);
 
-        return true;
+        return 0;
 }
 
 int main(int argc, char *argv[])
@@ -458,14 +481,14 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 
-        parseArgs(argc, argv, &opts);
+        parse_args(argc, argv, &opts);
 
         bool success;
         double tend, dt;
         std::vector<Entity*> entities;
         lcg::generators::Waveform *stimulus;
 
-        if (!parseConfigurationFile(opts.configFile, entities, &tend, &dt)) {
+        if (parse_configuration_file(opts.configFile, entities, &tend, &dt) != 0) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
@@ -482,7 +505,7 @@ int main(int argc, char *argv[])
                 if (!success || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)
-                        Store(argc, argv, entities);
+                        store(argc, argv, entities);
                 if (i != opts.nTrials-1)
                         usleep(opts.iti);
         }

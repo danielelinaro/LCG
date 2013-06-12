@@ -126,11 +126,10 @@ static void parse_args(int argc, char *argv[], options *opts)
 {
         int ch;
         struct stat buf;
-        double ibi = -1;
+        double iti=-1, ibi=-1;
         DIR *dirp;
         struct dirent *dp;
         // default values
-        opts->iti = 0;
         opts->nTrials = opts->nBatches = 1;
         opts->dt = 1./20000;
         while ((ch = getopt_long(argc, argv, "hvV:F:f:n:N:i:I:H:d:D:", longopts, NULL)) != -1) {
@@ -139,7 +138,7 @@ static void parse_args(int argc, char *argv[], options *opts)
                         usage();
                         exit(0);
                 case 'v':
-                        printf("lcg vcclamp version %s", VERSION);
+                        printf("lcg vcclamp version %s.\n", VERSION);
                         exit(0);
                 case 'V':
                         if (atoi(optarg) < All || atoi(optarg) > Critical) {
@@ -170,11 +169,12 @@ static void parse_args(int argc, char *argv[], options *opts)
                         }
                         break;
                 case 'i':
-                        if (atof(optarg) < 0) {
-                                Logger(Critical, "The inter-trial interval must be not negative.\n");
+                        iti = atof(optarg);
+                        if (iti < 0) {
+                                Logger(Critical, "The inter-trial interval must be non-negative.\n");
                                 exit(1);
                         }
-                        opts->iti = (useconds_t) (1e6 * atof(optarg));
+                        opts->iti = (useconds_t) (1e6 * iti);
                         break;
                 case 'I':
                         if (atof(optarg) < 0) {
@@ -246,7 +246,7 @@ static void parse_args(int argc, char *argv[], options *opts)
                                  "   -D, --stimdir      Directory containing the stimulus files.\n");
                 exit(1);
         }
-        if (opts->iti == 0 && (opts->nTrials > 1 || opts->stimulusFiles.size() > 1)) {
+        if (iti < 0 && (opts->nTrials > 1 || opts->stimulusFiles.size() > 1)) {
                 Logger(Critical, "You must specify the inter-trial interval (-i switch).\n");
                 exit(1);
         }

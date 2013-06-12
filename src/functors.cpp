@@ -100,7 +100,7 @@ double SobolDelay::operator()()
         float x;
         double y;
         sobseq(&m_numberOfSobolSequences, &x);
-        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units(), "s"))
+        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units().c_str(), "s"))
                 throw "Unable to convert.";
         return x*y;
 }
@@ -122,7 +122,7 @@ bool PhasicDelay::initialise()
 double PhasicDelay::operator()()
 {
         double y;
-        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units(), "s"))
+        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units().c_str(), "s"))
                 throw "Unable to convert.";
         return m_parameters["phase"] * y;
 }

@@ -53,15 +53,15 @@ ullong GetRandomSeed();
 uint GetIdFromDictionary(string_dict& args);
 ullong GetSeedFromDictionary(string_dict& args);
 
-bool CheckAndExtractValue(string_dict& dict, const std::string& key, std::string& value);
-bool CheckAndExtractDouble(string_dict& dict, const std::string& key, double *value);
-bool CheckAndExtractInteger(string_dict& dict, const std::string& key, int *value);
-bool CheckAndExtractLong(string_dict& dict, const std::string& key, long *value);
-bool CheckAndExtractLongLong(string_dict& dict, const std::string& key, long long *value);
-bool CheckAndExtractUnsignedInteger(string_dict& dict, const std::string& key, unsigned int *value);
-bool CheckAndExtractUnsignedLong(string_dict& dict, const std::string& key, unsigned long *value);
-bool CheckAndExtractUnsignedLongLong(string_dict& dict, const std::string& key, unsigned long long *value);
-bool CheckAndExtractBool(string_dict& dict, const std::string& key, bool *value);
+bool CheckAndExtractValue(string_dict& dict, const char *key, std::string& value);
+bool CheckAndExtractDouble(string_dict& dict, const char *key, double *value);
+bool CheckAndExtractInteger(string_dict& dict, const char *key, int *value);
+bool CheckAndExtractLong(string_dict& dict, const char *key, long *value);
+bool CheckAndExtractLongLong(string_dict& dict, const char *key, long long *value);
+bool CheckAndExtractUnsignedInteger(string_dict& dict, const char *key, unsigned int *value);
+bool CheckAndExtractUnsignedLong(string_dict& dict, const char *key, unsigned long *value);
+bool CheckAndExtractUnsignedLongLong(string_dict& dict, const char *key, unsigned long long *value);
+bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 
 Entity* EntityFactory(const char *name, string_dict& args);
@@ -69,7 +69,7 @@ Entity* EntityFactory(const char *name, string_dict& args);
 /**
  * So far converts only Hz to seconds and vice versa.
  */
-bool ConvertUnits(double x, double *y, const std::string& unitsIn, const std::string& unitsOut);
+bool ConvertUnits(double x, double *y, const char *unitsIn, const char *unitsOut);
 
 } // namespace lcg
 
