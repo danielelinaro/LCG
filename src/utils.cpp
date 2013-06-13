@@ -134,7 +134,7 @@ bool CheckAndExtractValue(string_dict& dict, const char *key, std::string& value
                 value = dict[key];
                 return true;
         }
-        Logger(Critical, "The required parameter [%s] is missing.\n", key);
+        Logger(Debug, "The requested key [%s] is missing.\n", key);
         return false;
 }
 

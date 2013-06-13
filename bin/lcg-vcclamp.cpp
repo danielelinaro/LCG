@@ -129,6 +129,7 @@ static void parse_args(int argc, char *argv[], options *opts)
         double iti=-1, ibi=-1;
         DIR *dirp;
         struct dirent *dp;
+        char filename[FILENAME_MAXLEN];
         // default values
         opts->nTrials = opts->nBatches = 1;
         opts->dt = 1./20000;
@@ -213,8 +214,10 @@ static void parse_args(int argc, char *argv[], options *opts)
                                 exit(1);
                         }
                         while ((dp = readdir(dirp)) != NULL) {
-                                if (dp->d_name[0] != '.')
-                                        opts->stimulusFiles.push_back(dp->d_name);
+                                if (dp->d_name[0] != '.') {
+                                        sprintf(filename, "%s/%s", optarg, dp->d_name);
+                                        opts->stimulusFiles.push_back(filename);
+                                }
                         }
                         closedir(dirp);
                         break;
