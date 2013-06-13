@@ -503,7 +503,7 @@ int main(int argc, char *argv[])
         for (int i=0; i<opts.nTrials; i++) {
                 Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
                 ResetGlobalTime();
-                success = Simulate(entities,tend);
+                success = Simulate(&entities,tend);
                 if (!success || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)

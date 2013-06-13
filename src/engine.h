@@ -16,7 +16,7 @@ class Recorder;
 }
 
 double SetGlobalDt(double dt);
-bool Simulate(std::vector<Entity*>& entities, double tend);
+int Simulate(std::vector<Entity*> *entities, double tend);
 
 extern double globalT;
 extern double globalDt;

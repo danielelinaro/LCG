@@ -1,5 +1,7 @@
-#include <boost/thread.hpp>
+#include <pthread.h>
 #include <stdio.h>
+#include <assert.h>
+#include <iostream>
 #include "engine.h"
 #include "entity.h"
 #include "utils.h"
@@ -37,19 +39,21 @@ double realtimeDt;
 #endif
 
 ////// COMMENTS HANDLING CODE - START //////
-bool readingComment = false;
-boost::condition_variable commentsCV;
-boost::mutex commentsMutex;
-boost::thread commentsThread;
 
-void CommentsReader(recorders::Recorder *rec)
+bool readingComment = false;
+pthread_cond_t commentsCV = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t commentsMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_t commentsThread;
+
+void* CommentsReader(void *arg)
 {
+        recorders::Recorder *rec = static_cast<recorders::Recorder*>(arg);
         Logger(Debug, "CommentsReader started.\n");
         char c, msg[COMMENT_MAXLEN];
         time_t now;
         while (!TERMINATE_TRIAL()) {
                 if ((c = getchar()) == 'c') {
-                        boost::unique_lock<boost::mutex> lock(commentsMutex);
+                        pthread_mutex_lock(&commentsMutex);
                         readingComment = true;
                         getchar(); // remove the newline character
                         now = time(NULL);
@@ -57,27 +61,29 @@ void CommentsReader(recorders::Recorder *rec)
                         std::cin.getline(msg, COMMENT_MAXLEN);
                         rec->addComment(msg, &now);
                         readingComment = false;
+                        pthread_mutex_unlock(&commentsMutex);
                 }
-                commentsCV.notify_all();
+                pthread_cond_signal(&commentsCV);
         }
+        pthread_exit(NULL);
 }
 
-void StartCommentsReaderThread(std::vector<Entity*>& entities)
+void StartCommentsReaderThread(std::vector<Entity*> *entities)
 {
         int i=0;
         recorders::Recorder *rec = NULL;
-        while (i < entities.size() && (rec = dynamic_cast<recorders::Recorder*>(entities[i])) == NULL)
+        while (i < entities->size() && (rec = dynamic_cast<recorders::Recorder*>(entities->at(i))) == NULL)
                 i++;
         if (rec != NULL)
-                commentsThread = boost::thread(CommentsReader, rec);
+                pthread_create(&commentsThread, NULL, CommentsReader, (void *) rec);
 }
 
 void StopCommentsReaderThread()
 {
-        boost::unique_lock<boost::mutex> lock(commentsMutex);
+        pthread_mutex_lock(&commentsMutex);
         while (readingComment)
-                commentsCV.wait(lock);
-        commentsThread.interrupt();
+                pthread_cond_wait(&commentsCV, &commentsMutex);
+        pthread_cancel(commentsThread);
 }
 
 ////// COMMENTS HANDLING CODE - END //////
@@ -86,8 +92,8 @@ void StopCommentsReaderThread()
 
 bool programRun = true; 
 bool trialRun = false; 
-boost::mutex programRunMutex;
-boost::mutex trialRunMutex;
+pthread_mutex_t programRunMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t trialRunMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void TerminationHandler(int signum)
 {
@@ -127,15 +133,16 @@ bool SetupSignalCatching()
 void SetTrialRun(bool value)
 {
         Logger(Debug, "SetTrialRun(%s)\n", value ? "True" : "False");
-        boost::mutex::scoped_lock lock(trialRunMutex);
+        pthread_mutex_lock(&trialRunMutex);
         trialRun = value;
+        pthread_mutex_unlock(&trialRunMutex);
 }
 
 void KillProgram()
 {
         Logger(Debug, "KillProgram()\n");
         TerminateTrial();
-        boost::mutex::scoped_lock lock(programRunMutex);
+        pthread_mutex_lock(&programRunMutex);
         programRun = false;
 }
 
@@ -179,20 +186,29 @@ double SetGlobalDt(double dt)
         return globalDt;
 }
 
+struct simulation_data {
+        simulation_data(std::vector<Entity*>* entities, double tend)
+                : m_entities(entities), m_tend(tend) {}
+        std::vector<Entity*> *m_entities;
+        double m_tend;
+};
 
 #if defined(HAVE_LIBLXRT)
 
-void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
+void* RTSimulation(void *arg)
 {
+        simulation_data *data = static_cast<simulation_data*>(arg);
+        std::vector<Entity*> *entities = data->m_entities;
+        double tend = data->m_tend;
         RT_TASK *task;
         RTIME tickPeriod;
         RTIME currentTime, previousTime;
         RTIME start, stop;
         int preambleIterations, flag, i;
         unsigned long taskName;
-        size_t nEntities = entities.size();
-
-        *retval = false;
+        size_t nEntities = entities->size();
+        int *retval = new int;
+        *retval = -1;
 
         Logger(Debug, "\n>>>>> REAL TIME THREAD STARTED <<<<<\n\n");
 
@@ -209,7 +225,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         task = rt_task_init(taskName, RT_SCHED_HIGHEST_PRIORITY+1, STACK_SIZE, MSG_SIZE);
         if(task == NULL) {
                 Logger(Critical, "Error: cannot initialise real-time task.\n");
-                return;
+                pthread_exit((void *) retval);
         }
 
         Logger(Info, "The period is %.6g ms (f = %.6g Hz).\n", count2ms(tickPeriod), 1./count2sec(tickPeriod));
@@ -240,9 +256,9 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         ResetGlobalTime();
         Logger(Debug, "Initialising all the entities.\n");
         for (i=0; i<nEntities; i++) {
-                if (!entities[i]->initialise()) {
-                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
-                        return;
+                if (!entities->at(i)->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities->at(i)->id());
+                        pthread_exit((void *) retval);
                 }
         }
 
@@ -253,10 +269,10 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->readAndStoreInputs();
+                        entities->at(i)->readAndStoreInputs();
                 IncreaseGlobalTime();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->step();
+                        entities->at(i)->step();
                 rt_task_wait_period();
         }
         stop = rt_timer_read();
@@ -272,7 +288,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         StopCommentsReaderThread();
 
         for (i=0; i<nEntities; i++)
-                entities[i]->terminate();
+                entities->at(i)->terminate();
 
 stopRT:
         Logger(Debug, "Deleting the task.\n");
@@ -285,7 +301,8 @@ stopRT:
 
         Logger(Debug, "\n>>>>> REAL TIME THREAD ENDED <<<<<\n\n");
 
-        *retval = true;
+        *retval = 0;
+        pthread_exit((void *) retval);
 }
 
 #elif defined(HAVE_LIBANALOGY)
@@ -455,20 +472,23 @@ static inline int64_t calcdiff_ns(struct timespec t1, struct timespec t2)
         return diff;
 }
 
-void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
+void* RTSimulation(void *arg)
 {
+        simulation_data *data = static_cast<simulation_data*>(arg);
+        std::vector<Entity*> *entities = data->m_entities;
+        double tend = data->m_tend;
         int priority, flag, i;
-        size_t nEntities = entities.size();
+        size_t nEntities = entities->size();
         struct timespec now, period;
         struct sched_param schedp;
-
-        *retval = false;
+        int *retval = new int;
+        *retval = -1;
 
         priority = sched_get_priority_max(SCHEDULER);
         if (priority < 0) {
                 Logger(Critical, "Unable to get maximum priority.\n");
                 perror("sched_get_priority_max");
-                return;
+                pthread_exit((void *) retval);
         }
         Logger(Debug, "The maximum priority is %d.\n", priority);
 
@@ -477,7 +497,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 	flag = sched_setscheduler(0, SCHEDULER, &schedp);
         if (flag != 0){
 		Logger(Critical, "Unable to set maximum priority.\n");
-		return; 
+                pthread_exit((void *) retval);
 	}
         Logger(Debug, "Successfully set maximum priority.\n");
 
@@ -486,9 +506,9 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
         // Initialise all entities
         for (i=0; i<nEntities; i++) {
-                if (!entities[i]->initialise()) {
-                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
-                        return;
+                if (!entities->at(i)->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities->at(i)->id());
+                        pthread_exit((void *) retval);
                 }
         }
         Logger(Debug, "Initialised all entities.\n");
@@ -502,7 +522,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         if (flag < 0) {
                 Logger(Critical, "Unable to get time from the system.\n");
                 perror("clock_gettime");
-                return;
+                pthread_exit((void *) retval);
         }
 
         // Set the time offset, i.e. the absolute time of the beginning of the simulation
@@ -515,7 +535,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 // Process the events and have all entities read their inputs
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->readAndStoreInputs();
+                        entities->at(i)->readAndStoreInputs();
 
                 // Compute the time at which the thread will have to resume
 	        now.tv_sec += period.tv_sec;
@@ -532,7 +552,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
                 // Increase the time of the simulation and step all entities forward
                 IncreaseGlobalTime();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->step();
+                        entities->at(i)->step();
         }
 
         // Compute how much time has passed since the beginning
@@ -548,7 +568,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
 
         // Stop all entities
         for (i=0; i<nEntities; i++)
-                entities[i]->terminate();
+                entities->at(i)->terminate();
 
 	// Switch to normal
 	schedp.sched_priority = 0;
@@ -556,33 +576,38 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         if (flag == 0)
                 Logger(Debug, "Switched to non real-time scheduler.\n");
 
-        *retval = true;
+        *retval = 0;
+        pthread_exit((void *) retval);
 }
 
 #else
 
-void NonRTSimulation(const std::vector<Entity*>& entities, double tend, bool *retval)
+void* NonRTSimulation(void *arg)
 {        
-	int i, nEntities = entities.size();
+        simulation_data *data = static_cast<simulation_data*>(arg);
+        std::vector<Entity*> *entities = data->m_entities;
+        double tend = data->m_tend;
+	int i, nEntities = entities->size();
         double dt = GetGlobalDt();
 
-        *retval = false;
+        int *retval = new int;
+        *retval = -1;
 
         ResetGlobalTime();
 
         for (i=0; i<nEntities; i++) {
-                if (!entities[i]->initialise()) {
-                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities[i]->id());
-                        return;
+                if (!entities->at(i)->initialise()) {
+                        Logger(Critical, "Problems while initialising entity #%d. Aborting...\n", entities->at(i)->id());
+                        pthread_exit((void *) retval);
                 }
         }
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->readAndStoreInputs();
+                        entities->at(i)->readAndStoreInputs();
                 IncreaseGlobalTime();
                 for (i=0; i<nEntities; i++)
-                        entities[i]->step();
+                        entities->at(i)->step();
         }
 
         SetTrialRun(false);
@@ -590,16 +615,19 @@ void NonRTSimulation(const std::vector<Entity*>& entities, double tend, bool *re
         StopCommentsReaderThread();
 
         for (i=0; i<nEntities; i++)
-                entities[i]->terminate();
+                entities->at(i)->terminate();
 
-        *retval = true;
+        *retval = 0;
+        pthread_exit((void *) retval);
 }
 
 #endif // HAVE_LIBLXRT
  
-bool Simulate(std::vector<Entity*>& entities, double tend)
+int Simulate(std::vector<Entity*> *entities, double tend)
 {
-        bool success;
+        int *success, retval;
+        pthread_t simulationThread;
+        simulation_data data(entities, tend);
 
         SetTrialRun(true);
 	ResetGlobalTime();
@@ -607,23 +635,26 @@ bool Simulate(std::vector<Entity*>& entities, double tend)
         StartCommentsReaderThread(entities);
 
 #ifdef HAVE_LIBRT
-        if (!CheckPrivileges())
-                return success;
+        if (!CheckPrivileges()) {
+                return -1;
+        }
 #endif
 #ifdef REALTIME_ENGINE
-        boost::thread simulationThread(RTSimulation, entities, tend, &success);
+        pthread_create(&simulationThread, NULL, RTSimulation, (void *) &data);
 #else
-        boost::thread simulationThread(NonRTSimulation, entities, tend, &success);
+        pthread_create(&simulationThread, NULL, NonRTSimulation, (void *) &data);
 #endif // REALTIME_ENGINE
 
-        simulationThread.join();
+        pthread_join(simulationThread, (void **) &success);
+        retval = *success;
+        delete success;
 
-        if (success)
+        if (retval == 0)
                 Logger(Debug, "The simulation thread has terminated successfully.\n");
         else
                 Logger(Important, "There were some problems with the simulation thread.\n");
 
-        return success;
+        return retval;
 }
 
 } // namespace lcg
