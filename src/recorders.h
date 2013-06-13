@@ -1,12 +1,13 @@
 #ifndef RECORDERS_H
 #define RECORDERS_H
 
-#include <stdio.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include <hdf5.h>
 #include <vector>
 #include <queue>
-#include <boost/thread.hpp>
 
 #include "utils.h"
 #include "entity.h"
@@ -229,7 +230,7 @@ protected:
         virtual void finaliseAddPre(Entity *entity);
 
 private:
-        void buffersWriter(uint bufferToSave, uint bufferPosition);
+        static void* buffersWriter(void *arg);
 
 private:
         bool m_recording;
@@ -246,7 +247,7 @@ private:
         // the number of steps that have been taken
         uint m_nSteps;
         // the thread that saves the data once the buffers are full
-        boost::thread m_writerThread;
+        pthread_t m_writerThread;
         hsize_t m_datasetSize[2];
 };
 
