@@ -20,7 +20,7 @@ def usage():
     print('     -h   Display this help message and exit.')
     print('     -v   Values of voltage at which the background activity should be balanced (comma-separated values).')
     print('     -c   Correlation coefficients (comma-separated values).')
-    print('     -f   Firing frequency of the excitatory background population (default 7000 Hz).')
+    print('     -f   Firing frequency of the inhibitory background population (default 3000 Hz).')
     print('     -R   Input resistance of the cell (in MOhm).')
     print('     -n   Number of repetitions (default 100).')
     print('     -i   Interval between trials (default 2 s).')
@@ -32,10 +32,10 @@ def usage():
     print('     -b   Time before stimulus onset (default 0.1 sec).')
     print('     -a   Time after stimulus offset (default 0.3 sec).')
     print('Additionally, if the --with-nmda option is set, the following options are accepted:\n')
-    print('     -m   Mean of the NMDA conductance (in nS).')
-    print('     -s   Standard deviation of the NMDA conductance (in nS).')
+    print('     -m   Mean of the NMDA conductance (default 0 nS).')
+    print('     -s   Standard deviation of the NMDA conductance (default twice the AMPA conductance).')
     print('     -t   Time constant of the NMDA conductance (default 100 ms).')
-    print('     -K   Coefficients for the magnesium block of the NMDA conductance (default 0.6,0.06)')
+    print('     -K   Coefficients for the magnesium block of the NMDA conductance (default 0.2,0.02)')
     print('')
 
 def parseArgs():
@@ -54,9 +54,11 @@ def parseArgs():
                'balanced_voltages': None,
                'input_resistance': None,
                'R_exc': 7000, # [Hz]
+               'R_inh': 3000, # [Hz]
                'sampling_rate': 20000, # [Hz]
                'with_nmda': False,
-               'nmda_mean': None, 'nmda_std': None, 'nmda_tau': 100, 'nmda_K': [0.6,0.06],
+               'nmda_mean': 1, 'nmda_std': 1,   ### dummy values, to remove
+               'nmda_tau': 100, 'nmda_K': [0.2,0.02],
                'before': 0.1, 'after': 0.3, # [s]
                'ai': 0, 'ao': 0}
 
@@ -85,7 +87,7 @@ def parseArgs():
         elif o == '-F':
             options['sampling_rate'] = float(a)
         elif o == '-f':
-            options['R_exc'] = float(a)
+            options['R_inh'] = float(a)
         elif o == '-v':
             options['balanced_voltages'] = []
             for v in a.split(','):
@@ -114,8 +116,8 @@ def parseArgs():
         print('The input resistance must be positive.')
         sys.exit(1)
 
-    if options['R_exc'] <= 0:
-        print('The firing frequency of the excitatory population must be positive.')
+    if options['R_inh'] <= 0:
+        print('The firing frequency of the inhibitory population must be positive.')
         sys.exit(1)
         
     if options['sampling_rate'] <= 0:
@@ -148,10 +150,10 @@ def parseArgs():
         options['kernel_frequency'] = options['reps']
 
     if options['with_nmda']:
-        if options['nmda_mean'] == None or options['nmda_mean'] < 0:
+        if options['nmda_mean'] < 0:
             print('You must specify a non-negative mean for the NMDA conductance.')
             sys.exit(1)
-        if options['nmda_std'] == None or options['nmda_std'] < 0:
+        if options['nmda_std'] != None and options['nmda_std'] < 0:
             print('You must specify a non-negative standard deviation for the NMDA conductance.')
             sys.exit(1)
         if options['nmda_tau'] <= 0:
@@ -196,7 +198,6 @@ def writeConfigFile(options):
 
 def main():
     opts = parseArgs()
-    print opts
     writeConfigFile(opts)
 
     cnt = 0
@@ -225,14 +226,15 @@ def main():
         ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
         for c in opts['correlation_coefficients']:
             gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(
-                ratio,R_exc=(1-c)*opts['R_exc'],Rin=opts['input_resistance'])
+                ratio,R_exc=ratio*(1-c)*opts['R_inh'],Rin=opts['input_resistance'])
             gampa['mc'],ggaba['mc'],gampa['sc'],ggaba['sc'] = lcg.computeSynapticBackgroundCoefficients(
-                ratio,R_exc=c*opts['R_exc'],Rin=opts['input_resistance'])
+                ratio,R_exc=ratio*c*opts['R_inh'],Rin=opts['input_resistance'])
             for k in range(opts['reps']):
+                current_ampa_seed = int(np.random.uniform(low=0, high=100*opts['reps']))
                 stim[1][2] = gampa['m']
                 stim[1][3] = gampa['s']
                 stim[1][4] = 5
-                stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                stim[1][8] = current_ampa_seed
                 lcg.writeStimFile(stim_files['gampa'], stim, False)
                 stim[1][2] = ggaba['m']
                 stim[1][3] = ggaba['s']
@@ -250,15 +252,15 @@ def main():
                 stim[1][8] = gaba_seeds[k]
                 lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
                 if opts['with_nmda']:
-                    stim[1][2] = (1-c)*opts['nmda_mean']
-                    stim[1][3] = (1-c)*opts['nmda_std']
+                    stim[1][2] = gampa['m']
+                    stim[1][3] = gampa['s']
                     stim[1][4] = opts['nmda_tau']
-                    stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                    stim[1][8] = current_ampa_seed
                     lcg.writeStimFile(stim_files['gnmda'], stim, False)
-                    stim[1][2] = c*opts['nmda_mean']
-                    stim[1][3] = c*opts['nmda_std']
+                    stim[1][2] = gampa['m']
+                    stim[1][3] = gampa['s']
                     stim[1][4] = opts['nmda_tau']
-                    stim[1][8] = nmda_seeds[k]
+                    stim[1][8] = ampa_seeds[k]
                     lcg.writeStimFile(stim_files['gnmda_common'], stim, False)
                 if cnt%opts['kernel_frequency'] == 0:
                     sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)

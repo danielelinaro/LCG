@@ -17,7 +17,7 @@ def usage():
     print('     -A    Final amplitude of the ramp (in pA).')
     print('     -a    Initial amplitude of the ramp (default 0 pA).')
     print('     -d    Duration of the ramp (default 10 sec).')
-    print('     -n    Number of repetitions (default 1).')
+    print('     -n    Number of repetitions (default 2).')
     print('     -i    Interval between repetitions (in sec).')
     print('     -F    Sampling frequency (default 20000 Hz)).')
     print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
@@ -35,7 +35,7 @@ def main():
 
     amplitude = [0,None]         # [pA]
     duration = 10                # [s]
-    reps = 1
+    reps = 2
     interval = None              # [s]
     sampling_frequency = 20000   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
