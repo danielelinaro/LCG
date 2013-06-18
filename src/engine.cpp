@@ -41,9 +41,9 @@ double realtimeDt;
 ////// COMMENTS HANDLING CODE - START //////
 
 bool readingComment = false;
-pthread_cond_t commentsCV = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t commentsMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t commentsThread;
+pthread_mutex_t commentsMutex;
+pthread_cond_t commentsCV;
 
 void* CommentsReader(void *arg)
 {
@@ -65,6 +65,7 @@ void* CommentsReader(void *arg)
                 }
                 pthread_cond_signal(&commentsCV);
         }
+        Logger(Debug, "CommentsReader ended.\n");
         pthread_exit(NULL);
 }
 
@@ -72,18 +73,47 @@ void StartCommentsReaderThread(std::vector<Entity*> *entities)
 {
         int i=0;
         recorders::Recorder *rec = NULL;
+        Logger(Debug, "Starting comments reader thread.\n");
         while (i < entities->size() && (rec = dynamic_cast<recorders::Recorder*>(entities->at(i))) == NULL)
                 i++;
-        if (rec != NULL)
-                pthread_create(&commentsThread, NULL, CommentsReader, (void *) rec);
+        if (rec != NULL) {
+                int err = pthread_mutex_init(&commentsMutex, NULL);
+                if (err) {
+                        Logger(Critical, "pthread_mutex_init: %s\n", strerror(err));
+                        return;
+                }
+                err = pthread_cond_init(&commentsCV, NULL);
+                if (err) {
+                        Logger(Critical, "pthread_cond_init: %s\n", strerror(err));
+                        return;
+                }
+                err = pthread_create(&commentsThread, NULL, CommentsReader, (void *) rec);
+                if (err) {
+                        Logger(Critical, "pthread_create: %s\n", strerror(err));
+                        return;
+                }
+                else {
+                        Logger(Debug, "Comments reader thread started.\n");
+                }
+        }
+        else {
+                Logger(Important, "No recorder found: not starting the comments reader thread.\n");
+        }
 }
 
 void StopCommentsReaderThread()
 {
+        Logger(Debug, "Stopping comments reader thread.\n");
         pthread_mutex_lock(&commentsMutex);
         while (readingComment)
                 pthread_cond_wait(&commentsCV, &commentsMutex);
-        pthread_cancel(commentsThread);
+        pthread_mutex_unlock(&commentsMutex);
+        if (pthread_cancel(commentsThread) != ESRCH)
+                Logger(Debug, "Comments reader thread stopped.\n");
+        else
+                Logger(Critical, "No such thread.\n");
+        pthread_mutex_destroy(&commentsMutex);
+        pthread_cond_destroy(&commentsCV);
 }
 
 ////// COMMENTS HANDLING CODE - END //////
@@ -285,8 +315,6 @@ void* RTSimulation(void *arg)
 
         SetTrialRun(false);
 
-        StopCommentsReaderThread();
-
         for (i=0; i<nEntities; i++)
                 entities->at(i)->terminate();
 
@@ -368,8 +396,6 @@ void RTSimulationTask(void *cookie)
         Logger(Debug, "Terminating all entities.\n");
 
         SetTrialRun(false);
-
-        StopCommentsReaderThread();
 
         for (i=0; i<nEntities; i++)
                 arg->entity(i)->terminate();
@@ -564,11 +590,11 @@ void* RTSimulation(void *arg)
 
         SetTrialRun(false);
 
-        StopCommentsReaderThread();
-
         // Stop all entities
+        Logger(Debug, "Terminating all entities.\n");
         for (i=0; i<nEntities; i++)
                 entities->at(i)->terminate();
+        Logger(Debug, "Terminated all entities.\n");
 
 	// Switch to normal
 	schedp.sched_priority = 0;
@@ -612,8 +638,6 @@ void* NonRTSimulation(void *arg)
 
         SetTrialRun(false);
 
-        StopCommentsReaderThread();
-
         for (i=0; i<nEntities; i++)
                 entities->at(i)->terminate();
 
@@ -625,6 +649,12 @@ void* NonRTSimulation(void *arg)
  
 int Simulate(std::vector<Entity*> *entities, double tend)
 {
+#ifdef HAVE_LIBRT
+        if (!CheckPrivileges()) {
+                return -1;
+        }
+#endif
+
         int *success, retval;
         pthread_t simulationThread;
         simulation_data data(entities, tend);
@@ -634,11 +664,6 @@ int Simulate(std::vector<Entity*> *entities, double tend)
 
         StartCommentsReaderThread(entities);
 
-#ifdef HAVE_LIBRT
-        if (!CheckPrivileges()) {
-                return -1;
-        }
-#endif
 #ifdef REALTIME_ENGINE
         pthread_create(&simulationThread, NULL, RTSimulation, (void *) &data);
 #else
@@ -648,6 +673,8 @@ int Simulate(std::vector<Entity*> *entities, double tend)
         pthread_join(simulationThread, (void **) &success);
         retval = *success;
         delete success;
+
+        StopCommentsReaderThread();
 
         if (retval == 0)
                 Logger(Debug, "The simulation thread has terminated successfully.\n");

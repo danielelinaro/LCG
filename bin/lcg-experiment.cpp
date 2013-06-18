@@ -23,7 +23,7 @@
 
 using boost::property_tree::ptree;
 
-#define DCLAMP_DIR    ".lcg"
+#define LCG_DIR    ".lcg"
 #define TMP_DIR       ".tmp"
 #define REPLAY_SCRIPT "replay"
 #define HASHES_FILE   "hashes.sha"
@@ -325,35 +325,37 @@ int store(int argc, char *argv[], const std::vector<Entity*>& entities)
         int flag, i;
         char directory[1024] = {0}, path[1024] = {0}, configFile[1024] = {0};
 
-        // create an invisible directory where all data will be stored
-        flag = mkdir(DCLAMP_DIR, 0755);
-        if (flag == 0) {
-                Logger(Debug, "Created directory [%s].\n", DCLAMP_DIR);
-        }
-        else {
-                if (errno == EEXIST) {
-                        Logger(Debug, "mkdir: [%s]: directory exists.\n", DCLAMP_DIR);
-                }
-                else {
-                        Logger(Important, "mkdir: [%s]: %s.\n", DCLAMP_DIR, strerror(errno));
-                        return -1;
-                }
-        }
-        
         // find the H5 recorder that was used: this is necessary
-        // because we will create a directory inside DCLAMP_DIR with
+        // because we will create a directory inside LCG_DIR with
         // the same name (except the .h5 suffix) as the one saved
         // by the H5 recorder
         BaseH5Recorder *rec = NULL;
         for (i=0; i<entities.size(); i++) {
                 rec = dynamic_cast<BaseH5Recorder*>(entities[i]);
                 if (rec != NULL) {
-                        sprintf(directory, "%s/%s", DCLAMP_DIR, rec->filename());
+                        sprintf(directory, "%s/%s", LCG_DIR, rec->filename());
                         directory[strlen(directory)-3] = 0;
                         break;
                 }
         }
+        if (i == entities.size())
+                return -2;
 
+        // create an invisible directory where all data will be stored
+        flag = mkdir(LCG_DIR, 0755);
+        if (flag == 0) {
+                Logger(Debug, "Created directory [%s].\n", LCG_DIR);
+        }
+        else {
+                if (errno == EEXIST) {
+                        Logger(Debug, "mkdir: [%s]: directory exists.\n", LCG_DIR);
+                }
+                else {
+                        Logger(Important, "mkdir: [%s]: %s.\n", LCG_DIR, strerror(errno));
+                        return -1;
+                }
+        }
+        
         flag = mkdir(directory, 0755);
         if (flag == 0) {
                 Logger(Debug, "Created directory [%s].\n", directory);
@@ -485,7 +487,7 @@ int main(int argc, char *argv[])
 
         parse_args(argc, argv, &opts);
 
-        bool success;
+        int success;
         double tend, dt;
         std::vector<Entity*> entities;
         lcg::generators::Waveform *stimulus;
@@ -504,7 +506,7 @@ int main(int argc, char *argv[])
                 Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
                 ResetGlobalTime();
                 success = Simulate(&entities,tend);
-                if (!success || KILL_PROGRAM())
+                if (success!=0 || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)
                         store(argc, argv, entities);

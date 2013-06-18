@@ -1,5 +1,4 @@
 #include <sstream>
-#include <string.h>
 #include <time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "engine.h"
@@ -729,7 +728,7 @@ const int  H5Recorder::rank            = 1;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
         : BaseH5Recorder(compress, 1024, 20, filename, id), // 1024 = chunkSize and 20 = numberOfChunks
-          m_data(), m_threadRun(false)
+          m_data(), m_threadRun(false), m_runCount(0)
 {
         m_bufferLengths = new hsize_t[H5Recorder::numberOfBuffers];
         //m_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -751,9 +750,22 @@ H5Recorder::~H5Recorder()
 bool H5Recorder::finaliseInit()
 {
         Logger(Debug, "H5Recorder::finaliseInit()\n");
+        int err;
         hsize_t bufsz = bufferSize(), maxbufsz = H5S_UNLIMITED, chunksz = chunkSize();
 
         stopWriterThread();
+        if (m_runCount) {
+                err = pthread_mutex_destroy(&m_mutex);
+                if (err)
+                        Logger(Critical, "pthread_mutex_destroy: %s.\n", strerror(err));
+                else
+                        Logger(Debug, "Successfully destroyed the mutex.\n");
+                err = pthread_cond_destroy(&m_cv);
+                if (err)
+                        Logger(Critical, "pthread_cond_destroy: %s.\n", strerror(err));
+                else
+                        Logger(Debug, "Successfully destroyed the condition variable.\n");
+        }
 
         m_bufferInUse = H5Recorder::numberOfBuffers-1;
         m_bufferPosition = 0;
@@ -764,6 +776,25 @@ bool H5Recorder::finaliseInit()
                         return false;
         }
 
+        err = pthread_mutex_init(&m_mutex, NULL);
+        if (err) {
+                Logger(Critical, "pthread_mutex_init: %s.", strerror(err));
+                return false;
+        }
+        else {
+                Logger(Debug, "Successfully initialized the mutex.\n");
+        }
+
+        err = pthread_cond_init(&m_cv, NULL);
+        if (err) {
+                Logger(Critical, "pthread_cond_init: %s.", strerror(err));
+                return false;
+        }
+        else {
+                Logger(Debug, "Successfully initialized the condition variable.\n");
+        }
+
+
         startWriterThread();
         
         return true;
@@ -772,13 +803,18 @@ bool H5Recorder::finaliseInit()
 void H5Recorder::startWriterThread()
 {
         pthread_attr_t attr;
+        int err;
         if (m_threadRun)
                 return;
         m_threadRun = true;
         // explicitly make the thread joinable, for portability
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        pthread_create(&m_writerThread, &attr, buffersWriter, this);
+        err = pthread_create(&m_writerThread, &attr, buffersWriter, this); 
+        if (err)
+                Logger(Critical, "pthread_create: %s.\n", strerror(err));
+        else
+                Logger(Debug, "Successfully created the writer thread.\n");
         pthread_attr_destroy(&attr);
 }
 
@@ -790,14 +826,18 @@ void H5Recorder::stopWriterThread()
 
         Logger(Debug, "H5Recorder::stopWriterThread() >> Terminating writer thread.\n");
         pthread_mutex_lock(&m_mutex);
-        Logger(Debug, "H5Recorder::~H5Recorder() >> buffer position = %d.\n", m_bufferPosition);
+        Logger(Debug, "H5Recorder::stopWriterThread() >> Locked the mutex.\n");
+        Logger(Debug, "H5Recorder::stopWriterThread() >> buffer position = %d.\n", m_bufferPosition);
         if (m_bufferPosition > 0)
                 m_dataQueue.push_back(m_bufferInUse);
-        Logger(Debug, "H5Recorder::~H5Recorder() >> %d values left to save in buffer #%d.\n",
+        Logger(Debug, "H5Recorder::stopWriterThread() >> %d values left to save in buffer #%d.\n",
                 m_bufferLengths[m_bufferInUse], m_bufferInUse);
         m_threadRun = false;
-        pthread_cond_signal(&m_cv);
+        Logger(Debug, "H5Recorder::stopWriterThread() >> before pthread_cond_broadcast.\n");
+        pthread_cond_broadcast(&m_cv);
+        Logger(Debug, "H5Recorder::stopWriterThread() >> after pthread_cond_broadcast.\n");
         pthread_mutex_unlock(&m_mutex);
+        Logger(Debug, "H5Recorder::stopWriterThread() >> Unlocked the mutex.\n");
         pthread_join(m_writerThread, NULL);
         Logger(Debug, "H5Recorder::stopWriterThread() >> Writer thread has terminated.\n");
 }
@@ -806,6 +846,7 @@ void H5Recorder::terminate()
 {
         stopWriterThread();
         BaseH5Recorder::terminate();
+        m_runCount++;
 }
 
 void H5Recorder::step()
@@ -816,7 +857,7 @@ void H5Recorder::step()
         if (m_bufferPosition == 0) {
                 pthread_mutex_lock(&m_mutex);
                 while (m_dataQueue.size() == H5Recorder::numberOfBuffers) {
-                        Logger(Debug, "Main thread: the data queue is full.\n");
+                        //Logger(Debug, "H5Recorder::step() >> The data queue is full.\n");
                         pthread_cond_wait(&m_cv, &m_mutex);
                 }
                 pthread_mutex_unlock(&m_mutex);
@@ -837,15 +878,17 @@ void H5Recorder::step()
                 pthread_mutex_lock(&m_mutex);
                 Logger(Debug, "H5Recorder::step() >> Acquired the mutex on the data queue.\n");
                 m_dataQueue.push_back(m_bufferInUse);
-                pthread_cond_signal(&m_cv);
+                Logger(Debug, "H5Recorder::step() >> Pushed buffer number in the data queue.\n");
+                pthread_cond_broadcast(&m_cv);
+                Logger(Debug, "H5Recorder::step() >> Signalled the condition variable.\n");
                 pthread_mutex_unlock(&m_mutex);
-                Logger(Debug, "H5Recorder::step() >> Released the mutex and notified all.\n");
+                Logger(Debug, "H5Recorder::step() >> Unlocked the mutex.\n");
         }
 }
 
 void* H5Recorder::buffersWriter(void *arg)
 {
-        Logger(Debug, "H5Recorder::buffersWriter >> Started.\n");
+        Logger(Debug, "H5Recorder::buffersWriter() >> Started.\n");
         H5Recorder *self = static_cast<H5Recorder*>(arg);
         if (self == NULL) {
                 Logger(Critical, "buffers writer terminating.\n");
@@ -860,7 +903,7 @@ void* H5Recorder::buffersWriter(void *arg)
         while (self->m_threadRun || self->m_dataQueue.size() != 0) {
                 pthread_mutex_lock(&self->m_mutex);
                 while (self->m_dataQueue.size() == 0) {
-                        Logger(Debug, "H5Recorder::buffersWriter >> The data queue is empty.\n");
+                        //Logger(Debug, "H5Recorder::buffersWriter() >> The data queue is empty.\n");
                         pthread_cond_wait(&self->m_cv, &self->m_mutex);
                 }
                 bufferToSave = self->m_dataQueue.front();
@@ -931,9 +974,13 @@ void* H5Recorder::buffersWriter(void *arg)
                 }
 
                 pthread_mutex_lock(&self->m_mutex);
+                Logger(Debug, "H5Recorder::buffersWriter() >> Locked the mutex.\n");
                 self->m_dataQueue.pop_front();
-                pthread_cond_signal(&self->m_cv);
+                Logger(Debug, "H5Recorder::buffersWriter() >> Removed data from the queue.\n");
+                pthread_cond_broadcast(&self->m_cv);
+                Logger(Debug, "H5Recorder::buffersWriter() >> Signalled the condition variable.\n");
                 pthread_mutex_unlock(&self->m_mutex);
+                Logger(Debug, "H5Recorder::buffersWriter() >> Unlocked the mutex.\n");
         }
 endBuffersWriter:
         Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");

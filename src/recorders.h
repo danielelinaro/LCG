@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <hdf5.h>
 #include <vector>
@@ -204,6 +205,7 @@ private:
         pthread_mutex_t m_mutex;
         pthread_cond_t m_cv;
         bool m_threadRun;
+        uint m_runCount;
 
         hsize_t m_datasetSize;
 };
