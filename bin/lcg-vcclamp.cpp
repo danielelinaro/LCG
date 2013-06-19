@@ -423,19 +423,19 @@ int main(int argc, char *argv[])
 
         Logger(Info, "Number of batches: %d.\n", opts.nBatches);
         Logger(Info, "Number of trials: %d.\n", opts.nTrials);
-        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opts.iti * 2e-6);
+        Logger(Info, "Inter-trial interval: %g sec.\n", (double) opts.iti * 1e-6);
         Logger(Info, "Holding current: %g pA.\n", opts.holdValue);
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opts.ibi * 1e-6);
 
-        bool success;
+        int success;
         cnt = 1;
         if (opts.mode == SPONTANEOUS) {
 		total = opts.nBatches*opts.nTrials;
 		for (i=0; i<opts.nBatches; i++) {
 			for (k=0; k<opts.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                success = Simulate(entities, opts.tend);
-                                if (!success || KILL_PROGRAM())
+                                success = Simulate(&entities, opts.tend);
+                                if (success!=0 || KILL_PROGRAM())
                                         goto endMain;
                                 if (k != opts.nTrials-1)
                                         usleep(opts.iti);
@@ -455,8 +455,8 @@ int main(int argc, char *argv[])
                                 stimulus->setStimulusFile(opts.stimulusFiles[j].c_str());
 				for (k=0; k<opts.nTrials; k++, cnt++) {
                                         Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                        success = Simulate(entities, stimulus->duration());
-                                        if (!success || KILL_PROGRAM())
+                                        success = Simulate(&entities, stimulus->duration());
+                                        if (success!=0 || KILL_PROGRAM())
                                                 goto endMain;
                                         if (k != opts.nTrials-1)
                                                 usleep(opts.iti);

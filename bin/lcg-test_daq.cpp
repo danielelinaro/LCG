@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
                 for (uint i=0; i<entities.size()-1; i++)
                         entities[i]->connect(entities.back());
 
-                Simulate(entities, 2.0);
+                Simulate(&entities, 2.0);
 
         } catch (const char* msg) {
                 fprintf(stderr, "Error: %s.\n", msg);
