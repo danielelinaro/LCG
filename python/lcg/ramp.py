@@ -18,7 +18,7 @@ def usage():
     print('     -a    Initial amplitude of the ramp (default 0 pA).')
     print('     -d    Duration of the ramp (default 10 sec).')
     print('     -n    Number of repetitions (default 2).')
-    print('     -i    Interval between repetitions (in sec).')
+    print('     -i    Interval between repetitions (default 20 sec).')
     print('     -F    Sampling frequency (default 20000 Hz)).')
     print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
@@ -36,7 +36,7 @@ def main():
     amplitude = [0,None]         # [pA]
     duration = 10                # [s]
     reps = 2
-    interval = None              # [s]
+    interval = 20                # [s]
     sampling_frequency = 20000   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
@@ -79,8 +79,8 @@ def main():
         print('The number of repetitions must be positive.')
         sys.exit(1)
 
-    if reps > 1 and not interval:
-        print('You must specify the interval between trials (-i switch).')
+    if reps > 1 and interval < 0:
+        print('The interval between repetitions must be non-negative.')
         sys.exit(1)
 
     if not with_preamble:
@@ -101,5 +101,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

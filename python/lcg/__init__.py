@@ -29,17 +29,4 @@ from utils import writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationCo
 from config_writer import XMLConfigurationFile
 import entities
 
-### the scripts
-import extract_kernels
-import Rin_protocol
-import cv
-import disynaptic_microcircuit
-import extracellular_protocol
-import fopt
-import fclamp
-import psp_opt
-import pulses_protocol
-import reliability_disynaptic
-import sinusoids_protocol
-import steps_protocol
 
