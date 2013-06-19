@@ -607,11 +607,11 @@ void ComediAnalogOutputSoftCal::write(double data)
 #ifdef TRIM_ANALOG_OUTPUT
 	if (sample <= m_dataRange->min) {
 		sample = m_dataRange->min + 0.01*(m_dataRange->max-m_dataRange->min);
-		Logger(Info, "[%f] - Trimming lower limit of the DAQ card.\n", GetGlobalTime());
+		//Logger(Debug, "[%f] - Trimming lower limit of the DAQ card.\n", GetGlobalTime());
 	}
 	if (sample >= m_dataRange->max) {
 		sample = m_dataRange->max - 0.01*(m_dataRange->max-m_dataRange->min);
-		Logger(Info, "[%f] - Trimming upper limit of the DAQ card.\n", GetGlobalTime());
+		//Logger(Debug, "[%f] - Trimming upper limit of the DAQ card.\n", GetGlobalTime());
 	}
 #endif
 #ifdef ASYNCHRONOUS_IO
