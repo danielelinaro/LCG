@@ -34,6 +34,7 @@ AC_C_INLINE
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile
 		stimgen/Makefile
+                non-rt/Makefile
 		src/Makefile
 		bin/Makefile
 		bin/scripts/Makefile])

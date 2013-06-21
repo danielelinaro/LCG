@@ -108,7 +108,7 @@ void StopCommentsReaderThread()
         while (readingComment)
                 pthread_cond_wait(&commentsCV, &commentsMutex);
         pthread_mutex_unlock(&commentsMutex);
-        if (pthread_cancel(commentsThread) != ESRCH)
+        if (pthread_cancel(commentsThread) == 0)
                 Logger(Debug, "Comments reader thread stopped.\n");
         else
                 Logger(Critical, "No such thread.\n");
