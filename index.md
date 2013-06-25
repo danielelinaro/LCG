@@ -16,9 +16,24 @@ integrated.
 Detailed installation instructions can be found [here](installation.html).
 
 ### Authors and Contributors
-LCG is mostly written by Daniele Linaro (@danielelinaro), with major contributions by João Couto (@jcouto).
+LCG is mostly written and maintained by [Daniele Linaro](mailto:danielelinaro@gmail.com).
+[João Couto](mailto:jpcouto@gmail.com) contributed code and design ideas, while [Michele
+Giugliano](mailto:michele.giugliano@ua.ac.be) wrote the STIMGEN library used to generate arbitrary stimuli.
+
+### Funding sources
+Daniele Linaro is supported by the [Flanders Research
+Foundation](http://www.fwo.be/) (contract no. 12C9112N).  
+Additional financial support from the European Commission
+(FP7-ICT-FET [BRAINLEAP project](http://www.brainleap.eu/), contract
+n. 306502) and from the [University of Antwerp](http://www.ua.ac.be/)
+is kindly ackowledged.
+
+### External links
+[Laboratory of Theoretical Neurobiology and Neuroengineering](http://www.tnb.ua.ac.be/).
 
 ### Contacts
 Daniele Linaro - <danielelinaro@gmail.com>  
-Jo&atilde;o Couto - <jpcouto@gmail.com>
+Jo&atilde;o Couto - <jpcouto@gmail.com>  
+Michele Giugliano - <michele.giugliano@ua.ac.be>
+
 
