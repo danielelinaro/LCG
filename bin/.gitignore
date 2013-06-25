@@ -2,6 +2,7 @@ lcg
 lcg-annotate
 lcg-experiment
 lcg-help
+lcg-non-rt
 lcg-output
 lcg-test_daq
 lcg-vcclamp

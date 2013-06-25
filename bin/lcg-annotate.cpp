@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
         }
 
         // add a timestamp to the comment
-        recorders::Comment comment(opts.comment);
+        Comment comment(opts.comment);
 
         return writeComment(opts.filename, comment.message());
 }

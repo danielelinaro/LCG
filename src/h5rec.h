@@ -110,7 +110,7 @@ protected:
         std::vector<hid_t> m_dataspaces;
         std::vector<hid_t> m_datasets;
 
-//private:
+private:
         // the size of each chunk of data that is saved to the H5 file
         hsize_t m_chunkSize;
         // the number of chunks of data

@@ -1,10 +1,11 @@
 LDADD = ../stimgen/libstimgen.la ../src/liblcg.la
 AM_CPPFLAGS = -I../stimgen -I../src -I.
-bin_PROGRAMS = lcg lcg-help lcg-experiment lcg-annotate
+bin_PROGRAMS = lcg lcg-help lcg-experiment lcg-annotate lcg-non-rt
 lcg_SOURCES = lcg.cpp
 lcg_experiment_SOURCES = lcg-experiment.cpp
 lcg_help_SOURCES = lcg-help.cpp
 lcg_annotate_SOURCES = lcg-annotate.cpp
+lcg_non_rt_SOURCES = lcg-non-rt.cpp 
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
