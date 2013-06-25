@@ -50,31 +50,18 @@ namespace lcg {
 
 namespace recorders {
 
-Recorder::Recorder(uint id) : Entity(id), m_comments()
+Recorder::Recorder(uint id) : Entity(id)
 {
         setName("Recorder");
 }
 
 Recorder::~Recorder()
 {
-        deleteComments();
-}
-
-void Recorder::deleteComments()
-{
-        std::deque<Comment*>::iterator it;
-        for (it=m_comments.begin(); it!=m_comments.end(); it++)
-                delete *it;
 }
 
 double Recorder::output()
 {
         return 0.0;
-}
-
-void Recorder::addComment(const char *message, const time_t *timestamp)
-{
-        m_comments.push_back(new Comment(message, timestamp));
 }
 
 ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
@@ -139,108 +126,13 @@ void ASCIIRecorder::terminate()
 
 //~~~
 
-const hsize_t BaseH5Recorder::unlimitedSize = H5S_UNLIMITED;
-const double  BaseH5Recorder::fillValue     = 0.0;
-
 BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t bufferSize, const char *filename, uint id)
-        : Recorder(id), m_fid(-1), m_bufferSize(bufferSize),
-          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets()
-{
-        if (filename == NULL) {
-                m_makeFilename = true;
-        }
-        else {
-                m_makeFilename = false;
-                strncpy(m_filename, filename, FILENAME_MAXLEN);
-        }
-        if (compress && isCompressionAvailable())
-                m_compress = true;
-        else
-                m_compress = false;
-
-        if (m_bufferSize % 1024 == 0) {
-                m_chunkSize = 1024;
-                m_numberOfChunks = m_bufferSize / m_chunkSize;
-        }
-        else {
-                m_chunkSize = m_bufferSize;
-                m_numberOfChunks = 1;
-        }
-}
-
-BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t chunkSize, uint numberOfChunks, const char *filename, uint id)
-        : Recorder(id), m_fid(-1), m_bufferSize(chunkSize*numberOfChunks),
-          m_chunkSize(chunkSize), m_numberOfChunks(numberOfChunks),
-          m_numberOfInputs(0), m_groups(), m_dataspaces(), m_datasets()
-{
-        if (filename == NULL) {
-                m_makeFilename = true;
-        }
-        else {
-                m_makeFilename = false;
-                strncpy(m_filename, filename, FILENAME_MAXLEN);
-        }
-        if (compress && isCompressionAvailable())
-                m_compress = true;
-        else
-                m_compress = false;
-
-}
-
-BaseH5Recorder::~BaseH5Recorder()
+        : H5RecorderCore(compress, bufferSize, filename), Recorder(id), m_numberOfInputs(0)
 {}
 
-hsize_t BaseH5Recorder::bufferSize() const
-{
-        return m_bufferSize;
-}
-
-hsize_t BaseH5Recorder::chunkSize() const
-{
-        return m_chunkSize;
-}
-
-uint BaseH5Recorder::numberOfChunks() const
-{
-        return m_numberOfChunks;
-}
-
-bool BaseH5Recorder::isCompressionAvailable() const
-{
-        htri_t avail;
-        herr_t status;
-        uint filterInfo;
-        
-        avail = H5Zfilter_avail(H5Z_FILTER_DEFLATE);
-        if (!avail) {
-                Logger(Important, "GZIP compression is not available on this system.\n");
-                return false;
-        }
-        Logger(All, "GZIP compression is available.\n");
-
-        status = H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filterInfo);
-        if (!(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED)) {
-                Logger(Important, "Unable to get filter info: disabling compression.\n");
-                return false;
-        }
-        Logger(All, "Obtained filter info.\n");
-        
-        avail = H5Zfilter_avail(H5Z_FILTER_SHUFFLE);
-        if (!avail) {
-                Logger(Important, "\nThe shuffle filter is not available on this system.\n");
-                return false;
-        }
-        Logger(All, "The shuffle filter is available.\n");
-        
-        status = H5Zget_filter_info (H5Z_FILTER_SHUFFLE, &filterInfo);
-        if ( !(filterInfo & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ) {
-                Logger(Important, "Unable to get filter info: disabling compression.\n");
-                return false;
-        }
-        Logger(Debug, "Compression is enabled.\n");
-
-        return true;
-}
+BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t chunkSize, uint numberOfChunks, const char *filename, uint id)
+        : H5RecorderCore(compress, chunkSize, numberOfChunks, filename), Recorder(id), m_numberOfInputs(0)
+{}
 
 bool BaseH5Recorder::initialise()
 {
@@ -283,64 +175,10 @@ bool BaseH5Recorder::initialise()
         return finaliseInit();
 }
 
-bool BaseH5Recorder::openFile()
-{
-        Logger(All, "--- BaseH5Recorder::openFile() ---\n");
-        Logger(All, "Opening file %s.\n", m_filename);
-
-        m_fid = H5Fcreate(m_filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-        if(m_fid < 0)
-                return false;
-
-        addComment("Opened file.");
-        return true;
-}
-
-void BaseH5Recorder::closeFile()
-{
-        Logger(All, "--- BaseH5Recorder::closeFile() ---\n");
-        if (m_fid != -1) {
-                writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
-                addComment("Closed file.");
-                writeComments();
-                for (int i=0; i<m_numberOfInputs; i++) {
-                        H5Dclose(m_datasets[i]);
-                        H5Sclose(m_dataspaces[i]);
-                }
-                for (int i=0; i<m_groups.size(); i++)
-                        H5Gclose(m_groups[i]);
-                H5Fclose(m_fid);
-                m_fid = -1;
-        }
-}
-
 void BaseH5Recorder::terminate()
 {
         Logger(Debug, "BaseH5Recorder::terminate()\n");
         closeFile();
-}
-
-const char* BaseH5Recorder::filename() const
-{
-        return m_filename;
-}
-
-void BaseH5Recorder::writeComments()
-{
-        char tag[4];
-        int i = 1;
-        if (!createGroup(COMMENTS_GROUP, &m_commentsGroup)) {
-                Logger(Important, "Unable to create group for comments.\n");
-                return;
-        }
-        while (m_comments.size() > 0) {
-                Comment *c = m_comments.front();
-                sprintf(tag, "%03d", i);
-                writeStringAttribute(m_commentsGroup, tag, c->message());
-                m_comments.pop_front();
-                delete c;
-                i++;
-        }
 }
 
 #if defined(HAVE_LIBRT)
@@ -435,288 +273,6 @@ bool BaseH5Recorder::allocateForEntity(Entity *entity, int dataRank,
         double_dict::const_iterator it;
         for (it = entity->parameters().begin(); it != entity->parameters().end(); it++)
                 writeScalarAttribute(grp, it->first, it->second);
-
-        return true;
-}
-
-bool BaseH5Recorder::createGroup(const std::string& groupName, hid_t *grp)
-{
-        *grp = H5Gcreate2(m_fid, groupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (*grp < 0)
-                return false;
-        m_groups.push_back(*grp);
-        return true;
-}
-
-bool BaseH5Recorder::createUnlimitedDataset(const std::string& datasetName,
-                                            int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
-                                            hid_t *dspace, hid_t *dset)
-{
-        herr_t status;
-        
-        // create the dataspace with unlimited dimensions
-        *dspace = H5Screate_simple(rank, dataDims, maxDataDims);
-        if (*dspace < 0) {
-                Logger(Critical, "Unable to create dataspace.\n");
-                return false;
-        }
-        else {
-                Logger(Debug, "Dataspace created.\n");
-        }
-
-        // modify dataset creation properties, i.e. enable chunking.
-        hid_t cparms = H5Pcreate(H5P_DATASET_CREATE);
-
-        if (cparms < 0) {
-                Logger(Critical, "Unable to create dataset properties.\n");
-                H5Sclose(*dspace);
-                return false;
-        }
-        else {
-                Logger(Debug, "Dataset properties created.\n");
-        }
-
-        status = H5Pset_chunk(cparms, rank, chunkDims);
-        if (status < 0) {
-                Logger(Critical, "Unable to set chunking.\n");
-                H5Sclose(*dspace);
-                H5Pclose(cparms);
-                return false;
-        }
-        else {
-                Logger(Debug, "Chunking set.\n");
-        }
-
-        status = H5Pset_fill_value(cparms, H5T_IEEE_F64LE, &fillValue);
-        if (status < 0) {
-                Logger(Critical, "Unable to set fill value.\n");
-                H5Sclose(*dspace);
-                H5Pclose(cparms);
-                return false;
-        }
-        else {
-                Logger(Debug, "Fill value set.\n");
-        }
-
-        if (m_compress) {
-                // Add the shuffle filter and the gzip compression filter to the
-                // dataset creation property list.
-                // The order in which the filters are added here is significant -
-                // we will see much greater results when the shuffle is applied
-                // first.  The order in which the filters are added to the property
-                // list is the order in which they will be invoked when writing
-                // data.
-                if (H5Pset_shuffle(cparms) < 0 || H5Pset_deflate(cparms, 9) < 0)
-                        Logger(Important, "Unable to enable compression.\n");
-                else 
-                        Logger(Debug, "Successfully enabled ompression.\n");
-        }
-
-        // create a new dataset within the file using cparms creation properties.
-        *dset = H5Dcreate2(m_fid, datasetName.c_str(),
-                           H5T_IEEE_F64LE, *dspace,
-                           H5P_DEFAULT, cparms, H5P_DEFAULT);
-        if (*dset < 0) {
-                Logger(Critical, "Unable to create dataset.\n");
-                H5Sclose(*dspace);
-                H5Pclose(cparms);
-                return false;
-        }
-        else {
-                Logger(Debug, "Dataset created.\n");
-        }
-
-        H5Pclose(cparms);
-        m_datasets.push_back(*dset);
-        m_dataspaces.push_back(*dspace);
-
-        return true;
-}
-
-bool BaseH5Recorder::writeStringAttribute(hid_t dataset,
-                                      const std::string& attrName,
-                                      const std::string& attrValue)
-{
-        hid_t dspace, atype, attr;
-        herr_t status;
-        bool retval = true;
-        
-        dspace = H5Screate(H5S_SCALAR);
-        if (dspace < 0) {
-                Logger(Critical, "Error in H5Screate.\n");
-                return false;
-        }
-
-        atype = H5Tcopy(H5T_C_S1);
-        if (atype < 0) {
-                Logger(Critical, "Error in H5Tcopy.\n");
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully copied type.\n");
-
-        status = H5Tset_size(atype, attrValue.size() + 1);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Tset_size.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully set type size.\n");
-
-        status = H5Tset_strpad(atype, H5T_STR_NULLTERM);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Tset_strpad.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully set type padding string.\n");
-
-        attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
-        if (attr < 0) {
-                Logger(Critical, "Error in H5Acreate2.\n");
-                H5Tclose(atype);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully created attribute.\n");
-
-        status = H5Awrite(attr, atype, attrValue.c_str());
-        if (status < 0) {
-                Logger(Critical, "Error in H5Awrite.\n");
-                retval = false;
-        }
-        else {
-                Logger(Debug, "Successfully written string attribute.\n");
-        }
-
-        H5Aclose(attr);
-        H5Tclose(atype);
-        H5Sclose(dspace);
-
-        return retval;
-}
-
-bool BaseH5Recorder::writeScalarAttribute(hid_t dataset, const std::string& attrName, double attrValue)
-{
-        Logger(Debug, "BaseH5Recorder::writeScalarAttribute(%d, %s, %g)\n", dataset, attrName.c_str(), attrValue);
-        hid_t aid, attr;
-        herr_t status;
-
-        aid = H5Screate(H5S_SCALAR);
-        if (aid < 0) {
-                Logger(Critical, "Unable to create scalar.\n");
-                return false;
-        }
-
-        attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
-        if (attr < 0) {
-                H5Sclose(aid);
-                Logger(Critical, "Unable to create scalar attribute.\n");
-                return false;
-        }
-
-        status = H5Awrite(attr, H5T_IEEE_F64LE, &attrValue);
-
-        H5Aclose(attr);
-        H5Sclose(aid);
-
-        if (status < 0) {
-                Logger(Critical, "Unable to write attribute.\n");
-                return false;
-        }
-
-        return true;
-}
-
-bool BaseH5Recorder::writeArrayAttribute(hid_t dataset, const std::string& attrName,
-                                         const double *data, const hsize_t *dims, int ndims)
-{
-        hid_t dspace, attr;
-        herr_t status;
-        bool retval = true;
-        
-        dspace = H5Screate(H5S_SIMPLE);
-        if (dspace < 0) {
-                Logger(Critical, "Error in H5Screate.\n");
-                return false;
-        }
-
-        status = H5Sset_extent_simple(dspace, ndims, dims, NULL);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Sset_extent_simple.\n");
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully allocated space for the data.\n");
-
-        attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
-        if (attr < 0) {
-                Logger(Critical, "Error in H5Acreate2.\n");
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully created attribute.\n");
-
-        status = H5Awrite(attr, H5T_IEEE_F64LE, data);
-        if (status < 0) {
-                Logger(Critical, "Error in H5Awrite.\n");
-                retval = false;
-        }
-        else {
-                Logger(Debug, "Successfully written array attribute.\n");
-        }
-
-        H5Aclose(attr);
-        H5Sclose(dspace);
-
-        return retval;
-        return true;
-}
-
-bool BaseH5Recorder::writeData(const std::string& datasetName, int rank, const hsize_t *dims,
-                               const double *data, const std::string& label)
-{
-        hid_t dspace, dset;
-        herr_t status;
-
-        dspace = H5Screate(H5S_SIMPLE);
-        if (dspace < 0) {
-                Logger(Critical, "Unable to create dataspace.\n");
-                return false;
-        }
-        Logger(Debug, "Successfully created dataspace.\n");
-
-        status = H5Sset_extent_simple(dspace, rank, dims, NULL);
-        if (status < 0) {
-                Logger(Critical, "Unable to set the size of the dataset.\n");
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully set dataspace size.\n");
-
-        dset = H5Dcreate2(m_fid, datasetName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (dset < 0) {
-                Logger(Critical, "Unable to create dataset [%s].\n", datasetName.c_str());
-                return false;
-        }
-        Logger(Debug, "Successfully created dataset [%s].\n", datasetName.c_str());
-
-        status = H5Dwrite(dset, H5T_IEEE_F64LE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
-        if (status < 0) {
-                Logger(Critical, "Unable to write data to dataset [%s].\n", datasetName.c_str());
-                H5Dclose(dset);
-                H5Sclose(dspace);
-                return false;
-        }
-        Logger(Debug, "Successfully written data.\n");
-
-        if (label.size() > 0)
-                writeStringAttribute(dset, "Label", label);
-
-        H5Dclose(dset);
-        H5Sclose(dspace);
 
         return true;
 }

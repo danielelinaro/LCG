@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I../stimgen -I.
+AM_CPPFLAGS = -I../stimgen -I. -I../non-rt
 lib_LTLIBRARIES = liblcg.la
 liblcg_la_SOURCES = randlib.cpp utils.cpp entity.cpp dynamical_entity.cpp synapses.cpp events.cpp neurons.cpp poisson_generator.cpp waveform.cpp recorders.cpp aec.cpp engine.cpp periodic_pulse.cpp currents.cpp delay.cpp conductance_stimulus.cpp trigger.cpp pid.cpp frequency_estimator.cpp event_counter.cpp connections.cpp functors.cpp constants.cpp converter.cpp probability_estimator.cpp sha1.cpp
 liblcg_la_LDFLAGS = -version-info ${LIB_VER}

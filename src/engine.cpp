@@ -6,6 +6,7 @@
 #include "entity.h"
 #include "utils.h"
 #include "common.h"
+#include "h5rec.h"
 #include "recorders.h"
 
 #ifdef HAVE_LIBLXRT
@@ -47,7 +48,7 @@ pthread_cond_t commentsCV;
 
 void* CommentsReader(void *arg)
 {
-        recorders::Recorder *rec = static_cast<recorders::Recorder*>(arg);
+        H5RecorderCore *rec = static_cast<H5RecorderCore*>(arg);
         Logger(Debug, "CommentsReader started.\n");
         char c, msg[COMMENT_MAXLEN];
         time_t now;
