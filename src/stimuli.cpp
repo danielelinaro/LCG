@@ -17,14 +17,14 @@ void free_stimuli(uint nstim)
 
 int allocate_stimuli(uint nstim)
 {
-        int i, flag;
+        int i, err;
         uint stimlen;
 
         for (i=0; i<nstim; i++) {
-                flag = generate_trial(stimulus_files[i], GetLoggingLevel() <= Debug,
+                err = generate_trial(stimulus_files[i], GetLoggingLevel() <= Debug,
                               0, NULL, &stimuli[i], &stimlen,
                               1.0/GetGlobalDt(), GetGlobalDt());
-                if (flag == -1) {
+                if (err) {
                         Logger(Critical, "Error in generate_trial.\n");
                         break;
                 }

@@ -1,10 +1,9 @@
 
 === Short term (and therefore relatively simple) ===
 
--) control output trimming in comedi_io.cpp
--) remove useless scripts!
+-) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
+-) control output trimming in comedi_io.cpp.
 -) analog output should also be proxied in asynchronous mode.
--) add a Logger object.
 -) finish to add the ionic currents for LTS neurons.
 -) Add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
 

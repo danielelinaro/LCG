@@ -6,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <dirent.h>
+#include <math.h>
 
 #include <vector>
 #include <string>
@@ -16,6 +17,7 @@
 #include "utils.h"
 #include "configuration.h"
 #include "stimuli.h"
+#include "h5rec.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -231,7 +233,19 @@ static void parse_args(int argc, char *argv[], options *opts)
 
 int run_trial(const io_options *input, const io_options *output)
 {
+        int i, id, nsteps;
+        ChunkedH5Recorder rec;
+        double_dict pars;
+        allocate_stimuli(1);
+        nsteps = ceil(trial_duration / GetGlobalDt());
+        for (i=0, id=0; i<input->nchan; i++, id++)
+                rec.addRecord(id, "AnalogInput", input->units, nsteps, pars);
+        for (i=0; i<output->nchan; i++, id++) {
+                rec.addRecord(id, "Waveform", output->units, nsteps, pars);
+                rec.writeRecord(id, stimuli[i], nsteps);
+        }
         Logger(Important, "Trial duration: %g seconds.\n", trial_duration);
+        free_stimuli(1);
         return 0;
 }
 

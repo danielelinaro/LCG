@@ -1,22 +1,23 @@
 #ifndef H5REC_H
 #define H5REC_H
 
+#include <pthread.h>
 #include <time.h>
 #include <hdf5.h>
-#include <string>
 #include <vector>
 #include <deque>
+#include "types.h"
 #include "common.h"
 
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
-//#define ENTITIES_GROUP   "/Entities"
-//#define INFO_GROUP       "/Info"
+#define ENTITIES_GROUP   "/Entities"
+#define INFO_GROUP       "/Info"
 #define COMMENTS_GROUP   "/Comments"
-//#define DATA_DATASET     "Data"
-//#define METADATA_DATASET "Metadata"
-//#define PARAMETERS_GROUP "Parameters"
-//#define H5_FILE_VERSION  2
+#define DATA_DATASET     "Data"
+#define METADATA_DATASET "Metadata"
+#define PARAMETERS_GROUP "Parameters"
+#define H5_FILE_VERSION  2
 
 namespace lcg {
 
@@ -48,9 +49,6 @@ public:
         H5RecorderCore(bool compress, hsize_t chunkSize, uint numberOfChunks, const char *filename = NULL);
         virtual ~H5RecorderCore();
 
-        //virtual bool initialise();
-        //virtual void terminate();
-
         hsize_t bufferSize() const;
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
@@ -68,23 +66,20 @@ public:
 protected:
         virtual bool openFile();
         virtual void closeFile();
+        virtual bool initialiseFile();
         virtual void deleteComments();
 
-        //virtual void addPre(Entity *entity);
-        //virtual bool allocateForEntity(Entity *entity, int dataRank,
-        //                               const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims);
-
-        virtual bool createGroup(const std::string& groupName, hid_t *grp);
-        virtual bool createUnlimitedDataset(const std::string& datasetName,
+        virtual bool createGroup(const char *groupName, hid_t *grp);
+        virtual bool createUnlimitedDataset(const char *datasetName,
                                             int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
                                             hid_t *dspace, hid_t *dset);
 
-        virtual bool writeStringAttribute(hid_t objId, const std::string& attrName, const std::string& attrValue);
-        virtual bool writeScalarAttribute(hid_t objId, const std::string& attrName, double attrValue);
-        virtual bool writeArrayAttribute(hid_t objId, const std::string& attrName,
+        virtual bool writeStringAttribute(hid_t objId, const char *attrName, const char *attrValue);
+        virtual bool writeScalarAttribute(hid_t objId, const char *attrName, double attrValue);
+        virtual bool writeArrayAttribute(hid_t objId, const char *attrName,
                                          const double *data, const hsize_t *dims, int ndims);
-        virtual bool writeData(const std::string& datasetName, int rank, const hsize_t *dims,
-                               const double *data, const std::string& label = "");
+        virtual bool writeData(const char *datasetName, int rank, const hsize_t *dims,
+                               const double *data, const char *label = "");
 
         virtual void writeComments();
 
@@ -119,18 +114,25 @@ private:
         hsize_t m_bufferSize;
 };
 
-class ChunkedH5Recorder {
+class ChunkedH5Recorder : public H5RecorderCore {
 public:
-        ChunkedH5Recorder(int numberOfRecords, int recordLength, bool compress = true, const char *filename = NULL);
+        ChunkedH5Recorder(bool compress = true, const char *filename = NULL);
         ~ChunkedH5Recorder();
-
-        int write(int recordNumber, const double *data, ssize_t n);
+        bool addRecord(uint id, const char *name, const char *units,
+                       size_t recordLength, const double_dict& parameters,
+                       const double *metadata = NULL, const size_t *metadataDims = NULL);
+        bool writeRecord(uint id, double *data, size_t length);
+        
+public:
+        static const int rank;
 
 private:
-        int open();
-        void close();
+        static void* writerThread(void *arg);
 
 private:
+        std::vector<uint> m_ids;
+        std::vector<hsize_t> m_datasetSizes;
+        std::vector<pthread_t*> m_writerThreads;
 };
 
 }

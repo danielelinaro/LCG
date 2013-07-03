@@ -27,32 +27,10 @@ public:
         virtual double output();
 };
 
-class ASCIIRecorder : public Recorder {
-public:
-        ASCIIRecorder(const char *filename = NULL, uint id = GetId());
-        ~ASCIIRecorder();
-        virtual bool initialise();
-        virtual void step();
-        virtual void terminate();
-
-private:
-        void openFile();
-        void closeFile();
-
-private:
-        bool m_makeFilename;
-        char m_filename[FILENAME_MAXLEN];
-        FILE *m_fid;
-        bool m_closeFile;
-};
-
-
-#define ENTITIES_GROUP   "/Entities"
-#define INFO_GROUP       "/Info"
-#define DATA_DATASET     "Data"
-#define METADATA_DATASET "Metadata"
-#define PARAMETERS_GROUP "Parameters"
-#define H5_FILE_VERSION  2
+//#define DATA_DATASET     "Data"
+//#define METADATA_DATASET "Metadata"
+//#define PARAMETERS_GROUP "Parameters"
+//#define H5_FILE_VERSION  2
 
 class BaseH5Recorder : public H5RecorderCore, public Recorder {
 public:

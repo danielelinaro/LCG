@@ -121,29 +121,9 @@ bool H5RecorderCore::isCompressionAvailable()
         return true;
 }
 
-/*
-bool H5RecorderCore::initialise()
+bool H5RecorderCore::initialiseFile()
 {
-        Logger(Debug, "H5RecorderCore::initialise()\n");
-
-        if (m_inputs.size() == 0) {
-                Logger(Critical, "H5RecorderCore::initialise() >> There are no entities "
-                                 "connected to this H5RecorderCore. Probably you don't want this.\n");
-                return false;
-        }
-
-        closeFile();
-
-        if (m_makeFilename)
-                MakeFilename(m_filename, "h5");
-
-        m_groups.clear();
-        m_dataspaces.clear();
-        m_datasets.clear();
-
-        if (!openFile())
-                return false;
-        Logger(Debug, "Successfully opened file [%s].\n", m_filename);
+        Logger(Debug, "H5RecorderCore::initialiseFile()\n");
 
         if (!createGroup(INFO_GROUP, &m_infoGroup)) {
                 Logger(Critical, "Unable to create Info group.\n");
@@ -160,9 +140,8 @@ bool H5RecorderCore::initialise()
         }
         Logger(Debug, "Successfully created Entities group.\n");
 
-        return finaliseInit();
+        return true;
 }
-*/
 
 bool H5RecorderCore::openFile()
 {
@@ -196,14 +175,6 @@ void H5RecorderCore::closeFile()
         }
 }
 
-/*
-void H5RecorderCore::terminate()
-{
-        Logger(Debug, "H5RecorderCore::terminate()\n");
-        closeFile();
-}
-*/
-
 const char* H5RecorderCore::filename() const
 {
         return m_filename;
@@ -227,89 +198,16 @@ void H5RecorderCore::writeComments()
         }
 }
 
-/*
-void H5RecorderCore::addPre(Entity *entity)
+bool H5RecorderCore::createGroup(const char *groupName, hid_t *grp)
 {
-        Entity::addPre(entity);
-        Logger(All, "--- H5RecorderCore::addPre(Entity*) ---\n");
-        m_numberOfInputs++;
-        finaliseAddPre(entity);
-}
-
-bool H5RecorderCore::allocateForEntity(Entity *entity, int dataRank,
-                                       const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims)
-{
-        hid_t dspace, dset, grp;
-        char groupName[GROUP_NAME_LEN];
-        char datasetName[DATASET_NAME_LEN];
-
-        // the name of the group (i.e., /Entities/0001)
-        sprintf(groupName, "%s/%04d", ENTITIES_GROUP, entity->id());
-        if (!createGroup(groupName, &grp)) {
-                Logger(Critical, "Unable to create group [%s].\n", groupName);
-                return false;
-        }
-        Logger(Debug, "Group [%s] created.\n", groupName);
-
-        // dataset for actual data (i.e., /Entities/0001/Data)
-        sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), DATA_DATASET);
-        if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset)) {
-                Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
-                return false;
-        }
-        Logger(Debug, "Dataset [%s] created.\n", datasetName);
-
-        // save name and units as attributes of the group
-        writeStringAttribute(grp, "Name", entity->name());
-        writeStringAttribute(grp, "Units", entity->units());
-
-        // save metadata
-        size_t ndims;
-        if (entity->hasMetadata(&ndims)) {
-                char label[LABEL_LEN];
-                size_t *dims = new size_t[ndims];
-                hsize_t *hdims = new hsize_t[ndims];
-                const double *metadata = entity->metadata(dims, label);
-                for (int i=0; i<ndims; i++)
-                        hdims[i] = dims[i];
-                sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), METADATA_DATASET);
-                if (! writeData(datasetName, (int) ndims, hdims, metadata, label)) {
-                        Logger(Critical, "Unable to create metadata dataset.\n");
-                        delete hdims;
-                        delete dims;
-                        return false;
-                }
-                delete hdims;
-                delete dims;
-        } 
-        
-        // group for the parameters (i.e., /Entities/0001/Parameters)
-        sprintf(groupName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), PARAMETERS_GROUP);
-        if (!createGroup(groupName, &grp)) {
-                Logger(Critical, "Unable to create group [%s].\n", groupName);
-                return false;
-        }
-        Logger(Debug, "Group [%s] created.\n", groupName);
-
-
-        double_dict::const_iterator it;
-        for (it = entity->parameters().begin(); it != entity->parameters().end(); it++)
-                writeScalarAttribute(grp, it->first, it->second);
-
-        return true;
-}
-*/
-
-bool H5RecorderCore::createGroup(const std::string& groupName, hid_t *grp)
-{
-        *grp = H5Gcreate2(m_fid, groupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        *grp = H5Gcreate2(m_fid, groupName, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (*grp < 0)
                 return false;
         m_groups.push_back(*grp);
         return true;
 }
 
-bool H5RecorderCore::createUnlimitedDataset(const std::string& datasetName,
+bool H5RecorderCore::createUnlimitedDataset(const char *datasetName,
                                             int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
                                             hid_t *dspace, hid_t *dset)
 {
@@ -370,11 +268,11 @@ bool H5RecorderCore::createUnlimitedDataset(const std::string& datasetName,
                 if (H5Pset_shuffle(cparms) < 0 || H5Pset_deflate(cparms, 9) < 0)
                         Logger(Important, "Unable to enable compression.\n");
                 else 
-                        Logger(Debug, "Successfully enabled ompression.\n");
+                        Logger(Debug, "Successfully enabled compression.\n");
         }
 
         // create a new dataset within the file using cparms creation properties.
-        *dset = H5Dcreate2(m_fid, datasetName.c_str(),
+        *dset = H5Dcreate2(m_fid, datasetName,
                            H5T_IEEE_F64LE, *dspace,
                            H5P_DEFAULT, cparms, H5P_DEFAULT);
         if (*dset < 0) {
@@ -395,8 +293,8 @@ bool H5RecorderCore::createUnlimitedDataset(const std::string& datasetName,
 }
 
 bool H5RecorderCore::writeStringAttribute(hid_t dataset,
-                                      const std::string& attrName,
-                                      const std::string& attrValue)
+                                      const char *attrName,
+                                      const char *attrValue)
 {
         hid_t dspace, atype, attr;
         herr_t status;
@@ -416,7 +314,7 @@ bool H5RecorderCore::writeStringAttribute(hid_t dataset,
         }
         Logger(Debug, "Successfully copied type.\n");
 
-        status = H5Tset_size(atype, attrValue.size() + 1);
+        status = H5Tset_size(atype, strlen(attrValue) + 1);
         if (status < 0) {
                 Logger(Critical, "Error in H5Tset_size.\n");
                 H5Tclose(atype);
@@ -434,7 +332,7 @@ bool H5RecorderCore::writeStringAttribute(hid_t dataset,
         }
         Logger(Debug, "Successfully set type padding string.\n");
 
-        attr = H5Acreate2(dataset, attrName.c_str(), atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
+        attr = H5Acreate2(dataset, attrName, atype, dspace, H5P_DEFAULT, H5P_DEFAULT);
         if (attr < 0) {
                 Logger(Critical, "Error in H5Acreate2.\n");
                 H5Tclose(atype);
@@ -443,7 +341,7 @@ bool H5RecorderCore::writeStringAttribute(hid_t dataset,
         }
         Logger(Debug, "Successfully created attribute.\n");
 
-        status = H5Awrite(attr, atype, attrValue.c_str());
+        status = H5Awrite(attr, atype, attrValue);
         if (status < 0) {
                 Logger(Critical, "Error in H5Awrite.\n");
                 retval = false;
@@ -459,9 +357,9 @@ bool H5RecorderCore::writeStringAttribute(hid_t dataset,
         return retval;
 }
 
-bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const std::string& attrName, double attrValue)
+bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const char *attrName, double attrValue)
 {
-        Logger(Debug, "H5RecorderCore::writeScalarAttribute(%d, %s, %g)\n", dataset, attrName.c_str(), attrValue);
+        Logger(Debug, "H5RecorderCore::writeScalarAttribute(%d, %s, %g)\n", dataset, attrName, attrValue);
         hid_t aid, attr;
         herr_t status;
 
@@ -471,7 +369,7 @@ bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const std::string& attr
                 return false;
         }
 
-        attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
+        attr = H5Acreate2(dataset, attrName, H5T_IEEE_F64LE, aid, H5P_DEFAULT, H5P_DEFAULT);
         if (attr < 0) {
                 H5Sclose(aid);
                 Logger(Critical, "Unable to create scalar attribute.\n");
@@ -491,7 +389,7 @@ bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const std::string& attr
         return true;
 }
 
-bool H5RecorderCore::writeArrayAttribute(hid_t dataset, const std::string& attrName,
+bool H5RecorderCore::writeArrayAttribute(hid_t dataset, const char *attrName,
                                          const double *data, const hsize_t *dims, int ndims)
 {
         hid_t dspace, attr;
@@ -512,7 +410,7 @@ bool H5RecorderCore::writeArrayAttribute(hid_t dataset, const std::string& attrN
         }
         Logger(Debug, "Successfully allocated space for the data.\n");
 
-        attr = H5Acreate2(dataset, attrName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
+        attr = H5Acreate2(dataset, attrName, H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT);
         if (attr < 0) {
                 Logger(Critical, "Error in H5Acreate2.\n");
                 H5Sclose(dspace);
@@ -536,8 +434,8 @@ bool H5RecorderCore::writeArrayAttribute(hid_t dataset, const std::string& attrN
         return true;
 }
 
-bool H5RecorderCore::writeData(const std::string& datasetName, int rank, const hsize_t *dims,
-                               const double *data, const std::string& label)
+bool H5RecorderCore::writeData(const char *datasetName, int rank, const hsize_t *dims,
+                               const double *data, const char *label)
 {
         hid_t dspace, dset;
         herr_t status;
@@ -557,29 +455,203 @@ bool H5RecorderCore::writeData(const std::string& datasetName, int rank, const h
         }
         Logger(Debug, "Successfully set dataspace size.\n");
 
-        dset = H5Dcreate2(m_fid, datasetName.c_str(), H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        dset = H5Dcreate2(m_fid, datasetName, H5T_IEEE_F64LE, dspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (dset < 0) {
-                Logger(Critical, "Unable to create dataset [%s].\n", datasetName.c_str());
+                Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
                 return false;
         }
-        Logger(Debug, "Successfully created dataset [%s].\n", datasetName.c_str());
+        Logger(Debug, "Successfully created dataset [%s].\n", datasetName);
 
         status = H5Dwrite(dset, H5T_IEEE_F64LE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
         if (status < 0) {
-                Logger(Critical, "Unable to write data to dataset [%s].\n", datasetName.c_str());
+                Logger(Critical, "Unable to write data to dataset [%s].\n", datasetName);
                 H5Dclose(dset);
                 H5Sclose(dspace);
                 return false;
         }
         Logger(Debug, "Successfully written data.\n");
 
-        if (label.size() > 0)
+        if (strlen(label))
                 writeStringAttribute(dset, "Label", label);
 
         H5Dclose(dset);
         H5Sclose(dspace);
 
         return true;
+}
+
+
+//~~~
+
+struct thread_data {
+        thread_data(ChunkedH5Recorder *recorder, uint id, double *data, size_t length)
+                : m_self(recorder), m_id(id), m_data(data), m_length(length) {}
+        ChunkedH5Recorder *m_self;
+        uint m_id;
+        double *m_data;
+        hsize_t m_length;
+};
+
+const int ChunkedH5Recorder::rank = 1;
+
+ChunkedH5Recorder::ChunkedH5Recorder(bool compress, const char *filename)
+        : H5RecorderCore(compress, 1024, 20, filename), m_ids(), m_datasetSizes(), m_writerThreads()
+{
+        if (m_makeFilename)
+                MakeFilename(m_filename, "h5");
+        openFile();
+        initialiseFile();
+}
+
+ChunkedH5Recorder::~ChunkedH5Recorder()
+{
+        for (int i=0; i<m_writerThreads.size(); i++) {
+                pthread_join(*m_writerThreads[i], NULL);
+                delete m_writerThreads[i];
+        }
+        closeFile();
+}
+
+bool ChunkedH5Recorder::addRecord(uint id, const char *name, const char *units,
+                size_t recordLength, const double_dict& parameters,
+                const double *metadata, const size_t *metadataDims)
+{
+        if (std::find(m_ids.begin(), m_ids.end(), id) != m_ids.end()) {
+                Logger(Critical, "ID %d already present.\n", id);
+                return false;
+        }
+
+        hid_t dspace, dset, grp;
+        hsize_t bufsz = bufferSize(), maxbufsz = H5S_UNLIMITED, chunksz = chunkSize();
+        if (recordLength > 0)
+                bufsz = maxbufsz = recordLength;
+        char groupName[GROUP_NAME_LEN];
+        char datasetName[DATASET_NAME_LEN];
+
+        // the name of the group (i.e., /Entities/0001)
+        sprintf(groupName, "%s/%04d", ENTITIES_GROUP, id);
+        if (!createGroup(groupName, &grp)) {
+                Logger(Critical, "Unable to create group [%s].\n", groupName);
+                return false;
+        }
+        Logger(Debug, "Group [%s] created.\n", groupName);
+
+        // dataset for actual data (i.e., /Entities/0001/Data)
+        sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, id, DATA_DATASET);
+        if (!createUnlimitedDataset(datasetName, 1, &bufsz, &maxbufsz, &chunksz, &dspace, &dset)) {
+                Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
+                return false;
+        }
+        Logger(Debug, "Dataset [%s] created.\n", datasetName);
+
+        // save name and units as attributes of the group
+        writeStringAttribute(grp, "Name", name);
+        writeStringAttribute(grp, "Units", units);
+
+        // save metadata
+        if (metadata) {
+                char label[LABEL_LEN];
+                hsize_t hdims[2];
+                for (int i=0; i<2; i++)
+                        hdims[i] = metadataDims[i];
+                sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, id, METADATA_DATASET);
+                if (! writeData(datasetName, 2, hdims, metadata, label)) {
+                        Logger(Critical, "Unable to create metadata dataset.\n");
+                        return false;
+                }
+        } 
+        
+        // group for the parameters (i.e., /Entities/0001/Parameters)
+        sprintf(groupName, "%s/%04d/%s", ENTITIES_GROUP, id, PARAMETERS_GROUP);
+        if (!createGroup(groupName, &grp)) {
+                Logger(Critical, "Unable to create group [%s].\n", groupName);
+                return false;
+        }
+        Logger(Debug, "Group [%s] created.\n", groupName);
+
+        double_dict::const_iterator it;
+        for (it = parameters.begin(); it != parameters.end(); it++)
+                writeScalarAttribute(grp, it->first.c_str(), it->second);
+
+        m_ids.push_back(id);
+        m_datasetSizes.push_back(0);
+        m_writerThreads.push_back(new pthread_t);
+
+        return true;
+}
+
+bool ChunkedH5Recorder::writeRecord(uint id, double *data, size_t length)
+{
+        if (std::find(m_ids.begin(), m_ids.end(), id) == m_ids.end()) {
+                Logger(Critical, "%d: no such ID.\n", id);
+                return false;
+        }
+        thread_data *arg = new thread_data(this, id, data, length);
+        pthread_join(*m_writerThreads[id], NULL);
+        return pthread_create(m_writerThreads[id], NULL, ChunkedH5Recorder::writerThread, (void *) arg) == 0;
+}
+
+void* ChunkedH5Recorder::writerThread(void *arg)
+{
+        thread_data *data = static_cast<thread_data*>(arg);
+        if (!data) {
+                pthread_exit(NULL);
+        }
+
+        ChunkedH5Recorder *self = data->m_self;
+        uint id = data->m_id;
+        double *buffer = data->m_data;
+        hid_t filespace;
+        herr_t status;
+        hsize_t start = self->m_datasetSizes[id], count = data->m_length;
+        self->m_datasetSizes[id] += count;
+        delete data;
+
+        // extend the dataset
+        status = H5Dset_extent(self->m_datasets[id], &self->m_datasetSizes[id]);
+        if (status < 0)
+                throw "Unable to extend dataset.";
+        else
+                Logger(All, "Extended dataset to %d elements.\n", self->m_datasetSizes[id]);
+
+        // get the filespace
+        filespace = H5Dget_space(self->m_datasets[id]);
+        if (filespace < 0)
+                throw "Unable to get filespace.";
+        else
+                Logger(All, "Obtained filespace.\n");
+
+        // select an hyperslab
+        status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &start, NULL, &count, NULL);
+        if (status < 0) {
+                H5Sclose(filespace);
+                throw "Unable to select hyperslab.";
+        }
+        else {
+                Logger(All, "Selected hyperslab.\n");
+        }
+
+        // define memory space
+        self->m_dataspaces[id] = H5Screate_simple(ChunkedH5Recorder::rank, &count, NULL);
+        if (self->m_dataspaces[id] < 0) {
+                H5Sclose(filespace);
+                throw "Unable to define memory space.";
+        }
+        else {
+                Logger(All, "Memory space defined.\n");
+        }
+
+        // write data
+        status = H5Dwrite(self->m_datasets[id], H5T_IEEE_F64LE, self->m_dataspaces[id], filespace, H5P_DEFAULT, buffer);
+        if (status < 0) {
+                H5Sclose(filespace);
+                throw "Unable to write data.";
+        }
+        else {
+                Logger(All, "Written data.\n");
+        }
+        H5Sclose(filespace);
+        pthread_exit(NULL);
 }
 
 }

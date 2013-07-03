@@ -4,16 +4,6 @@
 #include "engine.h"
 #include "common.h"
 
-lcg::Entity* ASCIIRecorderFactory(string_dict& args)
-{
-        uint id;
-        std::string filename;
-        id = lcg::GetIdFromDictionary(args);
-        if (!lcg::CheckAndExtractValue(args, "filename", filename))
-                return new lcg::recorders::ASCIIRecorder((const char *) NULL, id);
-        return new lcg::recorders::ASCIIRecorder(filename.c_str(), id);
-}
-
 lcg::Entity* H5RecorderFactory(string_dict& args)
 {       
         uint id;
@@ -64,66 +54,6 @@ double Recorder::output()
         return 0.0;
 }
 
-ASCIIRecorder::ASCIIRecorder(const char *filename, uint id)
-        : Recorder(id), m_closeFile(false)
-{
-        if (filename == NULL) {
-                m_makeFilename = true;
-        }
-        else {
-                m_makeFilename = false;
-                strncpy(m_filename, filename, FILENAME_MAXLEN);
-        }
-        setName("ASCIIRecorder");
-}
-
-ASCIIRecorder::~ASCIIRecorder()
-{
-        closeFile();
-}
-
-void ASCIIRecorder::closeFile()
-{
-        if (m_closeFile)
-                fclose(m_fid);
-}
-
-void ASCIIRecorder::openFile()
-{
-        m_fid = fopen(m_filename, "w");
-        if (m_fid == NULL) {
-                char msg[100];
-                sprintf(msg, "Unable to open %s.\n", m_filename); 
-                throw msg;
-        }
-        m_closeFile = true;
-}
-
-bool ASCIIRecorder::initialise()
-{       
-        closeFile();
-        if (m_makeFilename)
-                MakeFilename(m_filename, "dat");
-        openFile();
-        return true;
-}
-
-void ASCIIRecorder::step()
-{
-        uint i, n = m_inputs.size();
-        if (n > 0) {
-                fprintf(m_fid, "%14e", GetGlobalTime());
-                for (i=0; i<n; i++)
-                        fprintf(m_fid, " %14e", m_inputs[i]);
-                fprintf(m_fid, "\n");
-        }
-}
-
-void ASCIIRecorder::terminate()
-{
-        closeFile();
-}
-
 //~~~
 
 BaseH5Recorder::BaseH5Recorder(bool compress, hsize_t bufferSize, const char *filename, uint id)
@@ -157,20 +87,9 @@ bool BaseH5Recorder::initialise()
                 return false;
         Logger(Debug, "Successfully opened file [%s].\n", m_filename);
 
-        if (!createGroup(INFO_GROUP, &m_infoGroup)) {
-                Logger(Critical, "Unable to create Info group.\n");
+        if (!initialiseFile())
                 return false;
-        }
-        Logger(Debug, "Successfully created Info group.\n");
-        writeScalarAttribute(m_infoGroup, "version", H5_FILE_VERSION);
-        writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
-
-        hid_t grp;
-        if (!createGroup(ENTITIES_GROUP, &grp)) {
-                Logger(Critical, "Unable to create Entities group.\n");
-                return false;
-        }
-        Logger(Debug, "Successfully created Entities group.\n");
+        Logger(Debug, "Successfully initialised file [%s].\n", m_filename);
 
         return finaliseInit();
 }
@@ -238,8 +157,8 @@ bool BaseH5Recorder::allocateForEntity(Entity *entity, int dataRank,
         Logger(Debug, "Dataset [%s] created.\n", datasetName);
 
         // save name and units as attributes of the group
-        writeStringAttribute(grp, "Name", entity->name());
-        writeStringAttribute(grp, "Units", entity->units());
+        writeStringAttribute(grp, "Name", entity->name().c_str());
+        writeStringAttribute(grp, "Units", entity->units().c_str());
 
         // save metadata
         size_t ndims;
@@ -272,7 +191,7 @@ bool BaseH5Recorder::allocateForEntity(Entity *entity, int dataRank,
 
         double_dict::const_iterator it;
         for (it = entity->parameters().begin(); it != entity->parameters().end(); it++)
-                writeScalarAttribute(grp, it->first, it->second);
+                writeScalarAttribute(grp, it->first.c_str(), it->second);
 
         return true;
 }
