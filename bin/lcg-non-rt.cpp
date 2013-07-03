@@ -26,10 +26,7 @@
 using namespace lcg;
 
 //// GLOBAL VARIABLES - START
-extern char stimulus_files[MAX_NO_STIMULI][FILENAME_MAXLEN];
-extern double *stimuli[MAX_NO_STIMULI];
-extern uint stimulus_length;
-extern double trial_duration;
+extern std::vector<Stimulus*> stimuli;
 //// GLOBAL VARIABLES - END
 
 typedef enum {DEFAULT, SPONTANEOUS, TRIGGERED} recording_mode;
@@ -231,6 +228,7 @@ static void parse_args(int argc, char *argv[], options *opts)
 
 /// PARSING OF COMMAND LINE ARGUMENTS - END
 
+/*
 int run_trial(const io_options *input, const io_options *output)
 {
         int i, id, nsteps;
@@ -248,6 +246,7 @@ int run_trial(const io_options *input, const io_options *output)
         free_stimuli(1);
         return 0;
 }
+*/
 
 int main(int argc, char *argv[])
 {
@@ -257,7 +256,8 @@ int main(int argc, char *argv[])
         }
 
         options opts;
-        io_options input_opts, output_opts;
+        //io_options input_opts, output_opts;
+        std::vector<channel_opts*> channels;
         int i, j, k;
         int cnt, total;
         int err;
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 
         SetGlobalDt(opts.dt);
 
-        err = parse_configuration_file(opts.configFile, &input_opts, &output_opts);
+        err = parse_configuration_file(opts.configFile, channels);
         if (err) {
                 Logger(Critical, "Unable to parse the configuration file.\n");
                 goto endMain;
@@ -284,10 +284,11 @@ int main(int argc, char *argv[])
 	total = opts.nBatches*opts.stimulusFiles.size()*opts.nTrials;
 	for (i=0; i<opts.nBatches; i++) {
 	        for (j=0; j<opts.stimulusFiles.size(); j++) {
-                        strncpy(stimulus_files[0], opts.stimulusFiles[j].c_str(), FILENAME_MAXLEN);
+                        //strncpy(stimulus_files[0], opts.stimulusFiles[j].c_str(), FILENAME_MAXLEN);
 			for (k=0; k<opts.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                err = run_trial(&input_opts, &output_opts);
+                                //err = run_trial(&input_opts, &output_opts);
+                                err = 0;
                                 if (err || KILL_PROGRAM())
                                         goto endMain;
                                 if (k != opts.nTrials-1)

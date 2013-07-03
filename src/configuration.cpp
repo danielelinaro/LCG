@@ -19,13 +19,36 @@ using namespace lcg;
 
 #define CONFIG_FILE ".lcg-non-rt"
 
-int parse_configuration_file(const char *filename, io_options *input, io_options *output)
+std::vector<std::string> split_string(const std::string &source, const char *delimiter = " ", bool keepEmpty = false)
+{
+    std::vector<std::string> results;
+    size_t prev=0, next=0;
+    while ((next = source.find_first_of(delimiter, prev)) != std::string::npos) {
+        if (keepEmpty || (next - prev != 0))
+            results.push_back(source.substr(prev, next - prev));
+        prev = next + 1;
+    }
+    if (prev < source.size())
+        results.push_back(source.substr(prev));
+    return results;
+}
+
+int parse_configuration_file(const char *filename, std::vector<channel_opts*>& channels)
 {
         ptree pt;
-        std::string str;
+        std::string str, device;
+        std::vector<std::string> channels_v, factors_v, units_v, filenames_v;
+        uint subdevice, range, reference;
+        int i;
         struct stat buf;
         char *home, configFile[FILENAME_MAXLEN] = {0};
-        char channels[128];
+        char chan[128];
+
+        if (!channels.empty()) {
+                for (i=0; i<channels.size(); i++)
+                        delete channels[i];
+                channels.clear();
+        }
 
         if (filename != NULL) {
                 strncpy(configFile, filename, FILENAME_MAXLEN);
@@ -51,29 +74,24 @@ int parse_configuration_file(const char *filename, io_options *input, io_options
         if (pt.count("AnalogInput") == 0) {
                 Logger(Critical, "The configuration file [%s] does not contain a 'AnalogInput' record. "
                                  "Aborting...\n", filename);
-                input->nchan = 0;
                 return -1;
         }
 
+        // let's parse first what's common among all channels...
         try {
-                str = pt.get<std::string>("AnalogInput.device");
-                strncpy(input->device, str.c_str(), FILENAME_MAXLEN);
+                device = pt.get<std::string>("AnalogInput.device");
         } catch(...) {
-                strncpy(input->device, getenv("COMEDI_DEVICE"), FILENAME_MAXLEN);
+                device = getenv("COMEDI_DEVICE");
         }
-        Logger(Debug, "input device: %s\n", input->device);
+        Logger(Debug, "input device: %s\n", device.c_str());
+
         try {
-                input->subdevice = pt.get<int>("AnalogInput.subdevice");
+                subdevice = pt.get<int>("AnalogInput.subdevice");
         } catch(...) {
-                input->subdevice = atoi(getenv("AI_SUBDEVICE"));
+                subdevice = atoi(getenv("AI_SUBDEVICE"));
         }
-        Logger(Debug, "input subdevice: %d\n", input->subdevice);
-        try {
-                input->conversionFactor = pt.get<double>("AnalogInput.conversionFactor");
-        } catch(...) {
-                input->conversionFactor = atof(getenv("AI_CONVERSION_FACTOR"));
-        }
-        Logger(Debug, "input conversion factor: %g\n", input->conversionFactor);
+        Logger(Debug, "input subdevice: %d\n", subdevice);
+
         try {
                 str = pt.get<std::string>("AnalogInput.range");
         } catch(...) {
@@ -82,148 +100,198 @@ int parse_configuration_file(const char *filename, io_options *input, io_options
         if (str.compare("PlusMinusTen") == 0 ||
             str.compare("[-10,+10]") == 0 ||
             str.compare("+-10") == 0) {
-                input->range = PLUS_MINUS_TEN;
+                range = PLUS_MINUS_TEN;
         }
         else if (str.compare("PlusMinusFive") == 0 ||
                  str.compare("[-5,+5]") == 0 ||
                  str.compare("+-5") == 0) {
-                input->range = PLUS_MINUS_FIVE;
+                range = PLUS_MINUS_FIVE;
         }
         else if (str.compare("PlusMinusOne") == 0 ||
                  str.compare("[-1,+1]") == 0 ||
                  str.compare("+-1") == 0) {
-                input->range = PLUS_MINUS_ONE;
+                range = PLUS_MINUS_ONE;
         }
         else if (str.compare("PlusMinusZeroPointTwo") == 0 ||
                  str.compare("[-0.2,+0.2]") == 0 ||
                  str.compare("+-0.2") == 0) {
-                input->range = PLUS_MINUS_ZERO_POINT_TWO;
+                range = PLUS_MINUS_ZERO_POINT_TWO;
         }
         else {
                 Logger(Critical, "[%s]: Unknown input range.\n", str.c_str());
                 return -1;
         }
+
         try {
                 str = pt.get<std::string>("AnalogInput.reference");
         } catch(...) {
                 str = getenv("GROUND_REFERENCE");
         }
         if (str.compare("GRSE") == 0) {
-                input->reference = AREF_GROUND;
+                reference = AREF_GROUND;
         }
         else if (str.compare("NRSE") == 0) {
-                input->reference = AREF_COMMON;
+                reference = AREF_COMMON;
         }
         else {
                 Logger(Critical, "[%s]: Unknown ground reference.\n", str.c_str());
                 return -1;
         }
+
+        // ... and then what can be different across channels.
         try {
-                str = pt.get<std::string>("AnalogInput.units");
-                strncpy(input->units, str.c_str(), 10);
+                channels_v = split_string(pt.get<std::string>("AnalogInput.channels"), ",");
         } catch(...) {
-                strncpy(input->units, getenv("INPUT_UNITS"), 10);
+                channels_v.push_back(getenv("AI_CHANNEL"));
         }
-        Logger(Debug, "input units: %s\n", input->units);
+        Logger(Debug, "number of input channels: %d.\n", channels_v.size());
+         
         try {
-                str = pt.get<std::string>("AnalogInput.channels");
-                strncpy(channels, str.c_str(), 128);
-                if (channels[strlen(channels)-1] == ',')
-                        channels[strlen(channels)-1] = '\0';
-                char *cur, *next = channels;
-                input->nchan = 0;
-                int channels[1024];
-                while ((cur = strsep(&next, ",")) != NULL)
-                        channels[input->nchan++] = atoi(cur);
-                input->channels = (uint *) malloc(input->nchan * sizeof(uint));
-                for (int i=0; i<input->nchan; i++)
-                        input->channels[i] = channels[i];
+                factors_v = split_string(pt.get<std::string>("AnalogInput.conversionFactors"), ",");
         } catch(...) {
-                input->nchan = 1;
-                input->channels = (uint *) malloc(sizeof(uint));
-                input->channels[0] = atoi(getenv("AI_CHANNEL"));
+                factors_v.push_back(getenv("AI_CONVERSION_FACTOR"));
         }
-        Logger(Debug, "number of input channels: %d (", input->nchan);
-        for (int i=0; i<input->nchan-1; i++)
-                Logger(Debug, "%d,", input->channels[i]);
-        Logger(Debug, "%d).\n", input->channels[input->nchan-1]);
-                
+        if (factors_v.size() == 1) {
+                for (i=1; i<channels_v.size(); i++)
+                        factors_v.push_back(factors_v[0]);
+        }
+        else if (factors_v.size() != channels_v.size()) {
+                Logger(Critical, "Number of channels != Number of conversion factors.\n");
+                return -1;
+        }
+
+        try {
+                units_v = split_string(pt.get<std::string>("AnalogInput.units"), ",");
+        } catch(...) {
+                units_v.push_back(getenv("INPUT_UNITS"));
+        }
+        if (units_v.size() == 1) {
+                for (i=1; i<channels_v.size(); i++)
+                        units_v.push_back(units_v[0]);
+        }
+        else if (units_v.size() != channels_v.size()) {
+                Logger(Critical, "Number of channels != Number of units.\n");
+                return -1;
+        }
+        
+        for (i=0; i<channels_v.size(); i++) {
+                channels.push_back(new channel_opts(INPUT, device.c_str(), subdevice, range, reference,
+                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), units_v[i].c_str()));
+                print_channel_opts(channels[i]);
+        }
+        
         //// OUTPUT ////
+
+        channels_v.clear();
+        factors_v.clear();
+        units_v.clear();
 
         if (pt.count("AnalogOutput") == 0) {
                 Logger(Info, "The configuration file [%s] does not contain a 'AnalogOutput' record: "
                              "will only record spontaneous activity.\n", filename);
-                output->nchan = 0;
                 return 0;
         }
 
-        output->range = PLUS_MINUS_TEN;
+        range = PLUS_MINUS_TEN;
         try {
-                str = pt.get<std::string>("AnalogOutput.device");
-                strncpy(output->device, str.c_str(), FILENAME_MAXLEN);
+                device = pt.get<std::string>("AnalogOutput.device");
         } catch(...) {
-                strncpy(output->device, getenv("COMEDI_DEVICE"), FILENAME_MAXLEN);
+                device = getenv("COMEDI_DEVICE");
         }
-        Logger(Debug, "output device: %s\n", output->device);
+        Logger(Debug, "output device: %s\n", device.c_str());
+
         try {
-                output->subdevice = pt.get<int>("AnalogOutput.subdevice");
+                subdevice = pt.get<int>("AnalogOutput.subdevice");
         } catch(...) {
-                output->subdevice = atoi(getenv("AO_SUBDEVICE"));
+                subdevice = atoi(getenv("AO_SUBDEVICE"));
         }
-        Logger(Debug, "output subdevice: %d\n", output->subdevice);
-        try {
-                output->conversionFactor = pt.get<double>("AnalogOutput.conversionFactor");
-        } catch(...) {
-                output->conversionFactor = atof(getenv("AO_CONVERSION_FACTOR"));
-        }
-        Logger(Debug, "output conversion factor: %g\n", output->conversionFactor);
+        Logger(Debug, "output subdevice: %d\n", subdevice);
+
         try {
                 str = pt.get<std::string>("AnalogOutput.reference");
         } catch(...) {
                 str = getenv("GROUND_REFERENCE");
         }
         if (str.compare("GRSE") == 0) {
-                output->reference = AREF_GROUND;
+                reference = AREF_GROUND;
         }
         else if (str.compare("NRSE") == 0) {
-                output->reference = AREF_COMMON;
+                reference = AREF_COMMON;
         }
         else {
                 Logger(Critical, "[%s]: Unknown ground reference.\n", str.c_str());
-                return -1;
+                goto dealloc_and_fail;
         }
+
         try {
-                str = pt.get<std::string>("AnalogOutput.units");
-                strncpy(output->units, str.c_str(), 10);
+                channels_v = split_string(pt.get<std::string>("AnalogOutput.channels"), ",");
         } catch(...) {
-                strncpy(output->units, getenv("INPUT_UNITS"), 10);
+                channels_v.push_back(getenv("AO_CHANNEL"));
         }
-        Logger(Debug, "output units: %s\n", output->units);
+        Logger(Debug, "number of output channels: %d.\n", channels_v.size());
+         
         try {
-                str = pt.get<std::string>("AnalogOutput.channels");
-                strncpy(channels, str.c_str(), 128);
-                if (channels[strlen(channels)-1] == ',')
-                        channels[strlen(channels)-1] = '\0';
-                char *cur, *next = channels;
-                output->nchan = 0;
-                int channels[1024];
-                while ((cur = strsep(&next, ",")) != NULL)
-                        channels[output->nchan++] = atoi(cur);
-                output->channels = (uint *) malloc(output->nchan * sizeof(uint));
-                for (int i=0; i<output->nchan; i++)
-                        output->channels[i] = channels[i];
+                factors_v = split_string(pt.get<std::string>("AnalogOutput.conversionFactors"), ",");
         } catch(...) {
-                output->nchan = 1;
-                output->channels = (uint *) malloc(sizeof(uint));
-                output->channels[0] = atoi(getenv("AO_CHANNEL"));
+                factors_v.push_back(getenv("AO_CONVERSION_FACTOR"));
         }
-        Logger(Debug, "number of output channels: %d (", output->nchan);
-        for (int i=0; i<output->nchan-1; i++)
-                Logger(Debug, "%d,", output->channels[i]);
-        Logger(Debug, "%d).\n", output->channels[output->nchan-1]);
-                
+        if (factors_v.size() == 1) {
+                for (i=1; i<channels_v.size(); i++)
+                        factors_v.push_back(factors_v[0]);
+        }
+        else if (factors_v.size() != channels_v.size()) {
+                Logger(Critical, "Number of channels != Number of conversion factors.\n");
+                goto dealloc_and_fail;
+        }
+
+        try {
+                units_v = split_string(pt.get<std::string>("AnalogOutput.units"), ",");
+        } catch(...) {
+                units_v.push_back(getenv("OUTPUT_UNITS"));
+        }
+        if (units_v.size() == 1) {
+                for (i=1; i<channels_v.size(); i++)
+                        units_v.push_back(units_v[0]);
+        }
+        else if (units_v.size() != channels_v.size()) {
+                Logger(Critical, "Number of channels != Number of units.\n");
+                goto dealloc_and_fail;
+        }
+
+        try {
+                filenames_v = split_string(pt.get<std::string>("AnalogOutput.stimfiles"), ",");
+        } catch(...) {
+                for (i=0; i<channels_v.size(); i++)
+                        filenames_v.push_back("");
+        }
+        if (filenames_v.size() == 1) {
+                for (i=1; i<channels_v.size(); i++)
+                        filenames_v.push_back(filenames_v[0]);
+        }
+        else if (filenames_v.size() != channels_v.size()) {
+                Logger(Critical, "Number of channels != Number of stimfiles.\n");
+                goto dealloc_and_fail;
+        }
+
+        for (i=0; i<channels_v.size(); i++) {
+                channels.push_back(new channel_opts(OUTPUT, device.c_str(), subdevice, range, reference,
+                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()),
+                                        units_v[i].c_str(), filenames_v[i].c_str()));
+                print_channel_opts(channels[channels.size()-1]);
+        }
+        
         Logger(Debug, "Successfully parsed configuration file [%s].\n", configFile);
 
         return 0;
+
+dealloc_and_fail:
+
+        for (i=0; i<channels.size(); i++)
+                delete channels[i];
+        channels.clear();
+
+        Logger(Debug, "Error while parsing configuration file [%s].\n", configFile);
+
+        return -1;
 }
 
