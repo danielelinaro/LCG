@@ -29,6 +29,7 @@ struct channel_opts {
 };
 
 int parse_configuration_file(const char *filename, std::vector<channel_opts*>& channels);
+
 void print_channel_opts(channel_opts* opts)
 {
         switch(opts->type) {

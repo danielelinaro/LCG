@@ -34,7 +34,7 @@ typedef enum {DEFAULT, SPONTANEOUS, TRIGGERED} recording_mode;
 /// PARSING OF COMMAND LINE ARGUMENTS - START
 
 struct options {
-        options() : tend(0), dt(0), iti(0), ibi(0),
+        options() : tend(-1), dt(0), iti(0), ibi(0),
                 nTrials(0), nBatches(0), holdValue(0),
                 stimulusFiles(), mode(DEFAULT), configFile(NULL) {}
         ~options() {
@@ -228,25 +228,45 @@ static void parse_args(int argc, char *argv[], options *opts)
 
 /// PARSING OF COMMAND LINE ARGUMENTS - END
 
-/*
-int run_trial(const io_options *input, const io_options *output)
+extern std::vector<Stimulus*> stimuli;
+
+int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
 {
-        int i, id, nsteps;
+        int i, id, noutput=0;
+        size_t nsteps;
+        std::vector<std::string> stimfiles;
         ChunkedH5Recorder rec;
         double_dict pars;
-        allocate_stimuli(1);
-        nsteps = ceil(trial_duration / GetGlobalDt());
-        for (i=0, id=0; i<input->nchan; i++, id++)
-                rec.addRecord(id, "AnalogInput", input->units, nsteps, pars);
-        for (i=0; i<output->nchan; i++, id++) {
-                rec.addRecord(id, "Waveform", output->units, nsteps, pars);
-                rec.writeRecord(id, stimuli[i], nsteps);
+
+        for (i=0; i<channels.size(); i++) {
+                if (channels[i]->type == OUTPUT)
+                        stimfiles.push_back(channels[i]->stimfile);
         }
-        Logger(Important, "Trial duration: %g seconds.\n", trial_duration);
-        free_stimuli(1);
+        allocate_stimuli(stimfiles, GetGlobalDt());
+        if (tend < 0) {
+                if (stimfiles.size())
+                        tend = stimuli[0]->duration();
+                else
+                        Logger(Critical, "Negative trial duration, aborting.\n");
+        }
+
+        nsteps = ceil(tend / GetGlobalDt());
+        for (i=0; i<channels.size(); i++) {
+                if (channels[i]->type == INPUT) {
+                        rec.addRecord(i, "AnalogInput", channels[i]->units, nsteps, pars);
+                }
+                else {
+                        rec.addRecord(i, "AnalogOutput", channels[i]->units, nsteps, pars);
+                        const double *data = stimuli[noutput++]->data(&nsteps);
+                        rec.writeRecord(i, data, nsteps);
+                }
+        }
+
+        Logger(Important, "Trial duration: %g seconds.\n", tend);
+        free_stimuli();
+
         return 0;
 }
-*/
 
 int main(int argc, char *argv[])
 {
@@ -256,10 +276,10 @@ int main(int argc, char *argv[])
         }
 
         options opts;
-        //io_options input_opts, output_opts;
         std::vector<channel_opts*> channels;
         int i, j, k;
-        int cnt, total;
+        int cnt = 1, total;
+        int n_input = 0, n_output = 0;
         int err;
 
         SetLoggingLevel(Info);
@@ -280,26 +300,77 @@ int main(int argc, char *argv[])
         Logger(Info, "Holding current: %g pA.\n", opts.holdValue);
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opts.ibi * 1e-6);
 
-        cnt = 1;
-	total = opts.nBatches*opts.stimulusFiles.size()*opts.nTrials;
-	for (i=0; i<opts.nBatches; i++) {
-	        for (j=0; j<opts.stimulusFiles.size(); j++) {
-                        //strncpy(stimulus_files[0], opts.stimulusFiles[j].c_str(), FILENAME_MAXLEN);
-			for (k=0; k<opts.nTrials; k++, cnt++) {
+        for (i=0; i<channels.size(); i++) {
+                switch (channels[i]->type) {
+                case INPUT:
+                        n_input++;
+                        break;
+                case OUTPUT:
+                        n_output++;
+                        break;
+                default:
+                        Logger(Critical, "Unknown channel type.\n");
+                        exit(1);
+                }
+        }
+
+        // we give priority to the stimulus files specified on the command line.
+        if (opts.stimulusFiles.size()) {
+                // if the user specified a stimulus file on the command line, there
+                // must be exactly one output channel.
+                if (n_output == 0) {
+                        Logger(Critical, "Exactly one output channel must be present in the configuration file when"
+                                        "specifying stimulus files on the command line.\n");
+                        exit(1);
+                }
+                if (n_output > 1) {
+                        Logger(Critical, "Only one output channel is allowed when specifying stimulus files on the command line.\n");
+                        exit(1);
+                }
+
+                // let's find the output channel
+                channel_opts *output_chan;
+                for (i=0; i<channels.size(); i++) {
+                        if (channels[i]->type == OUTPUT) {
+                                output_chan = channels[i];
+                                break;
+                        }
+                }
+
+        	total = opts.nBatches*opts.stimulusFiles.size()*opts.nTrials;
+        	for (i=0; i<opts.nBatches; i++) {
+        	        for (j=0; j<opts.stimulusFiles.size(); j++) {
+                                strncpy(output_chan->stimfile, opts.stimulusFiles[j].c_str(), FILENAME_MAXLEN);
+        			for (k=0; k<opts.nTrials; k++, cnt++) {
+                                        Logger(Important, "Trial: %d of %d.\n", cnt, total);
+                                        err = run_trial(channels, opts.tend);
+                                        if (err || KILL_PROGRAM())
+                                                goto endMain;
+                                        if (k != opts.nTrials-1)
+                                                usleep(opts.iti);
+                                }
+                                if (j != opts.stimulusFiles.size()-1)
+                                        usleep(opts.iti);
+        		}
+        		if (i != opts.nBatches-1)
+                                usleep(opts.ibi);
+        	}
+        }
+        else {
+        	total = opts.nBatches*opts.nTrials;
+        	for (i=0; i<opts.nBatches; i++) {
+        		for (j=0; j<opts.nTrials; j++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                //err = run_trial(&input_opts, &output_opts);
-                                err = 0;
+                                err = run_trial(channels, opts.tend);
                                 if (err || KILL_PROGRAM())
                                         goto endMain;
-                                if (k != opts.nTrials-1)
+                                if (j != opts.nTrials-1)
                                         usleep(opts.iti);
                         }
-                        if (j != opts.stimulusFiles.size()-1)
-                                usleep(opts.iti);
-		}
-		if (i != opts.nBatches-1)
-                        usleep(opts.ibi);
-	}
+        		if (i != opts.nBatches-1)
+                                usleep(opts.ibi);
+        	}
+        }
 
 endMain:
         return err;

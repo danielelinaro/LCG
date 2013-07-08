@@ -484,11 +484,11 @@ bool H5RecorderCore::writeData(const char *datasetName, int rank, const hsize_t 
 //~~~
 
 struct thread_data {
-        thread_data(ChunkedH5Recorder *recorder, uint id, double *data, size_t length)
+        thread_data(ChunkedH5Recorder *recorder, uint id, const double *data, size_t length)
                 : m_self(recorder), m_id(id), m_data(data), m_length(length) {}
         ChunkedH5Recorder *m_self;
         uint m_id;
-        double *m_data;
+        const double *m_data;
         hsize_t m_length;
 };
 
@@ -580,7 +580,7 @@ bool ChunkedH5Recorder::addRecord(uint id, const char *name, const char *units,
         return true;
 }
 
-bool ChunkedH5Recorder::writeRecord(uint id, double *data, size_t length)
+bool ChunkedH5Recorder::writeRecord(uint id, const double *data, size_t length)
 {
         if (std::find(m_ids.begin(), m_ids.end(), id) == m_ids.end()) {
                 Logger(Critical, "%d: no such ID.\n", id);
@@ -600,7 +600,7 @@ void* ChunkedH5Recorder::writerThread(void *arg)
 
         ChunkedH5Recorder *self = data->m_self;
         uint id = data->m_id;
-        double *buffer = data->m_data;
+        const double *buffer = data->m_data;
         hid_t filespace;
         herr_t status;
         hsize_t start = self->m_datasetSizes[id], count = data->m_length;

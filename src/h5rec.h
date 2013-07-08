@@ -121,7 +121,7 @@ public:
         bool addRecord(uint id, const char *name, const char *units,
                        size_t recordLength, const double_dict& parameters,
                        const double *metadata = NULL, const size_t *metadataDims = NULL);
-        bool writeRecord(uint id, double *data, size_t length);
+        bool writeRecord(uint id, const double *data, size_t length);
         
 public:
         static const int rank;

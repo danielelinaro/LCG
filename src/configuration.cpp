@@ -177,7 +177,7 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
         for (i=0; i<channels_v.size(); i++) {
                 channels.push_back(new channel_opts(INPUT, device.c_str(), subdevice, range, reference,
                                         atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), units_v[i].c_str()));
-                print_channel_opts(channels[i]);
+                //print_channel_opts(channels[i]);
         }
         
         //// OUTPUT ////
@@ -277,7 +277,7 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
                 channels.push_back(new channel_opts(OUTPUT, device.c_str(), subdevice, range, reference,
                                         atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()),
                                         units_v[i].c_str(), filenames_v[i].c_str()));
-                print_channel_opts(channels[channels.size()-1]);
+                //print_channel_opts(channels[channels.size()-1]);
         }
         
         Logger(Debug, "Successfully parsed configuration file [%s].\n", configFile);

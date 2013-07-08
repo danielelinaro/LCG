@@ -120,6 +120,11 @@ double Stimulus::duration() const
         return length() * dt();
 }
 
+double Stimulus::dt() const
+{
+        return m_dt;
+}
+
 size_t Stimulus::length() const
 {
         return m_length;
