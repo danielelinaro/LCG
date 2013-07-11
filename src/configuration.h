@@ -5,6 +5,7 @@
 #include "types.h"
 #include <vector>
 #include <stdio.h>
+#include <string.h>
 
 typedef enum {INPUT, OUTPUT} channel_type;
 

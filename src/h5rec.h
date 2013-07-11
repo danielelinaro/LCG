@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 #include <hdf5.h>
 #include <vector>
 #include <deque>
