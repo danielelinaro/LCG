@@ -233,15 +233,23 @@ extern std::vector<Stimulus*> stimuli;
 
 int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
 {
-        int i, id, noutput=0;
+        int i, j, err, *retval;
         size_t nsteps;
+        double *buf = NULL;
         std::vector<std::string> stimfiles;
+        std::vector<channel_opts*> in_channels, out_channels;
         ChunkedH5Recorder rec;
         double_dict pars;
+        pthread_t io_thrd;
 
         for (i=0; i<channels.size(); i++) {
-                if (channels[i]->type == OUTPUT)
+                if (channels[i]->type == OUTPUT) {
+                        out_channels.push_back(channels[i]);
                         stimfiles.push_back(channels[i]->stimfile);
+                }
+                else {
+                        in_channels.push_back(channels[i]);
+                }
         }
         allocate_stimuli(stimfiles, GetGlobalDt());
         if (tend < 0) {
@@ -252,23 +260,34 @@ int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
         }
 
         nsteps = ceil(tend / GetGlobalDt());
-        for (i=0; i<channels.size(); i++) {
-                if (channels[i]->type == INPUT) {
-                        rec.addRecord(i, "AnalogInput", channels[i]->units, nsteps, pars);
-                }
-                else {
-                        rec.addRecord(i, "AnalogOutput", channels[i]->units, nsteps, pars);
-                        const double *data = stimuli[noutput++]->data(&nsteps);
-                        rec.writeRecord(i, data, nsteps);
-                }
+        for (i=0; i<in_channels.size(); i++)
+                rec.addRecord(i, "AnalogInput", in_channels[i]->units, nsteps, pars);
+        for (i=0; i<out_channels.size(); i++) {
+                rec.addRecord(in_channels.size()+i, "AnalogOutput", channels[i]->units, nsteps, pars);
+                const double *data = stimuli[i]->data(&nsteps);
+                rec.writeRecord(in_channels.size()+i, data, nsteps);
         }
         Logger(Important, "Trial duration: %g seconds.\n", tend);
-        rec.waitOnWriterThreads();
+
+        io_thread_arg arg(tend, GetGlobalDt(), &in_channels, &out_channels);
+        pthread_create(&io_thrd, NULL, io_thread, (void *) &arg);
+        pthread_join(io_thrd, (void **) &retval);
+        err = *retval;
+        delete retval;
+        if (! err) {
+                nsteps = ceil(arg.data_length/in_channels.size());
+                buf = new double[nsteps];
+                for (i=0; i<in_channels.size(); i++) {
+                        for (j=0; j<nsteps; j++)
+                                buf[j] = arg.data[i+j*in_channels.size()];
+                        rec.writeRecord(i, buf, nsteps);
+                        rec.waitForWriterThreads();
+                }
+        }
+        if (buf)
+                delete buf;
         free_stimuli();
-
-        setup_io(channels, GetGlobalDt(), tend);
-
-        return 0;
+        return err;
 }
 
 int main(int argc, char *argv[])
@@ -280,6 +299,7 @@ int main(int argc, char *argv[])
 
         options opts;
         std::vector<channel_opts*> channels;
+        std::vector<int> to_remove;
         int i, j, k;
         int cnt = 1, total;
         int n_input = 0, n_output = 0;
@@ -309,12 +329,22 @@ int main(int argc, char *argv[])
                         n_input++;
                         break;
                 case OUTPUT:
-                        n_output++;
+                        // if an output channel has no stimulus file in the configuration file
+                        // and there is no stimulus file specified on the command line, we simply
+                        // ignore that output channel
+                        if (strlen(channels[i]->stimfile) == 0 && opts.stimulusFiles.size() == 0)
+                                to_remove.push_back(i);
+                        else
+                                n_output++;
                         break;
                 default:
                         Logger(Critical, "Unknown channel type.\n");
                         exit(1);
                 }
+        }
+        while (!to_remove.empty()) {
+                channels.erase(channels.begin() + to_remove.back());
+                to_remove.pop_back();
         }
 
         // we give priority to the stimulus files specified on the command line.

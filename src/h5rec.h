@@ -124,7 +124,7 @@ public:
                        const double *metadata = NULL, const size_t *metadataDims = NULL);
         bool writeRecord(uint id, const double *data, size_t length);
 
-        void waitOnWriterThreads();
+        void waitForWriterThreads();
         
 public:
         static const int rank;
