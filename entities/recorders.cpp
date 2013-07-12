@@ -2,6 +2,9 @@
 #include <time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "common.h"
+#if defined(HAVE_LIBRT)
+#include "engine.h"
+#endif
 
 lcg::Entity* H5RecorderFactory(string_dict& args)
 {       

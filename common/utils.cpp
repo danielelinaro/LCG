@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <signal.h>
+#include <math.h>
 
 #include <sstream>
 #include <algorithm>

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I../stimgen -I../common -I.
+AM_CPPFLAGS = -I../stimgen -I../common -I../rt -I.
 lib_LTLIBRARIES = liblcg_entities.la
 liblcg_entities_la_SOURCES = entity.cpp dynamical_entity.cpp synapses.cpp neurons.cpp poisson_generator.cpp waveform.cpp recorders.cpp periodic_pulse.cpp currents.cpp delay.cpp conductance_stimulus.cpp trigger.cpp pid.cpp frequency_estimator.cpp event_counter.cpp connections.cpp functors.cpp constants.cpp converter.cpp probability_estimator.cpp events.cpp
 liblcg_entities_la_LDFLAGS = -version-info ${LIB_VER}

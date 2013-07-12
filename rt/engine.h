@@ -28,7 +28,6 @@ int Simulate(std::vector<Entity*> *entities, double tend);
 
 #ifdef REALTIME_ENGINE
 extern double globalTimeOffset;
-#define NSEC_PER_SEC 1000000000
 #define GetGlobalTimeOffset() globalTimeOffset
 #endif
 
