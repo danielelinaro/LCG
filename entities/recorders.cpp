@@ -1,7 +1,6 @@
 #include <sstream>
 #include <time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
-#include "engine.h"
 #include "common.h"
 
 lcg::Entity* H5RecorderFactory(string_dict& args)

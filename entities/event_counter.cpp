@@ -1,6 +1,5 @@
 #include <strings.h>
 #include "event_counter.h"
-#include "engine.h"
 
 lcg::Entity* EventCounterFactory(string_dict& args)
 {

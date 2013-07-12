@@ -2,7 +2,6 @@
 #include "events.h"
 #include "thread_safe_queue.h"
 #include "poisson_generator.h"
-#include "engine.h"
 
 lcg::Entity* PoissonFactory(string_dict& args)
 {

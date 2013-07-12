@@ -1,5 +1,4 @@
 #include "trigger.h"
-#include "engine.h"
 
 lcg::Entity* PeriodicTriggerFactory(string_dict& args)
 {

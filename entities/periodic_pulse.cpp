@@ -1,6 +1,6 @@
 #include <math.h>
 #include "periodic_pulse.h"
-#include "engine.h"
+#include "utils.h"
 
 lcg::Entity* PeriodicPulseFactory(string_dict& args)
 {

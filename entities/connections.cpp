@@ -1,6 +1,6 @@
 #include "connections.h"
-#include "engine.h"
 #include "common.h"
+#include "utils.h"
 #include "synapses.h"
 
 lcg::Entity* ConnectionFactory(string_dict& args)

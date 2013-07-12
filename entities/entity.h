@@ -32,10 +32,14 @@
 #include "utils.h"
 #include "events.h"
 
+#if defined(__APPLE__)
+#define ENTITIES_LIBNAME "liblcg_entities.dylib"
+#elif defined(__linux__)
+#define ENTITIES_LIBNAME "liblcg_entities.so"
+#endif
+
 namespace lcg
 {
-
-class Entity;
 
 /*!
  * \class Entity
@@ -224,6 +228,8 @@ class EntitySorter {
 public:
     bool operator() (const Entity* e1, const Entity* e2) { return e1->id() < e2->id(); }
 };
+
+Entity* EntityFactory(const char *name, string_dict& args);
 
 }
 

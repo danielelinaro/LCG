@@ -4,7 +4,7 @@ AC_PREREQ([2.61])
 # init autoconf, automake and libtool
 AC_INIT([lcg], [0.9.1], [daniele.linaro@ua.ac.be])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([src/utils.h])
+AC_CONFIG_SRCDIR([common/utils.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
@@ -34,7 +34,9 @@ AC_C_INLINE
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile
 		stimgen/Makefile
-		src/Makefile
+		common/Makefile
+                entities/Makefile
+                rt/Makefile
 		bin/Makefile
 		bin/scripts/Makefile])
 

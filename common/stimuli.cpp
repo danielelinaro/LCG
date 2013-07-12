@@ -7,7 +7,6 @@
 #include "generate_trial.h"
 #include "common.h"
 #include "utils.h"
-#include "engine.h"
 using namespace lcg;
 
 std::vector<Stimulus*> stimuli;

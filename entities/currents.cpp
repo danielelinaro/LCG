@@ -1,6 +1,6 @@
 #include <math.h>
 #include "currents.h"
-#include "engine.h"
+#include "utils.h"
 
 lcg::Entity* HHSodiumFactory(string_dict& args)
 {

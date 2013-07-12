@@ -4,7 +4,6 @@
 #include "events.h"
 #include "thread_safe_queue.h"
 #include "utils.h"
-#include "engine.h"
 
 lcg::Entity* LIFNeuronFactory(string_dict& args)
 {

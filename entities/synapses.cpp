@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "synapses.h"
-#include "engine.h"
+#include "utils.h"
 #include "neurons.h"
 
 lcg::Entity* ExponentialSynapseFactory(string_dict& args)

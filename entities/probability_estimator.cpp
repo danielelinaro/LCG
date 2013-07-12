@@ -1,5 +1,4 @@
 #include "probability_estimator.h"
-#include "engine.h"
 #include <math.h>
 
 lcg::Entity* ProbabilityEstimatorFactory(string_dict& args)

@@ -20,6 +20,7 @@
  *
  *=========================================================================*/
 
+#include <dlfcn.h>
 #include "entity.h"
 #include "thread_safe_queue.h"
 
@@ -157,6 +158,46 @@ void Entity::setUnits(const std::string& units)
 {
         m_units = units;
 }
+
+Entity* EntityFactory(const char *entityName, string_dict& args)
+{
+        Entity *entity = NULL;
+        Factory builder;
+        void *library, *addr;
+        char symbol[50] = {0};
+
+        library = dlopen(ENTITIES_LIBNAME, RTLD_LAZY);
+        if (library == NULL) {
+                Logger(Critical, "Unable to open library %s.\n", ENTITIES_LIBNAME);
+                return NULL;
+        }
+        Logger(Debug, "Successfully opened library %s.\n", ENTITIES_LIBNAME);
+
+        sprintf(symbol, "%sFactory", entityName);
+
+        addr = dlsym(library, symbol);
+        if (addr == NULL) {
+                Logger(Critical, "Unable to find symbol %s.\n", symbol);
+                goto close_lib;
+        }
+        else {
+                Logger(Debug, "Successfully found symbol %s.\n", symbol);
+        }
+
+        builder = (Factory) addr;
+        entity = builder(args);
+
+close_lib:
+        if (dlclose(library) == 0) {
+                Logger(Debug, "Successfully closed library %s.\n", ENTITIES_LIBNAME);
+        }
+        else {
+                Logger(Critical, "Unable to close library %s: %s.\n", ENTITIES_LIBNAME, dlerror());
+        }
+
+        return entity;
+}
+
 
 } // namespace lcg
 

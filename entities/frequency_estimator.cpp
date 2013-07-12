@@ -1,5 +1,4 @@
 #include "frequency_estimator.h"
-#include "engine.h"
 #include <math.h>
 
 lcg::Entity* FrequencyEstimatorFactory(string_dict& args)

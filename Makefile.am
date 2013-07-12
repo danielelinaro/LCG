@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = stimgen src bin bin/scripts
+SUBDIRS = stimgen common entities rt bin bin/scripts
 if EXAMPLES
 SUBDIRS += examples
 endif

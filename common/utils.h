@@ -3,35 +3,15 @@
 
 #include <vector>
 #include "types.h"
+#include "common.h"
+#include "h5rec.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef HAVE_LIBLXRT
-#include <rtai_lxrt.h>
-
-/** Convert internal count units to milliseconds */
-#define count2ms(t)     ((double) count2nano(t)*1e-6)
-/** Convert milliseconds to internal count units*/
-#define ms2count(t)     nano2count((t)*1e6)
-/** Convert internal count units to seconds */
-#define count2sec(t)     ((double) count2nano(t)*1e-9)
-/** Convert seconds to internal count units */
-#define sec2count(t)     nano2count((t)*1e9)
-
-#endif // HAVE_LIBLXRT
-
-#if defined(__APPLE__)
-#define LIBNAME "liblcg.dylib"
-#elif defined(__linux__)
-#define LIBNAME "liblcg.so"
-#endif
-
 namespace lcg
 {
-
-class Entity;
 
 typedef enum
 {
@@ -64,12 +44,39 @@ bool CheckAndExtractUnsignedLongLong(string_dict& dict, const char *key, unsigne
 bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value);
 void MakeFilename(char *filename, const char *extension);
 
-Entity* EntityFactory(const char *name, string_dict& args);
-
 /**
  * So far converts only Hz to seconds and vice versa.
  */
 bool ConvertUnits(double x, double *y, const char *unitsIn, const char *unitsOut);
+
+double SetGlobalDt(double dt);
+
+extern double globalT;
+extern double globalDt;
+extern double runTime;
+#define GetGlobalDt() globalDt
+#define GetGlobalTime() globalT
+#define IncreaseGlobalTime() (globalT += globalDt)
+#define ResetGlobalTime()  (globalT = 0.0)
+#define SetRunTime(tend) (runTime = tend)
+#define GetRunTime() runTime
+
+////// SIGNAL HANDLING CODE - START /////
+extern bool programRun;
+extern bool trialRun;
+#define KILL_PROGRAM() !programRun
+#define TERMINATE_TRIAL() !trialRun
+bool SetupSignalCatching();
+////// SIGNAL HANDLING CODE - END /////
+
+void SetTrialRun(bool value);
+/*! Stops the execution of the program (like issuing a SIGINT signal). */
+void KillProgram();
+/*! Stops the execution of the current trial. */
+void TerminateTrial();
+
+void StartCommentsReaderThread(H5RecorderCore *rec);
+void StopCommentsReaderThread();
 
 } // namespace lcg
 

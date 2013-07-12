@@ -1,6 +1,5 @@
 #include <math.h>
 #include "delay.h"
-#include "engine.h"
 
 lcg::Entity* DelayFactory(string_dict& args)
 {

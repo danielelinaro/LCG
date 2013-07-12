@@ -23,7 +23,6 @@
 #include "events.h"
 #include "entity.h"
 #include "thread_safe_queue.h"
-#include "engine.h"
 
 namespace lcg {
 

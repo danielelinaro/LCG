@@ -1,7 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include <signal.h>
 #include "types.h"
 #include "utils.h"
 
@@ -9,24 +8,23 @@
 #include "config.h"
 #endif // HAVE_CONFIG_H
 
+#ifdef HAVE_LIBLXRT
+#include <rtai_lxrt.h>
+
+/** Convert internal count units to milliseconds */
+#define count2ms(t)     ((double) count2nano(t)*1e-6)
+/** Convert milliseconds to internal count units*/
+#define ms2count(t)     nano2count((t)*1e6)
+/** Convert internal count units to seconds */
+#define count2sec(t)     ((double) count2nano(t)*1e-9)
+/** Convert seconds to internal count units */
+#define sec2count(t)     nano2count((t)*1e9)
+
+#endif // HAVE_LIBLXRT
+
 namespace lcg {
 
-namespace recorders {
-class Recorder;
-}
-
-double SetGlobalDt(double dt);
 int Simulate(std::vector<Entity*> *entities, double tend);
-
-extern double globalT;
-extern double globalDt;
-extern double runTime;
-#define GetGlobalDt() globalDt
-#define GetGlobalTime() globalT
-#define IncreaseGlobalTime() (globalT += globalDt)
-#define ResetGlobalTime()  (globalT = 0.0)
-#define SetRunTime(tend) (runTime = tend)
-#define GetRunTime() runTime
 
 #ifdef REALTIME_ENGINE
 extern double globalTimeOffset;
@@ -53,19 +51,6 @@ extern double realtimeDt;
 #define SCHEDULER SCHED_RR
 #define SetGlobalTimeOffset(now) (globalTimeOffset = now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC))
 #endif // HAVE_LIBRT
-
-////// SIGNAL HANDLING CODE - START /////
-extern bool programRun;
-extern bool trialRun;
-#define KILL_PROGRAM() !programRun
-#define TERMINATE_TRIAL() !trialRun
-bool SetupSignalCatching();
-////// SIGNAL HANDLING CODE - END /////
-
-/*! Stops the execution of the program (like issuing a SIGINT signal). */
-void KillProgram();
-/*! Stops the execution of the current trial. */
-void TerminateTrial();
 
 } // namespace lcg
 

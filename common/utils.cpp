@@ -4,24 +4,20 @@
 #include <assert.h>
 #include <string.h>
 #include <strings.h>
-#include <dlfcn.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <signal.h>
 
 #include <sstream>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 #include "utils.h"
-#include "events.h"
-#include "entity.h"
-#include "types.h"
-#include "engine.h"
-#include "common.h"
 
 /* colors */
 #define ESC ''
@@ -32,6 +28,183 @@
 
 namespace lcg
 {
+
+double globalT;
+double globalDt = SetGlobalDt(1.0/20e3);
+double runTime;
+
+////// COMMENTS HANDLING CODE - START //////
+
+bool readingComment = false;
+pthread_t commentsThread;
+pthread_mutex_t commentsMutex;
+pthread_cond_t commentsCV;
+
+void* CommentsReader(void *arg)
+{
+        H5RecorderCore *rec = static_cast<H5RecorderCore*>(arg);
+        Logger(Debug, "CommentsReader started.\n");
+        char c, msg[COMMENT_MAXLEN];
+        time_t now;
+        while (!TERMINATE_TRIAL()) {
+                if ((c = getchar()) == 'c') {
+                        pthread_mutex_lock(&commentsMutex);
+                        readingComment = true;
+                        getchar(); // remove the newline character
+                        now = time(NULL);
+                        Logger(Critical, "Enter comment: ");
+                        std::cin.getline(msg, COMMENT_MAXLEN);
+                        rec->addComment(msg, &now);
+                        readingComment = false;
+                        pthread_mutex_unlock(&commentsMutex);
+                }
+                pthread_cond_signal(&commentsCV);
+        }
+        Logger(Debug, "CommentsReader ended.\n");
+        pthread_exit(NULL);
+}
+
+void StartCommentsReaderThread(H5RecorderCore *rec)
+{
+        if (rec != NULL) {
+                int err = pthread_mutex_init(&commentsMutex, NULL);
+                if (err) {
+                        Logger(Critical, "pthread_mutex_init: %s\n", strerror(err));
+                        return;
+                }
+                err = pthread_cond_init(&commentsCV, NULL);
+                if (err) {
+                        Logger(Critical, "pthread_cond_init: %s\n", strerror(err));
+                        return;
+                }
+                err = pthread_create(&commentsThread, NULL, CommentsReader, (void *) rec);
+                if (err) {
+                        Logger(Critical, "pthread_create: %s\n", strerror(err));
+                        return;
+                }
+                else {
+                        Logger(Debug, "Comments reader thread started.\n");
+                }
+        }
+        else {
+                Logger(Important, "Not a valid H5RecorderCore object: not starting the comments reader thread.\n");
+        }
+}
+
+void StopCommentsReaderThread()
+{
+        Logger(Debug, "Stopping comments reader thread.\n");
+        pthread_mutex_lock(&commentsMutex);
+        while (readingComment)
+                pthread_cond_wait(&commentsCV, &commentsMutex);
+        pthread_mutex_unlock(&commentsMutex);
+        if (pthread_cancel(commentsThread) == 0)
+                Logger(Debug, "Comments reader thread stopped.\n");
+        else
+                Logger(Critical, "No such thread.\n");
+        pthread_mutex_destroy(&commentsMutex);
+        pthread_cond_destroy(&commentsCV);
+}
+
+////// COMMENTS HANDLING CODE - END //////
+
+////// SIGNAL HANDLING CODE - START //////
+
+bool programRun = true; 
+bool trialRun = false; 
+pthread_mutex_t programRunMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t trialRunMutex = PTHREAD_MUTEX_INITIALIZER;
+
+void TerminationHandler(int signum)
+{
+        if (signum == SIGINT || signum == SIGHUP) {
+                Logger(Critical, "Terminating the program.\n");
+                KillProgram();
+        }
+}
+
+bool SetupSignalCatching()
+{
+        struct sigaction oldAction, newAction;
+        int i, sig[] = {SIGINT, SIGHUP, -1};
+        // set up the structure to specify the new action.
+        newAction.sa_handler = TerminationHandler;
+        sigemptyset(&newAction.sa_mask);
+        newAction.sa_flags = 0;
+        i = 0;
+        while (sig[i] != -1) {
+                if (sigaction(sig[i], NULL, &oldAction) != 0) {
+                        perror("Error on sigaction:");
+                        return false;
+                }
+                if (oldAction.sa_handler != SIG_IGN) {
+                        if (sigaction(sig[i], &newAction, NULL) != 0) {
+                             perror("Error on sigaction:");
+                             return false;
+                        }
+                }
+                i++;
+        }
+        return true;
+}
+
+////// SIGNAL HANDLING CODE - END //////
+
+void SetTrialRun(bool value)
+{
+        Logger(Debug, "SetTrialRun(%s)\n", value ? "True" : "False");
+        pthread_mutex_lock(&trialRunMutex);
+        trialRun = value;
+        pthread_mutex_unlock(&trialRunMutex);
+}
+
+void KillProgram()
+{
+        Logger(Debug, "KillProgram()\n");
+        TerminateTrial();
+        pthread_mutex_lock(&programRunMutex);
+        programRun = false;
+}
+
+void TerminateTrial()
+{
+        Logger(Debug, "TerminateTrial()\n");
+        SetTrialRun(false);
+}
+
+double SetGlobalDt(double dt)
+{
+        assert(dt > 0.0);
+        globalDt = dt;
+
+#ifdef HAVE_LIBLXRT
+        Logger(Debug, "Starting RT timer.\n");
+        RTIME period = start_rt_timer(sec2count(dt));
+        realtimeDt = count2sec(period);
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", realtimeDt*1e3, 1./realtimeDt);
+#ifndef NO_STOP_RT_TIMER
+        Logger(Debug, "Stopping RT timer.\n");
+        stop_rt_timer();
+#endif // NO_STOP_RT_TIMER
+#endif // HAVE_LIBLXRT
+
+#ifdef HAVE_LIBANALOGY
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
+#endif // HAVE_LIBANALOGY
+
+#ifdef HAVE_LIBRT
+        struct timespec ts;
+        clock_getres(CLOCK_REALTIME, &ts);
+        if (ts.tv_nsec != 1) {
+                long cycles = round(globalDt * NSEC_PER_SEC / ts.tv_nsec);
+                globalDt = cycles * ts.tv_nsec / NSEC_PER_SEC;
+        }
+        Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
+#endif // HAVE_LIBRT
+
+        assert(globalDt > 0.0);
+        return globalDt;
+}
 
 LogLevel verbosity = Info;
 uint progressiveId = -1;
@@ -243,45 +416,6 @@ void MakeFilename(char *filename, const char *extension)
         }
 
         delete base;
-}
-
-Entity* EntityFactory(const char *entityName, string_dict& args)
-{
-        Entity *entity = NULL;
-        Factory builder;
-        void *library, *addr;
-        char symbol[50] = {0};
-
-        library = dlopen(LIBNAME, RTLD_LAZY);
-        if (library == NULL) {
-                Logger(Critical, "Unable to open library %s.\n", LIBNAME);
-                return NULL;
-        }
-        Logger(Debug, "Successfully opened library %s.\n", LIBNAME);
-
-        sprintf(symbol, "%sFactory", entityName);
-
-        addr = dlsym(library, symbol);
-        if (addr == NULL) {
-                Logger(Critical, "Unable to find symbol %s.\n", symbol);
-                goto close_lib;
-        }
-        else {
-                Logger(Debug, "Successfully found symbol %s.\n", symbol);
-        }
-
-        builder = (Factory) addr;
-        entity = builder(args);
-
-close_lib:
-        if (dlclose(library) == 0) {
-                Logger(Debug, "Successfully closed library %s.\n", LIBNAME);
-        }
-        else {
-                Logger(Critical, "Unable to close library %s: %s.\n", LIBNAME, dlerror());
-        }
-
-        return entity;
 }
 
 bool ConvertUnits(double x, double *y, const char *unitsIn, const char *unitsOut)

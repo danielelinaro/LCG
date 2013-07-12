@@ -6,7 +6,6 @@
 #include "waveform.h"
 #include "generate_trial.h"
 #include "events.h"
-#include "engine.h"
 
 lcg::Entity* WaveformFactory(string_dict& args)
 {
