@@ -18,10 +18,8 @@
 #include "configuration.h"
 #include "stimuli.h"
 #include "h5rec.h"
+#ifdef ANALOG_IO
 #include "daq_io.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
 #endif
 
 using namespace lcg;
@@ -233,6 +231,7 @@ extern std::vector<Stimulus*> stimuli;
 
 int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
 {
+#ifdef ANALOG_IO
         int i, j, err, *retval;
         size_t nsteps;
         double *buf = NULL;
@@ -288,6 +287,9 @@ int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
                 delete buf;
         free_stimuli();
         return err;
+#else
+        return 0;
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -314,7 +316,7 @@ int main(int argc, char *argv[])
         err = parse_configuration_file(opts.configFile, channels);
         if (err) {
                 Logger(Critical, "Unable to parse the configuration file.\n");
-                goto endMain;
+                goto end_main;
         }
 
         Logger(Info, "Number of batches: %d.\n", opts.nBatches);
@@ -378,7 +380,7 @@ int main(int argc, char *argv[])
                                         Logger(Important, "Trial: %d of %d.\n", cnt, total);
                                         err = run_trial(channels, opts.tend);
                                         if (err || KILL_PROGRAM())
-                                                goto endMain;
+                                                goto end_main;
                                         if (k != opts.nTrials-1)
                                                 usleep(opts.iti);
                                 }
@@ -396,7 +398,7 @@ int main(int argc, char *argv[])
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
                                 err = run_trial(channels, opts.tend);
                                 if (err || KILL_PROGRAM())
-                                        goto endMain;
+                                        goto end_main;
                                 if (j != opts.nTrials-1)
                                         usleep(opts.iti);
                         }
@@ -405,7 +407,7 @@ int main(int argc, char *argv[])
         	}
         }
 
-endMain:
+end_main:
         return err;
 }
 
