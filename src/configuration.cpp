@@ -295,3 +295,28 @@ dealloc_and_fail:
         return -1;
 }
 
+void print_channel_opts(channel_opts* opts)
+{
+        switch(opts->type) {
+        case INPUT:
+                printf("Device type: INPUT\n");
+                break;
+        case OUTPUT:
+                printf("Device type: OUTPUT\n");
+                break;
+        default:
+                printf("Unknown device type.\n");
+                return;
+        }
+        printf("Device: %s\n", opts->device);
+        printf("Subdevice: %d\n", opts->subdevice);
+        printf("Range: %d\n", opts->range);
+        printf("Reference: %d\n", opts->reference);
+        printf("Conversion factor: %g\n", opts->conversionFactor);
+        printf("Channel: %d\n", opts->channel);
+        printf("Units: %s\n", opts->units);
+        if (strlen(opts->stimfile))
+                printf("Stimfile: %s\n", opts->stimfile);
+        printf("\n");
+}
+

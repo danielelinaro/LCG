@@ -17,8 +17,8 @@ AM_CPPFLAGS += -DANALOG_IO
 liblcg_la_SOURCES += analog_io.cpp
 include_HEADERS += analog_io.h
 if COMEDI
-liblcg_la_SOURCES += comedi_io.cpp
-include_HEADERS += comedi_io.h
+liblcg_la_SOURCES += comedi_io.cpp daq_io.cpp
+include_HEADERS += comedi_io.h daq_io.h
 endif
 if ANALOGY
 liblcg_la_SOURCES += analogy_io.cpp

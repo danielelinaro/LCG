@@ -506,10 +506,7 @@ ChunkedH5Recorder::ChunkedH5Recorder(bool compress, const char *filename)
 
 ChunkedH5Recorder::~ChunkedH5Recorder()
 {
-        for (int i=0; i<m_writerThreads.size(); i++) {
-                pthread_join(*m_writerThreads[i], NULL);
-                delete m_writerThreads[i];
-        }
+        waitOnWriterThreads();
         closeFile();
 }
 
@@ -653,6 +650,15 @@ void* ChunkedH5Recorder::writerThread(void *arg)
         }
         H5Sclose(filespace);
         pthread_exit(NULL);
+}
+
+void ChunkedH5Recorder::waitOnWriterThreads()
+{
+        for (int i=0; i<m_writerThreads.size(); i++) {
+                pthread_join(*m_writerThreads[i], NULL);
+                delete m_writerThreads[i];
+        }
+        m_writerThreads.clear();
 }
 
 }

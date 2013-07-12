@@ -18,6 +18,7 @@
 #include "configuration.h"
 #include "stimuli.h"
 #include "h5rec.h"
+#include "daq_io.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -191,7 +192,7 @@ static void parse_args(int argc, char *argv[], options *opts)
                         closedir(dirp);
                         break;
                 case 'f':
-                        if (opts->tend != 0) {
+                        if (opts->tend > 0) {
                                 Logger(Critical, "You cannot specify -d and either -f or -D simultaneously.\n");
                                 exit(1);
                         }
@@ -261,9 +262,11 @@ int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
                         rec.writeRecord(i, data, nsteps);
                 }
         }
-
         Logger(Important, "Trial duration: %g seconds.\n", tend);
+        rec.waitOnWriterThreads();
         free_stimuli();
+
+        setup_io(channels, GetGlobalDt(), tend);
 
         return 0;
 }
