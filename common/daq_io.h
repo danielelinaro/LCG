@@ -12,24 +12,66 @@
 
 #include <vector>
 
-#include "configuration.h"
+#include "stimulus.h"
+
+class Channel {
+public:
+        Channel(const char *device, uint subdevice, uint range, uint reference,
+                uint channel, double conversionFactor, double samplingRate, const char *units);
+        virtual ~Channel();
+        const char* device() const;
+        uint subdevice() const;
+        uint range() const;
+        uint reference() const;
+        uint channel() const;
+        double conversionFactor() const;
+        double samplingRate() const;
+        const char* units() const;
+
+private:
+        char m_device[FILENAME_MAXLEN];
+        uint m_subdevice, m_range, m_reference, m_channel;
+        double m_conversionFactor, m_samplingRate;
+        char m_units[10];
+};
+
+class InputChannel : public Channel {
+public:
+        InputChannel(const char *device, uint subdevice, uint range, uint reference,
+                uint channel, double conversionFactor, double samplingRate, const char *units);
+        ~InputChannel();
+        const double* data(size_t *length) const;
+        bool allocateDataBuffer(double tend);
+        double& operator[](int i);
+        double& at(int i);
+private:
+        double *m_data;
+        size_t m_dataLength;
+};
+
+class OutputChannel : public Channel {
+public:
+        OutputChannel(const char *device, uint subdevice, uint range, uint reference,
+                uint channel, double conversionFactor, double samplingRate,
+                const char *units, const char *stimfile);
+        const char* stimulusFile() const;
+        bool setStimulusFile(const char *filename);
+        const Stimulus* stimulus() const;
+private:
+        Stimulus m_stimulus;
+};
 
 struct io_thread_arg {
         io_thread_arg(double final_time, double time_step,
-                      const std::vector<channel_opts*>* input,
-                      const std::vector<channel_opts*>* output)
+                      const std::vector<InputChannel*>* input,
+                      const std::vector<OutputChannel*>* output)
                 : tend(final_time), dt(time_step),
                   input_channels(input), output_channels(output),
-                  data(NULL), data_length(0) {}
-        ~io_thread_arg() {
-                if (data_length)
-                        delete data;
-        }
+                  nsteps(0) {}
         double tend, dt;
-        const std::vector<channel_opts*>* input_channels;
-        const std::vector<channel_opts*>* output_channels;
-        double *data;
-        size_t data_length;
+        const std::vector<InputChannel*>* input_channels;
+        const std::vector<OutputChannel*>* output_channels;
+        size_t nsteps;
 };
 
 /**

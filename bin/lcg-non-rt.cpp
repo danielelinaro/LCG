@@ -16,17 +16,13 @@
 #include "types.h"
 #include "utils.h"
 #include "configuration.h"
-#include "stimuli.h"
+#include "stimulus.h"
 #include "h5rec.h"
 #ifdef ANALOG_IO
 #include "daq_io.h"
 #endif
 
 using namespace lcg;
-
-//// GLOBAL VARIABLES - START
-extern std::vector<Stimulus*> stimuli;
-//// GLOBAL VARIABLES - END
 
 typedef enum {DEFAULT, SPONTANEOUS, TRIGGERED} recording_mode;
 
@@ -227,65 +223,54 @@ static void parse_args(int argc, char *argv[], options *opts)
 
 /// PARSING OF COMMAND LINE ARGUMENTS - END
 
-extern std::vector<Stimulus*> stimuli;
-
-int run_trial(const std::vector<channel_opts*>& channels, double tend = -1.)
+int run_trial(const std::vector<InputChannel*>& in_channels,
+              const std::vector<OutputChannel*>& out_channels,
+              double tend = -1.)
 {
 #ifdef ANALOG_IO
         int i, j, err, *retval;
-        size_t nsteps;
-        double *buf = NULL;
-        std::vector<std::string> stimfiles;
-        std::vector<channel_opts*> in_channels, out_channels;
-        ChunkedH5Recorder rec;
         double_dict pars;
         pthread_t io_thrd;
 
-        for (i=0; i<channels.size(); i++) {
-                if (channels[i]->type == OUTPUT) {
-                        out_channels.push_back(channels[i]);
-                        stimfiles.push_back(channels[i]->stimfile);
-                }
-                else {
-                        in_channels.push_back(channels[i]);
-                }
-        }
-        allocate_stimuli(stimfiles, GetGlobalDt());
         if (tend < 0) {
-                if (stimfiles.size())
-                        tend = stimuli[0]->duration();
+                if (!out_channels.empty())
+                        tend = out_channels[0]->stimulus()->duration();
                 else
                         Logger(Critical, "Negative trial duration, aborting.\n");
         }
 
-        nsteps = ceil(tend / GetGlobalDt());
         for (i=0; i<in_channels.size(); i++)
-                rec.addRecord(i, "AnalogInput", in_channels[i]->units, nsteps, pars);
-        for (i=0; i<out_channels.size(); i++) {
-                rec.addRecord(in_channels.size()+i, "AnalogOutput", channels[i]->units, nsteps, pars);
-                const double *data = stimuli[i]->data(&nsteps);
-                rec.writeRecord(in_channels.size()+i, data, nsteps);
-        }
-        Logger(Important, "Trial duration: %g seconds.\n", tend);
+                in_channels[i]->allocateDataBuffer(tend);
 
+        // run the acquisition
+        Logger(Important, "Trial duration: %g seconds.\n", tend);
         io_thread_arg arg(tend, GetGlobalDt(), &in_channels, &out_channels);
         pthread_create(&io_thrd, NULL, io_thread, (void *) &arg);
         pthread_join(io_thrd, (void **) &retval);
         err = *retval;
         delete retval;
-        if (! err) {
-                nsteps = ceil(arg.data_length/in_channels.size());
-                buf = new double[nsteps];
-                for (i=0; i<in_channels.size(); i++) {
-                        for (j=0; j<nsteps; j++)
-                                buf[j] = arg.data[i+j*in_channels.size()];
-                        rec.writeRecord(i, buf, nsteps);
-                        rec.waitForWriterThreads();
+
+        if (!err) {
+
+                Logger(Important, "Duration of the recording: %g seconds.\n", arg.nsteps*GetGlobalDt());
+        
+                // save the data
+                ChunkedH5Recorder rec;
+                int id;
+                size_t unused;
+                for (i=0, id=0; i<in_channels.size(); i++, id++) {
+                        rec.addRecord(id, "AnalogInput", in_channels[i]->units(), arg.nsteps, pars);
+                        rec.writeRecord(id, in_channels[i]->data(&unused), arg.nsteps);
+                }
+                for (i=0; i<out_channels.size(); i++, id++) {
+                        rec.addRecord(id, "AnalogOutput", out_channels[i]->units(), arg.nsteps, pars);
+                        rec.writeRecord(id, out_channels[i]->stimulus()->data(&unused), arg.nsteps);
                 }
         }
-        if (buf)
-                delete buf;
-        free_stimuli();
+        else {
+                Logger(Critical, "There were some problems during the recording.\n");
+        }
+
         return err;
 #else
         return 0;
@@ -300,7 +285,8 @@ int main(int argc, char *argv[])
         }
 
         options opts;
-        std::vector<channel_opts*> channels;
+        std::vector<InputChannel*> in_channels;
+        std::vector<OutputChannel*> out_channels;
         std::vector<int> to_remove;
         int i, j, k;
         int cnt = 1, total;
@@ -313,7 +299,7 @@ int main(int argc, char *argv[])
 
         SetGlobalDt(opts.dt);
 
-        err = parse_configuration_file(opts.configFile, channels);
+        err = parse_configuration_file(opts.configFile, in_channels, out_channels);
         if (err) {
                 Logger(Critical, "Unable to parse the configuration file.\n");
                 goto end_main;
@@ -325,29 +311,21 @@ int main(int argc, char *argv[])
         Logger(Info, "Holding current: %g pA.\n", opts.holdValue);
         Logger(Info, "Inter-batch interval: %g sec.\n", (double) opts.ibi * 1e-6);
 
-        for (i=0; i<channels.size(); i++) {
-                switch (channels[i]->type) {
-                case INPUT:
-                        n_input++;
-                        break;
-                case OUTPUT:
-                        // if an output channel has no stimulus file in the configuration file
-                        // and there is no stimulus file specified on the command line, we simply
-                        // ignore that output channel
-                        if (strlen(channels[i]->stimfile) == 0 && opts.stimulusFiles.size() == 0)
-                                to_remove.push_back(i);
-                        else
-                                n_output++;
-                        break;
-                default:
-                        Logger(Critical, "Unknown channel type.\n");
-                        exit(1);
-                }
+        for (i=0; i<out_channels.size(); i++) {
+                // if an output channel has no stimulus file in the configuration file
+                // and there is no stimulus file specified on the command line, we simply
+                // ignore that output channel
+                if ((out_channels[i]->stimulusFile() == NULL || strlen(out_channels[i]->stimulusFile()) == 0)
+                                && opts.stimulusFiles.size() == 0)
+                        to_remove.push_back(i);
         }
         while (!to_remove.empty()) {
-                channels.erase(channels.begin() + to_remove.back());
+                Logger(Important, "Removing output channel #%d.\n", to_remove.back());
+                out_channels.erase(out_channels.begin() + to_remove.back());
                 to_remove.pop_back();
         }
+        n_input = in_channels.size();
+        n_output = out_channels.size();
 
         // we give priority to the stimulus files specified on the command line.
         if (opts.stimulusFiles.size()) {
@@ -363,22 +341,15 @@ int main(int argc, char *argv[])
                         exit(1);
                 }
 
-                // let's find the output channel
-                channel_opts *output_chan;
-                for (i=0; i<channels.size(); i++) {
-                        if (channels[i]->type == OUTPUT) {
-                                output_chan = channels[i];
-                                break;
-                        }
-                }
+                OutputChannel *output_chan = out_channels[0];
 
         	total = opts.nBatches*opts.stimulusFiles.size()*opts.nTrials;
         	for (i=0; i<opts.nBatches; i++) {
         	        for (j=0; j<opts.stimulusFiles.size(); j++) {
-                                strncpy(output_chan->stimfile, opts.stimulusFiles[j].c_str(), FILENAME_MAXLEN);
+                                output_chan->setStimulusFile(opts.stimulusFiles[j].c_str());
         			for (k=0; k<opts.nTrials; k++, cnt++) {
                                         Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                        err = run_trial(channels, opts.tend);
+                                        err = run_trial(in_channels, out_channels, opts.tend);
                                         if (err || KILL_PROGRAM())
                                                 goto end_main;
                                         if (k != opts.nTrials-1)
@@ -396,7 +367,7 @@ int main(int argc, char *argv[])
         	for (i=0; i<opts.nBatches; i++) {
         		for (j=0; j<opts.nTrials; j++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                err = run_trial(channels, opts.tend);
+                                err = run_trial(in_channels, out_channels, opts.tend);
                                 if (err || KILL_PROGRAM())
                                         goto end_main;
                                 if (j != opts.nTrials-1)

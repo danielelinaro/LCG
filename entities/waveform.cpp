@@ -30,27 +30,37 @@ namespace lcg {
 namespace generators {
 
 Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, uint id)
-        : Generator(id), m_stimulus(NULL), m_stimulusMetadata(NULL),
-          m_stimulusLength(0), m_triggered(triggered), m_toInitialise(true)
+        : Generator(id), m_triggered(triggered), m_toInitialise(true)
 {
-        if (stimulusFile != NULL) {
-            if (!setStimulusFile(stimulusFile))
-                    throw "missing stimulus file";
-        }
         setName("Waveform");
         setUnits(units);
+        if (stimulusFile && strlen(stimulusFile)) {
+                strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
+                m_stimulus = new Stimulus(GetGlobalDt(), m_stimulusFile);
+        }
+        else {
+                m_stimulusFile[0] = 0;
+                m_stimulus = NULL;
+        }
 }
 
 Waveform::~Waveform()
 {
-        freeMemory();
+        if (m_stimulus)
+                delete m_stimulus;
 }
 
 bool Waveform::initialise()
 {
-        if (m_toInitialise && !parseStimulusFile()) {
-                Logger(Critical, "Unable to parse stimulus file [%s].\n", m_stimulusFile);
-                return false;
+        if (m_toInitialise) {
+                if (m_stimulus)
+                        delete m_stimulus;
+                try {
+                        m_stimulus = new Stimulus(GetGlobalDt(), m_stimulusFile);
+                } catch(...) {
+                        Logger(Critical, "Unable to parse stimulus file [%s].\n", m_stimulusFile);
+                        return false;
+                }
         }
         // parse again the file in the next calls to initialise
         m_toInitialise = true;
@@ -59,7 +69,7 @@ bool Waveform::initialise()
                 m_position = 0;
         }
         else {
-                m_position = m_stimulusLength + 1;
+                m_position = m_stimulus->length() + 1;
                 Logger(Debug, "Waveform is waiting for events.\n");
         }
         return true;
@@ -72,85 +82,18 @@ const char* Waveform::stimulusFile() const
 
 bool Waveform::setStimulusFile(const char *stimulusFile)
 {
-        struct stat buf;
-        if (stat(stimulusFile, &buf) == -1) {
-                Logger(Critical, "%s: %s.\n", stimulusFile, strerror(errno));
-                return false;
-        }
         strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
-        // parse the stimulus file here in order to have the metadata
-        bool flag = parseStimulusFile();
-        // the first call to initialise should not parse again the file
-        m_toInitialise = !flag;
-        return flag;
-}
-
-bool Waveform::parseStimulusFile()
-{
-        bool retval = true;
-        int i, j, flag;
-        double **metadata;
-
-        freeMemory();
-
-        flag = generate_trial(m_stimulusFile, GetLoggingLevel() <= Debug,
-                              0, NULL, &m_stimulus, &m_stimulusLength,
-                              1.0/GetGlobalDt(), GetGlobalDt());
-        Logger(Debug,"Passed %lf - %lf to generate_trial.\n",1.0/GetGlobalDt(),GetGlobalDt());
-        if (flag == -1) {
-                if (m_stimulus != NULL)
-                        free(m_stimulus);
-                Logger(Critical, "Error in <generate_trial>\n");
-                return false;
-        }
-        Logger(Debug,"The number of points in the stimulus is: %d, which will last for: %lf (s).\n",m_stimulusLength,m_stimulusLength*GetGlobalDt());
-        metadata = new double*[MAXROWS];
-        if (metadata == NULL) {
-                Logger(Critical, "Unable to allocate memory for <parsed_data>.\n");
-                return false;
-        }
-        for (i=0; i<MAXROWS; i++)  { 
-                metadata[i] = new double[MAXCOLS];
-                if (metadata[i] == NULL) {
-                        Logger(Critical, "Unable to allocate memory for <parsed_data>.\n");
-                        for (j=0; j<i; i++)
-                                delete metadata[j];
-                        delete metadata;
-                        return false;
-                }
-        }
-        
-        if (readmatrix(m_stimulusFile, metadata, &m_stimulusRows, &m_stimulusCols) == -1) {
-                Logger(Critical, "Unable to parse file [%s].\n", m_stimulusFile);
-                retval = false;
-                goto endSetFilename;
-        }
-
-        m_stimulusMetadata = new double[m_stimulusRows * m_stimulusCols];
-        for (i=0; i<m_stimulusRows; i++) {
-                for (j=0; j<m_stimulusCols; j++) {
-                        m_stimulusMetadata[i*m_stimulusCols + j] = metadata[i][j];
-                        Logger(Debug, "%7.1lf ", m_stimulusMetadata[i*m_stimulusCols + j]);
-                }
-                Logger(Debug, "\n");
-        }
-
-endSetFilename:
-        for (i=0; i<MAXROWS; i++)
-                delete metadata[i];
-        delete metadata;
-
-        return retval;
+        return !(m_toInitialise = !m_stimulus->setStimulusFile(stimulusFile));
 }
 
 double Waveform::duration() const
 {
-        return stimulusLength() * GetGlobalDt();
+        return m_stimulus->duration();
 }
 
 uint Waveform::stimulusLength() const
 {
-        return m_stimulusLength;
+        return m_stimulus->length();
 }
 
 bool Waveform::hasNext() const
@@ -172,19 +115,7 @@ bool Waveform::hasMetadata(size_t *ndims) const
 const double* Waveform::metadata(size_t *dims, char *label) const
 {
         sprintf(label, "Stimulus_Matrix");
-        dims[0] = m_stimulusRows;
-        dims[1] = m_stimulusCols;
-        return m_stimulusMetadata;
-}
-
-void Waveform::freeMemory()
-{
-        if (m_stimulus != NULL) {
-                delete m_stimulus;
-                delete m_stimulusMetadata;
-                m_stimulus = NULL;
-                m_stimulusMetadata = NULL;
-        }
+        return m_stimulus->metadata(&dims[0], &dims[1]);
 }
 
 /**
@@ -192,9 +123,9 @@ void Waveform::freeMemory()
  */
 double Waveform::output()
 {
-        if (m_position < m_stimulusLength)
-                return m_stimulus[m_position];
-        if (m_position == m_stimulusLength)
+        if (m_position < m_stimulus->length())
+                return m_stimulus->at(m_position);
+        if (m_position == m_stimulus->length())
             emitEvent(new ResetEvent(this));
         return 0.0;
 }
@@ -203,7 +134,7 @@ void Waveform::handleEvent(const Event *event)
 {
         switch(event->type()) {
         case TRIGGER:
-                if (m_triggered && m_position >= m_stimulusLength){
+                if (m_triggered && m_position >= m_stimulus->length()){
                     Logger(Debug, "Waveform: triggered by event.\n");
                     reset();
                 }
@@ -221,7 +152,7 @@ void Waveform::reset()
 
 void Waveform::terminate()
 {
-        m_position = m_stimulusLength;
+        m_position = m_stimulus->length();
 }
 
 } // namespace generators

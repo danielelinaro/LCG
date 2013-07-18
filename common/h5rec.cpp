@@ -586,16 +586,18 @@ bool ChunkedH5Recorder::writeRecord(uint id, const double *data, size_t length)
                 return false;
         }
         thread_data *arg = new thread_data(this, id, data, length);
+        //pthread_join(*m_writerThreads[id], NULL);
+        if (pthread_create(m_writerThreads[id], NULL, ChunkedH5Recorder::writerThread, (void *) arg) != 0)
+                return false;
         pthread_join(*m_writerThreads[id], NULL);
-        return pthread_create(m_writerThreads[id], NULL, ChunkedH5Recorder::writerThread, (void *) arg) == 0;
+        return true;
 }
 
 void* ChunkedH5Recorder::writerThread(void *arg)
 {
         thread_data *data = static_cast<thread_data*>(arg);
-        if (!data) {
+        if (!data)
                 pthread_exit(NULL);
-        }
 
         ChunkedH5Recorder *self = data->m_self;
         uint id = data->m_id;

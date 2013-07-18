@@ -6,31 +6,32 @@
 
 class Stimulus {
 public:
-        Stimulus(const char *filename, double dt);
+        Stimulus(double dt = -1., const char *filename = NULL);
         virtual ~Stimulus();
 
-        const char* filename() const;
+        const char* stimulusFile() const;
+        bool setStimulusFile(const char *filename);
+        void setDt(double dt);
         double dt() const;
 
         const double* data(size_t *length) const;
         const double* metadata(size_t *rows, size_t *cols) const;
-        double operator[](int i) const;
+        double& operator[](int i);
+        double& at(int i);
 
         size_t length() const;
         double duration() const;
 
 private:
-        bool parse(const char *filename);
+        bool parseStimulusFile();
+        void freeMemory();
 
-protected:
+private:
         char m_filename[FILENAME_MAXLEN];
         double m_dt;
         double *m_stimulus, *m_metadata;
         size_t m_length, m_metadataRows, m_metadataCols;
 };
-
-int allocate_stimuli(const std::vector<std::string>& filenames, double dt);
-void free_stimuli();
 
 #endif
 

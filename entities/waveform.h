@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "generator.h"
 #include "common.h"
+#include "stimulus.h"
 
 namespace lcg {
 
@@ -34,24 +35,14 @@ public:
 
         double duration() const;
 
-private:
-        bool parseStimulusFile();
-        void freeMemory();
-
 protected:
         virtual void reset();
 
-protected:
-        char m_stimulusFile[FILENAME_MAXLEN];
-
-        double *m_stimulus;
-        uint m_stimulusLength;
+private:
         uint m_position;
         bool m_triggered;
-        double *m_stimulusMetadata;
-        size_t m_stimulusRows, m_stimulusCols;
-
-private:
+        Stimulus *m_stimulus;
+        char m_stimulusFile[FILENAME_MAXLEN];
         bool m_toInitialise;
 };
 

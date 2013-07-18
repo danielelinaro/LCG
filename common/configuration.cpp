@@ -1,4 +1,5 @@
 #include "configuration.h"
+#include "daq_io.h"
 
 #include <stdlib.h>
 #include <sys/types.h>
@@ -13,9 +14,6 @@ using boost::property_tree::ptree;
 
 #include "utils.h"
 using namespace lcg;
-
-#define AREF_GROUND 0
-#define AREF_COMMON 1
 
 #define CONFIG_FILE ".lcg-non-rt"
 
@@ -33,7 +31,7 @@ std::vector<std::string> split_string(const std::string &source, const char *del
     return results;
 }
 
-int parse_configuration_file(const char *filename, std::vector<channel_opts*>& channels)
+int parse_configuration_file(const char *filename, std::vector<InputChannel*>& input_channels, std::vector<OutputChannel*>& output_channels)
 {
         ptree pt;
         std::string str, device;
@@ -44,10 +42,15 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
         char *home, configFile[FILENAME_MAXLEN] = {0};
         char chan[128];
 
-        if (!channels.empty()) {
-                for (i=0; i<channels.size(); i++)
-                        delete channels[i];
-                channels.clear();
+        if (!input_channels.empty()) {
+                for (i=0; i<input_channels.size(); i++)
+                        delete input_channels[i];
+                input_channels.clear();
+        }
+        if (!output_channels.empty()) {
+                for (i=0; i<output_channels.size(); i++)
+                        delete output_channels[i];
+                output_channels.clear();
         }
 
         if (filename != NULL) {
@@ -175,9 +178,9 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
         }
         
         for (i=0; i<channels_v.size(); i++) {
-                channels.push_back(new channel_opts(INPUT, device.c_str(), subdevice, range, reference,
-                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), units_v[i].c_str()));
-                //print_channel_opts(channels[i]);
+                input_channels.push_back(new InputChannel(device.c_str(), subdevice, range, reference,
+                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), 20000, units_v[i].c_str()));
+                print_channel(input_channels[i]);
         }
         
         //// OUTPUT ////
@@ -274,10 +277,10 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
         }
 
         for (i=0; i<channels_v.size(); i++) {
-                channels.push_back(new channel_opts(OUTPUT, device.c_str(), subdevice, range, reference,
-                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()),
+                output_channels.push_back(new OutputChannel(device.c_str(), subdevice, range, reference,
+                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), 20000,
                                         units_v[i].c_str(), filenames_v[i].c_str()));
-                //print_channel_opts(channels[channels.size()-1]);
+                print_channel(output_channels[i]);
         }
         
         Logger(Debug, "Successfully parsed configuration file [%s].\n", configFile);
@@ -286,37 +289,33 @@ int parse_configuration_file(const char *filename, std::vector<channel_opts*>& c
 
 dealloc_and_fail:
 
-        for (i=0; i<channels.size(); i++)
-                delete channels[i];
-        channels.clear();
+        for (i=0; i<input_channels.size(); i++)
+                delete input_channels[i];
+        input_channels.clear();
+        for (i=0; i<output_channels.size(); i++)
+                delete output_channels[i];
+        output_channels.clear();
 
         Logger(Debug, "Error while parsing configuration file [%s].\n", configFile);
 
         return -1;
 }
 
-void print_channel_opts(channel_opts* opts)
+void print_channel(Channel* chan)
 {
-        switch(opts->type) {
-        case INPUT:
-                printf("Device type: INPUT\n");
-                break;
-        case OUTPUT:
+        OutputChannel *out = dynamic_cast<OutputChannel*>(chan);
+        if (out)
                 printf("Device type: OUTPUT\n");
-                break;
-        default:
-                printf("Unknown device type.\n");
-                return;
-        }
-        printf("Device: %s\n", opts->device);
-        printf("Subdevice: %d\n", opts->subdevice);
-        printf("Range: %d\n", opts->range);
-        printf("Reference: %d\n", opts->reference);
-        printf("Conversion factor: %g\n", opts->conversionFactor);
-        printf("Channel: %d\n", opts->channel);
-        printf("Units: %s\n", opts->units);
-        if (strlen(opts->stimfile))
-                printf("Stimfile: %s\n", opts->stimfile);
-        printf("\n");
+        else
+                printf("Device type: INPUT\n");
+        printf("Device: %s\n", chan->device());
+        printf("Subdevice: %d\n", chan->subdevice());
+        printf("Range: %d\n", chan->range());
+        printf("Reference: %d\n", chan->reference());
+        printf("Conversion factor: %g\n", chan->conversionFactor());
+        printf("Channel: %d\n", chan->channel());
+        printf("Units: %s\n", chan->units());
+        if (out)
+                printf("Stimfile: %s\n", out->stimulus()->stimulusFile());
 }
 

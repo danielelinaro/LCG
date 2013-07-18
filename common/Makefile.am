@@ -1,8 +1,8 @@
 AM_CPPFLAGS = -I../stimgen -I../entities -I.
 lib_LTLIBRARIES = liblcg_common.la
-liblcg_common_la_SOURCES = randlib.cpp utils.cpp aec.cpp sha1.cpp stimuli.cpp configuration.cpp h5rec.cpp
+liblcg_common_la_SOURCES = randlib.cpp utils.cpp aec.cpp sha1.cpp stimulus.cpp configuration.cpp h5rec.cpp
 liblcg_common_la_LDFLAGS = -version-info ${LIB_VER}
-include_HEADERS = types.h randlib.h utils.h thread_safe_queue.h aec.h common.h sha1.h stimuli.h configuration.h h5rec.h
+include_HEADERS = types.h randlib.h utils.h thread_safe_queue.h aec.h common.h sha1.h stimulus.h configuration.h h5rec.h
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
