@@ -293,7 +293,7 @@ static int parse_configuration_file(std::vector<Entity*>& entities, const option
                 else {
 		        parameters.clear();
 		        parameters["id"] = "1";
-			parameters["units"] = "pA";
+			parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
 			entities.push_back( EntityFactory("Waveform", parameters) );
 		}
 
@@ -328,33 +328,33 @@ static int parse_configuration_file(std::vector<Entity*>& entities, const option
 				
                 if (opts->mode == SPONTANEOUS) {
 		        Logger(Debug, "Connecting the analog inputs [%d to %d] to the recorder.\n",
-			entities.size()-AI_cnt, entities.size());
-			for (int i=entities.size()-AI_cnt; i<entities.size(); i++)
+				entities.size()-AI_cnt, entities.size());
+				for (int i=entities.size()-AI_cnt; i<entities.size(); i++)
 			        entities[i]->connect(entities[0]);
                 }
                 else {
 		        std::stringstream id;
-			id << entities.back()->id() + 1;
+				id << entities.back()->id() + 1;
 		        parameters.clear();
-			parameters["id"] = id.str();
-			parameters["deviceFile"] = pt.get<std::string>("AnalogOutput0.device");
-			parameters["outputSubdevice"] = pt.get<std::string>("AnalogOutput0.subdevice");
-			parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
-			parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
-			parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
-			parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
+				parameters["id"] = id.str();
+				parameters["deviceFile"] = pt.get<std::string>("AnalogOutput0.device");
+				parameters["outputSubdevice"] = pt.get<std::string>("AnalogOutput0.subdevice");
+				parameters["writeChannel"] = pt.get<std::string>("AnalogOutput0.channel");
+				parameters["outputConversionFactor"] = pt.get<std::string>("AnalogOutput0.conversionFactor");
+				parameters["reference"] = pt.get<std::string>("AnalogOutput0.reference");
+				parameters["units"] = pt.get<std::string>("AnalogOutput0.units");
 
-			entities.push_back( EntityFactory("AnalogOutput", parameters) );
-			Logger(Debug, "Connecting the stimulus to the recorder.\n");
-			entities[1]->connect(entities[0]);
-			Logger(Debug, "Connecting the stimulus to the analog output.\n");
-			entities[1]->connect(entities.back());
+				entities.push_back( EntityFactory("AnalogOutput", parameters) );
+				Logger(Debug, "Connecting the stimulus to the recorder.\n");
+				entities[1]->connect(entities[0]);
+				Logger(Debug, "Connecting the stimulus to the analog output.\n");
+				entities[1]->connect(entities.back());
 			
-			Logger(Debug, "Connecting the analog inputs [%d to %d] to the recorder.\n",
+				Logger(Debug, "Connecting the analog inputs [%d to %d] to the recorder.\n",
 						entities.size()-(AI_cnt+1), entities.size()-1);
-			for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
-				entities[i]->connect(entities[0]);
-
+				for (int i=entities.size()-(AI_cnt+1); i<entities.size()-1; i++)
+					entities[i]->connect(entities[0]);
+				}
 			if(opts->holdValue != 0.0) {
 				Logger(Debug,"Using %f as a holding value.\n", opts->holdValue);
 				std::stringstream holdValue_str;
@@ -363,16 +363,22 @@ static int parse_configuration_file(std::vector<Entity*>& entities, const option
 				id << entities.back()->id() + 1;
 				parameters.clear();
 				parameters["id"] = id.str();
-				parameters["units"] = "pA";
+				parameters["units"] = pt.get<std::string>("AnalogOutput0.units");;
 				parameters["value"] = holdValue_str.str();
 				entities.push_back( EntityFactory("Constant", parameters) );
 				Logger(Debug, "Connecting the constant to the [%d to %d] to the recorder.\n",
 						entities.size(), 0);
 				entities.back()->connect(entities[0]);
-				Logger(Debug, "Connecting the constant to the analog output.\n");
-				entities.back()->connect(entities[entities.size()-2]);
-			}   
-		}   	
+
+                if (opts->mode == SPONTANEOUS) {
+					Logger(Important, "Constant recording but not connected to AO (spontaneous mode).\n");
+				} 
+				else {
+					Logger(Debug, "Connecting the constant to the analog output.\n");
+					entities.back()->connect(entities[entities.size()-2]);
+				}   
+			
+			}   	
         } catch (const char *msg) {
                 Logger(Critical, "Error: %s\n", msg);
                 return -1;
