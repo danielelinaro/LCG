@@ -152,12 +152,22 @@ const double* Stimulus::metadata(size_t *rows, size_t *cols) const
 
 double& Stimulus::operator[](int i)
 {
+        return this->at(i);
+}
+
+const double& Stimulus::operator[](int i) const
+{
+        return this->at(i);
+}
+
+double& Stimulus::at(int i)
+{
         if (i<0 || i>=length())
                 throw "Index out of bounds";
         return m_stimulus[i];
 }
 
-double& Stimulus::at(int i)
+const double& Stimulus::at(int i) const
 {
         if (i<0 || i>=length())
                 throw "Index out of bounds";

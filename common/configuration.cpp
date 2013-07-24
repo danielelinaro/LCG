@@ -74,113 +74,110 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
 
         //// INPUT ////
         
-        if (pt.count("AnalogInput") == 0) {
-                Logger(Critical, "The configuration file [%s] does not contain a 'AnalogInput' record. "
-                                 "Aborting...\n", filename);
-                return -1;
-        }
+        if (pt.count("AnalogInput") != 0) {
 
-        // let's parse first what's common among all channels...
-        try {
-                device = pt.get<std::string>("AnalogInput.device");
-        } catch(...) {
-                device = getenv("COMEDI_DEVICE");
-        }
-        Logger(Debug, "input device: %s\n", device.c_str());
+                // let's parse first what's common among all channels...
+                try {
+                        device = pt.get<std::string>("AnalogInput.device");
+                } catch(...) {
+                        device = getenv("COMEDI_DEVICE");
+                }
+                Logger(Debug, "input device: %s\n", device.c_str());
 
-        try {
-                subdevice = pt.get<int>("AnalogInput.subdevice");
-        } catch(...) {
-                subdevice = atoi(getenv("AI_SUBDEVICE"));
-        }
-        Logger(Debug, "input subdevice: %d\n", subdevice);
+                try {
+                        subdevice = pt.get<int>("AnalogInput.subdevice");
+                } catch(...) {
+                        subdevice = atoi(getenv("AI_SUBDEVICE"));
+                }
+                Logger(Debug, "input subdevice: %d\n", subdevice);
 
-        try {
-                str = pt.get<std::string>("AnalogInput.range");
-        } catch(...) {
-                str = getenv("RANGE");
-        }
-        if (str.compare("PlusMinusTen") == 0 ||
-            str.compare("[-10,+10]") == 0 ||
-            str.compare("+-10") == 0) {
-                range = PLUS_MINUS_TEN;
-        }
-        else if (str.compare("PlusMinusFive") == 0 ||
-                 str.compare("[-5,+5]") == 0 ||
-                 str.compare("+-5") == 0) {
-                range = PLUS_MINUS_FIVE;
-        }
-        else if (str.compare("PlusMinusOne") == 0 ||
-                 str.compare("[-1,+1]") == 0 ||
-                 str.compare("+-1") == 0) {
-                range = PLUS_MINUS_ONE;
-        }
-        else if (str.compare("PlusMinusZeroPointTwo") == 0 ||
-                 str.compare("[-0.2,+0.2]") == 0 ||
-                 str.compare("+-0.2") == 0) {
-                range = PLUS_MINUS_ZERO_POINT_TWO;
-        }
-        else {
-                Logger(Critical, "[%s]: Unknown input range.\n", str.c_str());
-                return -1;
-        }
+                try {
+                        str = pt.get<std::string>("AnalogInput.range");
+                } catch(...) {
+                        str = getenv("RANGE");
+                }
+                if (str.compare("PlusMinusTen") == 0 ||
+                    str.compare("[-10,+10]") == 0 ||
+                    str.compare("+-10") == 0) {
+                        range = PLUS_MINUS_TEN;
+                }
+                else if (str.compare("PlusMinusFive") == 0 ||
+                         str.compare("[-5,+5]") == 0 ||
+                         str.compare("+-5") == 0) {
+                        range = PLUS_MINUS_FIVE;
+                }
+                else if (str.compare("PlusMinusOne") == 0 ||
+                         str.compare("[-1,+1]") == 0 ||
+                         str.compare("+-1") == 0) {
+                        range = PLUS_MINUS_ONE;
+                }
+                else if (str.compare("PlusMinusZeroPointTwo") == 0 ||
+                         str.compare("[-0.2,+0.2]") == 0 ||
+                         str.compare("+-0.2") == 0) {
+                        range = PLUS_MINUS_ZERO_POINT_TWO;
+                }
+                else {
+                        Logger(Critical, "[%s]: Unknown input range.\n", str.c_str());
+                        return -1;
+                }
 
-        try {
-                str = pt.get<std::string>("AnalogInput.reference");
-        } catch(...) {
-                str = getenv("GROUND_REFERENCE");
-        }
-        if (str.compare("GRSE") == 0) {
-                reference = AREF_GROUND;
-        }
-        else if (str.compare("NRSE") == 0) {
-                reference = AREF_COMMON;
-        }
-        else {
-                Logger(Critical, "[%s]: Unknown ground reference.\n", str.c_str());
-                return -1;
-        }
+                try {
+                        str = pt.get<std::string>("AnalogInput.reference");
+                } catch(...) {
+                        str = getenv("GROUND_REFERENCE");
+                }
+                if (str.compare("GRSE") == 0) {
+                        reference = AREF_GROUND;
+                }
+                else if (str.compare("NRSE") == 0) {
+                        reference = AREF_COMMON;
+                }
+                else {
+                        Logger(Critical, "[%s]: Unknown ground reference.\n", str.c_str());
+                        return -1;
+                }
 
-        // ... and then what can be different across channels.
-        try {
-                channels_v = split_string(pt.get<std::string>("AnalogInput.channels"), ",");
-        } catch(...) {
-                channels_v.push_back(getenv("AI_CHANNEL"));
-        }
-        Logger(Debug, "number of input channels: %d.\n", channels_v.size());
-         
-        try {
-                factors_v = split_string(pt.get<std::string>("AnalogInput.conversionFactors"), ",");
-        } catch(...) {
-                factors_v.push_back(getenv("AI_CONVERSION_FACTOR"));
-        }
-        if (factors_v.size() == 1) {
-                for (i=1; i<channels_v.size(); i++)
-                        factors_v.push_back(factors_v[0]);
-        }
-        else if (factors_v.size() != channels_v.size()) {
-                Logger(Critical, "Number of channels != Number of conversion factors.\n");
-                return -1;
-        }
+                // ... and then what can be different across channels.
+                try {
+                        channels_v = split_string(pt.get<std::string>("AnalogInput.channels"), ",");
+                } catch(...) {
+                        channels_v.push_back(getenv("AI_CHANNEL"));
+                }
+                Logger(Debug, "number of input channels: %d.\n", channels_v.size());
+                 
+                try {
+                        factors_v = split_string(pt.get<std::string>("AnalogInput.conversionFactors"), ",");
+                } catch(...) {
+                        factors_v.push_back(getenv("AI_CONVERSION_FACTOR"));
+                }
+                if (factors_v.size() == 1) {
+                        for (i=1; i<channels_v.size(); i++)
+                                factors_v.push_back(factors_v[0]);
+                }
+                else if (factors_v.size() != channels_v.size()) {
+                        Logger(Critical, "Number of channels != Number of conversion factors.\n");
+                        return -1;
+                }
 
-        try {
-                units_v = split_string(pt.get<std::string>("AnalogInput.units"), ",");
-        } catch(...) {
-                units_v.push_back(getenv("INPUT_UNITS"));
-        }
-        if (units_v.size() == 1) {
-                for (i=1; i<channels_v.size(); i++)
-                        units_v.push_back(units_v[0]);
-        }
-        else if (units_v.size() != channels_v.size()) {
-                Logger(Critical, "Number of channels != Number of units.\n");
-                return -1;
-        }
-        
-        for (i=0; i<channels_v.size(); i++) {
-                input_channels.push_back(new InputChannel(device.c_str(), subdevice, range, reference,
-                                        atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), 20000, units_v[i].c_str()));
-                print_channel(input_channels[i]);
+                try {
+                        units_v = split_string(pt.get<std::string>("AnalogInput.units"), ",");
+                } catch(...) {
+                        units_v.push_back(getenv("INPUT_UNITS"));
+                }
+                if (units_v.size() == 1) {
+                        for (i=1; i<channels_v.size(); i++)
+                                units_v.push_back(units_v[0]);
+                }
+                else if (units_v.size() != channels_v.size()) {
+                        Logger(Critical, "Number of channels != Number of units.\n");
+                        return -1;
+                }
+                
+                for (i=0; i<channels_v.size(); i++) {
+                        input_channels.push_back(new InputChannel(device.c_str(), subdevice, range, reference,
+                                                atoi(channels_v[i].c_str()), atof(factors_v[i].c_str()), 20000, units_v[i].c_str()));
+                        print_channel(input_channels[i]);
+                }
         }
         
         //// OUTPUT ////

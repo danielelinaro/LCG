@@ -223,7 +223,7 @@ static void parse_args(int argc, char *argv[], options *opts)
 
 /// PARSING OF COMMAND LINE ARGUMENTS - END
 
-int run_trial(const std::vector<InputChannel*>& in_channels,
+int run_trial(std::vector<InputChannel*>& in_channels,
               const std::vector<OutputChannel*>& out_channels,
               double tend = -1.)
 {

@@ -1,5 +1,9 @@
 #include "daq_io.h"
 #include "utils.h"
+#include <errno.h>
+
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 using namespace lcg;
 
@@ -44,19 +48,28 @@ const double* InputChannel::data(size_t *length) const
 
 double& InputChannel::operator[](int i)
 {
+        return this->at(i);
+}
+
+const double& InputChannel::operator[](int i) const
+{
+        return this->at(i);
+}
+
+double& InputChannel::at(int i)
+{
         if (i<0 || i>=m_dataLength)
                 throw "Index out of bounds";
         return m_data[i];
 }
 
-double& InputChannel::at(int i)
+const double& InputChannel::at(int i) const
 {
-        if (i<0 || i>=m_dataLength) {
-                Logger(Critical, "\nTrying to access element %d of %d.\n", i, m_dataLength);
+        if (i<0 || i>=m_dataLength)
                 throw "Index out of bounds";
-        }
         return m_data[i];
 }
+
 bool InputChannel::allocateDataBuffer(double tend)
 {
         m_dataLength = ceil(tend*samplingRate());
@@ -90,6 +103,26 @@ const char* OutputChannel::stimulusFile() const
 bool OutputChannel::setStimulusFile(const char *filename)
 {
         return m_stimulus.setStimulusFile(filename);
+}
+
+double& OutputChannel::operator[](int i)
+{
+        return m_stimulus[i];
+}
+
+const double& OutputChannel::operator[](int i) const
+{
+        return m_stimulus[i];
+}
+
+double& OutputChannel::at(int i)
+{
+        return m_stimulus[i];
+}
+
+const double& OutputChannel::at(int i) const
+{
+        return m_stimulus[i];
 }
 
 ///// CHANNEL CLASSES - END /////
@@ -129,6 +162,59 @@ static void dump_cmd(LogLevel level, comedi_cmd *cmd)
 	Logger(level, "data_len: %d\n", cmd->data_len);
 }
 
+struct io_loop_data {
+        io_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<Channel*>* chan)
+                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
+        comedi_t *device;
+        uint subdevice;
+        char *buffer;
+        size_t buffer_length;
+        comedi_polynomial_t *converters;
+        std::vector<Channel*>* channels;
+};
+
+void* input_loop(void *arg)
+{
+        int i, j, k, ret, cnt, total, n_channels, bytes_per_sample, flags;
+        int *nsteps = new int;
+        lsampl_t sample;
+        io_loop_data *data = static_cast<io_loop_data*>(arg);
+        cnt = total = *nsteps = 0;
+        if (!data)
+                pthread_exit((void *) nsteps);
+        n_channels = data->channels->size();
+        flags = comedi_get_subdevice_flags(data->device, data->subdevice);
+        if (flags & SDF_LSAMPL)
+                bytes_per_sample = sizeof(lsampl_t);
+        else
+                bytes_per_sample = sizeof(sampl_t);
+        while ((ret = read(comedi_fileno(data->device), data->buffer, data->buffer_length)) > 0) {
+                total += ret;
+                Logger(Debug, "Read %d bytes from the board [%d/%d].\r", ret, total, data->buffer_length);
+                for (i=0; i<ret/bytes_per_sample; i++) {
+                        if (flags & SDF_LSAMPL)
+                                sample = ((lsampl_t *) data->buffer)[i];
+                        else
+                                sample = ((sampl_t *) data->buffer)[i];
+                        j = cnt%n_channels;
+                        k = cnt/n_channels;
+                        cnt++;
+                        data->channels->at(j)->at(k) = comedi_to_physical(sample, &data->converters[j]) *
+                                data->channels->at(j)->conversionFactor();
+                }
+        }
+        Logger(Debug, "\n");
+        *nsteps = k+1;
+        pthread_exit((void *) nsteps);
+}
+
+void* output_loop(void *arg)
+{
+        int *nsteps = new int;
+        *nsteps = 10000000;
+        pthread_exit((void *) nsteps);
+}
+
 void* io_thread(void *in)
 {
         comedi_t *device;
@@ -136,16 +222,21 @@ void* io_thread(void *in)
         const char *io_device;
         comedi_calibration_t *calibration;
         comedi_polynomial_t *in_converters, *out_converters;
-        lsampl_t sample;
-        uint *in_chanlist, *out_chanlist, in_subdevice, insn_data = 0;
-        int i, j, k, cnt, ret, total, in_subdev_flags, in_bytes_per_sample;
+        uint *in_chanlist, *out_chanlist, in_subdevice, out0.001_subdevice, in_insn_data, out_insn_data;
+        int i, j, k, nsteps, ret;
+        int in_bytes_per_sample, out_bytes_per_sample;
         comedi_cmd cmd;
-        comedi_insn insn;
+        comedi_insn in_insn, out_insn;
         size_t n_input_channels, n_output_channels;
-        size_t input_buffer_length;
-        char *input_buffer;
+        size_t input_buffer_length, output_buffer_length;
+        size_t bytes_written;
+        char *input_buffer, *output_buffer;
+        pthread_t in_loop_thrd, out_loop_thrd;
+        int *in_retval, *out_retval, *retval = new int;
+        io_loop_data *in_data, *out_data;
+        std::vector<Channel*> input_channels, output_channels;
+
         io_thread_arg *arg = static_cast<io_thread_arg*>(in);
-        int *retval = new int;
         *retval = -1;
 
         if (!arg)
@@ -189,12 +280,12 @@ void* io_thread(void *in)
         }
         Logger(Debug, "Successfully parsed calibration file.\n");
 
-        // pack channel numbers and get a converter for each channel
         if (n_input_channels) {
 
                 in_subdevice = arg->input_channels->at(0)->subdevice();
                 in_chanlist = new uint[n_input_channels];
                 in_converters = new comedi_polynomial_t[n_input_channels];
+                // pack channel numbers and get a converter for each channel
                 for (i=0; i<n_input_channels; i++) {
                         in_chanlist[i] = CR_PACK(arg->input_channels->at(i)->channel(),
                                                  arg->input_channels->at(i)->range(),
@@ -210,9 +301,7 @@ void* io_thread(void *in)
                         Logger(Debug, "Successfully obtained converter for channel %d.\n", arg->input_channels->at(i)->channel());
                 }
                                 
-                // get subdevice flags
-                in_subdev_flags = comedi_get_subdevice_flags(device, in_subdevice);
-                if (in_subdev_flags & SDF_LSAMPL)
+                if (comedi_get_subdevice_flags(device, in_subdevice) & SDF_LSAMPL)
                         in_bytes_per_sample = sizeof(lsampl_t);
                 else
                         in_bytes_per_sample = sizeof(sampl_t);
@@ -256,53 +345,177 @@ void* io_thread(void *in)
                 input_buffer = new char[input_buffer_length];
                 Logger(Important, "The total size of the input buffer is %ld bytes (= %.2f Mb).\n",
                                 input_buffer_length, (double) input_buffer_length/(1024*1024));
+
+                // prepare the triggering instruction
+                in_insn_data = 0;
+                memset(&in_insn, 0, sizeof(in_insn));
+                in_insn.insn = INSN_INTTRIG;
+                in_insn.n = 1;
+                in_insn.data = &in_insn_data;
+                in_insn.subdev = in_subdevice;
         }
 
-        // prepare the triggering instruction
-        memset(&insn, 0, sizeof(insn));
-        insn.insn = INSN_INTTRIG;
-        insn.n = 1;
-        insn.data = &insn_data;
-        insn.subdev = in_subdevice;
+        if (n_output_channels) {
 
-        // start the acquisition
-        ret = comedi_do_insn(device, &insn);
-        if (ret < 0) {
-                Logger(Critical, "Unable to start the acquisition.\n");
-                goto end_io;
+                out_subdevice = arg->output_channels->at(0)->subdevice();
+                out_chanlist = new uint[n_output_channels];
+                out_converters = new comedi_polynomial_t[n_output_channels];
+                // pack channel numbers and get a converter for each channel
+                for (i=0; i<n_output_channels; i++) {
+                        out_chanlist[i] = CR_PACK(arg->output_channels->at(i)->channel(),
+                                                  arg->output_channels->at(i)->range(),
+                                                  arg->output_channels->at(i)->reference());
+                        ret = comedi_get_softcal_converter(out_subdevice,
+                                                           arg->output_channels->at(i)->channel(),
+                                                           arg->output_channels->at(i)->range(),
+                                                           COMEDI_FROM_PHYSICAL, calibration, &out_converters[i]);
+                        if (ret < 0) {
+                                Logger(Critical, "Unable to get converter for channel %d.\n", arg->output_channels->at(i)->channel());
+                                goto end_io;
+                        }
+                        Logger(Debug, "Successfully obtained converter for channel %d.\n", arg->output_channels->at(i)->channel());
+                }
+                                
+                int flags = comedi_get_subdevice_flags(device, out_subdevice);
+                if (flags & SDF_LSAMPL)
+                        out_bytes_per_sample = sizeof(lsampl_t);
+                else
+                        out_bytes_per_sample = sizeof(sampl_t);
+                Logger(Debug, "Number of bytes per output sample: %d\n", out_bytes_per_sample);
+                
+                memset(&cmd, 0, sizeof(struct comedi_cmd_struct));
+                ret = comedi_get_cmd_generic_timed(device, out_subdevice, &cmd,
+                                n_output_channels, 1000000000*arg->dt);
+                if (ret < 0) {
+                        Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
+                        goto end_io;
+                }
+                cmd.convert_arg = 0;    // this value is wrong, but will be fixed by comedi_command_test
+                cmd.chanlist    = in_chanlist;
+                cmd.start_src   = TRIG_INT;
+                cmd.stop_src    = TRIG_COUNT;
+                cmd.stop_arg    = ceil(arg->tend/arg->dt);
+                
+                // test and fix the command
+                if (comedi_command_test(device, &cmd) < 0 &&
+                    comedi_command_test(device, &cmd) < 0) {
+                        Logger(Critical, "Unable to setup the command.\n");
+                        goto end_io;
+                }
+                Logger(Debug, "Successfully setup the command.\n");
+                Logger(Debug, "-------------------------------\n");
+                dump_cmd(Debug, &cmd);
+                Logger(Debug, "-------------------------------\n");
+        
+                // issue the command (writing doesn't start immediately)
+                ret = comedi_command(device, &cmd);
+                if (ret < 0) {
+                        Logger(Critical, "Unable to issue the command.\n");
+                        comedi_perror("comedi_command");
+                        goto end_io;
+                }
+                Logger(Debug, "Successfully issued the command.\n");
+        
+                // allocate memory for the data that will be written
+                output_buffer_length = ceil(arg->tend/arg->dt) * n_output_channels * out_bytes_per_sample;
+                output_buffer = new char[output_buffer_length];
+                Logger(Important, "The total size of the output buffer is %ld bytes (= %.2f Mb).\n",
+                                output_buffer_length, (double) output_buffer_length/(1024*1024));
+
+                // fill the buffer and preload it
+                nsteps = ceil(arg->tend/arg->dt);
+                double sample;
+                sampl_t *ptr = (sampl_t*) output_buffer;
+                lsampl_t *lptr = (lsampl_t*) output_buffer;
+                for (i=0; i<nsteps; i++) {
+                        for (j=0; j<n_output_channels; j++) {
+                                sample = arg->output_channels->at(j)->at(i) * arg->output_channels->at(j)->conversionFactor();
+                                if (sample > 0)
+                                        fprintf(stdout, "%g = 0x%x\n", sample, comedi_from_physical(sample, &out_converters[j]));
+                                if (flags & SDF_LSAMPL)
+                                        *lptr = comedi_from_physical(sample, &out_converters[j]);
+                                else
+                                        *ptr = (sampl_t) comedi_from_physical(sample, &out_converters[j]);
+                                ptr++;
+                                lptr++;
+                        }
+                }
+
+                bytes_written = write(comedi_fileno(device), (void *) output_buffer, output_buffer_length);
+                if (bytes_written < 0) {
+                        Logger(Critical, "Error on write: %s.\n", strerror(errno));
+                }
+                else if (bytes_written < output_buffer_length) {
+                        fprintf(stderr, "failed to preload output buffer with %i bytes, is it too small?\n"
+                                        "See the --write-buffer option of comedi_config\n", output_buffer_length);
+                }
+                Logger(Important, "Number of preloaded bytes: %d.\n", bytes_written);
+
+                out_insn_data = 0;
+                memset(&out_insn, 0, sizeof(out_insn));
+                out_insn.insn = INSN_INTTRIG;
+                out_insn.n = 1;
+                out_insn.data = &out_insn_data;
+                out_insn.subdev = out_subdevice;
         }
-        Logger(Debug, "Successfully started the acquisition.\n");
 
-        cnt = total = 0;
-        while ((ret = read(comedi_fileno(device), input_buffer, input_buffer_length)) > 0) {
-                total += ret;
-                Logger(Debug, "Read %d bytes from the board [%d/%d].\r", ret, total, input_buffer_length);
-                for (i=0; i<ret/in_bytes_per_sample; i++) {
-                        if (in_subdev_flags & SDF_LSAMPL)
-                                sample = ((lsampl_t *) input_buffer)[i];
-                        else
-                                sample = ((sampl_t *) input_buffer)[i];
-                        j = i%n_input_channels;
-                        k = cnt/n_input_channels;
-                        cnt++;
-                        arg->input_channels->at(j)->at(k) = comedi_to_physical(sample, &in_converters[j]) *
-                                arg->input_channels->at(j)->conversionFactor();
+        in_retval = new int;
+        out_retval = new int;
+        *in_retval = *out_retval = ceil(arg->tend/arg->dt);
+
+        if (n_input_channels) {
+                // start the acquisition
+                ret = comedi_do_insn(device, &in_insn);
+                if (ret < 0)
+                        Logger(Critical, "Unable to start the acquisition.\n");
+                else
+                        Logger(Debug, "Successfully started the acquisition.\n");
+                for (i=0; i<n_input_channels; i++)
+                        input_channels.push_back(arg->input_channels->at(i));
+                in_data = new io_loop_data(device, in_subdevice, input_buffer, input_buffer_length, in_converters, &input_channels);
+                pthread_create(&in_loop_thrd, NULL, input_loop, (void *) in_data);
+        }
+
+        if (n_output_channels) {
+                // start the writing
+                ret = comedi_do_insn(device, &out_insn);
+                if (ret < 0)
+                        Logger(Critical, "Unable to start the writing: %s.\n", comedi_strerror(comedi_errno()));
+                else
+                        Logger(Debug, "Successfully started the writing.\n");
+                if (bytes_written < output_buffer_length) {
+                        for (i=0; i<n_output_channels; i++)
+                                output_channels.push_back(arg->output_channels->at(i));
+                        out_data = new io_loop_data(device, out_subdevice, output_buffer, output_buffer_length, out_converters, &output_channels);
+                        pthread_create(&out_loop_thrd, NULL, output_loop, (void *) out_data);
                 }
         }
-        arg->nsteps = k+1;
-        *retval = 0;
-        Logger(Debug, "\n");
 
-        if (comedi_cancel(device, in_subdevice) == 0)
-                Logger(Debug, "Successfully stopped the command.\n");
-        else
-                Logger(Critical, "Unable to stop the command.\n");
+        if (n_input_channels) pthread_join(in_loop_thrd, (void **) &in_retval);
+        if (n_output_channels && bytes_written < output_buffer_length) pthread_join(out_loop_thrd, (void **) &out_retval);
+
+        arg->nsteps = MIN(*in_retval,*out_retval);
+
+        delete in_retval;
+        delete out_retval;
+        delete in_data;
+        delete out_data;
+
+        *retval = 0;
+
+        if (n_input_channels) comedi_cancel(device, in_subdevice);
+        if (n_output_channels) comedi_cancel(device, out_subdevice);
 
 end_io:
         if (n_input_channels) {
                 delete in_chanlist;
                 delete in_converters;
                 delete input_buffer;
+        }
+        if (n_output_channels) {
+                delete out_chanlist;
+                delete out_converters;
+                delete output_buffer;
         }
         comedi_cleanup_calibration(calibration);
         Logger(Debug, "Cleaned up the calibration.\n");

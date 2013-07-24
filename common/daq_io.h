@@ -27,6 +27,10 @@ public:
         double conversionFactor() const;
         double samplingRate() const;
         const char* units() const;
+        virtual double& operator[](int i) = 0;
+        virtual const double& operator[](int i) const = 0;
+        virtual double& at(int i) = 0;
+        virtual const double& at(int i) const = 0;
 
 private:
         char m_device[FILENAME_MAXLEN];
@@ -43,7 +47,9 @@ public:
         const double* data(size_t *length) const;
         bool allocateDataBuffer(double tend);
         double& operator[](int i);
+        const double& operator[](int i) const;
         double& at(int i);
+        const double& at(int i) const;
 private:
         double *m_data;
         size_t m_dataLength;
@@ -56,6 +62,10 @@ public:
                 const char *units, const char *stimfile);
         const char* stimulusFile() const;
         bool setStimulusFile(const char *filename);
+        double& operator[](int i);
+        const double& operator[](int i) const;
+        double& at(int i);
+        const double& at(int i) const;
         const Stimulus* stimulus() const;
 private:
         Stimulus m_stimulus;
@@ -63,13 +73,13 @@ private:
 
 struct io_thread_arg {
         io_thread_arg(double final_time, double time_step,
-                      const std::vector<InputChannel*>* input,
+                      std::vector<InputChannel*>* input,
                       const std::vector<OutputChannel*>* output)
                 : tend(final_time), dt(time_step),
                   input_channels(input), output_channels(output),
                   nsteps(0) {}
         double tend, dt;
-        const std::vector<InputChannel*>* input_channels;
+        std::vector<InputChannel*>* input_channels;
         const std::vector<OutputChannel*>* output_channels;
         size_t nsteps;
 };

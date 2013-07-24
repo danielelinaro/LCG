@@ -17,7 +17,9 @@ public:
         const double* data(size_t *length) const;
         const double* metadata(size_t *rows, size_t *cols) const;
         double& operator[](int i);
+        const double& operator[](int i) const;
         double& at(int i);
+        const double& at(int i) const;
 
         size_t length() const;
         double duration() const;
