@@ -162,8 +162,8 @@ static void dump_cmd(LogLevel level, comedi_cmd *cmd)
 	Logger(level, "data_len: %d\n", cmd->data_len);
 }
 
-struct io_loop_data {
-        io_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<Channel*>* chan)
+struct input_loop_data {
+        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<Channel*>* chan)
                 : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
         comedi_t *device;
         uint subdevice;
@@ -173,12 +173,23 @@ struct io_loop_data {
         std::vector<Channel*>* channels;
 };
 
+struct output_loop_data {
+        output_loop_data(comedi_t *dev, int subdev, const char *buf, size_t buflen, size_t bytes_already_written, int nchan, int bps)
+                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), bytes_written(bytes_already_written),
+                  n_channels(nchan), bytes_per_sample(bps) {}
+        comedi_t *device;
+        uint subdevice;
+        const char *buffer;
+        size_t buffer_length, bytes_written;
+        int n_channels, bytes_per_sample;
+};
+
 void* input_loop(void *arg)
 {
         int i, j, k, ret, cnt, total, n_channels, bytes_per_sample, flags;
         int *nsteps = new int;
         lsampl_t sample;
-        io_loop_data *data = static_cast<io_loop_data*>(arg);
+        input_loop_data *data = static_cast<input_loop_data*>(arg);
         cnt = total = *nsteps = 0;
         if (!data)
                 pthread_exit((void *) nsteps);
@@ -210,8 +221,25 @@ void* input_loop(void *arg)
 
 void* output_loop(void *arg)
 {
+        size_t bytes_to_write, bytes_written;
         int *nsteps = new int;
-        *nsteps = 10000000;
+        output_loop_data *data = static_cast<output_loop_data*>(arg);
+        *nsteps = 0;
+        if (!data)
+                pthread_exit((void *) nsteps); // this value we return is wrong, but if we get here,
+                                               // there is probably some other problem.
+        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
+        bytes_to_write = data->buffer_length - data->bytes_written;
+        while (bytes_to_write > 0) {
+                bytes_written = write(comedi_fileno(data->device), (void *) (data->buffer+data->bytes_written), bytes_to_write);
+                if (bytes_written < 0) {
+                        Logger(Critical, "Error while writing: %s\n", strerror(errno));
+                        break;
+                }
+                bytes_to_write -= bytes_written;
+                data->bytes_written += bytes_written;
+        }
+        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
         pthread_exit((void *) nsteps);
 }
 
@@ -222,7 +250,7 @@ void* io_thread(void *in)
         const char *io_device;
         comedi_calibration_t *calibration;
         comedi_polynomial_t *in_converters, *out_converters;
-        uint *in_chanlist, *out_chanlist, in_subdevice, out0.001_subdevice, in_insn_data, out_insn_data;
+        uint *in_chanlist, *out_chanlist, in_subdevice, out_subdevice, in_insn_data, out_insn_data;
         int i, j, k, nsteps, ret;
         int in_bytes_per_sample, out_bytes_per_sample;
         comedi_cmd cmd;
@@ -232,8 +260,9 @@ void* io_thread(void *in)
         size_t bytes_written;
         char *input_buffer, *output_buffer;
         pthread_t in_loop_thrd, out_loop_thrd;
-        int *in_retval, *out_retval, *retval = new int;
-        io_loop_data *in_data, *out_data;
+        int *in_retval = NULL, *out_retval = NULL, *retval = new int;
+        input_loop_data *in_data;
+        output_loop_data *out_data;
         std::vector<Channel*> input_channels, output_channels;
 
         io_thread_arg *arg = static_cast<io_thread_arg*>(in);
@@ -340,10 +369,10 @@ void* io_thread(void *in)
                 }
                 Logger(Debug, "Successfully issued the command.\n");
         
-                // allocate memory for reading the data
-                input_buffer_length = ceil(arg->tend/arg->dt) * n_input_channels * in_bytes_per_sample;
+                // allocate memory for reading at most one second of data
+                input_buffer_length = ceil(MIN(arg->tend,1.)/arg->dt) * n_input_channels * in_bytes_per_sample;
                 input_buffer = new char[input_buffer_length];
-                Logger(Important, "The total size of the input buffer is %ld bytes (= %.2f Mb).\n",
+                Logger(Debug, "The total size of the input buffer is %ld bytes (= %.2f Mb).\n",
                                 input_buffer_length, (double) input_buffer_length/(1024*1024));
 
                 // prepare the triggering instruction
@@ -419,10 +448,10 @@ void* io_thread(void *in)
                 // allocate memory for the data that will be written
                 output_buffer_length = ceil(arg->tend/arg->dt) * n_output_channels * out_bytes_per_sample;
                 output_buffer = new char[output_buffer_length];
-                Logger(Important, "The total size of the output buffer is %ld bytes (= %.2f Mb).\n",
+                Logger(Debug, "The total size of the output buffer is %ld bytes (= %.2f Mb).\n",
                                 output_buffer_length, (double) output_buffer_length/(1024*1024));
 
-                // fill the buffer and preload it
+                // fill the buffer and FULLY preload it
                 nsteps = ceil(arg->tend/arg->dt);
                 double sample;
                 sampl_t *ptr = (sampl_t*) output_buffer;
@@ -430,8 +459,6 @@ void* io_thread(void *in)
                 for (i=0; i<nsteps; i++) {
                         for (j=0; j<n_output_channels; j++) {
                                 sample = arg->output_channels->at(j)->at(i) * arg->output_channels->at(j)->conversionFactor();
-                                if (sample > 0)
-                                        fprintf(stdout, "%g = 0x%x\n", sample, comedi_from_physical(sample, &out_converters[j]));
                                 if (flags & SDF_LSAMPL)
                                         *lptr = comedi_from_physical(sample, &out_converters[j]);
                                 else
@@ -445,11 +472,7 @@ void* io_thread(void *in)
                 if (bytes_written < 0) {
                         Logger(Critical, "Error on write: %s.\n", strerror(errno));
                 }
-                else if (bytes_written < output_buffer_length) {
-                        fprintf(stderr, "failed to preload output buffer with %i bytes, is it too small?\n"
-                                        "See the --write-buffer option of comedi_config\n", output_buffer_length);
-                }
-                Logger(Important, "Number of preloaded bytes: %d.\n", bytes_written);
+                Logger(Debug, "Number of preloaded bytes: %d.\n", bytes_written);
 
                 out_insn_data = 0;
                 memset(&out_insn, 0, sizeof(out_insn));
@@ -458,10 +481,6 @@ void* io_thread(void *in)
                 out_insn.data = &out_insn_data;
                 out_insn.subdev = out_subdevice;
         }
-
-        in_retval = new int;
-        out_retval = new int;
-        *in_retval = *out_retval = ceil(arg->tend/arg->dt);
 
         if (n_input_channels) {
                 // start the acquisition
@@ -472,7 +491,7 @@ void* io_thread(void *in)
                         Logger(Debug, "Successfully started the acquisition.\n");
                 for (i=0; i<n_input_channels; i++)
                         input_channels.push_back(arg->input_channels->at(i));
-                in_data = new io_loop_data(device, in_subdevice, input_buffer, input_buffer_length, in_converters, &input_channels);
+                in_data = new input_loop_data(device, in_subdevice, input_buffer, input_buffer_length, in_converters, &input_channels);
                 pthread_create(&in_loop_thrd, NULL, input_loop, (void *) in_data);
         }
 
@@ -483,23 +502,29 @@ void* io_thread(void *in)
                         Logger(Critical, "Unable to start the writing: %s.\n", comedi_strerror(comedi_errno()));
                 else
                         Logger(Debug, "Successfully started the writing.\n");
-                if (bytes_written < output_buffer_length) {
-                        for (i=0; i<n_output_channels; i++)
-                                output_channels.push_back(arg->output_channels->at(i));
-                        out_data = new io_loop_data(device, out_subdevice, output_buffer, output_buffer_length, out_converters, &output_channels);
+                if (bytes_written < output_buffer_length ) {
+                        out_data = new output_loop_data(device, out_subdevice, output_buffer, output_buffer_length,
+                                        bytes_written, n_output_channels, out_bytes_per_sample);
                         pthread_create(&out_loop_thrd, NULL, output_loop, (void *) out_data);
                 }
         }
 
-        if (n_input_channels) pthread_join(in_loop_thrd, (void **) &in_retval);
-        if (n_output_channels && bytes_written < output_buffer_length) pthread_join(out_loop_thrd, (void **) &out_retval);
+        if (n_input_channels) {
+                pthread_join(in_loop_thrd, (void **) &in_retval);
+                arg->nsteps = *in_retval;
+                delete in_retval;
+                delete in_data;
+        }
+        else {
+                arg->nsteps = 100000000000;
+        }
 
-        arg->nsteps = MIN(*in_retval,*out_retval);
-
-        delete in_retval;
-        delete out_retval;
-        delete in_data;
-        delete out_data;
+        if (n_output_channels && bytes_written < output_buffer_length) {
+                pthread_join(out_loop_thrd, (void **) &out_retval);
+                arg->nsteps = (*out_retval < arg->nsteps ? *out_retval : arg->nsteps);
+                delete out_retval;
+                delete out_data;
+        }
 
         *retval = 0;
 
