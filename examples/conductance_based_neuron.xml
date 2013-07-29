@@ -1,4 +1,4 @@
-<dynamicclamp>
+<xml>
   <entities>
 
     <entity>
@@ -78,4 +78,4 @@
     <rate>100000</rate>
   </simulation>
 
-</dynamicclamp>
+</xml>
