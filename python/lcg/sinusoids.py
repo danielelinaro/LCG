@@ -6,6 +6,7 @@ import getopt
 import subprocess as sub
 import numpy as np
 import lcg
+import copy
 
 current_file = 'current.stim'
 gexc_file = 'gexc.stim'
@@ -224,7 +225,7 @@ def writeConfigurationFile(options):
                                               readChannel=options['ai'], writeChannel=options['ao'],
                                               inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
                                               outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange=os.environ('RANGE'), reference=os.environ['GROUND_REFERENCE'],
+                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename=gexc_file, units='nS'))
@@ -241,7 +242,6 @@ def replaceValue(stimulus, old_value, new_value=None):
                 stimulus[r][c] = new_value
             else:
                 stimulus[r][c] = int(np.random.uniform(high=10000))
-    return stimulus
 
 def createSinusoidallyModOU(f, r0, dr, Rin, tau, dur, type, seed):
     if type == 'exc':
@@ -345,11 +345,19 @@ def main():
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             
-            lcg.writeStimFile(current_file, replaceValue(replaceValue(current, random_seed),
-                                                         frequency_value, f), addDefaultPreamble=True)
+            I = copy.deepcopy(current)
+            replaceValue(I, random_seed)
+            replaceValue(I, frequency_value, f)
+            lcg.writeStimFile(current_file, I, addDefaultPreamble=True)
             if gexc and ginh:
-                lcg.writeStimFile(gexc_file, replaceValue(replaceValue(gexc, random_seed), frequency_value, f))
-                lcg.writeStimFile(ginh_file, replaceValue(replaceValue(ginh, random_seed), frequency_value, f))
+                G = copy.deepcopy(gexc)
+                replaceValue(G, random_seed)
+                replaceValue(G, frequency_value, f)
+                lcg.writeStimFile(gexc_file, G)
+                G = copy.deepcopy(ginh)
+                replaceValue(G, random_seed)
+                replaceValue(G, frequency_value, f)
+                lcg.writeStimFile(ginh_file, G)
                 sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
             else:
                 sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
