@@ -229,7 +229,6 @@ int run_trial(std::vector<InputChannel*>& in_channels,
 {
 #ifdef ANALOG_IO
         int i, j, err, *retval;
-        double_dict pars;
         pthread_t io_thrd;
 
         if (tend < 0) {
@@ -257,15 +256,29 @@ int run_trial(std::vector<InputChannel*>& in_channels,
                 // save the data
                 ChunkedH5Recorder rec;
                 int id;
-                size_t unused;
+                size_t unused, rows, cols;
                 for (i=0, id=0; i<in_channels.size(); i++, id++) {
+                        double_dict pars;
+                        pars["subdevice"] = in_channels[i]->subdevice();
+                        pars["range"] = in_channels[i]->range();
+                        pars["channel"] = in_channels[i]->channel();
+                        pars["conversionFactor"] = in_channels[i]->conversionFactor();
                         rec.addRecord(id, "AnalogInput", in_channels[i]->units(), arg.nsteps, pars);
                         rec.writeRecord(id, in_channels[i]->data(&unused), arg.nsteps);
                 }
                 for (i=0; i<out_channels.size(); i++, id++) {
+                        double_dict pars;
+                        pars["subdevice"] = out_channels[i]->subdevice();
+                        pars["range"] = out_channels[i]->range();
+                        pars["channel"] = out_channels[i]->channel();
+                        pars["conversionFactor"] = out_channels[i]->conversionFactor();
                         rec.addRecord(id, "AnalogOutput", out_channels[i]->units(), arg.nsteps, pars);
+                        const double *metadata = out_channels[i]->stimulus()->metadata(&rows,&cols);
                         rec.writeRecord(id, out_channels[i]->stimulus()->data(&unused), arg.nsteps);
+                        rec.writeMetadata(id, metadata, rows, cols);
                 }
+                rec.writeRecordingDuration(arg.nsteps*GetGlobalDt());
+                rec.writeTimeStep(GetGlobalDt());
         }
         else {
                 Logger(Critical, "There were some problems during the recording.\n");

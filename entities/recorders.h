@@ -27,11 +27,6 @@ public:
         virtual double output();
 };
 
-//#define DATA_DATASET     "Data"
-//#define METADATA_DATASET "Metadata"
-//#define PARAMETERS_GROUP "Parameters"
-//#define H5_FILE_VERSION  2
-
 class BaseH5Recorder : public H5RecorderCore, public Recorder {
 public:
         BaseH5Recorder(bool compress, hsize_t bufferSize = 20480, const char *filename = NULL, uint id = GetId());

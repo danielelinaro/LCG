@@ -91,6 +91,8 @@ bool BaseH5Recorder::initialise()
 
         if (!initialiseFile())
                 return false;
+
+        writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
         Logger(Debug, "Successfully initialised file [%s].\n", m_filename);
 
         return finaliseInit();

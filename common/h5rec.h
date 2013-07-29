@@ -95,10 +95,7 @@ protected:
         char m_filename[FILENAME_MAXLEN];
         // tells whether the filename should be generated from the timestamp
         bool m_makeFilename;
-         
-        // number of inputs
-        //uint m_numberOfInputs;
-
+        
         // H5 stuff
         hid_t m_infoGroup;
         hid_t m_commentsGroup;
@@ -123,6 +120,9 @@ public:
                        size_t recordLength, const double_dict& parameters,
                        const double *metadata = NULL, const size_t *metadataDims = NULL);
         bool writeRecord(uint id, const double *data, size_t length);
+        bool writeMetadata(uint id, const double *data, size_t rows, size_t cols);
+        bool writeRecordingDuration(double duration);
+        bool writeTimeStep(double dt);
 
         void waitForWriterThreads();
         

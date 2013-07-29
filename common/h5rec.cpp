@@ -131,7 +131,6 @@ bool H5RecorderCore::initialiseFile()
         }
         Logger(Debug, "Successfully created Info group.\n");
         writeScalarAttribute(m_infoGroup, "version", H5_FILE_VERSION);
-        writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
 
         hid_t grp;
         if (!createGroup(ENTITIES_GROUP, &grp)) {
@@ -161,7 +160,6 @@ void H5RecorderCore::closeFile()
         Logger(All, "--- H5RecorderCore::closeFile() ---\n");
         if (m_fid != -1) {
                 int i;
-                writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
                 addComment("Closed file.");
                 writeComments();
                 for (i=0; i<m_datasets.size(); i++)
@@ -591,6 +589,28 @@ bool ChunkedH5Recorder::writeRecord(uint id, const double *data, size_t length)
                 return false;
         pthread_join(*m_writerThreads[id], NULL);
         return true;
+}
+
+bool ChunkedH5Recorder::writeMetadata(uint id, const double *metadata, size_t rows, size_t cols)
+{
+        char datasetName[DATASET_NAME_LEN], label[LABEL_LEN] = "Stimulus_Matrix";
+        hsize_t dims[2] = {rows, cols};
+        sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, id, METADATA_DATASET);
+        if (! writeData(datasetName, 2, dims, metadata, label)) {
+                Logger(Important, "Unable to create metadata dataset.\n");
+                return false;
+        }
+        return true;
+}
+
+bool ChunkedH5Recorder::writeRecordingDuration(double duration)
+{
+        return writeScalarAttribute(m_infoGroup, "tend", duration);
+}
+
+bool ChunkedH5Recorder::writeTimeStep(double dt)
+{
+        return writeScalarAttribute(m_infoGroup, "dt", dt);
 }
 
 void* ChunkedH5Recorder::writerThread(void *arg)
