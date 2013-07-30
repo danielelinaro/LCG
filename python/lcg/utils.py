@@ -5,6 +5,17 @@ import tables as tbl
 
 ########## Functions that write configuration files ##########
 
+def conductanceBurstStim(dur, g, tau, R0, dR, Tb, taub):
+    Tb.append(dur)
+    tau_sec = tau*1e-3
+    stim = [[Tb[0], 2, g*tau*R0, g*(R0*tau/2)**0.5, tau, 0, 0, 1, int(np.random.uniform(high=10000)), 0, 0, 1]]
+    for i in range(1,len(Tb)):
+        stim.append([Tb[i]-Tb[i-1], -4, 0, 1, tau, 0, 0, 1, int(np.random.uniform(high=50000)), 2, 0, 1])
+        stim.append([0, -4, dR, 1, taub, 0, R0, 0, 0, 12, 2, 0.5])
+        stim.append([0, -4, g*(tau_sec/2)**0.5, 0, 0, 0, 0, 0, 0, 1, 2, 1])
+        stim.append([0, -4, g*tau_sec*dR, 1, taub, 0, g*tau_sec*R0, 0, 0, 12, 1, 1])
+    return stim
+
 def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.
