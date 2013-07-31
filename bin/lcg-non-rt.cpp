@@ -1,3 +1,5 @@
+#ifdef ANALOG_IO
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -15,12 +17,10 @@
 #include "common.h"
 #include "types.h"
 #include "utils.h"
-#include "configuration.h"
 #include "stimulus.h"
 #include "h5rec.h"
-#ifdef ANALOG_IO
+#include "configuration.h"
 #include "daq_io.h"
-#endif
 
 using namespace lcg;
 
@@ -227,7 +227,6 @@ int run_trial(std::vector<InputChannel*>& in_channels,
               const std::vector<OutputChannel*>& out_channels,
               double tend = -1.)
 {
-#ifdef ANALOG_IO
         int i, j, err, *retval;
         pthread_t io_thrd;
 
@@ -285,9 +284,6 @@ int run_trial(std::vector<InputChannel*>& in_channels,
         }
 
         return err;
-#else
-        return 0;
-#endif
 }
 
 int main(int argc, char *argv[])
@@ -395,3 +391,14 @@ end_main:
         return err;
 }
 
+#else
+
+#include "utils.h"
+using namespace lcg;
+
+int main() {
+        Logger(Critical, "This program requires a working installation of Comedi.\n");
+        return -1;
+}
+
+#endif

@@ -16,15 +16,10 @@
 
 class Channel {
 public:
-        Channel(const char *device, uint subdevice, uint range, uint reference,
-                uint channel, double conversionFactor, double samplingRate, const char *units);
+        Channel(const char *device, uint channel, double samplingRate, const char *units);
         virtual ~Channel();
         const char* device() const;
-        uint subdevice() const;
-        uint range() const;
-        uint reference() const;
         uint channel() const;
-        double conversionFactor() const;
         double samplingRate() const;
         const char* units() const;
         virtual double& operator[](int i) = 0;
@@ -33,13 +28,27 @@ public:
         virtual const double& at(int i) const = 0;
 
 private:
-        char m_device[FILENAME_MAXLEN];
-        uint m_subdevice, m_range, m_reference, m_channel;
-        double m_conversionFactor, m_samplingRate;
-        char m_units[10];
+        char m_device[FILENAME_MAXLEN], m_units[10];
+        uint m_channel;
+        double m_samplingRate;
 };
 
-class InputChannel : public Channel {
+class ComediChannel : public Channel {
+        ComediChannel(const char *device, uint subdevice, uint range, uint reference,
+                uint channel, double conversionFactor, double samplingRate, const char *units);
+        uint subdevice() const;
+        uint range() const;
+        uint reference() const;
+        double conversionFactor() const;
+private:
+        uint m_subdevice, m_range, m_reference;
+        double m_conversionFactor;
+};
+
+class MCSChannel : public Channel {
+};
+
+class InputChannel : public ComediChannel {
 public:
         InputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate, const char *units);
@@ -55,7 +64,7 @@ private:
         size_t m_dataLength;
 };
 
-class OutputChannel : public Channel {
+class OutputChannel : public ComediChannel {
 public:
         OutputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate,
@@ -90,7 +99,6 @@ struct io_thread_arg {
  * 2) It assumes that all input and output channels are on the same device.
  * 3) It assumes that all input channels and all output channels are on the
  *    same subdevice (which are different between in and out, obviously).
- * 4) It saves the data to a given memory location.
  */
 void* io_thread(void *in);
 

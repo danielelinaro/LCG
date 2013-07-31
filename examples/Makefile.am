@@ -1,5 +1,5 @@
-LDADD = ../stimgen/libstimgen.la ../src/liblcg.la
-AM_CPPFLAGS = -I../stimgen -I../src -I.
+LDADD = ../stimgen/liblcg_stimgen.la ../common/liblcg_common.la
+AM_CPPFLAGS = -I../stimgen -I../common -I.
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif

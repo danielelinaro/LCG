@@ -68,10 +68,12 @@ AC_ARG_WITH([examples],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
 AC_ARG_WITH([output-reset],
 	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on a realtime system)])],
-       	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
+       	    [with_output_reset=yes],
+            [if test `expr $host_os : 'linux'` -eq 5 ; then echo "WARNING: not resetting the output." ; fi])
 AC_ARG_WITH([asynchronous-io],
        	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
-       	    [with_asynchronous_io=yes],[echo "WARNING: using synchronous I/O."])
+       	    [with_asynchronous_io=yes],
+            [if test `expr $host_os : 'linux'` -eq 5 ; then echo "WARNING: using synchronous I/O." ; fi])
 
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 if test "$with_examples" = "yes" ; then

@@ -9,26 +9,30 @@ using namespace lcg;
 
 ///// CHANNEL CLASSES - START /////
 
-Channel::Channel(const char *device, uint subdevice, uint range, uint reference,
-                uint channel, double conversionFactor, double samplingRate, const char *units)
-        : m_subdevice(subdevice), m_range(range), m_reference(reference),
-          m_conversionFactor(conversionFactor), m_samplingRate(samplingRate), m_channel(channel) {
+Channel::Channel(const char *device, uint channel, double samplingRate, const char *units)
+        : m_channel(channel) m_samplingRate(samplingRate) {
         strncpy(m_device, device, FILENAME_MAXLEN);
         strncpy(m_units, units, 10);
 }
 Channel::~Channel() {}
 const char* Channel::device() const { return m_device; }
 const char* Channel::units() const { return m_units; }
-uint Channel::subdevice() const { return m_subdevice; }
-uint Channel::range() const { return m_range; }
-uint Channel::reference() const { return m_reference; }
 uint Channel::channel() const { return m_channel; }
-double Channel::conversionFactor() const { return m_conversionFactor; }
 double Channel::samplingRate() const { return m_samplingRate; }
+
+ComediChannel::ComediChannel(const char *device, uint subdevice, uint range, uint reference,
+                uint channel, double conversionFactor, double samplingRate, const char *units)
+        : Channel(device, channel, samplingRate, units), m_subdevice(subdevice), m_range(range), m_reference(reference),
+          m_conversionFactor(conversionFactor) {}
+
+uint ComediChannel::subdevice() const { return m_subdevice; }
+uint ComediChannel::range() const { return m_range; }
+uint ComediChannel::reference() const { return m_reference; }
+double ComediChannel::conversionFactor() const { return m_conversionFactor; }
 
 InputChannel::InputChannel(const char *device, uint subdevice, uint range, uint reference,
         uint channel, double conversionFactor, double samplingRate, const char *units)
-        : Channel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units),
+        : ComediChannel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units),
           m_data(NULL), m_dataLength(0)
 {}
 
@@ -86,7 +90,7 @@ bool InputChannel::allocateDataBuffer(double tend)
 
 OutputChannel::OutputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate, const char *units, const char *stimfile)
-        : Channel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units),
+        : ComediChannel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units),
           m_stimulus(1./samplingRate, stimfile)
 {}
 
