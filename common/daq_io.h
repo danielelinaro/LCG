@@ -34,6 +34,7 @@ private:
 };
 
 class ComediChannel : public Channel {
+public:
         ComediChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate, const char *units);
         uint subdevice() const;

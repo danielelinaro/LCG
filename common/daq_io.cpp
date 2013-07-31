@@ -10,7 +10,7 @@ using namespace lcg;
 ///// CHANNEL CLASSES - START /////
 
 Channel::Channel(const char *device, uint channel, double samplingRate, const char *units)
-        : m_channel(channel) m_samplingRate(samplingRate) {
+        : m_channel(channel), m_samplingRate(samplingRate) {
         strncpy(m_device, device, FILENAME_MAXLEN);
         strncpy(m_units, units, 10);
 }
@@ -167,14 +167,14 @@ static void dump_cmd(LogLevel level, comedi_cmd *cmd)
 }
 
 struct input_loop_data {
-        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<Channel*>* chan)
+        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<ComediChannel*>* chan)
                 : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
         comedi_t *device;
         uint subdevice;
         char *buffer;
         size_t buffer_length;
         comedi_polynomial_t *converters;
-        std::vector<Channel*>* channels;
+        std::vector<ComediChannel*>* channels;
 };
 
 struct output_loop_data {
@@ -267,7 +267,7 @@ void* io_thread(void *in)
         int *in_retval = NULL, *out_retval = NULL, *retval = new int;
         input_loop_data *in_data;
         output_loop_data *out_data;
-        std::vector<Channel*> input_channels, output_channels;
+        std::vector<ComediChannel*> input_channels, output_channels;
 
         io_thread_arg *arg = static_cast<io_thread_arg*>(in);
         *retval = -1;

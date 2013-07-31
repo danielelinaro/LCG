@@ -300,18 +300,21 @@ dealloc_and_fail:
 
 void print_channel(Channel* chan)
 {
+        ComediChannel *comedi = dynamic_cast<ComediChannel*>(chan);
         OutputChannel *out = dynamic_cast<OutputChannel*>(chan);
         if (out)
                 printf("Device type: OUTPUT\n");
         else
                 printf("Device type: INPUT\n");
         printf("Device: %s\n", chan->device());
-        printf("Subdevice: %d\n", chan->subdevice());
-        printf("Range: %d\n", chan->range());
-        printf("Reference: %d\n", chan->reference());
-        printf("Conversion factor: %g\n", chan->conversionFactor());
         printf("Channel: %d\n", chan->channel());
         printf("Units: %s\n", chan->units());
+        if (comedi) {
+                printf("Subdevice: %d\n", comedi->subdevice());
+                printf("Range: %d\n", comedi->range());
+                printf("Reference: %d\n", comedi->reference());
+                printf("Conversion factor: %g\n", comedi->conversionFactor());
+        }
         if (out)
                 printf("Stimfile: %s\n", out->stimulus()->stimulusFile());
 }
