@@ -12,7 +12,7 @@ using namespace lcg;
 Stimulus::Stimulus(double dt, const char *filename) :
         m_dt(dt), m_stimulus(NULL), m_metadata(NULL), m_length(0), m_metadataRows(0), m_metadataCols(0)
 {
-        if (filename != NULL) {
+        if (filename != NULL && strlen(filename)) {
                 if (!setStimulusFile(filename))
                         throw "Must provide a valid stimulus file.";
         }
