@@ -8,20 +8,42 @@ import lcg
 import time
 import subprocess as sub
 
-stim_files = {'gampa': 'gampa.stim', 'gampa_common': 'gampa_common.stim',
+class ColorFactory:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    BLUE = '\033[94m'
+    YELLOW = '\033[93m'
+    ENDC = '\033[0m'
+    def __init__(self):
+        pass
+    def __color__(self, col, str):
+        return col + str + self.ENDC
+    def red(self, str):
+        return self.__color__(self.RED, str)
+    def green(self, str):
+        return self.__color__(self.GREEN, str)
+    def blue(self, str):
+        return self.__color__(self.BLUE, str)
+    def yellow(self, str):
+        return self.__color__(self.YELLOW, str)
+
+stim_files = {'current': 'current.stim',
+              'gampa': 'gampa.stim', 'gampa_common': 'gampa_common.stim',
               'ggaba': 'ggaba.stim', 'ggaba_common': 'ggaba_common.stim',
               'gnmda': 'gnmda.stim', 'gnmda_common': 'gnmda_common.stim'}
-
 config_file = 'correlations.xml'
+colors = ColorFactory()
+switches = 'hc:n:i:d:I:O:k:R:f:F:v:b:a:m:s:t:K:'
+long_switches = ['help','with-nmda']
 
 def usage():
-    print('\nUsage: %s [--option <value>]' % os.path.basename(sys.argv[0]))
-    print('\nThe options are:\n')
+    print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
+    print('\nThe working modes are:\n')
+    print('    ' + colors.yellow('current') + '      Perform a current-clamp experiment.')
+    print('    ' + colors.green('conductance') + '  Perform a current-clamp experiment.')
+    print('\nThe global options are:\n')
     print('     -h   Display this help message and exit.')
-    print('     -v   Values of voltage at which the background activity should be balanced (comma-separated values).')
     print('     -c   Correlation coefficients (comma-separated values).')
-    print('     -f   Firing frequency of the inhibitory background population (default 3000 Hz).')
-    print('     -R   Input resistance of the cell (in MOhm).')
     print('     -n   Number of repetitions (default 100).')
     print('     -i   Interval between trials (default 2 s).')
     print('     -d   Duration of the stimulation (default 1.1 sec).')
@@ -31,16 +53,24 @@ def usage():
     print('     -k   Frequency at which a new kernel should be computed (the default is just at the beginning).')
     print('     -b   Time before stimulus onset (default 0.1 sec).')
     print('     -a   Time after stimulus offset (default 0.3 sec).')
-    print('Additionally, if the --with-nmda option is set, the following options are accepted:\n')
-    print('     -m   Mean of the NMDA conductance (default 0 nS).')
-    print('     -s   Standard deviation of the NMDA conductance (default twice the AMPA conductance).')
-    print('     -t   Time constant of the NMDA conductance (default 100 ms).')
-    print('     -K   Coefficients for the magnesium block of the NMDA conductance (default 0.2,0.02)')
+    print('\nThe following options are valid in the "' + colors.yellow('current') + '" working mode:\n')
+    print('     ' + colors.yellow('-m') + '   Mean of the noisy current.')
+    print('     ' + colors.yellow('-s') + '   Standard deviation of the noisy current.')
+    print('     ' + colors.yellow('-t') + '   Time constant of the noisy current.')
+    print('\nThe following options are valid in the "' + colors.green('conductance') + '" working mode:\n')
+    print('     ' + colors.green('-v') + '   Values of voltage at which the background activity should be balanced (comma-separated values).')
+    print('     ' + colors.green('-f') + '   Firing frequency of the inhibitory background population (default 3000 Hz).')
+    print('     ' + colors.green('-R') + '   Input resistance of the cell (in MOhm).')
+    print('\nAdditionally, if the ' + colors.blue('--with-nmda') + ' option is set, the following options are accepted:\n')
+    print('     ' + colors.blue('-m') + '   Mean of the NMDA conductance (default 0 nS).')
+    print('     ' + colors.blue('-s') + '   Standard deviation of the NMDA conductance (default twice the AMPA conductance).')
+    print('     ' + colors.blue('-t') + '   Time constant of the NMDA conductance (default 100 ms).')
+    print('     ' + colors.blue('-K') + '   Coefficients for the magnesium block of the NMDA conductance (default 0.2,0.02).')
     print('')
 
-def parseArgs():
+def parseGlobalArgs():
     try:
-        opts,args = getopt.getopt(sys.argv[1:],'hc:n:i:d:I:O:k:R:f:F:v:b:a:m:s:t:K:',['help','with-nmda'])
+        opts,args = getopt.getopt(sys.argv[2:],switches,long_switches)
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -51,14 +81,7 @@ def parseArgs():
                'duration': 1.1,   # [s]
                'kernel_frequency': 0,
                'correlation_coefficients': None,
-               'balanced_voltages': None,
-               'input_resistance': None,
-               'R_exc': 7000, # [Hz]
-               'R_inh': 3000, # [Hz]
                'sampling_rate': 20000, # [Hz]
-               'with_nmda': False,
-               'nmda_mean': 1, 'nmda_std': 1,   ### dummy values, to remove
-               'nmda_tau': 100, 'nmda_K': [0.2,0.02],
                'before': 0.1, 'after': 0.3, # [s]
                'ai': 0, 'ao': 0}
 
@@ -82,20 +105,100 @@ def parseArgs():
             options['duration'] = float(a)
         elif o == '-k':
             options['kernel_frequency'] = int(a)
-        elif o == '-R':
-            options['input_resistance'] = float(a)
         elif o == '-F':
             options['sampling_rate'] = float(a)
+        elif o == '-c':
+            options['correlation_coefficients'] = []
+            for c in a.split(','):
+                options['correlation_coefficients'].append(float(c))
+        
+    if options['sampling_rate'] <= 0:
+        print('The sampling rate must be greater than 0.')
+        sys.exit(1)
+
+    if not options['correlation_coefficients']:
+        print('You must specify the correlation coefficient(s) (-c switch).')
+        sys.exit(1)
+
+    if min(options['correlation_coefficients']) < 0 or max(options['correlation_coefficients']) > 1:
+        plural = ''
+        if len(options['correlation_coefficients']) > 1:
+            plural = 's'
+        print('The correlation coefficient' + plural + ' must be between 0 and 1.')
+        sys.exit(1)
+
+    if options['kernel_frequency'] <= 0:
+        options['kernel_frequency'] = options['reps']
+
+    return options
+
+def parseCurrentModeArgs():
+    try:
+        opts,args = getopt.getopt(sys.argv[2:],switches,long_switches)
+    except getopt.GetoptError, err:
+        print(str(err))
+        usage()
+        sys.exit(1)
+
+    options = {'current_mean': None, # [pA]
+               'current_std': None,  # [pA]
+               'current_tau': None}  # [ms]
+
+    for o,a in opts:
+        if o == '-m':
+            options['current_mean'] = float(a)
+        elif o == '-s':
+            options['current_std'] = float(a)
+        elif o == '-t':
+            options['current_tau'] = float(a)
+
+    if not options['current_mean']:
+        print('You must specify the mean of the current (-m switch).')
+        sys.exit(1)
+
+    if not options['current_std']:
+        print('You must specify the standard deviation of the current (-s switch).')
+        sys.exit(1)
+
+    if options['current_std'] < 0:
+        print('The standard deviation of the current must be non-negative.')
+        sys.exit(1)
+
+    if not options['current_tau']:
+        print('You must specify the time constant of the current (-t switch).')
+        sys.exit(1)
+
+    if options['current_tau'] < 0:
+        print('The time constant of the current must be non-negative.')
+        sys.exit(1)
+
+    return options
+
+def parseConductanceModeArgs():
+    try:
+        opts,args = getopt.getopt(sys.argv[2:],switches,long_switches)
+    except getopt.GetoptError, err:
+        print(str(err))
+        usage()
+        sys.exit(1)
+
+    options = {'balanced_voltages': None,
+               'input_resistance': None,
+               'R_exc': 7000, # [Hz]
+               'R_inh': 3000, # [Hz]
+               'with_nmda': False,
+               'nmda_mean': 1, 'nmda_std': 1,   ### dummy values, to remove
+               'nmda_tau': 100, 'nmda_K': [0.2,0.02]}
+
+    for o,a in opts:
+        if o == '-R':
+            options['input_resistance'] = float(a)
         elif o == '-f':
             options['R_inh'] = float(a)
         elif o == '-v':
             options['balanced_voltages'] = []
             for v in a.split(','):
                 options['balanced_voltages'].append(float(v))
-        elif o == '-c':
-            options['correlation_coefficients'] = []
-            for c in a.split(','):
-                options['correlation_coefficients'].append(float(c))
         elif o == '--with-nmda':
             options['with_nmda'] = True
         elif o == '-m':
@@ -120,10 +223,6 @@ def parseArgs():
         print('The firing frequency of the inhibitory population must be positive.')
         sys.exit(1)
         
-    if options['sampling_rate'] <= 0:
-        print('The sampling rate must be greater than 0.')
-        sys.exit(1)
-
     if not options['balanced_voltages']:
         print('You must specify the balanced voltage (-v switch)')
         sys.exit(1)
@@ -134,20 +233,6 @@ def parseArgs():
             plural = 's'
         print('The balanced voltage' + plural + ' must be between -80 and 0 mV.')
         sys.exit(1)
-
-    if not options['correlation_coefficients']:
-        print('You must specify the correlation coefficient(s) (-c switch)')
-        sys.exit(1)
-
-    if min(options['correlation_coefficients']) < 0 or max(options['correlation_coefficients']) > 1:
-        plural = ''
-        if len(options['correlation_coefficients']) > 1:
-            plural = 's'
-        print('The correlation coefficient' + plural + ' must be between 0 and 1.')
-        sys.exit(1)
-
-    if options['kernel_frequency'] <= 0:
-        options['kernel_frequency'] = options['reps']
 
     if options['with_nmda']:
         if options['nmda_mean'] < 0:
@@ -197,78 +282,113 @@ def writeConfigFile(options):
     config.write(config_file)
 
 def main():
-    opts = parseArgs()
-    writeConfigFile(opts)
+    mode = None
 
-    cnt = 0
-    tot = len(opts['balanced_voltages']) * len(opts['correlation_coefficients']) * opts['reps']
-    gampa = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
-    ggaba = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
+    if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help','help'):
+        usage()
+        sys.exit(0)
 
-    stim = [[opts['before'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-            [opts['duration'], 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-            [opts['after'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]
+    mode = sys.argv[1]
+    if mode != 'current' and mode != 'conductance':
+        print('Unknown working mode: [%s].' % sys.argv[1])
+        sys.exit(1)
 
-    np.random.seed(5061983)
-    ampa_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
-    np.random.seed(7051983)
-    gaba_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
-    if opts['with_nmda']:
-        np.random.seed(723587)
-        nmda_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
+    opts = parseGlobalArgs()
+
+    if mode == 'current':
+        opts = dict(parseCurrentModeArgs(), **opts)
+        tot = len(opts['correlation_coefficients']) * opts['reps']
+        stim = [[opts['before'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [opts['duration'], -2, opts['current_mean'], 0, opts['current_tau'], 0, 0, 1, 0, 2, 0, 1], # indipendent part
+                [0, -2, 0, 0, opts['current_tau'], 0, 0, 1, 0, 2, 1, 1], # common part
+                [opts['after'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]
+        I = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
+        np.random.seed(5061983)
+        I_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
+    else:
+        opts = dict(parseConductanceModeArgs(), **opts)
+        writeConfigFile(opts)
+        tot = len(opts['balanced_voltages']) * len(opts['correlation_coefficients']) * opts['reps']
+        stim = [[opts['before'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                [opts['duration'], 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+                [opts['after'], 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]]
+        gampa = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
+        ggaba = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
+        np.random.seed(5061983)
+        ampa_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
+        np.random.seed(7051983)
+        gaba_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
+        if opts['with_nmda']:
+            np.random.seed(723587)
+            nmda_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
 
     np.random.seed(int(time.time()))
-
-    np.random.shuffle(opts['balanced_voltages'])
     np.random.shuffle(opts['correlation_coefficients'])
 
-    for v in opts['balanced_voltages']:
-        ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
-        for c in opts['correlation_coefficients']:
-            gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(
-                ratio,R_exc=ratio*(1-c)*opts['R_inh'],Rin=opts['input_resistance'])
-            gampa['mc'],ggaba['mc'],gampa['sc'],ggaba['sc'] = lcg.computeSynapticBackgroundCoefficients(
-                ratio,R_exc=ratio*c*opts['R_inh'],Rin=opts['input_resistance'])
+    cnt = 0
+    for c in opts['correlation_coefficients']:
+        if mode == 'current':
+            stim[1][3] = np.sqrt(1-c)*opts['current_std']
+            stim[2][3] = np.sqrt(c)*opts['current_std']
             for k in range(opts['reps']):
-                current_ampa_seed = int(np.random.uniform(low=0, high=100*opts['reps']))
-                stim[1][2] = gampa['m']
-                stim[1][3] = gampa['s']
-                stim[1][4] = 5
-                stim[1][8] = current_ampa_seed
-                lcg.writeStimFile(stim_files['gampa'], stim, False)
-                stim[1][2] = ggaba['m']
-                stim[1][3] = ggaba['s']
-                stim[1][4] = 10
-                stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
-                lcg.writeStimFile(stim_files['ggaba'], stim, False)
-                stim[1][2] = gampa['mc']
-                stim[1][3] = gampa['sc']
-                stim[1][4] = 5
-                stim[1][8] = ampa_seeds[k]
-                lcg.writeStimFile(stim_files['gampa_common'], stim, False)
-                stim[1][2] = ggaba['mc']
-                stim[1][3] = ggaba['sc']
-                stim[1][4] = 10
-                stim[1][8] = gaba_seeds[k]
-                lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
-                if opts['with_nmda']:
-                    stim[1][2] = gampa['m']
-                    stim[1][3] = gampa['s']
-                    stim[1][4] = opts['nmda_tau']
-                    stim[1][8] = current_ampa_seed
-                    lcg.writeStimFile(stim_files['gnmda'], stim, False)
-                    stim[1][2] = gampa['m']
-                    stim[1][3] = gampa['s']
-                    stim[1][4] = opts['nmda_tau']
-                    stim[1][8] = ampa_seeds[k]
-                    lcg.writeStimFile(stim_files['gnmda_common'], stim, False)
                 if cnt%opts['kernel_frequency'] == 0:
                     sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
-                cnt = cnt+1
-                sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+                stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                stim[2][8] = I_seeds[k]
+                lcg.writeStimFile(stim_files['current'], stim, False)
+                sub.call('lcg vcclamp -V 4 -f ' + stim_files['current'], shell=True)
                 sub.call(['sleep', str(opts['interval'])])
+                cnt = cnt+1
                 if cnt%10 == 0:
                     print('[%02d/%02d]' % (cnt,tot))
+        else:
+            np.random.shuffle(opts['balanced_voltages'])
+            for v in opts['balanced_voltages']:
+                ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
+                gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(
+                    ratio,R_exc=ratio*(1-c)*opts['R_inh'],Rin=opts['input_resistance'])
+                gampa['mc'],ggaba['mc'],gampa['sc'],ggaba['sc'] = lcg.computeSynapticBackgroundCoefficients(
+                    ratio,R_exc=ratio*c*opts['R_inh'],Rin=opts['input_resistance'])
+                for k in range(opts['reps']):
+                    current_ampa_seed = int(np.random.uniform(low=0, high=100*opts['reps']))
+                    stim[1][2] = gampa['m']
+                    stim[1][3] = gampa['s']
+                    stim[1][4] = 5
+                    stim[1][8] = current_ampa_seed
+                    lcg.writeStimFile(stim_files['gampa'], stim, False)
+                    stim[1][2] = ggaba['m']
+                    stim[1][3] = ggaba['s']
+                    stim[1][4] = 10
+                    stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                    lcg.writeStimFile(stim_files['ggaba'], stim, False)
+                    stim[1][2] = gampa['mc']
+                    stim[1][3] = gampa['sc']
+                    stim[1][4] = 5
+                    stim[1][8] = ampa_seeds[k]
+                    lcg.writeStimFile(stim_files['gampa_common'], stim, False)
+                    stim[1][2] = ggaba['mc']
+                    stim[1][3] = ggaba['sc']
+                    stim[1][4] = 10
+                    stim[1][8] = gaba_seeds[k]
+                    lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
+                    if opts['with_nmda']:
+                        stim[1][2] = gampa['m']
+                        stim[1][3] = gampa['s']
+                        stim[1][4] = opts['nmda_tau']
+                        stim[1][8] = current_ampa_seed
+                        lcg.writeStimFile(stim_files['gnmda'], stim, False)
+                        stim[1][2] = gampa['m']
+                        stim[1][3] = gampa['s']
+                        stim[1][4] = opts['nmda_tau']
+                        stim[1][8] = ampa_seeds[k]
+                        lcg.writeStimFile(stim_files['gnmda_common'], stim, False)
+                    if cnt%opts['kernel_frequency'] == 0:
+                        sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+                    cnt = cnt+1
+                    sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+                    sub.call(['sleep', str(opts['interval'])])
+                    if cnt%10 == 0:
+                        print('[%02d/%02d]' % (cnt,tot))
 
 if __name__ == '__main__':
     main()

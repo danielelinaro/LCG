@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <iostream>
+#include <errno.h>
 #include "engine.h"
 #include "entity.h"
 #include "utils.h"
