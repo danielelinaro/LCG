@@ -91,7 +91,7 @@ int writeComment(const char *filename, const char *comment)
         Logger(Debug, "Successfully opened HDF5 file %s.\n", filename);
 
         // open the comments group
-        grp = H5Gopen(fid, COMMENTS_GROUP, H5P_DEFAULT);
+        grp = H5Gopen2(fid, COMMENTS_GROUP, H5P_DEFAULT);
         if (grp < 0) {
                 Logger(Critical, "%s: unable to open group.\n", COMMENTS_GROUP);
                 H5Fclose(fid);

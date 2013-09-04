@@ -53,7 +53,7 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
                 output_channels.clear();
         }
 
-        if (filename != NULL) {
+        if (filename != NULL && strlen(filename)) {
                 strncpy(configFile, filename, FILENAME_MAXLEN);
         }
         else {

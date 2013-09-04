@@ -1,4 +1,6 @@
 
+-) ADD SIGNAL HANDLING TO LCG-NON-RT!!!
+
 === Short term (and therefore relatively simple) ===
 
 -) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.

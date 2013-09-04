@@ -71,7 +71,7 @@ public:
                 return elem;
         }
 
-        value_type front() const
+        value_type front()
         {
                 // Returns front element by value and not by reference because the queue could be 
                 // modified by another thread.
