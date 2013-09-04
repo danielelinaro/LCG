@@ -424,7 +424,7 @@ void* io_thread(void *in)
                         goto end_io;
                 }
                 cmd.convert_arg = 0;    // this value is wrong, but will be fixed by comedi_command_test
-                cmd.chanlist    = in_chanlist;
+                cmd.chanlist    = out_chanlist;
                 cmd.start_src   = TRIG_INT;
                 cmd.stop_src    = TRIG_COUNT;
                 cmd.stop_arg    = ceil(arg->tend/arg->dt);
@@ -454,8 +454,16 @@ void* io_thread(void *in)
                 output_buffer = new char[output_buffer_length];
                 Logger(Debug, "The total size of the output buffer is %ld bytes (= %.2f Mb).\n",
                                 output_buffer_length, (double) output_buffer_length/(1024*1024));
-
-                // fill the buffer and FULLY preload it
+				// List the conversion factors. *Used for debugging.*
+                //
+				//for (j=0; j<n_output_channels; j++) 
+				//	Logger(Critical,"Conversion factor for channel %d is %lf, stim:%s, first: %lf.\n",
+				//			arg->output_channels->at(j)->channel(),
+				//			arg->output_channels->at(j)->conversionFactor(),
+				//			arg->output_channels->at(j)->stimulusFile(),
+				//			arg->output_channels->at(j)->at(1));
+                //
+				// fill the buffer and FULLY preload it
                 nsteps = ceil(arg->tend/arg->dt);
                 double sample;
                 sampl_t *ptr = (sampl_t*) output_buffer;
