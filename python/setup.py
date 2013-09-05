@@ -42,7 +42,8 @@ setup(
             'lcg-ramp = lcg.ramp:main',
             'lcg-vi = lcg.vi:main',
             'lcg-kernel = lcg.kernel:main',
-            'lcg-rate-steps = lcg.rate_steps:main'
+            'lcg-rate-steps = lcg.rate_steps:main',
+            'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main'
             ]
         }
     )

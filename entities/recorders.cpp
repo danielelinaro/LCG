@@ -92,8 +92,8 @@ bool BaseH5Recorder::initialise()
         if (!initialiseFile())
                 return false;
 
-        writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
         Logger(Debug, "Successfully initialised file [%s].\n", m_filename);
+        writeScalarAttribute(m_infoGroup, "dt", GetGlobalDt());
 
         return finaliseInit();
 }
@@ -101,7 +101,8 @@ bool BaseH5Recorder::initialise()
 void BaseH5Recorder::terminate()
 {
         Logger(Debug, "BaseH5Recorder::terminate()\n");
-        closeFile();
+        writeScalarAttribute(m_infoGroup, "tend", GetGlobalTime() - GetGlobalDt());
+		closeFile();
 }
 
 #if defined(HAVE_LIBRT)
@@ -210,14 +211,12 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
           m_data(), m_threadRun(false), m_runCount(0)
 {
         m_bufferLengths = new hsize_t[H5Recorder::numberOfBuffers];
-        //m_mutex = PTHREAD_MUTEX_INITIALIZER;
-        //m_cv = PTHREAD_COND_INITIALIZER;
         setName("H5Recorder");
 }
 
 H5Recorder::~H5Recorder()
 {
-        terminate();
+		closeFile();
         for (int i=0; i<m_numberOfInputs; i++) {
                 for(int j=0; j<H5Recorder::numberOfBuffers; j++)
                         delete m_data[i][j];
