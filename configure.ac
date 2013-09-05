@@ -36,6 +36,7 @@ AC_CONFIG_FILES([Makefile
 		stimgen/Makefile
 		common/Makefile
                 entities/Makefile
+                streams/Makefile
                 rt/Makefile
 		bin/Makefile
 		bin/scripts/Makefile])

@@ -9,6 +9,7 @@
 
 namespace lcg {
 class Entity;
+class Stream;
 }
 
 typedef unsigned int uint;
@@ -23,7 +24,8 @@ typedef std::map<std::string,double> double_dict;
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef lcg::Entity* (*Factory)(string_dict&);
+typedef lcg::Entity* (*NttFactory)(string_dict&);
+typedef lcg::Stream* (*StrmFactory)(string_dict&);
 #ifdef __cplusplus
 }
 #endif

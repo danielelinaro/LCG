@@ -162,7 +162,7 @@ void Entity::setUnits(const std::string& units)
 Entity* EntityFactory(const char *entityName, string_dict& args)
 {
         Entity *entity = NULL;
-        Factory builder;
+        NttFactory builder;
         void *library, *addr;
         char symbol[50] = {0};
 
@@ -184,7 +184,7 @@ Entity* EntityFactory(const char *entityName, string_dict& args)
                 Logger(Debug, "Successfully found symbol %s.\n", symbol);
         }
 
-        builder = (Factory) addr;
+        builder = (NttFactory) addr;
         entity = builder(args);
 
 close_lib:
