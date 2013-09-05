@@ -203,7 +203,7 @@ void* input_loop(void *arg)
                 bytes_per_sample = sizeof(lsampl_t);
         else
                 bytes_per_sample = sizeof(sampl_t);
-        while ((ret = read(comedi_fileno(data->device), data->buffer, data->buffer_length)) > 0) {
+        while (!KILL_PROGRAM() && (ret = read(comedi_fileno(data->device), data->buffer, data->buffer_length)) > 0) {
                 total += ret;
                 Logger(Debug, "Read %d bytes from the board [%d/%d].\r", ret, total, data->buffer_length);
                 for (i=0; i<ret/bytes_per_sample; i++) {
@@ -234,7 +234,7 @@ void* output_loop(void *arg)
                                                // there is probably some other problem.
         *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
         bytes_to_write = data->buffer_length - data->bytes_written;
-        while (bytes_to_write > 0) {
+        while (!KILL_PROGRAM() && bytes_to_write > 0) {
                 bytes_written = write(comedi_fileno(data->device), (void *) (data->buffer+data->bytes_written), bytes_to_write);
                 if (bytes_written < 0) {
                         Logger(Critical, "Error while writing: %s\n", strerror(errno));
@@ -463,7 +463,8 @@ void* io_thread(void *in)
 				//			arg->output_channels->at(j)->stimulusFile(),
 				//			arg->output_channels->at(j)->at(1));
                 //
-				// fill the buffer and FULLY preload it
+		
+                // fill the buffer and FULLY preload it
                 nsteps = ceil(arg->tend/arg->dt);
                 double sample;
                 sampl_t *ptr = (sampl_t*) output_buffer;
