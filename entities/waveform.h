@@ -43,7 +43,6 @@ private:
         bool m_triggered;
         Stimulus *m_stimulus;
         char m_stimulusFile[FILENAME_MAXLEN];
-        bool m_toInitialise;
 };
 
 } // namespace generators

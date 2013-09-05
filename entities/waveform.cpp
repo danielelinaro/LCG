@@ -30,40 +30,25 @@ namespace lcg {
 namespace generators {
 
 Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, uint id)
-        : Generator(id), m_triggered(triggered), m_toInitialise(true)
+        : Generator(id), m_triggered(triggered)
 {
         setName("Waveform");
         setUnits(units);
-        if (stimulusFile && strlen(stimulusFile)) {
+        if (stimulusFile && strlen(stimulusFile))
                 strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
-                m_stimulus = new Stimulus(GetGlobalDt(), m_stimulusFile);
-        }
-        else {
+        else
                 m_stimulusFile[0] = 0;
-                m_stimulus = NULL;
-        }
+        m_stimulus = new Stimulus(GetGlobalDt(), m_stimulusFile);
 }
 
 Waveform::~Waveform()
 {
-        if (m_stimulus)
-                delete m_stimulus;
+		delete m_stimulus;
 }
 
 bool Waveform::initialise()
 {
-        if (m_toInitialise) {
-                if (m_stimulus)
-                        delete m_stimulus;
-                try {
-                        m_stimulus = new Stimulus(GetGlobalDt(), m_stimulusFile);
-                } catch(...) {
-                        Logger(Critical, "Unable to parse stimulus file [%s].\n", m_stimulusFile);
-                        return false;
-                }
-        }
-        // parse again the file in the next calls to initialise
-        m_toInitialise = true;
+		m_stimulus->setStimulusFile(m_stimulusFile);
 
         if (!m_triggered) {
                 m_position = 0;
@@ -83,7 +68,7 @@ const char* Waveform::stimulusFile() const
 bool Waveform::setStimulusFile(const char *stimulusFile)
 {
         strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
-        return !(m_toInitialise = !m_stimulus->setStimulusFile(stimulusFile));
+		return m_stimulus->setStimulusFile(m_stimulusFile);
 }
 
 double Waveform::duration() const
