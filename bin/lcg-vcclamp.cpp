@@ -400,8 +400,9 @@ int main(int argc, char *argv[])
         SetLoggingLevel(Info);
         
 	parse_args(argc, argv, &opts);
-
-        if (parse_configuration_file(entities, &opts) != 0) {
+        SetGlobalDt(opts.dt);
+	
+	if (parse_configuration_file(entities, &opts) != 0) {
                 write_default_configuration_file();
                 parse_configuration_file(entities, &opts);
         }
@@ -418,8 +419,6 @@ int main(int argc, char *argv[])
 			goto endMain;
 		}
 	}
-
-        SetGlobalDt(opts.dt);
 
         Logger(Info, "Number of batches: %d.\n", opts.nBatches);
         Logger(Info, "Number of trials: %d.\n", opts.nTrials);
