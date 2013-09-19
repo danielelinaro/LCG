@@ -236,8 +236,8 @@ def parseConductanceModeArgs():
         if options['nmda_tau'] <= 0:
             print('The time constant of the NMDA conductance must be positive')
             sys.exit(1)
-        if not np.all(np.array(options['nmda_K']) >= 0):
-            print('The K1 and K2 coefficients must be non-negative.')
+        if not np.all(np.array(options['nmda_K']) > 0):
+            print('The K1 and K2 coefficients must be positive.')
             sys.exit(1)
         if options['nmda_mean'] == 0 and options['nmda_std'] == 0:
             print('Both mean and standard deviation of the NMDA conductance are zero, I cowardly refuse to continue.')
@@ -312,7 +312,6 @@ def main():
         gaba_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
         if opts['with_nmda']:
             np.random.seed(723587)
-            gnmda = {'m': 0, 's': 0, 'mc': 0, 'sc': 0}
             nmda_seeds = map(int, np.random.uniform(low=0, high=10000, size=opts['reps']))
 
     np.random.seed(int(time.time()))
@@ -336,10 +335,6 @@ def main():
                     print('[%02d/%02d]' % (cnt,tot))
         else:
             np.random.shuffle(opts['balanced_voltages'])
-            gnmda['m'] = (1-c)*opts['nmda_mean']
-            gnmda['mc'] = c*opts['nmda_mean']
-            gnmda['s'] = np.sqrt(1-c)*opts['nmda_std']
-            gnmda['sc'] = np.sqrt(c)*opts['nmda_std']
             for v in opts['balanced_voltages']:
                 ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
                 gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(
@@ -347,10 +342,11 @@ def main():
                 gampa['mc'],ggaba['mc'],gampa['sc'],ggaba['sc'] = lcg.computeSynapticBackgroundCoefficients(
                     ratio,R_exc=ratio*c*opts['R_inh'],Rin=opts['input_resistance'])
                 for k in range(opts['reps']):
+                    current_ampa_seed = int(np.random.uniform(low=0, high=100*opts['reps']))
                     stim[1][2] = gampa['m']
                     stim[1][3] = gampa['s']
                     stim[1][4] = 5
-                    stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                    stim[1][8] = current_ampa_seed
                     lcg.writeStimFile(stim_files['gampa'], stim, False)
                     stim[1][2] = ggaba['m']
                     stim[1][3] = ggaba['s']
@@ -368,15 +364,15 @@ def main():
                     stim[1][8] = gaba_seeds[k]
                     lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
                     if opts['with_nmda']:
-                        stim[1][2] = gnmda['m']
-                        stim[1][3] = gnmda['s']
+                        stim[1][2] = gampa['m']
+                        stim[1][3] = gampa['s']
                         stim[1][4] = opts['nmda_tau']
-                        stim[1][8] = int(np.random.uniform(low=0, high=100*opts['reps']))
+                        stim[1][8] = current_ampa_seed
                         lcg.writeStimFile(stim_files['gnmda'], stim, False)
-                        stim[1][2] = gnmda['m']
-                        stim[1][3] = gnmda['s']
+                        stim[1][2] = gampa['m']
+                        stim[1][3] = gampa['s']
                         stim[1][4] = opts['nmda_tau']
-                        stim[1][8] = nmda_seeds[k]
+                        stim[1][8] = ampa_seeds[k]
                         lcg.writeStimFile(stim_files['gnmda_common'], stim, False)
                     if cnt%opts['kernel_frequency'] == 0:
                         sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
