@@ -41,6 +41,7 @@ double realtimeDt;
 
 ////// COMMENTS HANDLING CODE - START //////
 
+bool commentsThreadRunning = false;
 bool readingComment = false;
 pthread_t commentsThread;
 pthread_mutex_t commentsMutex;
@@ -75,6 +76,7 @@ void StartCommentsReaderThread(std::vector<Entity*> *entities)
         int i=0;
         recorders::Recorder *rec = NULL;
         Logger(Debug, "Starting comments reader thread.\n");
+        commentsThreadRunning = false;
         while (i < entities->size() && (rec = dynamic_cast<recorders::Recorder*>(entities->at(i))) == NULL)
                 i++;
         if (rec != NULL) {
@@ -95,6 +97,7 @@ void StartCommentsReaderThread(std::vector<Entity*> *entities)
                 }
                 else {
                         Logger(Debug, "Comments reader thread started.\n");
+                        commentsThreadRunning = true;
                 }
         }
         else {
@@ -104,17 +107,19 @@ void StartCommentsReaderThread(std::vector<Entity*> *entities)
 
 void StopCommentsReaderThread()
 {
-        Logger(Debug, "Stopping comments reader thread.\n");
-        pthread_mutex_lock(&commentsMutex);
-        while (readingComment)
-                pthread_cond_wait(&commentsCV, &commentsMutex);
-        pthread_mutex_unlock(&commentsMutex);
-        if (pthread_cancel(commentsThread) != ESRCH)
-                Logger(Debug, "Comments reader thread stopped.\n");
-        else
-                Logger(Critical, "No such thread.\n");
-        pthread_mutex_destroy(&commentsMutex);
-        pthread_cond_destroy(&commentsCV);
+        if (commentsThreadRunning) {
+                Logger(Debug, "Stopping comments reader thread.\n");
+                pthread_mutex_lock(&commentsMutex);
+                while (readingComment)
+                        pthread_cond_wait(&commentsCV, &commentsMutex);
+                pthread_mutex_unlock(&commentsMutex);
+                if (pthread_cancel(commentsThread) != ESRCH)
+                        Logger(Debug, "Comments reader thread stopped.\n");
+                else
+                        Logger(Critical, "No such thread.\n");
+                pthread_mutex_destroy(&commentsMutex);
+                pthread_cond_destroy(&commentsCV);
+        }
 }
 
 ////// COMMENTS HANDLING CODE - END //////

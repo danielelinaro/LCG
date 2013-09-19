@@ -21,7 +21,6 @@ public:
         virtual void step();
 
 private:
-        void emitSpike(double timeout = 2e-3) const;
         void calculateTimeNextSpike();
 
 private:

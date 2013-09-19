@@ -372,14 +372,14 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     Ksize = int(Kdur/info['dt'])
     Kt = np.arange(0,Kdur,info['dt'])[:Ksize]
     for ntt in entities:
-        if ntt['name'] == 'Waveform':
+        if 'metadata' in ntt and ntt['units'] == 'pA':
             I = ntt['data']
             stimtimes = np.cumsum(ntt['metadata'][:,0])
             pulse = np.nonzero(ntt['metadata'][:,0] == 0.01)[0][0]
             if len(interval) != 2:
                 idx = np.nonzero(ntt['metadata'][:,0] > 5)[0][0]
                 interval = stimtimes[idx-1:idx+1]
-        elif ntt['units'] == 'mV' :
+        elif ntt['name'] == 'AnalogInput' and ntt['units'] == 'mV':
             V = ntt['data']
     t = np.arange(len(V)) * info['dt']
     idx = np.intersect1d(np.nonzero(t >= interval[0])[0], np.nonzero(t <= interval[1])[0])
