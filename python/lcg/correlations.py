@@ -56,7 +56,7 @@ def usage():
     print('\nThe following options are valid in the "' + colors.yellow('current') + '" working mode:\n')
     print('     ' + colors.yellow('-m') + '   Mean of the noisy current.')
     print('     ' + colors.yellow('-s') + '   Standard deviation of the noisy current.')
-    print('     ' + colors.yellow('-t') + '   Time constant of the noisy current.')
+    print('     ' + colors.yellow('-t') + '   Time constant of the noisy current (default -1 ms, which means Gaussian noise).')
     print('\nThe following options are valid in the "' + colors.green('conductance') + '" working mode:\n')
     print('     ' + colors.green('-v') + '   Values of voltage at which the background activity should be balanced (comma-separated values).')
     print('     ' + colors.green('-f') + '   Firing frequency of the inhibitory background population (default 3000 Hz).')
@@ -142,7 +142,7 @@ def parseCurrentModeArgs():
 
     options = {'current_mean': None, # [pA]
                'current_std': None,  # [pA]
-               'current_tau': None}  # [ms]
+               'current_tau': -1}  # [ms]
 
     for o,a in opts:
         if o == '-m':
@@ -162,14 +162,6 @@ def parseCurrentModeArgs():
 
     if options['current_std'] < 0:
         print('The standard deviation of the current must be non-negative.')
-        sys.exit(1)
-
-    if not options['current_tau']:
-        print('You must specify the time constant of the current (-t switch).')
-        sys.exit(1)
-
-    if options['current_tau'] < 0:
-        print('The time constant of the current must be non-negative.')
         sys.exit(1)
 
     return options
