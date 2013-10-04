@@ -37,7 +37,7 @@ AC_CONFIG_FILES([Makefile
 		common/Makefile
                 entities/Makefile
                 streams/Makefile
-                rt/Makefile
+                engine/Makefile
 		bin/Makefile
 		bin/scripts/Makefile])
 

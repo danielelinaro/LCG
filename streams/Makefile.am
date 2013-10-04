@@ -1,8 +1,8 @@
-AM_CPPFLAGS = -I../stimgen -I../common -I.
+AM_CPPFLAGS = -I../stimgen -I../common -I../entities -I.
 lib_LTLIBRARIES = liblcg_streams.la
-liblcg_streams_la_SOURCES = stream.cpp
+liblcg_streams_la_SOURCES = stream.cpp channel.cpp
 liblcg_streams_la_LDFLAGS = -version-info ${LIB_VER}
-include_HEADERS = stream.h
+include_HEADERS = stream.h channel.h
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif

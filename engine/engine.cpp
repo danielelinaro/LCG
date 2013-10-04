@@ -4,6 +4,7 @@
 #include <iostream>
 #include "engine.h"
 #include "entity.h"
+#include "stream.h"
 #include "utils.h"
 #include "common.h"
 
@@ -507,6 +508,21 @@ int Simulate(std::vector<Entity*> *entities, double tend)
                 Logger(Important, "There were some problems with the simulation thread.\n");
 
         return retval;
+}
+
+int Simulate(std::vector<Stream*>* streams, double tend)
+{
+        int i;
+        Logger(Info, "Simulate(std::vector<Stream*>* streams, double)\n");
+        for (i=0; i<streams->size(); i++)
+                streams->at(i)->initialise();
+        for (i=0; i<streams->size(); i++)
+                streams->at(i)->run();
+        for (i=0; i<streams->size(); i++)
+                streams->at(i)->join();
+        for (i=0; i<streams->size(); i++)
+                streams->at(i)->terminate();
+        return 0;
 }
 
 } // namespace lcg

@@ -30,7 +30,7 @@ const std::map<std::string,double>& Stream::parameters() const
 double& Stream::parameter(const std::string name)
 {
         if (m_parameters.count(name) == 0)
-                throw "No parameter with such a name";
+                throw "No parameter with such name";
         return m_parameters[name];
 }
 
@@ -39,7 +39,7 @@ void Stream::connect(Stream *stream)
         Logger(All, "--- Stream::connect(Stream*) ---\n");
 
         if (stream == this) {
-                Logger(Critical, "Can't connect an stream to itself (stream #%d).\n", stream->id());
+                Logger(Critical, "Can't connect a stream to itself (stream #%d).\n", stream->id());
                 throw "Tried to connect stream to itself.";
         }
 

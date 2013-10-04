@@ -24,7 +24,11 @@
 
 namespace lcg {
 
+class Entity;
+class Stream;
+
 int Simulate(std::vector<Entity*> *entities, double tend);
+int Simulate(std::vector<Stream*> *streams, double tend);
 
 #ifdef REALTIME_ENGINE
 extern double globalTimeOffset;

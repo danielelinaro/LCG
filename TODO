@@ -1,8 +1,7 @@
 
--) ADD SIGNAL HANDLING TO LCG-NON-RT!!!
-
 === Short term (and therefore relatively simple) ===
 
+-) add output reset in output stream.
 -) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
 -) control output trimming in comedi_io.cpp.
 -) analog output should also be proxied in asynchronous mode.

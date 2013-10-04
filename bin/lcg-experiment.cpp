@@ -14,6 +14,7 @@
 #include "waveform.h"
 #include "engine.h"
 #include "recorders.h"
+#include "stream.h"
 
 #include "sha1.h"
 
@@ -54,7 +55,7 @@ static struct option longopts[] = {
         {NULL, 0, NULL, 0}
 };
 
-const char lcg_vcclamp_usage_string[] =
+const char lcg_experiment_usage_string[] =
         "This program performs closed loop, hybrid, dynamic-clamp experiments: you name it, we got it...\n\n"
         "Usage: lcg experiment [<options> ...]\n"
         "where options are:\n"
@@ -68,7 +69,7 @@ const char lcg_vcclamp_usage_string[] =
 
 static void usage()
 {
-        printf("%s\n", lcg_vcclamp_usage_string);
+        printf("%s\n", lcg_experiment_usage_string);
 }
 
 void parse_args(int argc, char *argv[], options *opts)
@@ -133,13 +134,16 @@ void parse_args(int argc, char *argv[], options *opts)
         opts->iti = (useconds_t) (1e6 * iti);
 }
 
-int parse_configuration_file(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
+int parse_configuration_file(const std::string& filename,
+                             std::vector<Entity*>& entities, std::vector<Stream*>& streams,
+                             double *tend, double *dt)
 {
         ptree pt;
         uint id;
         std::string name, conn;
         std::map< uint, std::vector<uint> > connections;
         std::map< uint, Entity* > ntts;
+        std::map< uint, Stream* > strms;
 
         try {
                 read_xml(filename, pt);
@@ -166,61 +170,95 @@ int parse_configuration_file(const std::string& filename, std::vector<Entity*>& 
                 SetRunTime(*tend);
 
                 /*** entities ***/
-                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("lcg.entities")) {
-                        string_dict args;
-                        name = ntt.second.get<std::string>("name");
-                        id = ntt.second.get<uint>("id");
-                        if (ntts.count(id) == 1) {
-                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
-                                entities.clear();
-                                return -1;
-                        }
-                        args["id"] = ntt.second.get<std::string>("id");
-                        BOOST_FOREACH(ptree::value_type &pars, ntt.second.get_child("parameters")) {
-                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
-                                        args[pars.first] = std::string(pars.second.data());
-                        }
+                char *children[2] = {"lcg.entities","lcg.streams"};
+                for (int i=0; i<2; i++) {
                         try {
-                                conn = ntt.second.get<std::string>("connections");
-                                // this test allows to have <connections></connections> in the configuration file
-                                if (conn.length() > 0) {
-                                        connections[id] = std::vector<uint>();
-                                        size_t start=0, stop;
-                                        int post;
-                                        Logger(Debug, "Entity #%d is connected to entities", id);
-                                        while ((stop = conn.find(",",start)) != conn.npos) {
-                                                std::stringstream ss(conn.substr(start,stop-start));
-                                                ss >> post;
-                                                connections[id].push_back(post);
-                                                start = stop+1;
-                                                Logger(Debug, " #%d", post);
+                                BOOST_FOREACH(ptree::value_type &vt, pt.get_child(children[i])) {
+                                        string_dict args;
+                                        name = vt.second.get<std::string>("name");
+                                        id = vt.second.get<uint>("id");
+                                        if (ntts.count(id) == 1 || strms.count(id) == 1) {
+                                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
+                                                entities.clear();
+                                                return -1;
                                         }
-                                        std::stringstream ss(conn.substr(start,stop-start));
-                                        ss >> post;
-                                        connections[id].push_back(post);
-                                        Logger(Debug, " #%d.\n", post);
+                                        args["id"] = vt.second.get<std::string>("id");
+                                        BOOST_FOREACH(ptree::value_type &pars, vt.second.get_child("parameters")) {
+                                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
+                                                        args[pars.first] = std::string(pars.second.data());
+                                        }
+                                        try {
+                                                conn = vt.second.get<std::string>("connections");
+                                                // this test allows to have <connections></connections> in the configuration file
+                                                if (conn.length() > 0) {
+                                                        connections[id] = std::vector<uint>();
+                                                        size_t start=0, stop;
+                                                        int post;
+                                                        Logger(Debug, "Entity #%d is connected to entities", id);
+                                                        while ((stop = conn.find(",",start)) != conn.npos) {
+                                                                std::stringstream ss(conn.substr(start,stop-start));
+                                                                ss >> post;
+                                                                connections[id].push_back(post);
+                                                                start = stop+1;
+                                                                Logger(Debug, " #%d", post);
+                                                        }
+                                                        std::stringstream ss(conn.substr(start,stop-start));
+                                                        ss >> post;
+                                                        connections[id].push_back(post);
+                                                        Logger(Debug, " #%d.\n", post);
+                                                }
+                                        } catch(std::exception e) {
+                                                Logger(Debug, "No connections for entity #%d.\n", id);
+                                        }
+                                        if (i == 0) {
+                                                Entity *entity;
+                                                try {
+                                                        entity = EntityFactory(name.c_str(), args);
+                                                        if (entity == NULL)
+                                                                throw "Entity factory is missing";
+                                                } catch(const char *err) {
+                                                        Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
+                                                        for (int i=0; i<entities.size(); i++)
+                                                                delete entities[i];
+                                                        entities.clear();
+                                                        return -1;
+                                                }
+                                                entities.push_back(entity);
+                                                ntts[id] = entity;
+                                        }
+                                        else {
+                                                Stream *stream;
+                                                try {
+                                                        stream = StreamFactory(name.c_str(), args);
+                                                        if (stream == NULL)
+                                                                throw "Stream factory is missing";
+                                                } catch(const char *err) {
+                                                        Logger(Critical, "Unable to create stream [%s]: %s.\n", name.c_str(), err);
+                                                        for (int i=0; i<entities.size(); i++)
+                                                                delete entities[i];
+                                                        entities.clear();
+                                                        for (int i=0; i<streams.size(); i++)
+                                                                delete streams[i];
+                                                        streams.clear();
+                                                        return -1;
+                                                }
+                                                streams.push_back(stream);
+                                                strms[id] = stream;
+                                        }
                                 }
-                        } catch(std::exception e) {
-                                Logger(Debug, "No connections for entity #%d.\n", id);
+        
+                                if (i == 0) {
+                                        EntitySorter sorter;
+                                        std::sort(entities.begin(), entities.end(), sorter);
+                                }
+                                else {
+                                        StreamSorter sorter;
+                                        std::sort(streams.begin(), streams.end(), sorter);
+                                }
+                        } catch (...) {
+                                Logger(Debug, "No children %s.\n", children[i]);
                         }
-                        Entity *entity;
-                        try {
-                                entity = EntityFactory(name.c_str(), args);
-                                if (entity == NULL)
-                                        throw "Entity factory is missing";
-                        } catch(const char *err) {
-                                Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
-                                for (int i=0; i<entities.size(); i++)
-                                        delete entities[i];
-                                entities.clear();
-                                return -1;
-                        }
-                        entities.push_back(entity);
-                        ntts[id] = entity;
                 }
-
-                EntitySorter sorter;
-                std::sort(entities.begin(), entities.end(), sorter);
 
                 /*** connections ***/
                 uint idPre, idPost;
@@ -231,6 +269,15 @@ int parse_configuration_file(const std::string& filename, std::vector<Entity*>& 
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
                                 Logger(Debug, "Connecting entity #%d to entity #%d.\n", idPre, idPost);
+                        }
+                }
+                for (int i=0; i<streams.size(); i++) {
+                        idPre = streams[i]->id();
+                        Logger(Debug, "Id = %d.\n", idPre);
+                        for (int j=0; j<connections[idPre].size(); j++) {
+                                idPost = connections[idPre][j];
+                                streams[i]->connect(strms[idPost]);
+                                Logger(Debug, "Connecting stream #%d to stream #%d.\n", idPre, idPost);
                         }
                 }
 
@@ -490,9 +537,10 @@ int main(int argc, char *argv[])
         int success;
         double tend, dt;
         std::vector<Entity*> entities;
+        std::vector<Stream*> streams;
         lcg::generators::Waveform *stimulus;
 
-        if (parse_configuration_file(opts.configFile, entities, &tend, &dt) != 0) {
+        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt) != 0) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
@@ -505,7 +553,10 @@ int main(int argc, char *argv[])
         for (int i=0; i<opts.nTrials; i++) {
                 Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
                 ResetGlobalTime();
-                success = Simulate(&entities,tend);
+                if (!entities.empty())
+                        success = Simulate(&entities,tend);
+                else
+                        success = Simulate(&streams,tend);
                 if (success!=0 || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)
@@ -517,6 +568,8 @@ int main(int argc, char *argv[])
 endMain:
         for (int i=0; i<entities.size(); i++)
                 delete entities[i];
+        for (int i=0; i<streams.size(); i++)
+                delete streams[i];
 
         return 0;
 }

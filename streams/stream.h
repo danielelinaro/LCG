@@ -42,6 +42,7 @@ namespace lcg
 {
 
 class Stream {
+public:
         /*!
          * Costructor that simply assigns an identifier to the stream.
          * \param id The identifier of the stream.
@@ -74,9 +75,6 @@ class Stream {
 
         /*! Returns a vector that contains all the streams connected to this stream. */
         const std::vector<Stream*>& pre() const;
-
-        /*! Returns a vector that contains all the streams this stream is connected to. */
-        const std::vector<Stream*>& post() const;
 
         /*! Returns the name of the stream. */
         const std::string& name() const;
@@ -131,10 +129,16 @@ class Stream {
         /*! Provides access to the i-th element in the internal buffer of this stream. */
         virtual const double& at(int i) const = 0;
 
+        /*! Instructs the stream to perform its operations. */
+        virtual void run() = 0;
+
+        /*! Blocks until the stream is running. */
+        virtual void join() = 0;
+
 protected:
         /*!
-         * Adds an stream to the list of objects that provide inputs to this stream.
-         * \param stream An stream to be connected to this stream.
+         * Adds a stream to the list of objects that provide inputs to this stream.
+         * \param stream A stream to be connected to this stream.
          */
         virtual void addPre(Stream *stream);
 
@@ -165,6 +169,17 @@ private:
         /*! The units of measure of the output of this stream. */
         std::string m_units;
 };
+
+/*!
+ * \class StreamSorter
+ * \brief A helper class to sort streams in a list according to their ID.
+ */
+class StreamSorter {
+public:
+    bool operator() (const Stream* s1, const Stream* s2) { return s1->id() < s2->id(); }
+};
+
+Stream* StreamFactory(const char *name, string_dict& args);
 
 }
 

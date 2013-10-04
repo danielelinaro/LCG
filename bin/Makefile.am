@@ -1,5 +1,5 @@
-LDADD = ../stimgen/liblcg_stimgen.la ../common/liblcg_common.la ../entities/liblcg_entities.la ../rt/liblcg_rt.la
-AM_CPPFLAGS = -I../stimgen -I../common -I../entities -I../rt -I.
+LDADD = ../stimgen/liblcg_stimgen.la ../common/liblcg_common.la ../entities/liblcg_entities.la ../engine/liblcg_engine.la ../streams/liblcg_streams.la
+AM_CPPFLAGS = -I../stimgen -I../common -I../entities -I../streams -I../engine -I.
 bin_PROGRAMS = lcg lcg-help lcg-experiment lcg-annotate lcg-non-rt
 lcg_SOURCES = lcg.cpp
 lcg_experiment_SOURCES = lcg-experiment.cpp
