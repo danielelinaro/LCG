@@ -1,7 +1,8 @@
+#include <errno.h>
+
 #include "channel.h"
 #include "utils.h"
 #include "comedi_io.h"
-#include <errno.h>
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -206,9 +207,11 @@ void ComediChannel::run()
         devices[device()]->acquire();
 }
 
-void ComediChannel::join()
+void ComediChannel::join(int *retval)
 {
-        devices[device()]->join();
+        int err;
+        devices[device()]->join(&err);
+        *retval = err;
 }
 
 InputChannel::InputChannel(const char *device, uint subdevice, uint range, uint reference,
@@ -327,20 +330,29 @@ const double* OutputChannel::metadata(size_t *dims, char *label) const
         return m_stimulus.metadata(&dims[0], &dims[1]);
 }
 
-Device::Device(const char *device, bool autoDestroy)
-        : m_device(device), m_subdevices(), m_autoDestroy(autoDestroy), m_acquiring(false)
+const double* OutputChannel::data(size_t *length) const
 {
-        Logger(Debug, "Created Device [%s].\n", device);
+        size_t unused;
+        *length = m_stimulus.length();
+        return m_stimulus.data(&unused);
+}
+
+Device::Device(const char *device, bool autoDestroy)
+        : m_subdevices(), m_autoDestroy(autoDestroy),
+          m_acquiring(false), m_joined(false), m_retval(0)
+{
+        strcpy(m_device, device);
+        Logger(Debug, "Created Device [%s].\n", m_device);
 }
 
 Device::~Device()
 {
-        Logger(Debug, "Destroyed Device [%s].\n", m_device.c_str());
+        Logger(Debug, "Destroyed Device [%s].\n", m_device);
 }
 
 bool Device::isSameDevice(ComediChannel *channel) const
 {
-        return strcmp(channel->device(),m_device.c_str()) == 0;
+        return strcmp(channel->device(),m_device) == 0;
 }
 
 bool Device::isChannelPresent(ComediChannel *channel) const
@@ -382,165 +394,62 @@ bool Device::removeChannel(ComediChannel *channel)
 void Device::acquire()
 {
         if (m_acquiring) {
-                Logger(Debug, "Already acquiring data from device %s.\n", m_device.c_str());
+                Logger(Debug, "Already acquiring data from device %s.\n", m_device);
                 return;
         }
-        Logger(Debug, "Will start acquiring data from device %s.\n", m_device.c_str());
+        Logger(Debug, "Will start acquiring data from device %s.\n", m_device);
+        int err = pthread_create(&m_ioThread, NULL, IOThread, (void *) this);
+        if (err) {
+                Logger(Critical, "Unable to start the I/O thread.\n");
+                return;
+        }
+        Logger(Debug, "Successfully started the I/O thread.\n");
         m_acquiring = true;
+        m_joined = false;
 }
 
-void Device::join()
+void Device::join(int *retval)
 {
-}
-
-}
-/*
-///// CHANNEL CLASSES - END /////
-
-static char *cmd_src(int src,char *buf)
-{
-	buf[0]=0;
-	if (src & TRIG_NONE) strcat(buf,"none|");
-	if (src & TRIG_NOW) strcat(buf,"now|");
-	if (src & TRIG_FOLLOW) strcat(buf, "follow|");
-	if (src & TRIG_TIME) strcat(buf, "time|");
-	if (src & TRIG_TIMER) strcat(buf, "timer|");
-	if (src & TRIG_COUNT) strcat(buf, "count|");
-	if (src & TRIG_EXT) strcat(buf, "ext|");
-	if (src & TRIG_INT) strcat(buf, "int|");
-#ifdef TRIG_OTHER
-	if (src & TRIG_OTHER) strcat(buf, "other|");
-#endif
-	if (strlen(buf) == 0)
-	        sprintf(buf, "unknown(0x%08x)", src);
-	else
-		buf[strlen(buf)-1] = 0;
-	return buf;
-}
-
-static void dump_cmd(LogLevel level, comedi_cmd *cmd)
-{
-	char buf[100];
-	Logger(level, "subdev:      %d\n", cmd->subdev);
-	Logger(level, "flags:       %x\n", cmd->flags);
-	Logger(level, "start:      %-8s %d\n", cmd_src(cmd->start_src,buf), cmd->start_arg);
-	Logger(level, "scan_begin: %-8s %d\n", cmd_src(cmd->scan_begin_src,buf), cmd->scan_begin_arg);
-	Logger(level, "convert:    %-8s %d\n", cmd_src(cmd->convert_src,buf), cmd->convert_arg);
-	Logger(level, "scan_end:   %-8s %d\n", cmd_src(cmd->scan_end_src,buf), cmd->scan_end_arg);
-	Logger(level, "stop:       %-8s %d\n", cmd_src(cmd->stop_src,buf), cmd->stop_arg);
-	Logger(level, "chanlist_len: %d\n", cmd->chanlist_len);
-	Logger(level, "data_len: %d\n", cmd->data_len);
-}
-
-struct input_loop_data {
-        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<ComediChannel*>* chan)
-                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
-        comedi_t *device;
-        uint subdevice;
-        char *buffer;
-        size_t buffer_length;
-        comedi_polynomial_t *converters;
-        std::vector<ComediChannel*>* channels;
-};
-
-struct output_loop_data {
-        output_loop_data(comedi_t *dev, int subdev, const char *buf, size_t buflen, size_t bytes_already_written, int nchan, int bps)
-                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), bytes_written(bytes_already_written),
-                  n_channels(nchan), bytes_per_sample(bps) {}
-        comedi_t *device;
-        uint subdevice;
-        const char *buffer;
-        size_t buffer_length, bytes_written;
-        int n_channels, bytes_per_sample;
-};
-
-void* input_loop(void *arg)
-{
-        int i, j, k, ret, cnt, total, n_channels, bytes_per_sample, flags;
-        int *nsteps = new int;
-        lsampl_t sample;
-        input_loop_data *data = static_cast<input_loop_data*>(arg);
-        cnt = total = *nsteps = 0;
-        if (!data)
-                pthread_exit((void *) nsteps);
-        n_channels = data->channels->size();
-        flags = comedi_get_subdevice_flags(data->device, data->subdevice);
-        if (flags & SDF_LSAMPL)
-                bytes_per_sample = sizeof(lsampl_t);
-        else
-                bytes_per_sample = sizeof(sampl_t);
-        while (!KILL_PROGRAM() && (ret = read(comedi_fileno(data->device), data->buffer, data->buffer_length)) > 0) {
-                total += ret;
-                Logger(Debug, "Read %d bytes from the board [%d/%d].\r", ret, total, data->buffer_length);
-                for (i=0; i<ret/bytes_per_sample; i++) {
-                        if (flags & SDF_LSAMPL)
-                                sample = ((lsampl_t *) data->buffer)[i];
-                        else
-                                sample = ((sampl_t *) data->buffer)[i];
-                        j = cnt%n_channels;
-                        k = cnt/n_channels;
-                        cnt++;
-                        data->channels->at(j)->at(k) = comedi_to_physical(sample, &data->converters[j]) *
-                                data->channels->at(j)->conversionFactor();
-                }
+        if (!m_joined) {
+                int *err;
+                pthread_join(m_ioThread, (void **) &err);
+                m_retval = *err;
+                m_joined = true;
+                delete err;
         }
-        Logger(Debug, "\n");
-        *nsteps = k+1;
-        pthread_exit((void *) nsteps);
+        *retval = m_retval;
 }
 
-void* output_loop(void *arg)
+void* Device::IOThread(void *arg)
 {
-        size_t bytes_to_write, bytes_written;
-        int *nsteps = new int;
-        output_loop_data *data = static_cast<output_loop_data*>(arg);
-        *nsteps = 0;
-        if (!data)
-                pthread_exit((void *) nsteps); // this value we return is wrong, but if we get here,
-                                               // there is probably some other problem.
-        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
-        bytes_to_write = data->buffer_length - data->bytes_written;
-        while (!KILL_PROGRAM() && bytes_to_write > 0) {
-                bytes_written = write(comedi_fileno(data->device), (void *) (data->buffer+data->bytes_written), bytes_to_write);
-                if (bytes_written < 0) {
-                        Logger(Critical, "Error while writing: %s\n", strerror(errno));
-                        break;
-                }
-                bytes_to_write -= bytes_written;
-                data->bytes_written += bytes_written;
-        }
-        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
-        pthread_exit((void *) nsteps);
-}
-
-void* io_thread(void *in)
-{
+        Device *self = static_cast<Device*>(arg);
         comedi_t *device;
         char *calibration_file;
-        const char *io_device;
         comedi_calibration_t *calibration;
-        comedi_polynomial_t *in_converters, *out_converters;
-        uint *in_chanlist, *out_chanlist, in_subdevice, out_subdevice, in_insn_data, out_insn_data;
-        int i, j, k, nsteps, ret;
-        int in_bytes_per_sample, out_bytes_per_sample;
-        comedi_cmd cmd;
-        comedi_insn in_insn, out_insn;
-        size_t n_input_channels, n_output_channels;
-        size_t input_buffer_length, output_buffer_length;
-        size_t bytes_written;
-        char *input_buffer, *output_buffer;
-        pthread_t in_loop_thrd, out_loop_thrd;
-        int *in_retval = NULL, *out_retval = NULL, *retval = new int;
-        input_loop_data *in_data;
-        output_loop_data *out_data;
-        std::vector<ComediChannel*> input_channels, output_channels;
+        
+        //comedi_polynomial_t *in_converters, *out_converters;
+        //uint *in_chanlist, *out_chanlist, in_subdevice, out_subdevice, in_insn_data, out_insn_data;
+        //int i, j, k, nsteps, ret;
+        //int in_bytes_per_sample, out_bytes_per_sample;
+        //comedi_cmd cmd;
+        //comedi_insn in_insn, out_insn;
+        //size_t n_input_channels, n_output_channels;
+        //size_t input_buffer_length, output_buffer_length;
+        //size_t bytes_written;
+        //char *input_buffer, *output_buffer;
+        //pthread_t in_loop_thrd, out_loop_thrd;
+        //int *in_retval = NULL, *out_retval = NULL, *retval = new int;
+        //input_loop_data *in_data;
+        //output_loop_data *out_data;
+        //std::vector<ComediChannel*> input_channels, output_channels;
 
-        io_thread_arg *arg = static_cast<io_thread_arg*>(in);
+        int *retval = new int;
         *retval = -1;
 
-        if (!arg)
+        if (!self)
                 pthread_exit((void *) retval);
 
+        /*
         n_input_channels = arg->input_channels->size();
         n_output_channels = arg->output_channels->size();
         if (n_input_channels == 0 && n_output_channels == 0) {
@@ -551,14 +460,15 @@ void* io_thread(void *in)
                 io_device = arg->input_channels->at(0)->device();
         else
                 io_device = arg->output_channels->at(0)->device();
+        */
 
         // open the device
-        device = comedi_open(io_device);
+        device = comedi_open(self->m_device);
         if (device == NULL) {
-                Logger(Critical, "Unable to open device [%s].\n", io_device);
+                Logger(Critical, "Unable to open device [%s].\n", self->m_device);
                 pthread_exit((void *) retval);
         }
-        Logger(Debug, "Successfully opened device [%s].\n", io_device);
+        Logger(Debug, "Successfully opened device [%s].\n", self->m_device);
 
         // get path of calibration file
         calibration_file = comedi_get_default_calibration_path(device);
@@ -579,6 +489,15 @@ void* io_thread(void *in)
         }
         Logger(Debug, "Successfully parsed calibration file.\n");
 
+        std::map< int, std::map<int, ComediChannel*> >::iterator it;
+        for (it=self->m_subdevices.begin(); it!=self->m_subdevices.end(); it++) {
+                if (dynamic_cast<InputChannel*>(it->second.begin()->second))
+                        Logger(Important, "Subdevice %d is an input subdevice.\n", it->first);
+                else
+                        Logger(Important, "Subdevice %d is an output subdevice.\n", it->first);
+        }
+
+        /*
         if (n_input_channels) {
 
                 in_subdevice = arg->input_channels->at(0)->subdevice();
@@ -805,8 +724,6 @@ void* io_thread(void *in)
                 delete out_data;
         }
 
-        *retval = 0;
-
         if (n_input_channels) comedi_cancel(device, in_subdevice);
         if (n_output_channels) comedi_cancel(device, out_subdevice);
 
@@ -821,13 +738,139 @@ end_io:
                 delete out_converters;
                 delete output_buffer;
         }
+        */
+
+        *retval = 0;
+
         comedi_cleanup_calibration(calibration);
         Logger(Debug, "Cleaned up the calibration.\n");
         free(calibration_file);
         comedi_close(device);
-        Logger(Debug, "Closed device [%s].\n", io_device);
+        Logger(Debug, "Closed device [%s].\n", self->m_device);
+        self->m_acquiring = false;
 
         pthread_exit((void *) retval);
+}
+
+}
+
+///// CHANNEL CLASSES - END /////
+
+/*
+static char *cmd_src(int src,char *buf)
+{
+	buf[0]=0;
+	if (src & TRIG_NONE) strcat(buf,"none|");
+	if (src & TRIG_NOW) strcat(buf,"now|");
+	if (src & TRIG_FOLLOW) strcat(buf, "follow|");
+	if (src & TRIG_TIME) strcat(buf, "time|");
+	if (src & TRIG_TIMER) strcat(buf, "timer|");
+	if (src & TRIG_COUNT) strcat(buf, "count|");
+	if (src & TRIG_EXT) strcat(buf, "ext|");
+	if (src & TRIG_INT) strcat(buf, "int|");
+#ifdef TRIG_OTHER
+	if (src & TRIG_OTHER) strcat(buf, "other|");
+#endif
+	if (strlen(buf) == 0)
+	        sprintf(buf, "unknown(0x%08x)", src);
+	else
+		buf[strlen(buf)-1] = 0;
+	return buf;
+}
+
+static void dump_cmd(LogLevel level, comedi_cmd *cmd)
+{
+	char buf[100];
+	Logger(level, "subdev:      %d\n", cmd->subdev);
+	Logger(level, "flags:       %x\n", cmd->flags);
+	Logger(level, "start:      %-8s %d\n", cmd_src(cmd->start_src,buf), cmd->start_arg);
+	Logger(level, "scan_begin: %-8s %d\n", cmd_src(cmd->scan_begin_src,buf), cmd->scan_begin_arg);
+	Logger(level, "convert:    %-8s %d\n", cmd_src(cmd->convert_src,buf), cmd->convert_arg);
+	Logger(level, "scan_end:   %-8s %d\n", cmd_src(cmd->scan_end_src,buf), cmd->scan_end_arg);
+	Logger(level, "stop:       %-8s %d\n", cmd_src(cmd->stop_src,buf), cmd->stop_arg);
+	Logger(level, "chanlist_len: %d\n", cmd->chanlist_len);
+	Logger(level, "data_len: %d\n", cmd->data_len);
+}
+
+struct input_loop_data {
+        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<ComediChannel*>* chan)
+                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
+        comedi_t *device;
+        uint subdevice;
+        char *buffer;
+        size_t buffer_length;
+        comedi_polynomial_t *converters;
+        std::vector<ComediChannel*>* channels;
+};
+
+struct output_loop_data {
+        output_loop_data(comedi_t *dev, int subdev, const char *buf, size_t buflen, size_t bytes_already_written, int nchan, int bps)
+                : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), bytes_written(bytes_already_written),
+                  n_channels(nchan), bytes_per_sample(bps) {}
+        comedi_t *device;
+        uint subdevice;
+        const char *buffer;
+        size_t buffer_length, bytes_written;
+        int n_channels, bytes_per_sample;
+};
+
+void* input_loop(void *arg)
+{
+        int i, j, k, ret, cnt, total, n_channels, bytes_per_sample, flags;
+        int *nsteps = new int;
+        lsampl_t sample;
+        input_loop_data *data = static_cast<input_loop_data*>(arg);
+        cnt = total = *nsteps = 0;
+        if (!data)
+                pthread_exit((void *) nsteps);
+        n_channels = data->channels->size();
+        flags = comedi_get_subdevice_flags(data->device, data->subdevice);
+        if (flags & SDF_LSAMPL)
+                bytes_per_sample = sizeof(lsampl_t);
+        else
+                bytes_per_sample = sizeof(sampl_t);
+        while (!KILL_PROGRAM() && (ret = read(comedi_fileno(data->device), data->buffer, data->buffer_length)) > 0) {
+                total += ret;
+                Logger(Debug, "Read %d bytes from the board [%d/%d].\r", ret, total, data->buffer_length);
+                for (i=0; i<ret/bytes_per_sample; i++) {
+                        if (flags & SDF_LSAMPL)
+                                sample = ((lsampl_t *) data->buffer)[i];
+                        else
+                                sample = ((sampl_t *) data->buffer)[i];
+                        j = cnt%n_channels;
+                        k = cnt/n_channels;
+                        cnt++;
+                        data->channels->at(j)->at(k) = comedi_to_physical(sample, &data->converters[j]) *
+                                data->channels->at(j)->conversionFactor();
+                }
+        }
+        Logger(Debug, "\n");
+        *nsteps = k+1;
+        pthread_exit((void *) nsteps);
+}
+
+void* output_loop(void *arg)
+{
+        size_t bytes_to_write, bytes_written;
+        int *nsteps = new int;
+        output_loop_data *data = static_cast<output_loop_data*>(arg);
+        *nsteps = 0;
+        if (!data)
+                pthread_exit((void *) nsteps); // this value we return is wrong, but if we get here,
+                                               // there is probably some other problem.
+        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
+        bytes_to_write = data->buffer_length - data->bytes_written;
+        while (!KILL_PROGRAM() && bytes_to_write > 0) {
+                bytes_written = write(comedi_fileno(data->device), (void *) (data->buffer+data->bytes_written), bytes_to_write);
+                if (bytes_written < 0) {
+                        Logger(Critical, "Error while writing: %s\n", strerror(errno));
+                        break;
+                }
+                bytes_to_write -= bytes_written;
+                data->bytes_written += bytes_written;
+        }
+        *nsteps = data->bytes_written / (data->n_channels*data->bytes_per_sample);
+        pthread_exit((void *) nsteps);
 }
 
 */

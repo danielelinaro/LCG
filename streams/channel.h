@@ -25,11 +25,6 @@ public:
         const char* device() const;
         uint channel() const;
         double samplingRate() const;
-        virtual double& operator[](int i) = 0;
-        virtual const double& operator[](int i) const = 0;
-        virtual double& at(int i) = 0;
-        virtual const double& at(int i) const = 0;
-
 private:
         char m_device[FILENAME_MAXLEN];
         uint m_channel;
@@ -47,7 +42,7 @@ public:
         virtual bool initialise();
         virtual void terminate();
         virtual void run();
-        virtual void join();
+        virtual void join(int *retval);
 private:
         uint m_subdevice, m_range, m_reference;
         double m_conversionFactor;
@@ -79,6 +74,7 @@ public:
                 const char *units, const char *stimfile, uint id = GetId());
         const char* stimulusFile() const;
         bool setStimulusFile(const char *filename);
+        const double* data(size_t *length) const;
         double& operator[](int i);
         const double& operator[](int i) const;
         double& at(int i);
@@ -98,14 +94,16 @@ public:
         bool removeChannel(ComediChannel *channel);
         bool isChannelPresent(ComediChannel *channel) const;
         void acquire();
-        void join();
+        void join(int *retval);
 private:
         bool isSameDevice(ComediChannel *channel) const;
+        static void *IOThread(void *arg);
 private:
-        std::string m_device;
+        char m_device[FILENAME_MAXLEN];
         std::map< int,std::map<int,ComediChannel*> > m_subdevices;
-        bool m_autoDestroy;
-        bool m_acquiring;
+        bool m_autoDestroy, m_acquiring, m_joined;
+        int m_retval;
+        pthread_t m_ioThread;
 };
 
 /*

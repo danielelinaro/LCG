@@ -117,6 +117,9 @@ public:
          */
         virtual const double* metadata(size_t *dims, char *label) const;
 
+        /*! Provides access to the whole data buffer. */
+        virtual const double* data(size_t *length) const = 0;
+
         /*! Provides access to the i-th element in the internal buffer of this stream. */
         virtual double& operator[](int i) = 0;
 
@@ -133,7 +136,7 @@ public:
         virtual void run() = 0;
 
         /*! Blocks until the stream is running. */
-        virtual void join() = 0;
+        virtual void join(int *retval) = 0;
 
 protected:
         /*!

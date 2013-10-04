@@ -7,6 +7,7 @@
 #include "stream.h"
 #include "utils.h"
 #include "common.h"
+#include "h5rec.h"
 
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
@@ -512,16 +513,55 @@ int Simulate(std::vector<Entity*> *entities, double tend)
 
 int Simulate(std::vector<Stream*>* streams, double tend)
 {
-        int i;
-        Logger(Info, "Simulate(std::vector<Stream*>* streams, double)\n");
+        int i, err;
+        size_t len, ndims, *dims;
+        char label[1024];
+        ChunkedH5Recorder *rec = NULL;
+
+        // initialise all the streams
         for (i=0; i<streams->size(); i++)
                 streams->at(i)->initialise();
+
+        // start the streams
         for (i=0; i<streams->size(); i++)
                 streams->at(i)->run();
-        for (i=0; i<streams->size(); i++)
-                streams->at(i)->join();
-        for (i=0; i<streams->size(); i++)
+
+        // wait for each stream to finish, save its data if there were
+        // no errors and then terminate the stream
+        for (i=0; i<streams->size(); i++) {
+                streams->at(i)->join(&err);
+
+                if (!err) {
+                        if (!rec)
+                                rec = new ChunkedH5Recorder;
+                        double_dict pars;
+                        const double *data = streams->at(i)->data(&len);
+                        rec->addRecord(streams->at(i)->id(), streams->at(i)->name().c_str(),
+                                       streams->at(i)->units().c_str(), len, streams->at(i)->parameters());
+                        rec->writeRecord(streams->at(i)->id(), data, len);
+                        if (streams->at(i)->hasMetadata(&ndims)) {
+                                dims = new size_t[ndims];
+                                const double *metadata = streams->at(i)->metadata(dims, label);
+                                if (ndims == 1)
+                                        rec->writeMetadata(streams->at(i)->id(), metadata, 1, dims[0]);
+                                else
+                                        rec->writeMetadata(streams->at(i)->id(), metadata, dims[0], dims[1]);
+                                delete dims;
+                        }
+                }
+                else {
+                        Logger(Critical, "There were some problems during the recording in stream %d.\n",
+                                        streams->at(i)->id());
+                }
                 streams->at(i)->terminate();
+        }
+
+        if (rec) {
+                rec->writeRecordingDuration(len*GetGlobalDt());
+                rec->writeTimeStep(GetGlobalDt());
+                delete rec;
+        }
+
         return 0;
 }
 
