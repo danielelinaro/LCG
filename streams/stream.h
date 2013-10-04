@@ -42,7 +42,10 @@ namespace lcg
 {
 
 class Stream {
+<<<<<<< HEAD
 public:
+=======
+>>>>>>> 3ee36e19941bd6b107584bf923fa7d36c9800482
         /*!
          * Costructor that simply assigns an identifier to the stream.
          * \param id The identifier of the stream.
@@ -76,6 +79,12 @@ public:
         /*! Returns a vector that contains all the streams connected to this stream. */
         const std::vector<Stream*>& pre() const;
 
+<<<<<<< HEAD
+=======
+        /*! Returns a vector that contains all the streams this stream is connected to. */
+        const std::vector<Stream*>& post() const;
+
+>>>>>>> 3ee36e19941bd6b107584bf923fa7d36c9800482
         /*! Returns the name of the stream. */
         const std::string& name() const;
 
@@ -170,6 +179,7 @@ private:
         std::string m_units;
 };
 
+<<<<<<< HEAD
 /*!
  * \class StreamSorter
  * \brief A helper class to sort streams in a list according to their ID.
@@ -181,6 +191,8 @@ public:
 
 Stream* StreamFactory(const char *name, string_dict& args);
 
+=======
+>>>>>>> 3ee36e19941bd6b107584bf923fa7d36c9800482
 }
 
 #endif
