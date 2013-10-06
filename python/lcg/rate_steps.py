@@ -180,12 +180,12 @@ def main():
     
     while opts['reps'] > 0:
         reps = min(opts['reps'],opts['kernel_frequency'])
-        #sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
-        #sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(reps) + ' -i ' + str(opts['interval']), shell=True)
+        sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+        sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(reps) + ' -i ' + str(opts['interval']), shell=True)
         opts['reps'] -= reps
         if opts['reps'] > 0:
             pass
-            #sub.call(['sleep', str(opts['interval'])])
+            sub.call(['sleep', str(opts['interval'])])
 
 if __name__ == '__main__':
     main()
