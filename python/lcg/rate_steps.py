@@ -166,13 +166,13 @@ def main():
         if opts['exc']:
             gm = Gm_exc * (1+dr)
             gs = Gs_exc * np.sqrt(1+dr)
-            gexc.append([opts['step_duration'], 2, gm, gs, 5, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
-            ginh.append([opts['step_duration'], 2, Gm_inh, Gs_inh, 10, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+            gexc.append([opts['step_duration'], 2, gm, gs, 5, Gm_exc, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+            ginh.append([opts['step_duration'], 2, Gm_inh, Gs_inh, 10, Gm_inh, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
         else:
             gm = Gm_inh * (1+dr)
             gs = Gs_inh * np.sqrt(1+dr)
             gexc.append([opts['step_duration'], 2, Gm_exc, Gs_exc, 5, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
-            ginh.append([opts['step_duration'], 2, gm, gs, 10, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+            ginh.append([opts['step_duration'], 2, gm, gs, 10, Gm_inh, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
     gexc.append([opts['post'],1,0,0,0,0,0,0,0,0,0,1])
     ginh.append([opts['post'],1,0,0,0,0,0,0,0,0,0,1])
     lcg.writeStimFile(gexc_file, gexc, False)
@@ -180,11 +180,12 @@ def main():
     
     while opts['reps'] > 0:
         reps = min(opts['reps'],opts['kernel_frequency'])
-        sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
-        sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(reps) + ' -i ' + str(opts['interval']), shell=True)
+        #sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+        #sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(reps) + ' -i ' + str(opts['interval']), shell=True)
         opts['reps'] -= reps
         if opts['reps'] > 0:
-            sub.call(['sleep', str(opts['interval'])])
+            pass
+            #sub.call(['sleep', str(opts['interval'])])
 
 if __name__ == '__main__':
     main()

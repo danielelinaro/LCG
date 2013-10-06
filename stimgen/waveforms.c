@@ -49,7 +49,7 @@ long oldseed;
       if (vector[P3] <= 0.)                                             // if the correlation time (P3) is 0 ms, use "GAUSS()" for a 
        GAUSS(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
       else                                                              // Otherwise, the user meant to ask for 
-      ORUHL(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt); // "ORUHL()" routine, so generate the realization.
+      ORUHL(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // "ORUHL()" routine, so generate the realization.
       break;
     case SINE_WAVE:                                                               // SINUSOIDAL Waveform has been selected
       SINE(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it by specifying the amplitude 
@@ -196,7 +196,7 @@ void GAUSS(double mean, double stdv, double *output, uint *index, uint Ni, doubl
 
 // Generate ORNSTEIN-UHLENBECK waveform -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-
 //
-void ORUHL(double mean, double stdv, double tau, double *output, uint *index, uint Ni, double expon, double srate, double dt)
+void ORUHL(double mean, double stdv, double tau, double x0, double *output, uint *index, uint Ni, double expon, double srate, double dt)
 {
  double x, tmp1, tmp2, tmp3;
  uint i;
@@ -214,8 +214,10 @@ void ORUHL(double mean, double stdv, double tau, double *output, uint *index, ui
     return;
   }
 
-  x = mean;                                  // The init. condition is set to the desired steady-state mean of
-                                             // the output stochastic process (to reduce transients).
+  if (x != 0.)
+        x = x0;       // initial condition
+  else
+        x = mean;
 
   // Please note: although what follows is apparently cryptic, it is just to save ALU loads & CPU time!
   // As already stressed [tau] = ms, therefore  [tau/1000.] = s .  
