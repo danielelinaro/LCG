@@ -17,7 +17,9 @@ def usage():
     print('     -h   Display this help message and exit.')
     print('     -n   Number of repetitions (default 100).')
     print('     -i   Interval between trials (default 2 s).')
-    print('     -d   Duration of the stimulation (default 1 sec per step).')
+    print('     -d   Duration of the stimulation (default 0.5 sec per step).')
+    print('     -b   Time before the beginning of the stimulation (default 0.1 s).')
+    print('     -a   Time after the end of the stimulation (default 0.1 s).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
     print('     -F   sampling frequency (default 20000).')
@@ -31,7 +33,7 @@ def usage():
     print('')
 
 def parseArgs():
-    switches = 'hn:i:d:I:O:F:k:R:v:r:m:'
+    switches = 'hn:i:d:b:a:I:O:F:k:R:v:r:m:'
     long_switches = ['help','exc','inh']
     try:
         opts,args = getopt.getopt(sys.argv[1:],switches,long_switches)
@@ -42,7 +44,7 @@ def parseArgs():
 
     options = {'reps': 100,
                'interval': 2,             # [s]
-               'step_duration': 1,        # [s]
+               'step_duration': 0.5,      # [s]
                'kernel_frequency': None,
                'sampling_rate' : 20000,   # [Hz]
                'input_resistance': None,  # [MOhm]
@@ -51,7 +53,7 @@ def parseArgs():
                'dR': None,
                'exc': False,
                'inh': False,
-               'pre': 0.25, 'post': 0.25, # [s]
+               'pre': 0.1, 'post': 0.1,   # [s]
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -62,6 +64,10 @@ def parseArgs():
             options['reps'] = int(a)
         elif o == '-i':
             options['interval'] = float(a)
+        elif o == '-b':
+            options['pre'] = float(a)
+        elif o == '-a':
+            options['post'] = float(a)
         elif o == '-I':
             options['ai'] = int(a)
         elif o == '-O':
@@ -126,6 +132,10 @@ def parseArgs():
 
     if options['balanced_voltage'] >= 0:
         print('The balanced voltage must be negative.')
+        sys.exit(1)
+
+    if options['pre'] < 0 or options['post'] < 0:
+        print('Durations before and after the stimulus must be non-negative.')
         sys.exit(1)
 
     if len(options['dR']) == 1:

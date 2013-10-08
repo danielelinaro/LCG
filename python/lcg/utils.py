@@ -2,6 +2,7 @@ import time
 import os
 import numpy as np
 import tables as tbl
+import lcg
 
 ########## Functions that write configuration files ##########
 
@@ -106,12 +107,24 @@ def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim'
     for i,filename in enumerate(outfiles):
         writeStimFile(filename,G[i],False)
 
-def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, outfile, infile=''):
-    if infile == '':
-        infile = findConfigurationFile('I_plus_bg_G_template.xml')
-        if infile == '':
-            print('Unable to locate default configuration file. Aborting...')
-            return
+def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile):
+    config = lcg.XMLConfigurationFile(sampling_rate, duration+3.61)
+    config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
+    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
+                                              inputSubdevice=os.environ['AI_SUBDEVICE'],
+                                              outputSubdevice=os.environ['AO_SUBDEVICE'],
+                                              readChannel=ai, writeChannel=ao,
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
+                                              kernelFile='kernel.dat'))
+    config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename='current.stim', units='pA'))
+    config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename='gexc.stim', units='nS'))
+    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,6), filename='ginh.stim', units='nS'))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=5, connections=(1), E=0.))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=6, connections=(1), E=-80.))
+    config.write(outfile)
+
     current = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
                [0.01,1,-300,0,0,0,0,0,0,0,0,1],
                [0.5,1,0,0,0,0,0,0,0,0,0,1],
@@ -143,14 +156,10 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, outfile, infile=''):
         conductance[1][8] = np.random.poisson(10000)
     writeStimFile('ginh.stim',conductance,False)
 
-    substituteStrings(infile, outfile, {'<readChannel>0</readChannel>': '<readChannel>'+str(ai)+'</readChannel>',
-                                        '<writeChannel>0</writeChannel>': '<writeChannel>'+str(ao)+'</writeChannel>',
-                                        '<tend>0</tend>': '<tend>'+str(duration+3.61)+'</tend>'})
-
-def writeSpontaneousConfig(I, G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=10, outfile='spontaneous.xml', infile=''):
+def writeSpontaneousConfig(I, G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=10, sampling_rate=20000, outfile='spontaneous.xml'):
     writeIPlusBgGConfig(I, {'m': G0_exc, 's': sigma_exc, 'tau': 5},
                         {'m': G0_inh, 's': sigma_inh, 'tau': 10},
-                        ai, ao, duration, outfile, infile)
+                        ai, ao, duration, sampling_rate, outfile)
 
 def writeSinusoidsConfig(bg_current, modulating_current, G0_exc, sigma_exc, G0_inh, sigma_inh,
                          ai=0, ao=0, duration=30, outfile='sinusoids.xml', infile=''):

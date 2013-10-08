@@ -214,7 +214,7 @@ void ORUHL(double mean, double stdv, double tau, double x0, double *output, uint
     return;
   }
 
-  if (x != 0.)
+  if (x0 != 0.)
         x = x0;       // initial condition
   else
         x = mean;
