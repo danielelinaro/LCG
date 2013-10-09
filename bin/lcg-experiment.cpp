@@ -439,10 +439,15 @@ int store(int argc, char *argv[], const std::vector<Entity*>& entities)
         }
 
         if (rec != NULL) {
-                if (sha1(rec->filename(), md) == 0)
-                        fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
-                else
+                if (sha1(rec->filename(), md) == 0) {
+                        if (strcmp(rec->filename()+strlen(rec->filename())-3,".h5"))
+                                fprintf(fid, "%08x%08x%08x%08x%08x %s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
+                        else // this is the H5 file...
+                                fprintf(fid, "%08x%08x%08x%08x%08x *../../%s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
+                }
+                else {
                         Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", rec->filename());
+                }
         }
 
         DIR *dirp = opendir(directory);

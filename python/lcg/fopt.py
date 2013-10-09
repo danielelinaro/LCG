@@ -12,7 +12,6 @@ def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1
     ratio = lcg.computeRatesRatio(Vm=Vbal, Rin=Rm)
     G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], R_exc, Rin=Rm)
     lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, sampling_rate, outfile='spontaneous.xml')
-    sys.exit(0)
     if interval > 0:
         sub.call(['sleep', str(interval)])
     sub.call(lcg.common.prog_name + ' -c spontaneous.xml -V 4', shell=True)
@@ -111,7 +110,7 @@ def main():
         usage()
         sys.exit(1)
 
-    #sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
+    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
     import scipy.optimize as opt
     Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
                                           args = [targetFrequency, Rm, rate, ai, ao, duration, interval, sampling_rate],
