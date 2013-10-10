@@ -17,7 +17,7 @@ def usage():
     print('\033[92m     -t  \033[0m  time constant (default 5 ms)')
     print('\033[92m     -m  \033[0m  mean (default 0 pA)')
     print('\033[92m     -d  \033[0m  duration of the noisy stimulus (default 60 s)')
-    print('\033[92m     -D  \033[0m  duration of the trial (default 65 s)')
+    print('\033[92m     -D  \033[0m  duration of the "tail" (default 1 s)')
     print('\033[92m     -H  \033[0m  holding current "kernel, trial"  (default 0pA for both)')
     print('\033[92m     -I  \033[0m  input channels separated by commas (default 0)')
     print('\033[92m     -O  \033[0m  output channels separated by commas (default 0)')
@@ -50,7 +50,7 @@ def parseArgs():
                'mean':[0],
                'tau':[5],
                'duration':60,
-               'tail':63,
+               'tail':1,
                'kernel':True,
                'preamble':False}
                
@@ -114,7 +114,9 @@ def main():
         stimulus = create_ou_stimulus(opts['mean'],opts['std'],
                                       opts['tau'],opts['duration'],
                                       opts['tail'],opts['preamble'])         
-        lcg.writeStimFile(stim_file[ii], stimulus, opts['preamble'])                
+        lcg.writeStimFile(stim_file[ii], stimulus, opts['preamble'])
+	if len(opts['holding']) < 2:
+		opts['holding'] = opts['holding']*2
     for ai,ao,stim in zip(opts['ai'],opts['ao'],stim_file):
         if opts['kernel']:
             sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +

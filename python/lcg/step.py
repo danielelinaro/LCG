@@ -21,6 +21,7 @@ def usage():
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
     print('     -F    sampling frequency (default 20000)')
+    print('     -H    holding (default 0)')
     print('\nAdditional options:')
     print(' --with-preamble   include stability preamble.')
     print(' --no-shuffle      do not shuffle trials.')
@@ -28,7 +29,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:', ['help','with-preamble','no-shuffle','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:H:', ['help','with-preamble','no-shuffle','no-kernel'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -37,6 +38,7 @@ def main():
     ao = 0
     ai = 0
     samplf = 20000    # [Hz]
+    holding = 0    # [pA]
     with_preamble = False
     shuffle = True
     kernel = True
@@ -67,6 +69,8 @@ def main():
             ao = int(a)
         elif o == '-F':
             samplf = float(a)
+        elif o == '-H':
+            holding = float(a)
         elif o == '--with-preamble':
             with_preamble = True
         elif o == '--no-shuffle':
@@ -105,11 +109,12 @@ def main():
     for i,amp in enumerate(amplitudes):
         stimulus[row][2] = amp
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
-
+	
     if kernel:
-        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(samplf), shell=True)
+        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(samplf) + ' -H ' + str(holding), shell=True)
+    
     sub.call('lcg vcclamp -D ' + stimuli_directory + ' -i ' + str(interval) +
-              ' -I ' + str(interval) + ' -N ' + str(nreps) + ' -F ' + str(samplf), shell=True)
+              ' -I ' + str(interval) + ' -N ' + str(nreps) + ' -F ' + str(samplf) + ' -H ' + str(holding), shell=True)
 
 if __name__ == '__main__':
     main()

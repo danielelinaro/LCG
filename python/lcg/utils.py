@@ -5,6 +5,17 @@ import tables as tbl
 
 ########## Functions that write configuration files ##########
 
+def conductanceBurstStim(dur, g, tau, R0, dR, Tb, taub):
+    Tb.append(dur)
+    tau_sec = tau*1e-3
+    stim = [[Tb[0], 2, g*tau*R0, g*(R0*tau/2)**0.5, tau, 0, 0, 1, int(np.random.uniform(high=10000)), 0, 0, 1]]
+    for i in range(1,len(Tb)):
+        stim.append([Tb[i]-Tb[i-1], -4, 0, 1, tau, 0, 0, 1, int(np.random.uniform(high=50000)), 2, 0, 1])
+        stim.append([0, -4, dR, 1, taub, 0, R0, 0, 0, 12, 2, 0.5])
+        stim.append([0, -4, g*(tau_sec/2)**0.5, 0, 0, 0, 0, 0, 0, 1, 2, 1])
+        stim.append([0, -4, g*tau_sec*dR, 1, taub, 0, g*tau_sec*R0, 0, 0, 12, 1, 1])
+    return stim
+
 def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.
@@ -361,14 +372,14 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     Ksize = int(Kdur/info['dt'])
     Kt = np.arange(0,Kdur,info['dt'])[:Ksize]
     for ntt in entities:
-        if ntt['name'] == 'Waveform':
+        if 'metadata' in ntt and ntt['units'] == 'pA':
             I = ntt['data']
             stimtimes = np.cumsum(ntt['metadata'][:,0])
             pulse = np.nonzero(ntt['metadata'][:,0] == 0.01)[0][0]
             if len(interval) != 2:
                 idx = np.nonzero(ntt['metadata'][:,0] > 5)[0][0]
                 interval = stimtimes[idx-1:idx+1]
-        elif ntt['units'] == 'mV' :
+        elif ntt['name'] == 'AnalogInput' and ntt['units'] == 'mV':
             V = ntt['data']
     t = np.arange(len(V)) * info['dt']
     idx = np.intersect1d(np.nonzero(t >= interval[0])[0], np.nonzero(t <= interval[1])[0])
