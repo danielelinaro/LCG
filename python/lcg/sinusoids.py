@@ -19,41 +19,42 @@ long_switches = ['with-bg','exc','inh','no-kernel','filtered']
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
     print('\nThe working modes are:\n')
-    print('    current      use a sinusoidally modulated current.')
-    print('    conductance  use sinusoidally modulated conductances.')
+    print('     current   Use a sinusoidally modulated current.')
+    print(' conductance   Use sinusoidally modulated conductances.')
     print('\nThe global options are:\n')
-    print('     -h   Display this help message and exit.')
-    print('     -f   Frequencies of the sinusoids (comma-separated values).')
-    print('     -n   Number of repetitions (default 1).')
-    print('     -i   Interval between trials (default 60 s).')
-    print('     -d   Duration of the stimulation (default 30 sec).')
-    print('     -I   Input channel (default 0).')
-    print('     -O   Output channel (default 0).')
-    print('     -F   sampling frequency (default 20000).')
-    print('     -k   Frequency at which a new kernel should be computed')
-    print('          (the default is at the beginning of each batch of frequencies).')
-    print(' --no-kernel  Do not compute the kernel.')
+    print('          -h   Display this help message and exit.')
+    print('          -f   Frequencies of the sinusoids (comma-separated values).')
+    print('               If not specified, the following frequencies are tested:')
+    print('               [1,5,10,20,50,100,200,300,600,1000].')
+    print('          -n   Number of repetitions (default 1).')
+    print('          -i   Interval between trials (default 30 s).')
+    print('          -d   Duration of the stimulation (default 30 sec).')
+    print('          -I   Input channel (default 0).')
+    print('          -O   Output channel (default 0).')
+    print('          -F   sampling frequency (default 20000).')
+    print('          -k   Frequency at which a new kernel should be computed')
+    print('               (the default is at the beginning of each batch of frequencies).')
+    print(' --no-kernel   Do not compute the kernel.')
 
     print('\nThe following options are valid in the "current" working mode:\n')
-    print('     -a   Mean of the noisy component of the current (default 0 pA).')
-    print('     -s   Standard deviation of the noisy component of the current (default 0 pA).')
-    print('     -t   Time constant of the noisy component of the current (default 0 ms).')
-    print('     -m   Amplitude of the modulating current (default 30 pA).')
+    print('          -a   Mean of the noisy component of the current (default 0 pA).')
+    print('          -s   Standard deviation of the noisy component of the current (default 0 pA).')
+    print('          -t   Time constant of the noisy component of the current (default 0 ms).')
+    print('          -m   Amplitude of the modulating current (default 30 pA).')
 
-    print('\nAdditionally, if the --with-bg option is specified, the following')
-    print('options are accepted:\n')
-    print('     -r   Firing frequency of the excitatory background population.')
-    print('     -R   Input resistance of the cell (in MOhm).')
-    print('     -v   Value of voltage at which the background activity should be balanced.')
+    print('\nAdditionally, if the --with-bg option is specified, the following options are accepted:\n')
+    print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
+    print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
 
     print('\nThe following options are valid in the "conductance" working mode:\n')
-    print('     -R   Input resistance of the cell (in MOhm).')
-    print('     -v   Value of voltage at which the background activity should be balanced.')
-    print('     -r   Baseline firing frequency of the excitatory background population.')
-    print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
-    print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
-    print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
-    print(' --filtered  Filter the modulating signal with the OU process.')
+    print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
+    print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
+    print('          -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
+    print('       --exc   Modulate the firing rate of the excitatory presynaptic population.')
+    print('       --inh   Modulate the firing rate of the inhibitory presynaptic population.')
+    print('  --filtered   Filter the modulating signal with the OU process.')
     print('')
 
 def parseGlobalArgs():
@@ -66,7 +67,7 @@ def parseGlobalArgs():
 
     options = {'frequencies': [1,5,10,20,50,100,200,300,600,1000], # [Hz]
                'reps': 1,
-               'interval': 60,   # [s]
+               'interval': 30,   # [s]
                'duration': 30,   # [s]
                'kernel_frequency': 0,
                'compute_kernel': True,
@@ -114,7 +115,7 @@ def parseBackgroundArgs():
 
     options = {'input_resistance': None,   # [MOhm]
                'balanced_voltage': None,   # [mV]
-               'R_exc': None,              # [Hz]
+               'R_exc': 7000,              # [Hz]
                'tau_exc': 5e-3,            # [s]
                'tau_inh': 10e-3}           # [s]
 
@@ -210,8 +211,8 @@ def parseConductanceModeArgs():
         elif o == '--filtered':
             options['filtered'] = True
 
-    if options['dR'] < 0:
-        print('The modulating fraction must be positive.')
+    if options['dR'] <= 0:
+        print('The modulating fraction must be non-negative.')
         sys.exit(1)
 
     if not options['exc'] and not options['inh']:
@@ -400,7 +401,7 @@ def main():
                     replaceValue(G, random_seed)
                     replaceValue(G, frequency_value, f)
                     lcg.writeStimFile(stimulus['filename'], G)
-                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
+                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
             else:
                 sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
 

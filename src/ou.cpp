@@ -175,7 +175,7 @@ OUNonStationary::OUNonStationary(double tau, double initialCondition, std::strin
 
         m_state.push_back(0.0);         // m_state[0] -> eta
         m_state.push_back(0.0);         // m_state[1] -> auxiliary variable
-        setName("OU");
+        setName("OUNonStationary");
         setUnits(units);
 } 
 

@@ -107,7 +107,7 @@ class OU (Entity):
         self.add_parameter('mean', mean)
         self.add_parameter('stddev', stddev)
         self.add_parameter('tau', tau)
-        self.add_parameter('ic', ic)
+        self.add_parameter('initialCondition', ic)
         self.add_parameter('units', units)
         self.add_parameter('interval', '%g,%g' % (interval[0],interval[1]))
         self.add_parameter('seed', seed)
@@ -116,7 +116,7 @@ class OUNonStationary (Entity):
     def __init__(self, id, connections, tau, ic, units, interval, seed=0):
         Entity.__init__(self, 'OUNonStationary', id, connections)
         self.add_parameter('tau', tau)
-        self.add_parameter('ic', ic)
+        self.add_parameter('initialCondition', ic)
         self.add_parameter('units', units)
         self.add_parameter('interval', '%g,%g' % (interval[0],interval[1]))
         self.add_parameter('seed', seed)
