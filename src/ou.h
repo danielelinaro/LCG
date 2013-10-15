@@ -26,6 +26,9 @@ namespace lcg {
 
 double largeInterval[2] = {0, 365*24*60*60};
 
+/*! 
+ * A stationary OU process.
+ */
 class OU : public DynamicalEntity
 {
 public:
@@ -42,6 +45,11 @@ private:
         NormalRandom *m_randn;
 };
 
+/*! 
+ * A non-stationary OU process.
+ * The mean and standard deviation of this process are supplied by the
+ * first and second input, respectively.
+ */
 class OUNonStationary : public DynamicalEntity
 {
 public:

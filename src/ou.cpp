@@ -186,6 +186,12 @@ OUNonStationary::~OUNonStationary() {
 
 bool OUNonStationary::initialise()
 {
+        if (m_inputs.size() != 2) {
+                Logger(Critical, "A OUNonStationaty object requires exactly two inputs, "
+                                "one for the mean and one for the standard deviation.\n");
+                return false;
+        }
+
         OU_ETA = 0.0;
         OU_ETA_AUX = OU_IC;
         if (m_randn)
