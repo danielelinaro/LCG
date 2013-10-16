@@ -119,13 +119,13 @@ def analise_last_file():
 
     Ke = np.loadtxt(kernel_file)
     ent,info = lcg.loadH5Trace(data_file)
-    V = ent[2]['data']
-    I = ent[1]['data']
-    Vc = aec.compensate(V,I,Ke)
-    t = np.range(0,len(V)-1).*info['dt']
-    spks = lcg.findSpikes(t, V, thresh=-10)
+    V = ent[1]['data']
+    I = ent[0]['data']
+    Vc = aec.compensate(V,I,Ke/1.0e9)
+    t = np.arange(0,len(V)-1)*info['dt']
+    spks = lcg.findSpikes(t, Vc, thresh=-10)
     isi = np.diff(spks)
-    return np.mean(isi), np.std(isi)./np.mean(isi),np.mean(Vc),np.std(Vc) 
+    return np.mean(isi), np.std(isi)/np.mean(isi),np.mean(Vc),np.std(Vc) 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help','help'):
@@ -168,11 +168,11 @@ def main():
         if opts['report']:
             isim,cv,Vm,Vsd = analise_last_file()
             
-            print('Report from the last file: {0}',1./isim)
-            print('Mean firing rate: {0}',1./isim)
-            print('Coefficient of variation: {0}',cv)
-            print('Mean membrane voltage (Vm): {0}',Vm)
-            print('Standard deviation of Vm: {0}',Vsd)
+            print('Report from the last file')
+            print('Mean firing rate: {0}'.format(1./isim))
+            print('Coefficient of variation: {0}'.format(cv))
+            print('Mean membrane voltage (Vm): {0}'.format(Vm))
+            print('Standard deviation of Vm: {0}'.format(Vsd))
             
 if __name__ == '__main__':
     main()
