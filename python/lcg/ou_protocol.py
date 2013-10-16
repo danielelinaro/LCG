@@ -6,6 +6,8 @@ import getopt
 import subprocess as sub
 import lcg
 from time import sleep
+import glob
+import aec
 
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
@@ -23,11 +25,12 @@ def usage():
     print('\033[92m     -O  \033[0m  output channels separated by commas (default 0)')
     print('\033[92m     -F  \033[0m  sampling frequency (default 20000)')
     print('\033[92m     --no-kernel  \033[0m  do not compute the kernel.')
+    print('\033[92m     --no-report  \033[0m  do not report statistics.')
     print('\033[92m     --with-preamble  \033[0m  includes a stability preamble.')
 
 
 switches = 'n:I:O:F:i:t:m:d:s:H:'
-long_switches = ['no-kernel','with-preamble']
+long_switches = ['no-kernel','with-preamble','no-report']
 
 def parseArgs():
     '''
@@ -52,7 +55,8 @@ def parseArgs():
                'duration':60,
                'tail':1,
                'kernel':True,
-               'preamble':False}
+               'preamble':False,
+               'report':True}
                
     for o,a in opts:
         if o == '-n':
@@ -79,6 +83,8 @@ def parseArgs():
             options['srate'] = float(a)
         elif o == '--no-kernel':
             options['kernel'] = False
+        elif o == '--no-report':
+            options['report'] = False
         elif o == '--with-preamble':
             options['preamble'] = True
     options['tail'] = options['tail']-options['duration']
@@ -99,6 +105,27 @@ def create_ou_stimulus(m,s,t,d,tail,preamble):
         stimulus.append([0,-2,mm,ss,tt,0,0,0,0,2,1,1])
     stimulus.append([tail,1,0,0,0,0,0,0,0,0,0,1])
     return stimulus
+
+def analise_last_file():
+    '''
+    Extracts the spiketrain statistics from the last file.
+    '''
+    files = glob.glob('*.h5')
+    files.sort()
+    data_file = files[-1]
+    kernel_file = glob.glob('*.dat')
+    kernel_file.sort()
+    kernel_file = kernel_file[-1]
+
+    Ke = np.loadtxt(kernel_file)
+    ent,info = lcg.loadH5Trace(data_file)
+    V = ent[2]['data']
+    I = ent[1]['data']
+    Vc = aec.compensate(V,I,Ke)
+    t = np.range(0,len(V)-1).*info['dt']
+    spks = lcg.findSpikes(t, V, thresh=-10)
+    isi = np.diff(spks)
+    return np.mean(isi), np.std(isi)./np.mean(isi),np.mean(Vc),np.std(Vc) 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help','help'):
@@ -138,7 +165,15 @@ def main():
             sleep(2)
         sub.call('lcg vcclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
                  ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][1]), shell=True)
-
+        if opts['report']:
+            isim,cv,Vm,Vsd = analise_last_file()
+            
+            print('Report from the last file: {0}',1./isim)
+            print('Mean firing rate: {0}',1./isim)
+            print('Coefficient of variation: {0}',cv)
+            print('Mean membrane voltage (Vm): {0}',Vm)
+            print('Standard deviation of Vm: {0}',Vsd)
+            
 if __name__ == '__main__':
     main()
 

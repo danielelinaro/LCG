@@ -21,11 +21,12 @@ def usage():
     print('     -F    sampling frequency (default 20000 Hz).')
     print('     -H    holding current (default 0 pA).')
     print(' -a,--append append channel numbers to kernel.dat file (default no).')
+    print(' --non-rt use lcg-non-rt (default no).')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['help','append'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['help','append','non-rt'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -38,6 +39,7 @@ def main():
     sampling_rate = 20000  # [Hz]
     holding_current = 0    # [pA]
     append = False
+    nonrt = False
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -57,6 +59,8 @@ def main():
             ao = int(a)
         elif o == '-H':
             holding_current = float(a)
+        elif o == '--non-rt':
+            nonrt = True
 
     if append:
         suffix = '-' + str(ai) + '-' + str(ao)
@@ -66,10 +70,16 @@ def main():
     stim = [[duration,11,0,amplitude,0,0,0,1,int(rnd.uniform(high=10000)),0,0,1],
             [1,1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(stim_file,stim,True)
+    if nonrt:
+        fname = 'kernel.cfg'
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt -f ' + fname, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt -f ' + fname + ' -p ' + stim_file, shell=True)
+        sub.call('lcg-non-rt -c ' + fname + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
+    else:
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai), shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao), shell=True)
+        sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
 
-    sub.call('cclamprc_write -e -i -c ' + str(ai), shell=True)
-    sub.call('cclamprc_write -o -c ' + str(ao), shell=True)
-    sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
     files = glob.glob('*.h5')
     files.sort()
     data_file = files[-1]
