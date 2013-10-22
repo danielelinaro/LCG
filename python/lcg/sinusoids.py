@@ -320,7 +320,7 @@ def main():
                        [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
                        [1,1,0,0,0,0,0,0,0,0,0,1]]
             if opts['separate']:
-                current = [[opts['duration'],1,opts['mean'],0,0,0,0,1,random_seed,0,0,1], # OU current
+                current = [[opts['duration'],1,opts['mean'],0,0,0,0,0,random_seed,0,0,1], # OU current
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
                 modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
                               [1,1,0,0,0,0,0,0,0,0,0,1]]
@@ -401,7 +401,7 @@ def main():
             else:
                 if opts['separate']:
                     fname = 'sinusoids.cfg'
-                    stim_file = '{0},{0}'.format(current_file,modulation_file)
+                    stim_file = '{0},{1}'.format(current_file,modulation_file)
                     sub.call('lcg-rcwrite -e -i -c ' + str(opts['ai'][0]) + ',' + str(opts['ai'][1]) + ' --non-rt -f ' + fname, shell=True)
                     sub.call('lcg-rcwrite -o -c ' + str(opts['ao'][0]) + ',' + str(opts['ao'][1]) + ' --non-rt -f ' + fname + ' -p ' + stim_file, shell=True)
                     sub.call('lcg-non-rt -c ' + fname + ' -F '+ str(opts['sampling_rate']), shell=True)
