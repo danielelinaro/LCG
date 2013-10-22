@@ -22,11 +22,12 @@ def usage():
     print('     -F    Sampling frequency (default 20000 Hz)).')
     print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('		--no-kernel')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:B:A:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:B:A:', ['help','no-kernel'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -41,7 +42,7 @@ def main():
     sampling_frequency = 20000   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
-
+    kernel = True
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
@@ -64,6 +65,8 @@ def main():
             ao = int(a)
         elif o == '-F':
             sampling_frequency = float(a)
+        elif o == '--no-kernel':
+            kernel = False
 
     if not amplitude:
         print('You must specify the amplitude of the stimulation (-a switch).')
@@ -103,8 +106,8 @@ def main():
         stim.append([before,1,0,0,0,0,0,0,0,0,0,1])
 
     lcg.writeStimFile(stim_file,stim,False)
-    
-    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(sampling_frequency), shell=True)
+    if kernel:
+        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(sampling_frequency), shell=True)
     sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(reps) + ' -i ' + str(interval) + ' -F ' + str(sampling_frequency), shell=True)
 
 if __name__ == '__main__':

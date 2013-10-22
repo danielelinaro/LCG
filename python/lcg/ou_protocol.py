@@ -29,7 +29,7 @@ def usage():
     print('\033[92m     --with-preamble  \033[0m  includes a stability preamble.')
 
 
-switches = 'n:I:O:F:i:t:m:d:s:H:'
+switches = 'n:I:O:F:i:t:D:m:d:s:H:'
 long_switches = ['no-kernel','with-preamble','no-report']
 
 def parseArgs():
@@ -113,19 +113,19 @@ def analise_last_file():
     files = glob.glob('*.h5')
     files.sort()
     data_file = files[-1]
-    kernel_file = glob.glob('*.dat')
-    kernel_file.sort()
-    kernel_file = kernel_file[-1]
-
-    Ke = np.loadtxt(kernel_file)
     ent,info = lcg.loadH5Trace(data_file)
     V = ent[1]['data']
     I = ent[0]['data']
-    Vc = aec.compensate(V,I,Ke/1.0e9)
+    kernel_file = glob.glob('*.dat')
+    kernel_file.sort()
+    if len(kernel_file):
+        kernel_file = kernel_file[-1]
+        Ke = np.loadtxt(kernel_file)
+        V = aec.compensate(V,I,Ke/1.0e9)
     t = np.arange(0,len(V)-1)*info['dt']
-    spks = lcg.findSpikes(t, Vc, thresh=-10)
+    spks = lcg.findSpikes(t, V, thresh=-10)
     isi = np.diff(spks)
-    return np.mean(isi), np.std(isi)/np.mean(isi),np.mean(Vc),np.std(Vc) 
+    return np.mean(isi), np.std(isi)/np.mean(isi),np.mean(V),np.std(V) 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help','help'):
