@@ -129,7 +129,7 @@ bool OU::initialise()
         if (m_randn)
                 delete m_randn;
         if (!m_fixSeed)
-                OU_SEED = time(NULL);
+                OU_SEED = GetRandomSeed();
         m_randn = new NormalRandom(0,1,OU_SEED); 
         return true;
 }
@@ -197,7 +197,7 @@ bool OUNonStationary::initialise()
         if (m_randn)
                 delete m_randn;
         if (!m_fixSeed)
-                OU_SEED = time(NULL);
+                OU_SEED = GetRandomSeed();
         m_randn = new NormalRandom(0,1,OU_SEED); 
         return true;
 }
