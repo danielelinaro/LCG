@@ -44,7 +44,8 @@ setup(
             'lcg-rcwrite = lcg.rc_write:main',
             'lcg-kernel = lcg.kernel:main',
             'lcg-rate-steps = lcg.rate_steps:main',
-            'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main'
+            'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main',
+            'lcg-stimgen = lcg.stimgen_interface:main'
             ]
         }
     )
