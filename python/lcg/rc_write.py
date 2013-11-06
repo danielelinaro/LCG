@@ -19,11 +19,12 @@ def usage():
     print('     -i    (--input) write input entry.')
     print('     -o    (--output) write output entry.')
     print('     -c    channel number.')
+    print('     -f    conversion factors.')
     print('     -s    subdevice number (default %s for AI, %s for AO).'%(os.environ['AI_SUBDEVICE'],os.environ['AO_SUBDEVICE']))
     print('     -u    units (default %s for AI, %s for AO).'%(os.environ['INPUT_UNITS'],os.environ['OUTPUT_UNITS']))
     print('     -e    (--erase) erase existing file (default no).')
     print('     -r    ground reference (default %s).'%(os.environ['GROUND_REFERENCE']))
-    print('     -f    filename instead of the default (.cclamprc and .lcg-non-rt).')
+    print('     --file    filename instead of the default (.cclamprc and .lcg-non-rt).')
     print('     --non-rt Write non-rt configuration file.')
     print('     -p    path of the stimulus files to use in non-rt configuration (optional)')
     print('WARNING: This script does not check that there are no repeated channels.')
@@ -45,7 +46,7 @@ def find_entity_number(filename,input_chan):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'heioc:p:f:s:u:e:r', ['help','input','output','erase','non-rt'])
+        opts,args = getopt.getopt(sys.argv[1:], 'heioc:p:f:s:u:e:r', ['help','input','output','erase','non-rt','file='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -78,13 +79,13 @@ def main():
             channel = a
         elif o in ('-c'):
             subdevice = a
-        elif o in ('-c'):
+        elif o in ('-f'):
              conversion_factor= a
         elif o in ('-u'):
             u = a
         elif o in ('-r'):
             reference = a
-        elif o in ('-f'):
+        elif o in ('--file'):
             filename = a
         elif o in ('-p'):
             stimfiles = a

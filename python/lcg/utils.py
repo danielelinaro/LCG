@@ -16,12 +16,12 @@ def conductanceBurstStim(dur, g, tau, R0, dR, Tb, taub):
         stim.append([0, -4, g*tau_sec*dR, 1, taub, 0, g*tau_sec*R0, 0, 0, 12, 1, 1])
     return stim
 
-def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename='pulses.stim'):
+def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulses_in_burst = 1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.
     
     Parameters:
-                 f - frequency of the stimulation
+                 f - frequency of the stimulation (needs to be a list!)
                dur - duration of the stimulation (!!! in ms !!!)
                amp - amplitude of the stimulation
                  N - number of repetitions
@@ -33,19 +33,17 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename=
        The duration of the stimulation.
 
     """
-    dur = dur*1e-3
     stimulus = [[delay,1,0,0,0,0,0,0,5061983,0,0,1]]
-    T = 1./f - dur
-    for i in range(N):
-        stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
-        if i != N-1:
-            stimulus.append([T,1,0,0,0,0,0,0,5061983,0,0,1])
+    if len(f)==1:
+        f = f*2
+    stimulus.append([N/f[1],-2,amp,-f[0],dur,0,0,0,5061983,8,0,1])
+    stimulus.append([0,-2,1,-f[1],pulses_in_burst*(1000./f[0]),0,0,0,5061983,8,2,1])
     if withRecovery:
         stimulus.append([0.5,1,0,0,0,0,0,0,5061983,0,0,1])
         stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
     stimulus.append([delay,1,0,0,0,0,0,0,5061983,0,0,1])
     dur = writeStimFile(filename, stimulus, False)
-    print('The total duration of the stimulus is %g sec.' % dur)
+#    print('The total duration of the stimulus is %g sec.' % dur)
     return dur
 
 def writeStimFile(filename, stimulus, addDefaultPreamble=False):
