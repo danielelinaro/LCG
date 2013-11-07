@@ -157,7 +157,7 @@ def check_options(opts,code):
     parameters = [opts[p] for p in ['P1','P2','P3']]
     if not len(np.where(parameters)[0]) == nparam:
         print_code_help(code)
-
+        
     if None in [opts['output_channels'],opts['input_channels']]:
         print('You need to specify at least one input and one output channel.\n')
         sys.exit(1)
@@ -174,15 +174,15 @@ def check_options(opts,code):
         opts['output_units'] = [os.environ['OUTPUT_UNITS']]
     # Duplicate if not sufficient
     N = len(opts['input_channels'])
-    if not opts['input_factors'] < N:
-        opts['input_factors'] = opts['input_units']*N
-    if not opts['input_units'] < N:
-        opts['input_units'] = opts['input_units']*N
+    if not len(opts['input_factors']) == N:
+        opts['input_factors'] = opts['input_factors'][0]*N
+    if not len(opts['input_units']) == N:
+        opts['input_units'] = opts['input_units'][0]*N
     N = len(opts['output_channels'])
-    if not opts['output_factors'] < N:
-        opts['output_factors'] = opts['output_units']*N
-    if not opts['output_units'] < N:
-        opts['output_units'] = opts['output_units']*N
+    if not len(opts['output_factors']) == N:
+        opts['output_factors'] = opts['output_factors'][0]*N
+    if not len(opts['output_units']) == N:
+        opts['output_units'] = opts['output_units'][0]*N
     opts['code'] = code
     
 def create_stimulus_matrix(opts,p1=0,p2=0,p3=0,seed=26021985):
@@ -208,11 +208,10 @@ def create_stimulus_matrix(opts,p1=0,p2=0,p3=0,seed=26021985):
         tmp[1][4] = p3
         stim.append(tmp)
         dur.append(tmp[0][0]+tmp[0][1])
-    for s,d in zip(stim,dur):
+    for d,s in zip(dur,stim):
         s.append(list(basestim))
         s[-1][0] = max(dur) - d + opts['pre']
-        d = d+s[-1][0]
-    return stim,dur
+    return stim,max(dur)+ opts['pre']
 
 def main():
     if len(sys.argv)<2:
@@ -228,8 +227,7 @@ def main():
     # If have more than one channel, create non-rt configuration file.
     comma = lambda y:",".join([str(i) for i in y])
     run = lambda p:sub.call(p,shell=True)
-    #    run = lambda p:sys.stdout.write(str(p)+'\n')
-    
+    #run = lambda p:sys.stdout.write(str(p)+'\n')
     stimnames = ",".join([stim_file.format(i) for i in range(len(opts['output_channels']))])
 
     if len(opts['input_channels']) + len(opts['output_channels']) > 2:
@@ -252,7 +250,10 @@ def main():
                                                                                           opts['input_channels'][i],
                                                                                           o,
                                                                                           opts['srate']))
-        cmd = 'lcg-non-rt -c {0} -F {1}'.format(cfg_file,opts['srate'])
+        cmd = 'lcg-non-rt -c {0} -F {1} -n {2} -i {3}'.format(cfg_file,
+                                                       opts['srate'],
+                                                       opts['nreps'],
+                                                       opts['interval'])
     else:
         if opts['kernel']:
             run('lcg-kernel -s {0} -I {1} -O {2} -F {3}'.format(opts['kernel_s'],
@@ -293,9 +294,10 @@ def main():
                 timeStart = time.time()
                 run(cmd)
                 if not (p1 == P1[-1] and p2 == P2[-1] and p3 == P3[-1]):
-                    timeToWait = timeStart + max(dur) + opts['interval'] - time.time()
+                    timeToWait = (timeStart + dur + opts['interval']) - time.time()
                     print('Waiting: {0}'.format(timeToWait))
-                    time.sleep(timeToWait)
+                    if timeToWait > 0:
+                        time.sleep(timeToWait)
                 
 if __name__ in ['__main__']:
     main()

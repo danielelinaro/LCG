@@ -82,7 +82,7 @@ def main():
         elif o in ('-f'):
              conversion_factor= a
         elif o in ('-u'):
-            u = a
+            units = a
         elif o in ('-r'):
             reference = a
         elif o in ('--file'):
