@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import os
@@ -72,8 +73,8 @@ def main():
     lcg.writeStimFile(stim_file,stim,True)
     if nonrt:
         fname = 'kernel.cfg'
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt -f ' + fname, shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt -f ' + fname + ' -p ' + stim_file, shell=True)
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt --file ' + fname, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt --file ' + fname + ' -p ' + stim_file, shell=True)
         sub.call('lcg-non-rt -c ' + fname + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
     else:
         sub.call('lcg-rcwrite -e -i -c ' + str(ai), shell=True)

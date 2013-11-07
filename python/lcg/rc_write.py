@@ -142,6 +142,7 @@ def main():
         header = '[AnalogOutput]\n'
         if input_chan:
             header = '[AnalogInput]\n'
+        open(filename,'a').close()
         with file(filename,append) as fd:
             fd.write(header)
             fd.write('device = {0}\n'.format(device))

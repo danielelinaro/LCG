@@ -227,30 +227,31 @@ def main():
     check_options(opts,code)
     # If have more than one channel, create non-rt configuration file.
     comma = lambda y:",".join([str(i) for i in y])
-#    run = lambda p:sub.call(p,shell=True)
-    run = lambda p:sys.stdout.write(str(p)+'\n')
+    run = lambda p:sub.call(p,shell=True)
+    #    run = lambda p:sys.stdout.write(str(p)+'\n')
     
     stimnames = ",".join([stim_file.format(i) for i in range(len(opts['output_channels']))])
 
     if len(opts['input_channels']) + len(opts['output_channels']) > 2:
         print("Using lcg-non-rt.\n")
         # write configuration file
-        run('lcg-rcwrite -e -i -c {0} -u {1} -f {2} -fname {3}'.format(comma(opts['input_channels']),
+        run('lcg-rcwrite -e -i -c {0} -u {1} -f {2} --file {3} --non-rt'.format(comma(opts['input_channels']),
                                                                        comma(opts['input_units']),
                                                                        comma(opts['input_factors']),
                                                                        cfg_file))
-        run('lcg-rcwrite -o -c {0} -u {1} -f {2} -stimfile {3} -fname {4}'.format(comma(opts['output_channels']),
-                                                                                  comma(opts['output_units']),
-                                                                                  comma(opts['output_factors']),
-                                                                                  stimnames,
-                                                                                  cfg_file))
+        run('lcg-rcwrite -o -c {0} -u {1} -f {2} -p {3} --file {4} --non-rt'.format(comma(opts['output_channels']),
+                                                                           comma(opts['output_units']),
+                                                                           comma(opts['output_factors']),
+                                                                           stimnames,
+                                                                           cfg_file))
         # compute kernels
         if opts['kernel']:
-            for i,o in enumerate(opts['output_channels']):
-                run('lcg-kernel -s {0} -I {1} -O {2} --append --non-rt -F {3}'.format(opts['kernel_s'],
-                                                                             opts['input_channels'][i],
-                                                                             o,
-                                                                             opts['srate']))
+            if len(opts['output_channels']) == len(opts['input_channels']):
+                for i,o in enumerate(opts['output_channels']):
+                    run('lcg-kernel -s {0} -I {1} -O {2} --append --non-rt -F {3}'.format(opts['kernel_s'],
+                                                                                          opts['input_channels'][i],
+                                                                                          o,
+                                                                                          opts['srate']))
         cmd = 'lcg-non-rt -c {0} -F {1}'.format(cfg_file,opts['srate'])
     else:
         if opts['kernel']:
@@ -291,8 +292,10 @@ def main():
                         lcg.writeStimFile(stim_file.format(i),s)
                 timeStart = time.time()
                 run(cmd)
-                timeToWait = time.time() - timeStart - max(dur) + opts['interval']
-                print('Going to wait {0}'.format(timeToWait))
+                if not (p1 == P1[-1] and p2 == P2[-1] and p3 == P3[-1]):
+                    timeToWait = timeStart + max(dur) + opts['interval'] - time.time()
+                    print('Waiting: {0}'.format(timeToWait))
+                    time.sleep(timeToWait)
                 
 if __name__ in ['__main__']:
     main()
