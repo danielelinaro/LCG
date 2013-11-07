@@ -82,7 +82,7 @@ def main():
         elif o in ('-f'):
              conversion_factor= a
         elif o in ('-u'):
-            u = a
+            units = a
         elif o in ('-r'):
             reference = a
         elif o in ('--file'):
@@ -142,6 +142,7 @@ def main():
         header = '[AnalogOutput]\n'
         if input_chan:
             header = '[AnalogInput]\n'
+        open(filename,'a').close()
         with file(filename,append) as fd:
             fd.write(header)
             fd.write('device = {0}\n'.format(device))
