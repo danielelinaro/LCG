@@ -36,7 +36,7 @@ def main():
     add_duration = True
     add_reps = True
     add_interval = True
-
+    kernel = True
     cmd = 'lcg pulse'
     for o,a in opts:
         if o in ('-h','--help'):

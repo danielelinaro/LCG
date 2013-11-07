@@ -103,7 +103,7 @@ def main():
     
     if len(ao) + len(ai) > 2:
         print("Using lcg-non-rt")
-        if compute_kernel and len(ao)>2:
+        if compute_kernel and len(ao)>1:
             run('lcg kernel -I {0} -O {1} --non-rt -F {2}'.format(ai[0],ao[0],srate))
 
         run('lcg-rcwrite -e -i -c {0} --non-rt --file {1}'.format(comma(ai),cfg_file))
@@ -116,8 +116,11 @@ def main():
             run('lcg-rcwrite -o -f 1 -u V -c {0} --non-rt -f {1} -u ND --file {3} -p {4}'.format(comma(ao),
                                                                                                  os.environ['AO_CONVERSION_FACTOR'],
                                                                                                  cfg_file,stimnames))
-
-        holdstim = [[duration,1,holding,0,0,0,0,0,0,0,0,1]]
+        noise = True
+        if noise:
+            holdstim = [[1,1,0,0,0,0,0,0,0,0,0,0,1],[duration-2,2,0,holding,10,0,0,0,0,0,0,0,1],[1,1,0,0,0,0,0,0,0,0,0,0,1]]
+        else:
+            holdstim = [[duration,1,holding,0,0,0,0,0,0,0,0,1]]
         lcg.writeStimFile(stimnames.split(',')[0], holdstim, False)
         run('lcg-non-rt -c {0} -F {1} -n {2} -i {3}'.format(cfg_file,
                                                             srate,
