@@ -32,7 +32,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hf:n:d:a:b:i:N:I:O:o:H:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hf:n:d:a:b:i:N:I:F:O:o:H:',
                                   ['help','compute-kernel','without-recovery-pulse'])
     except getopt.GetoptError, err:
         print str(err)
@@ -116,7 +116,7 @@ def main():
             run('lcg-rcwrite -o -f 1 -u V -c {0} --non-rt -f {1} -u ND --file {3} -p {4}'.format(comma(ao),
                                                                                                  os.environ['AO_CONVERSION_FACTOR'],
                                                                                                  cfg_file,stimnames))
-        noise = True
+        noise = False
         if noise:
             holdstim = [[1,1,0,0,0,0,0,0,0,0,0,0,1],[duration-2,2,0,holding,10,0,0,0,0,0,0,0,1],[1,1,0,0,0,0,0,0,0,0,0,0,1]]
         else:
