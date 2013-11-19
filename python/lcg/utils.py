@@ -49,16 +49,18 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename=
     print('The total duration of the stimulus is %g sec.' % dur)
     return dur
 
-def writeStimFile(filename, stimulus, addDefaultPreamble=False):
+def writeStimFile(filename, stimulus, preamble=None):
     """
     Writes a generic stimulus file.
 
     Parameters:
-                 filename - the name of the file that will be written.
-                 stimulus - a matrix containing the stimulus.
-       addDefaultPreamble - whether to add a default preamble composed
-                of a 10 ms pulse of -300 pA and a 100 ms pulse of -100 pA.
-
+       filename - the name of the file that will be written.
+       stimulus - a matrix containing the stimulus.
+       preamble - a 2 element list containing the amplitudes of a 10 ms and a 100 ms
+                  long pulses to add at the beginning of the stimulation. It can be None,
+                  in which case no preamble is added, or True, in which case default
+                  values of -300 pA and -100 pA are used for the first and second pulse,
+                  respectively.
     Returns:
        The duration of the stimulation.
            
@@ -67,18 +69,13 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
         stimulus = [stimulus]
     with open(filename,'w') as fid:
         preamble_dur = 0
-        if addDefaultPreamble:
-            ### preamble for small cells
-            #preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-            #            [0.01,1,-200,0,0,0,0,0,0,0,0,1],
-            #            [0.5,1,0,0,0,0,0,0,0,0,0,1],
-            #            [0.6,1,-50,0,0,0,0,0,0,0,0,1],
-            #            [1,1,0,0,0,0,0,0,0,0,0,1]]
-            ### preamble for larger cells
+        if preamble:
+            if type(preamble) != list or len(preamble) != 2:
+                preamble = [-300,-100]
             preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.01,1,-300,0,0,0,0,0,0,0,0,1],
+                        [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
                         [0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.6,1,-100,0,0,0,0,0,0,0,0,1],
+                        [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
                         [1,1,0,0,0,0,0,0,0,0,0,1]]
             for row in preamble:
                 preamble_dur = preamble_dur + row[0]

@@ -389,7 +389,7 @@ def main():
             I = copy.deepcopy(current)
             replaceValue(I, random_seed)
             replaceValue(I, frequency_value, f)
-            lcg.writeStimFile(current_file, I, addDefaultPreamble=True)
+            lcg.writeStimFile(current_file, I, preamble=True)
             if gexc and ginh:
                 for stimulus in gexc:
                     G = copy.deepcopy(stimulus['matrix'])

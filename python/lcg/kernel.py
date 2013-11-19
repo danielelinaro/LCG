@@ -32,7 +32,7 @@ def main():
         sys.exit(1)
 
     ai = int(os.environ['AI_CHANNEL'])
-    ao = int(os.environ['AI_CHANNEL'])
+    ao = int(os.environ['AO_CHANNEL'])
     duration = 10          # [s]
     amplitude = 250        # [pA]
     sampling_rate = 20000  # [Hz]
