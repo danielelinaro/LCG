@@ -486,8 +486,8 @@ static bool CheckPrivileges()
 
         /* try to change to SCHEDULER */
         param.sched_priority = 1;
-        if (sched_setscheduler(0, SCHEDULER, &param)) {
-                Logger(Critical, "Unable to change scheduling policy!\n");
+        if (sched_setscheduler(0, SCHEDULER, &param) == -1) {
+                Logger(Critical, "Unable to change scheduling policy! %s.\n", strerror(errno));
                 Logger(Critical, "Either run as root or join realtime group.\n");
                 return false;
         }
