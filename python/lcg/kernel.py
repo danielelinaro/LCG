@@ -1,4 +1,4 @@
-
+1
 #!/usr/bin/env python
 
 import os
@@ -27,7 +27,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['help','append','non-rt'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['If=','Of=','help','append','non-rt'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -35,6 +35,10 @@ def main():
 
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AI_CHANNEL'])
+    If = os.environ['AI_CONVERSION_FACTOR']
+    Of = os.environ['AO_CONVERSION_FACTOR']
+    Iu = 'mV'
+    Ou = 'pA'
     duration = 10          # [s]
     amplitude = 250        # [pA]
     sampling_rate = 20000  # [Hz]
@@ -52,8 +56,10 @@ def main():
             duration = float(a)
         elif o == '-s':
             amplitude = float(a)
-        elif o == '-F':
-            sampling_rate = float(a)
+        elif o == '--Of':
+            Of = a
+        elif o == '--If':
+            If = a
         elif o == '-I':
             ai = int(a)
         elif o == '-O':
@@ -72,13 +78,14 @@ def main():
             [1,1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(stim_file,stim,True)
     if nonrt:
+        print('Using non-rt kernel!')
         fname = 'kernel.cfg'
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt --file ' + fname, shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt --file ' + fname + ' -p ' + stim_file, shell=True)
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt --file ' + fname + ' -f ' + str(If) + ' -u ' + Iu, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt --file ' + fname + ' -p ' + stim_file + ' -f ' + str(Of) + ' -u ' + Ou, shell=True)
         sub.call('lcg-non-rt -c ' + fname + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
     else:
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai), shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao), shell=True)
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' -f '+ str(If) + ' -u ' + Iu, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' -f ' + str(Of) + ' -u ' + Ou, shell=True)
         sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
 
     files = glob.glob('*.h5')

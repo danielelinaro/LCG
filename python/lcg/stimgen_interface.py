@@ -59,7 +59,7 @@ opt_description = {'--P1': 'Parameter 1 (supports iteration [start,stop,step])',
                    '--seed': 'Fixes the seed to the specified value',
                    '--no-kernel': 'do not compute the kernel.',
                    '--Ks': 'std of the kernel.',
-                   '-V': 'verbose level'}
+                   '-V':'verbose level.'}
 
 # order of the parameters is random... is there a way to fix it??
 usage = '''
@@ -99,7 +99,7 @@ opt_defaults = {'P1':None,
 def parse_options():
     options = opt_defaults.copy()
     try:
-        opts,args = getopt.getopt(sys.argv[2:], 'h:o:t:n:d:i:I:V:O:F:', 
+        opts,args = getopt.getopt(sys.argv[2:], 'h:o:t:n:d:i:I:O:F:V:', 
                                   ['help','If=','Of=','Iu=','Ou=',
                                    'seed=','no-kernel','P1=','P2=','P3=','Ks='])
     except getopt.GetoptError, err:
@@ -107,6 +107,8 @@ def parse_options():
         print(str(err))
         sys.exit(1)
     for o,a in opts:
+        if o == '-V':
+            options['verbose'] = int(a)
         if o == '-n':
             options['nreps'] = int(a)
         if o == '-o':
@@ -143,8 +145,6 @@ def parse_options():
             options['kernel'] = False
         if o == '--Ks':
             options['kernel_s'] = np.float(a)
-        if o == '-V':
-            options['verbose'] = int(a)
     return options
 
 def print_code_help(code):
@@ -235,7 +235,7 @@ def main():
     stimnames = ",".join([stim_file.format(i) for i in range(len(opts['output_channels']))])
 
     if len(opts['input_channels']) + len(opts['output_channels']) > 2:
-      #  print("Using lcg-non-rt.\n")
+        print("Using lcg-non-rt.\n")
         # write configuration file
         run('lcg-rcwrite -e -i -c {0} -u {1} -f {2} --file {3} --non-rt'.format(comma(opts['input_channels']),
                                                                        comma(opts['input_units']),
@@ -248,12 +248,14 @@ def main():
                                                                            cfg_file))
         # compute kernels
         if opts['kernel']:
-            if len(opts['output_channels']) == len(opts['input_channels']):
+            if len(opts['output_channels']) <= len(opts['input_channels']):
                 for i,o in enumerate(opts['output_channels']):
-                    run('lcg-kernel -s {0} -I {1} -O {2} --append --non-rt -F {3}'.format(opts['kernel_s'],
-                                                                                          opts['input_channels'][i],
-                                                                                          o,
-                                                                                          opts['srate']))
+                    run('lcg-kernel -s {0} -I {1} -O {2} --append --If {3} --Of {4} --non-rt -F {5}'.format(opts['kernel_s'],
+                                                                                                            opts['input_channels'][i],
+                                                                                                            o,
+                                                                                                            opts['input_factors'][i],
+                                                                                                            opts['output_factors'][i],
+                                                                                                            opts['srate']))
         cmd = 'lcg-non-rt -c {0} -F {1} -n {2} -i {3} -V {4}'.format(cfg_file,
                                                                      opts['srate'],
                                                                      opts['nreps'],
@@ -262,17 +264,11 @@ def main():
     else:
         if opts['kernel']:
             run('lcg-kernel -s {0} -I {1} -O {2} -F {3}'.format(opts['kernel_s'],
-                                                                         opts['input_channels'][0],
-                                                                         opts['output_channels'][0],
-                                                                         opts['srate']))
-        run('lcg-rcwrite -e -i -c {0} -u {1} -f {2}'.format(comma(opts['input_channels']),
-                                                                       comma(opts['input_units']),
-                                                                       comma(opts['input_factors'])))
-        run('lcg-rcwrite -o -c {0} -u {1} -f {2}'.format(comma(opts['output_channels']),
-                                                                           comma(opts['output_units']),
-                                                                           comma(opts['output_factors'])))
-        cmd = 'lcg-vcclamp -f {0} -F {1} -V {2}'.format(stimnames,opts['srate'],opts['verbose'])
-#        print("Using lcg-vcclamp.\n")
+                                                                opts['input_channels'][0],
+                                                                opts['output_channels'][0],
+                                                                opts['srate']))
+            cmd = 'lcg-vcclamp -c {0} -F {1} -V {2}'.format(stimnames,opts['srate'],opts['verbose'])
+        print("Using lcg-vcclamp.\n")
 
     # Iterate through parameters 
     P1 = []

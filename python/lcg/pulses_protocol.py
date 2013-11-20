@@ -21,11 +21,12 @@ def usage():
     print('     -a    stimulation amplitude (default 4000 pA).')
     print('     -N    number of repetitions (default 10).')
     print('     -i    interval between repetitions (default 10 s).')
+    print('     --non-rt use non-rt.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hN:n:f:F:d:a:I:O:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hN:n:f:F:d:a:I:O:', ['help','non-rt','no-kernel'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -42,6 +43,8 @@ def main():
     stimdur = 1
     stimamp = 4000
     interval = 10
+    nonrt = False
+    kernel=True
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -67,6 +70,10 @@ def main():
                 ai.append(int(ch))
         elif o == '-O':
             ao = int(a)
+        elif o == '--non-rt':
+            nonrt=True
+        elif o == '--no-kernel':
+            kernel=False
 
     
     if fstim == None:
@@ -84,15 +91,28 @@ def main():
         usage()
         sys.exit(1)
 
-    sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao), shell=True)
+    if not nonrt:
+        if kernel:
+            sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao), shell=True)
 
-    sub.call('cclamprc_write -e -o -c ' + str(ao), shell=True)
-    sub.call('cclamprc_write -i -c ' + str(ai[0]), shell=True)
-    sub.call('cclamprc_write -i -c ' + str(ai[1]), shell=True)
+        sub.call('cclamprc_write -e -o -c ' + str(ao), shell=True)
+        sub.call('cclamprc_write -i -c ' + str(ai[0]), shell=True)
+        sub.call('cclamprc_write -i -c ' + str(ai[1]), shell=True)
 
-    lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
+        lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
 
-    sub.call('lcg vcclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
+        sub.call('lcg vcclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
+    else:
+        if kernel:
+            sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) 
+                     + ' -O ' + str(ao) + ' --non-rt', shell=True)
+        fname = 'pulses.cfg'
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai[0])+',' + str(ai[1]) + ' --non-rt -f '+ fname, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao)+' -p ' + stimfile + ' --non-rt -f '+ fname, shell=True)
+        lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
+
+        sub.call('lcg-non-rt -c ' + fname + ' -n ' + str(trials) + ' -i ' + str(interval) + ' -F ' + str(fsampl), shell=True)
+
 
 if __name__ == '__main__':
     main()
