@@ -262,12 +262,18 @@ def main():
                                                                      opts['interval'],
                                                                      opts['verbose'])
     else:
+        run('lcg-rcwrite -e -i -c {0} -u {1} -f {2}'.format(comma(opts['input_channels']),
+                                                            comma(opts['input_units']),
+                                                            comma(opts['input_factors'])))
+        run('lcg-rcwrite -o -c {0} -u {1} -f {2}'.format(comma(opts['output_channels']),
+                                                         comma(opts['output_units']),
+                                                         comma(opts['output_factors'])))
         if opts['kernel']:
             run('lcg-kernel -s {0} -I {1} -O {2} -F {3}'.format(opts['kernel_s'],
                                                                 opts['input_channels'][0],
                                                                 opts['output_channels'][0],
                                                                 opts['srate']))
-            cmd = 'lcg-vcclamp -c {0} -F {1} -V {2}'.format(stimnames,opts['srate'],opts['verbose'])
+        cmd = 'lcg-vcclamp -f {0} -F {1} -V {2}'.format(stimnames,opts['srate'],opts['verbose'])
         print("Using lcg-vcclamp.\n")
 
     # Iterate through parameters 

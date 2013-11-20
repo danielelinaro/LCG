@@ -49,7 +49,7 @@ Waveform::~Waveform()
 bool Waveform::initialise()
 {
 		m_stimulus->setStimulusFile(m_stimulusFile);
-
+		m_eventSent = false;
         if (!m_triggered) {
                 m_position = 0;
         }
@@ -107,11 +107,15 @@ const double* Waveform::metadata(size_t *dims, char *label) const
  * Note: a RESET event is sent when the waveform ends.
  */
 double Waveform::output()
-{
+{ 
         if (m_position < m_stimulus->length())
                 return m_stimulus->at(m_position);
-        if (m_position == m_stimulus->length())
-            emitEvent(new ResetEvent(this));
+        if (m_position == m_stimulus->length() && !m_eventSent) {
+            emitEvent(new TriggerEvent(this));
+			Logger(Info,"Waveform:Emiting event(%lf)!\n",GetGlobalTime());
+			m_eventSent = true;
+			Logger(Important,"Setting m_eventSent to true.\n");
+		}
         return 0.0;
 }
 
@@ -120,7 +124,7 @@ void Waveform::handleEvent(const Event *event)
         switch(event->type()) {
         case TRIGGER:
                 if (m_triggered && m_position >= m_stimulus->length()){
-                    Logger(Debug, "Waveform: triggered by event.\n");
+                    Logger(Info, "Waveform: triggered by event.\n");
                     reset();
                 }
                 break;
@@ -133,6 +137,7 @@ void Waveform::handleEvent(const Event *event)
 void Waveform::reset()
 {
         m_position = 0;
+		m_eventSent = false;
 }
 
 void Waveform::terminate()

@@ -5,11 +5,16 @@
 lcg::Entity* SobolDelayFactory(string_dict& args)
 {
         uint id, startSample;
+		double min, max;
         id = lcg::GetIdFromDictionary(args);
+		lcg::Logger(lcg::Important, "Using start sample [%d].\n", startSample);
+        if (! lcg::CheckAndExtractDouble(args, "min", &min))
+                min = 0;
+        if (! lcg::CheckAndExtractDouble(args, "max", &max))
+                max = -1;
         if (! lcg::CheckAndExtractUnsignedInteger(args, "startSample", &startSample))
                 startSample = 0;
-		lcg::Logger(lcg::Important, "Using start sample [%d].\n", startSample);
-        return new lcg::SobolDelay(startSample, id);
+        return new lcg::SobolDelay(startSample, min, max, id);
 }
 
 lcg::Entity* PhasicDelayFactory(string_dict& args)
@@ -78,8 +83,9 @@ bool Functor::initialise()
         return true;
 }
 
-SobolDelay::SobolDelay(uint startSample, uint id)
-        : Functor(id), m_numberOfSobolSequences(-1), m_startSample(startSample)
+SobolDelay::SobolDelay(uint startSample, double min, double max, uint id)
+        : Functor(id), m_numberOfSobolSequences(-1), 
+		m_startSample(startSample), m_min(min), m_max(max)
 {
         setName("SobolDelay");
         setUnits("s");
@@ -90,6 +96,9 @@ bool SobolDelay::initialise()
         m_numberOfSobolSequences = -1;
         sobseq(&m_numberOfSobolSequences, NULL);
         m_numberOfSobolSequences = 1;
+		//
+		// TODO: Check that min and max are positive!!!!!
+		//
 		for (uint i=0; i<m_startSample; i++)
 			this->operator()();
         return true;
@@ -98,11 +107,13 @@ bool SobolDelay::initialise()
 double SobolDelay::operator()()
 {
         float x;
-        double y;
+        double y = m_max;
         sobseq(&m_numberOfSobolSequences, &x);
-        if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units().c_str(), "s"))
-                throw "Unable to convert.";
-        return x*y;
+		if (m_max < 0)
+			if (!ConvertUnits(m_inputs[0], &y, pre()[0]->units().c_str(), "s"))
+				    throw "Unable to convert.";
+		Logger(Info,"Output of the sobol delay is: %f\n",m_min + x * (y-m_min));
+        return m_min + x*(y-m_min);
 }
 
 PhasicDelay::PhasicDelay(double phase, uint id)
