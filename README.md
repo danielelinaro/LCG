@@ -49,6 +49,6 @@ lcg command -h
 GPL
 
 ### Authors
-Daniele Linaro - danielelinaro@gmail.com
+Daniele Linaro - danielelinaro@gmail.com   
 Joao Couto - jpcouto@gmail.com
 
