@@ -132,11 +132,11 @@ public:
         /*! Provides access to the i-th element in the internal buffer of this stream. */
         virtual const double& at(int i) const = 0;
 
-        /*! Instructs the stream to perform its operations. */
-        virtual void run() = 0;
+        /*! Instructs the stream to perform its operations, for the duration specified by tend. */
+        virtual void run(double tend) = 0;
 
-        /*! Blocks until the stream is running. */
-        virtual void join(int *retval) = 0;
+        /*! Blocks until the stream is running. err = 0 means that everything went fine. */
+        virtual void join(int *err) = 0;
 
 protected:
         /*!
