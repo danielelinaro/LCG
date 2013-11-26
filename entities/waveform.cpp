@@ -48,8 +48,8 @@ Waveform::~Waveform()
 
 bool Waveform::initialise()
 {
-		m_stimulus->setStimulusFile(m_stimulusFile);
-
+	m_stimulus->setStimulusFile(m_stimulusFile);
+	m_eventSent = false;
         if (!m_triggered) {
                 m_position = 0;
         }
@@ -68,7 +68,7 @@ const char* Waveform::stimulusFile() const
 bool Waveform::setStimulusFile(const char *stimulusFile)
 {
         strncpy(m_stimulusFile, stimulusFile, FILENAME_MAXLEN);
-		return m_stimulus->setStimulusFile(m_stimulusFile);
+	return m_stimulus->setStimulusFile(m_stimulusFile);
 }
 
 double Waveform::duration() const
@@ -107,11 +107,14 @@ const double* Waveform::metadata(size_t *dims, char *label) const
  * Note: a RESET event is sent when the waveform ends.
  */
 double Waveform::output()
-{
+{ 
         if (m_position < m_stimulus->length())
                 return m_stimulus->at(m_position);
-        if (m_position == m_stimulus->length())
-            emitEvent(new ResetEvent(this));
+        if (m_position == m_stimulus->length() && !m_eventSent) {
+                emitEvent(new TriggerEvent(this));
+		Logger(Debug, "Waveform: emitting event at t = %lf seconds.\n", GetGlobalTime());
+		m_eventSent = true;
+	}
         return 0.0;
 }
 
@@ -120,12 +123,11 @@ void Waveform::handleEvent(const Event *event)
         switch(event->type()) {
         case TRIGGER:
                 if (m_triggered && m_position >= m_stimulus->length()){
-                    Logger(Debug, "Waveform: triggered by event.\n");
+                    Logger(Info, "Waveform: triggered by event.\n");
                     reset();
                 }
                 break;
         default:
-
                 Logger(Important, "Waveform: unknown event (%d) type.\n",event->type());
         }
 }
@@ -133,6 +135,7 @@ void Waveform::handleEvent(const Event *event)
 void Waveform::reset()
 {
         m_position = 0;
+		m_eventSent = false;
 }
 
 void Waveform::terminate()

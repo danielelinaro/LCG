@@ -18,14 +18,19 @@ def usage():
     print('     -s    standard deviation of the white noise (default 250 pA).')
     print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('     -O    output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('     --If    input factor (default %s).' % os.environ['AI_CONVERSION_FACTOR'])
+    print('     --Of    output factor (default %s).' % os.environ['AO_CONVERSION_FACTOR'])
+    print('     --Iu    input units (default %s).' % os.environ['INPUT_UNITS'])
+    print('     --Ou    output units (default %s).' % os.environ['OUTPUT_UNITS'])
     print('     -F    sampling frequency (default 20000 Hz).')
     print('     -H    holding current (default 0 pA).')
     print(' -a,--append append channel numbers to kernel.dat file (default no).')
+    print(' --non-rt use lcg-non-rt (default no).')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['help','append'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a', ['Iu=','Ou=','If=','Of=','help','append','non-rt'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -33,11 +38,16 @@ def main():
 
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AI_CHANNEL'])
+    If = os.environ['AI_CONVERSION_FACTOR']
+    Of = os.environ['AO_CONVERSION_FACTOR']
+    Iu = os.environ['INPUT_UNITS']
+    Ou = os.environ['OUTPUT_UNITS']
     duration = 10          # [s]
     amplitude = 250        # [pA]
     sampling_rate = 20000  # [Hz]
     holding_current = 0    # [pA]
     append = False
+    nonrt = False
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -49,14 +59,22 @@ def main():
             duration = float(a)
         elif o == '-s':
             amplitude = float(a)
-        elif o == '-F':
-            sampling_rate = float(a)
+        elif o == '--Of':
+            Of = a
+        elif o == '--If':
+            If = a
+        elif o == '--Ou':
+            Ou = a
+        elif o == '--Iu':
+            Iu = a
         elif o == '-I':
             ai = int(a)
         elif o == '-O':
             ao = int(a)
         elif o == '-H':
             holding_current = float(a)
+        elif o == '--non-rt':
+            nonrt = True
 
     if append:
         suffix = '-' + str(ai) + '-' + str(ao)
@@ -66,10 +84,17 @@ def main():
     stim = [[duration,11,0,amplitude,0,0,0,1,int(rnd.uniform(high=10000)),0,0,1],
             [1,1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(stim_file,stim,True)
+    if nonrt:
+        print('Using non-rt kernel!')
+        fname = 'kernel.cfg'
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt --file ' + fname + ' -f ' + If + ' -u ' + Iu, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt --file ' + fname + ' -p ' + stim_file + ' -f ' + Of + ' -u ' + Ou, shell=True)
+        sub.call('lcg-non-rt -c ' + fname + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
+    else:
+        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' -f '+ If + ' -u ' + Iu, shell=True)
+        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' -f ' + Of + ' -u ' + Ou, shell=True)
+        sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
 
-    sub.call('cclamprc_write -e -i -c ' + str(ai), shell=True)
-    sub.call('cclamprc_write -o -c ' + str(ao), shell=True)
-    sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
     files = glob.glob('*.h5')
     files.sort()
     data_file = files[-1]

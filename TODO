@@ -1,4 +1,8 @@
 
+=== PARAMOUNT
+
+-) Add signal handling to lcg-non-rt.
+
 === Short term (and therefore relatively simple) ===
 
 -) add output reset in output stream.
@@ -7,6 +11,8 @@
 -) analog output should also be proxied in asynchronous mode.
 -) finish to add the ionic currents for LTS neurons.
 -) Add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
+-) Channels are not being recorded in the order they are specified in non-rt config file.
+-) Include the channel number on the H5 entity when recording.
 
 === Long term (and therefore possibly complicated) ===
 
@@ -19,4 +25,5 @@ Modify the random library to have one base class for UniformRandom and two subcl
 >> Use a buffer also for the SW implementation of random number generators (i.e., in UniformRandom) ? <<
 
 >> Allow AnalogOutput and AnalogInput objects to be executed only at half the realtime sampling rate (e.g. acquiring 2 samples every time and stepping half the times).
+
 

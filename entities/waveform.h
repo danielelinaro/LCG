@@ -41,6 +41,7 @@ protected:
 private:
         uint m_position;
         bool m_triggered;
+        bool m_eventSent;
         Stimulus *m_stimulus;
         char m_stimulusFile[FILENAME_MAXLEN];
 };

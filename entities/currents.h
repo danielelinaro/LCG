@@ -9,7 +9,11 @@ namespace lcg {
 
 namespace ionic_currents {
 
-double vtrap(double x, double y);
+inline double vtrap(double x, double y) {
+        if (fabs(x/y) < 1e-6)
+	        return y*(1. - x/y/2.);
+        return x/(exp(x/y) - 1.);
+}
 
 #define IC_FRACTION     m_state[0]              // (1)
 
@@ -37,10 +41,10 @@ public:
 
         virtual bool initialise();
 
-        static double alpham(double v);
-        static double betam(double v);
-        static double alphah(double v);
-        static double betah(double v);
+        static inline double alpham(double v) { return 0.1 * vtrap(-(v+40.),10.); }
+	static inline double betam(double v) { return 4. * exp(-(v+65.)/18.); }
+        static inline double alphah(double v) { return 0.07 * exp(-(v+65.)/20.); }
+        static inline double betah(double v) { return 1.0 / (exp(-(v+35.)/10.) + 1.); }
 
 protected:
         void evolve();
@@ -48,15 +52,15 @@ protected:
 
 #define HH_K_N          m_state[1]
 
+
 class HHPotassium : public IonicCurrent {
 public:
         HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId());
 
         virtual bool initialise();
 
-        static double alphan(double v);
-        static double betan(double v);
-
+        static inline double alphan(double v) { return 0.01*vtrap(-(v+55.),10.); }
+	static inline double betan(double v) {	return 0.125*exp(-(v+65.)/80.); }
 protected:
         void evolve();
 };
@@ -228,6 +232,57 @@ private:
         double m_z[numberOfStates-1];
 };
 
+#define WB_NA_M         m_state[1]
+#define WB_NA_H         m_state[2]
+
+/*!
+ * \class WBSodium
+ * \brief Wang-Buzsaki model fast sodium  
+ *
+ * Description of the sodium current of hippocampal interneurons.
+ * 
+ * Model based on Wang, X.J. & Buzsáki, G., 1996. Gamma oscillation
+ * by synaptic inhibition in a hippocampal interneuronal network model.
+ * The Journal of neuroscience, 16(20), pp.6402–6413.
+ */
+class WBSodium : public IonicCurrent {
+public:
+        WBSodium(double area, double gbar = 0.035, double E = 55., uint id = GetId());
+
+        virtual bool initialise();
+
+        static inline double alpham(double v) { return 0.1 * vtrap(-(v + 35.),10); }
+	static inline double betam(double v) { return 4. * exp(-0.0556 * (v + 60.)); }
+        static inline double alphah(double v) { return 0.07 * exp(-0.05 * (v + 58.)); }
+        static inline double betah(double v) { return 1. / (1. + exp(-0.1 * (v + 28.))); }
+
+protected:
+        void evolve();
+};
+
+#define WB_K_N          m_state[1]
+/*
+ * \class WBPotassium
+ * \brief Wang-Buzsaki model potassium  
+ *
+ * Description of the potassium current of hippocampal interneurons.
+ * 
+ * Model based on Wang, X.J. & Buzsáki, G., 1996. Gamma oscillation
+ * by synaptic inhibition in a hippocampal interneuronal network model.
+ * The Journal of neuroscience, 16(20), pp.6402–6413.
+ */
+class WBPotassium : public IonicCurrent {
+public:
+        WBPotassium(double area, double gbar = 0.009, double E = -90., uint id = GetId());
+
+        virtual bool initialise();
+
+        static inline double alphan(double v) { return 0.01 * vtrap(-(v+34.), 10.); }
+	static inline double betan(double v) {	return 0.125 * exp(-0.0125 * (v+44.)); }
+protected:
+        void evolve();
+};
+
 } // namespace ionic_currents
 
 } // namespace lcg
@@ -246,7 +301,8 @@ lcg::Entity* HH2SodiumFactory(string_dict& args);
 lcg::Entity* HH2PotassiumFactory(string_dict& args);
 lcg::Entity* MCurrentFactory(string_dict& args);
 lcg::Entity* TCurrentFactory(string_dict& args);
-
+lcg::Entity* WBSodiumFactory(string_dict& args);
+lcg::Entity* WBPotassiumFactory(string_dict& args);
 ///// STOCHASTIC /////
 lcg::Entity* HHSodiumCNFactory(string_dict& args);
 lcg::Entity* HHPotassiumCNFactory(string_dict& args);

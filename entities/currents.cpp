@@ -134,15 +134,41 @@ lcg::Entity* HHPotassiumCNFactory(string_dict& args)
         return new lcg::ionic_currents::HHPotassiumCN(area, seed, gbar, E, gamma, id);
 }
 
+lcg::Entity* WBSodiumFactory(string_dict& args)
+{
+        uint id;
+        double area, gbar, E;
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an WB sodium current.\n");
+                return NULL;
+        }
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
+                gbar = 0.035;
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
+                E = 55;
+        return new lcg::ionic_currents::WBSodium(area, gbar, E, id);
+}
+
+lcg::Entity* WBPotassiumFactory(string_dict& args)
+{
+        uint id;
+        double area, gbar, E;
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH potassium current.\n");
+                return NULL;
+        }
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
+                gbar = 0.009;
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
+                E = -90;
+        return new lcg::ionic_currents::WBPotassium(area, gbar, E, id);
+}
 namespace lcg {
 
 namespace ionic_currents {
 
-double vtrap(double x, double y) {
-        if (fabs(x/y) < 1e-6)
-	        return y*(1. - x/y/2.);
-        return x/(exp(x/y) - 1.);
-}
 
 IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         : DynamicalEntity(id), m_neuron(NULL)
@@ -205,22 +231,6 @@ bool HHSodium::initialise()
         return true;
 }
 
-double HHSodium::alpham(double v) {
-	return 0.1 * vtrap(-(v+40.),10.);
-}
-
-double HHSodium::betam(double v) {
-	return 4. * exp(-(v+65.)/18.);
-}
-
-double HHSodium::alphah(double v) {
-	return 0.07 * exp(-(v+65.)/20.);
-}
-
-double HHSodium::betah(double v) {
-	return 1.0 / (exp(-(v+35.)/10.) + 1.);
-}
-
 void HHSodium::evolve()
 {
         double dt, v, am, bm, ah, bh, minf, hinf, taum, tauh;
@@ -273,15 +283,6 @@ bool HHPotassium::initialise()
                 m_state[i] = 0.0;
         return true;
 }
-
-double HHPotassium::alphan(double v) {
-	return 0.01*vtrap(-(v+55.),10.);
-}
-
-double HHPotassium::betan(double v) {
-	return 0.125*exp(-(v+65.)/80.);
-}
-
 void HHPotassium::evolve()
 {
         double dt, v, an, bn, ninf, taun;
@@ -698,6 +699,83 @@ void HHPotassiumCN::evolve()
 		IC_FRACTION = 1;
         
 }
+
+//~~
+
+WBSodium::WBSodium(double area, double gbar, double E, uint id)
+        : IonicCurrent(area, gbar, E, id)
+{
+        m_state.push_back(0);           // m
+        m_state.push_back(0);           // h
+        setName("WBSodiumCurrent");
+        setUnits("pA");
+}
+
+bool WBSodium::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+	WB_NA_H = 0.9379;
+        return true;
+}
+
+void WBSodium::evolve()
+{
+        double dt, v, am, bm, ah, bh, minf, hinf, taum, tauh;
+        dt = GetGlobalDt();
+        v = m_neuron->output();
+        am = alpham(v);
+        bm = betam(v);
+        ah = alphah(v);
+        bh = betah(v);
+        minf = am / (am +bm);
+
+        // Euler
+        WB_NA_M = minf;
+        WB_NA_H +=  dt * 1000. * 5. * (ah * (1 - WB_NA_H) - bh * WB_NA_H);
+
+        // Runge-Kutta 4
+        /*
+        */
+
+        IC_FRACTION = WB_NA_M*WB_NA_M*WB_NA_M*WB_NA_H;
+}
+
+//~~
+
+WBPotassium::WBPotassium(double area, double gbar, double E, uint id)
+        : IonicCurrent(area, gbar, E, id)
+{
+        m_state.push_back(0);           // n
+        setName("WBPotassiumCurrent");
+        setUnits("pA");
+}
+
+bool WBPotassium::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0;
+	WB_K_N = 0.1224;
+        return true;
+}
+void WBPotassium::evolve()
+{
+        double dt, v, an, bn;
+        dt = GetGlobalDt();
+        v = m_neuron->output();
+        an = alphan(v);
+        bn = betan(v);
+        
+        // Euler
+        WB_K_N +=  dt * 1000. * 5. * (an * (1 - WB_K_N) - bn * WB_K_N);
+        // Runge-Kutta 4
+        /*
+        */
+
+        IC_FRACTION = WB_K_N*WB_K_N*WB_K_N*WB_K_N;
+}
+
+//~~
 
 } // namespace ionic_currents
 

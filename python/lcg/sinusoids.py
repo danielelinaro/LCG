@@ -6,8 +6,10 @@ import getopt
 import subprocess as sub
 import numpy as np
 import lcg
+import copy
 
 current_file = 'current.stim'
+modulation_file = 'mod.stim'
 gexc_file = 'gexc.stim'
 ginh_file = 'ginh.stim'
 config_file = 'sinusoids.xml'
@@ -15,7 +17,7 @@ random_seed = 5061983
 frequency_value = 7051983
 
 switches = 'f:n:i:d:I:O:k:R:r:F:v:a:s:t:m:'
-long_switches = ['with-bg','exc','inh','no-kernel']
+long_switches = ['with-bg','exc','inh','no-kernel','separate']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
@@ -54,6 +56,7 @@ def usage():
     print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
     print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
     print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
+    print('  --separate  Injects current waveform in a separate channel (defined as the second defined in -O ) ')
     print('')
 
 def parseGlobalArgs():
@@ -63,7 +66,7 @@ def parseGlobalArgs():
         print(str(err))
         usage()
         sys.exit(1)
-
+        
     options = {'frequencies': [1,5,10,20,50,100,200,300,600,1000], # [Hz]
                'reps': 1,
                'interval': 60,   # [s]
@@ -83,9 +86,13 @@ def parseGlobalArgs():
         elif o == '-i':
             options['interval'] = float(a)
         elif o == '-I':
-            options['ai'] = int(a)
+            options['ai'] = [int(i) for i in a.split(',')]
+            if len(options['ai']) == 1:
+                options['ai'] = options['ai'][0]
         elif o == '-O':
-            options['ao'] = int(a)
+            options['ao'] = [int(i) for i in a.split(',')]
+            if len(options['ao']) == 1:
+                options['ao'] = options['ao'][0]
         elif o == '-F':
             options['sampling_rate'] = float(a)
         elif o == '-d':
@@ -150,8 +157,8 @@ def parseCurrentModeArgs():
                'mean': 0,                # [pA]
                'std': 0,                 # [pA]
                'tau': 0,                 # [ms]
-               'I_modul': 30}              # [pA]
-
+               'I_modul': 30,            # [pA]
+               'separate':False}
     for o,a in opts:
         if o == '--with-bg':
             options['with_bg'] = True
@@ -164,6 +171,8 @@ def parseCurrentModeArgs():
             options['tau'] = float(a)
         elif o == '-m':
             options['I_modul'] = float(a)
+        elif o == '--separate':
+            options['separate'] = True
 
     if options['std'] < 0:
         print('The standard deviation of the noisy current must be positive.')
@@ -224,7 +233,7 @@ def writeConfigurationFile(options):
                                               readChannel=options['ai'], writeChannel=options['ao'],
                                               inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
                                               outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange=os.environ('RANGE'), reference=os.environ['GROUND_REFERENCE'],
+                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename=gexc_file, units='nS'))
@@ -241,7 +250,6 @@ def replaceValue(stimulus, old_value, new_value=None):
                 stimulus[r][c] = new_value
             else:
                 stimulus[r][c] = int(np.random.uniform(high=10000))
-    return stimulus
 
 def createSinusoidallyModOU(f, r0, dr, Rin, tau, dur, type, seed):
     if type == 'exc':
@@ -301,16 +309,33 @@ def main():
             # sinusoidal modulating current only
             current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
                        [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],1,0,0,0,0,0,1,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
         elif opts['tau'] == 0:
             # sinusoid on top of a DC current
             current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
                        [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
                        [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],1,opts['mean'],0,0,0,0,0,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
+                       
         else:
             # sinusoid on top of a noisy (OU) current
             current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
                        [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
                        [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
+
     else:
         # current just for the preamble
         current = [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]]
@@ -340,19 +365,48 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
-                         ' -F '+ str(opts['sampling_rate']), shell=True)
+                if mode  == 'current' and opts['separate']:
+                    # Run the kernel for each channel.
+                    if (type(opts['ao']) is int) or (type(opts['ai']) is int):
+                        print('Separate only works if 2 channels are specified (use -I and -O options).\n')
+                        sys.exit(1)
+                    sub.call('lcg kernel -I ' + str(opts['ai'][0]) + ' -O ' + str(opts['ao'][0]) +
+                             ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
+                    sub.call('lcg kernel -I ' + str(opts['ai'][1]) + ' -O ' + str(opts['ao'][1]) +
+                             ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
+                else:
+                    sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
+                             ' -F '+ str(opts['sampling_rate']), shell=True)
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             
-            lcg.writeStimFile(current_file, replaceValue(replaceValue(current, random_seed),
-                                                         frequency_value, f), addDefaultPreamble=True)
+            I = copy.deepcopy(current)
+            replaceValue(I, random_seed)
+            replaceValue(I, frequency_value, f)
+            lcg.writeStimFile(current_file, I, addDefaultPreamble=True)
+            if mode == 'current' and opts['separate']:
+                I = copy.deepcopy(modulation)
+                replaceValue(I, frequency_value, f)
+                lcg.writeStimFile(modulation_file, I, addDefaultPreamble=True)
             if gexc and ginh:
-                lcg.writeStimFile(gexc_file, replaceValue(replaceValue(gexc, random_seed), frequency_value, f))
-                lcg.writeStimFile(ginh_file, replaceValue(replaceValue(ginh, random_seed), frequency_value, f))
+                G = copy.deepcopy(gexc)
+                replaceValue(G, random_seed)
+                replaceValue(G, frequency_value, f)
+                lcg.writeStimFile(gexc_file, G)
+                G = copy.deepcopy(ginh)
+                replaceValue(G, random_seed)
+                replaceValue(G, frequency_value, f)
+                lcg.writeStimFile(ginh_file, G)
                 sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
             else:
-                sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
+                if opts['separate']:
+                    fname = 'sinusoids.cfg'
+                    stim_file = '{0},{1}'.format(current_file,modulation_file)
+                    sub.call('lcg-rcwrite -e -i -c ' + str(opts['ai'][0]) + ',' + str(opts['ai'][1]) + ' --non-rt -f ' + fname, shell=True)
+                    sub.call('lcg-rcwrite -o -c ' + str(opts['ao'][0]) + ',' + str(opts['ao'][1]) + ' --non-rt -f ' + fname + ' -p ' + stim_file, shell=True)
+                    sub.call('lcg-non-rt -c ' + fname + ' -F '+ str(opts['sampling_rate']), shell=True)
+                else:
+                    sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
 
             if cnt != tot:
                 sub.call(['sleep', str(opts['interval'])])
