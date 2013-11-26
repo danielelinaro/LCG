@@ -250,12 +250,15 @@ def main():
         if opts['kernel']:
             if len(opts['output_channels']) <= len(opts['input_channels']):
                 for i,o in enumerate(opts['output_channels']):
-                    run('lcg-kernel -s {0} -I {1} -O {2} --append --If {3} --Of {4} --non-rt -F {5}'.format(opts['kernel_s'],
-                                                                                                            opts['input_channels'][i],
-                                                                                                            o,
-                                                                                                            opts['input_factors'][i],
-                                                                                                            opts['output_factors'][i],
-                                                                                                            opts['srate']))
+                    run('lcg-kernel -s {0} -I {1} -O {2} --append --If {3} '
+                        '--Of {4} --Iu {5} --Ou {6} --non-rt -F {7}'.format(opts['kernel_s'],
+                                                                            opts['input_channels'][i],
+                                                                            o,
+                                                                            opts['input_factors'][i],
+                                                                            opts['output_factors'][i],
+                                                                            opts['input_units'][i],
+                                                                            opts['output_units'][i],
+                                                                            opts['srate']))
         cmd = 'lcg-non-rt -c {0} -F {1} -n {2} -i {3} -V {4}'.format(cfg_file,
                                                                      opts['srate'],
                                                                      opts['nreps'],
