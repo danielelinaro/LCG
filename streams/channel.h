@@ -41,8 +41,8 @@ public:
         double conversionFactor() const;
         virtual bool initialise();
         virtual void terminate();
-        virtual void run();
-        virtual void join(int *retval);
+        virtual void run(double tend);
+        virtual void join(int *err);
 private:
         uint m_subdevice, m_range, m_reference;
         double m_conversionFactor;
@@ -62,6 +62,7 @@ public:
         const double& operator[](int i) const;
         double& at(int i);
         const double& at(int i) const;
+        virtual void run(double tend);
 private:
         double *m_data;
         size_t m_dataLength;
@@ -93,41 +94,21 @@ public:
         bool addChannel(ComediChannel *channel);
         bool removeChannel(ComediChannel *channel);
         bool isChannelPresent(ComediChannel *channel) const;
-        void acquire();
-        void join(int *retval);
+        void acquire(double tend);
+        void join(int *err);
+        size_t numberOfChannels() const;
 private:
         bool isSameDevice(ComediChannel *channel) const;
-        static void *IOThread(void *arg);
+        static void* IOThread(void *arg);
 private:
         char m_device[FILENAME_MAXLEN];
         std::map< int,std::map<int,ComediChannel*> > m_subdevices;
         bool m_autoDestroy, m_acquiring, m_joined;
-        int m_retval;
+        int m_err;
+        size_t m_numberOfChannels;
+        double m_tend;
         pthread_t m_ioThread;
 };
-
-/*
-struct io_thread_arg {
-        io_thread_arg(double final_time, double time_step,
-                      std::vector<InputChannel*>* input,
-                      const std::vector<OutputChannel*>* output)
-                : tend(final_time), dt(time_step),
-                  input_channels(input), output_channels(output),
-                  nsteps(0) {}
-        double tend, dt;
-        std::vector<InputChannel*>* input_channels;
-        const std::vector<OutputChannel*>* output_channels;
-        size_t nsteps;
-};
-*/
-/**
- * This thread performs I/O using the Comedi library. Its features are:
- * 1) It performs both input and output operations.
- * 2) It assumes that all input and output channels are on the same device.
- * 3) It assumes that all input channels and all output channels are on the
- *    same subdevice (which are different between in and out, obviously).
- */
-//void* io_thread(void *in);
 
 } // namespace lcg
 

@@ -519,18 +519,20 @@ int Simulate(std::vector<Stream*>* streams, double tend)
         ChunkedH5Recorder *rec = NULL;
 
         // initialise all the streams
+        Logger(Debug, "Initializing all streams...\n");
         for (i=0; i<streams->size(); i++)
                 streams->at(i)->initialise();
 
         // start the streams
+        Logger(Debug, "Starting all streams...\n");
         for (i=0; i<streams->size(); i++)
-                streams->at(i)->run();
+                streams->at(i)->run(tend);
 
-        // wait for each stream to finish, save its data if there were
-        // no errors and then terminate the stream
+        // wait for each stream to finish, terminate it and then
+        // save its data if there were no errors
         for (i=0; i<streams->size(); i++) {
                 streams->at(i)->join(&err);
-
+                streams->at(i)->terminate();
                 if (!err) {
                         if (!rec)
                                 rec = new ChunkedH5Recorder;
@@ -548,12 +550,12 @@ int Simulate(std::vector<Stream*>* streams, double tend)
                                         rec->writeMetadata(streams->at(i)->id(), metadata, dims[0], dims[1]);
                                 delete dims;
                         }
+                        Logger(Info, "Stream %d recorded for %.2f seconds.\n", streams->at(i)->id(), len*GetGlobalDt());
                 }
                 else {
                         Logger(Critical, "There were some problems during the recording in stream %d.\n",
                                         streams->at(i)->id());
                 }
-                streams->at(i)->terminate();
         }
 
         if (rec) {
