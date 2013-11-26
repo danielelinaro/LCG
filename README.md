@@ -3,7 +3,7 @@ LCG is a suite of command-line programs to perform electrophysiological experime
 
 ## Installation
 Detailed instructions about the installation of LCG can be found
-[here](http://danielelinaro.github.io/dynclamp/installation.html)
+[here](http://danielelinaro.github.io/dynclamp/installation.html).
 
 In a nutshell, if you have a system with at least Comedi, you can
 install LCG by typing the following commands:
