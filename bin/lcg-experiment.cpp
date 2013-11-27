@@ -473,7 +473,7 @@ int store(int argc, char *argv[])
                                                 strcpy(src, vt.second.get<std::string>(parameter_names[i]).c_str());
                                                 sprintf(dest, "%s/%s", directory, src);
                                                 if (cp(dest, src) == 0) {
-                                                        Logger(Info, "Copied stimulus file [%s] to directory [%s].\n",
+                                                        Logger(Debug, "Copied stimulus file [%s] to directory [%s].\n",
                                                                         src, directory);
                                                 }
                                                 else {
@@ -508,9 +508,8 @@ int store(int argc, char *argv[])
                 Logger(Debug, "Successfully created hashes file [%s].\n", path);
         }
 
-        Logger(Info, "Most recent file: %s\n", latest_h5_file);
         if (sha1(latest_h5_file, md) == 0)
-                fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], latest_h5_file);
+                fprintf(fid, "%08x%08x%08x%08x%08x *../../%s\n", md[0], md[1], md[2], md[3], md[4], latest_h5_file);
         else
                 Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", latest_h5_file);
 
@@ -541,7 +540,6 @@ int store(int argc, char *argv[])
         sprintf(path, "%s/%s", directory, HASHES_FILE);
         chmod(path, 0444);
 
-        exit(0);
         return 0;
 }
 
