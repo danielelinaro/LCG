@@ -23,7 +23,7 @@ struct options {
                 channel = -1;   // all channels
                 reference = strncmp(getenv("GROUND_REFERENCE"), "NRSE", 5) ? AREF_GROUND : AREF_COMMON;
                 value = 0.0;
-                factor = atof(getenv("AO_CONVERSION_FACTOR"));
+                factor = atof(getenv("AO_CONVERSION_FACTOR_CC"));
         }
         char device[FILENAME_MAXLEN];
         uint subdevice, reference;

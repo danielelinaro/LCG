@@ -20,12 +20,11 @@ def usage():
     print('     -a    amplitude of each pulse (default 5 V).')
     print('     -i    interval between trials (default 5 sec).')
     print('     -N    number of repetitions (default 20).')
-    print('     -F    sampling rate (default 20000).')
+    print('     -F    sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -I    input channel (default 0).')
     print('     -O    output channel for extracellular stimulation (default 1).')
-    print('')
-    print(' --without-recovery-pulse    do not include a recovery pulse in the stimulation.')
-    print(' --compute-kernel            run a kernel protocol for the input.')
+    print(' --no-recovery-pulse    do not include a recovery pulse in the stimulation.')
+    print('    --compute-kernel    run a kernel protocol for the input.')
     print('\nIn case the --compute-kernel option is specified, the following option is accepted:\n')
     print('     -o    output channel for kernel computation (default 0).')
     print('')
@@ -33,7 +32,7 @@ def usage():
 def main():
     try:
         opts,args = getopt.getopt(sys.argv[1:], 'hf:n:d:a:b:i:N:I:F:O:o:H:',
-                                  ['help','compute-kernel','without-recovery-pulse'])
+                                  ['help','compute-kernel','no-recovery-pulse'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -49,7 +48,7 @@ def main():
     npulses = 10
     nburst = 1
     holding = 0
-    srate = 20000
+    srate = float(os.environ['SAMPLING_RATE'])
     with_recovery = False
     compute_kernel = False
     extracellular_conversion_factor = 1
@@ -81,7 +80,7 @@ def main():
             holding = float(a)
         elif o == '--compute-kernel':
             compute_kernel = True
-        elif o == '--without-recovery-pulse':
+        elif o == '--no-recovery-pulse':
             with_recovery = False
 
     run = lambda p:sub.call(p,shell=True)
@@ -109,12 +108,12 @@ def main():
         run('lcg-rcwrite -e -i -c {0} --non-rt --file {1}'.format(comma(ai),cfg_file))
         if len(ao)>1:
             run('lcg-rcwrite -o -f 1 -u V -c {0} --non-rt -f {1},{2} -u pA,ND --file {3} -p {4}'.format(comma(ao),
-                                                                                                        os.environ['AO_CONVERSION_FACTOR'],
+                                                                                                        os.environ['AO_CONVERSION_FACTOR_CC'],
                                                                                                         extracellular_conversion_factor,
                                                                                                         cfg_file,stimnames))
         else:
             run('lcg-rcwrite -o -f 1 -u V -c {0} --non-rt -f {1} -u ND --file {3} -p {4}'.format(comma(ao),
-                                                                                                 os.environ['AO_CONVERSION_FACTOR'],
+                                                                                                 os.environ['AO_CONVERSION_FACTOR_CC'],
                                                                                                  cfg_file,stimnames))
         noise = False
         if noise:
@@ -129,7 +128,7 @@ def main():
     else:        
         run('lcg-rcwrite -e -i -c {0}'.format(comma(ai)))
         run('lcg-rcwrite -o -f 1 -u V -c {0} -f {1} -u ND --file {3} -p {4}'.format(comma(ao),
-                                                                                    os.environ['AO_CONVERSION_FACTOR'],
+                                                                                    os.environ['AO_CONVERSION_FACTOR_CC'],
                                                                                     cfg_file,stimnames))
         run('lcg vcclamp -f ' + stimnames + ' -n ' + str(repetitions) + ' -i ' + str(interval))
 

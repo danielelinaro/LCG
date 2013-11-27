@@ -62,11 +62,3 @@ class XMLConfigurationFile (object):
         '''
         tree = etree.ElementTree(self._xml_root)
         tree.write(filename, pretty_print=True)
-
-if __name__ == '__main__':
-    f = XMLConfigurationFile(20000, 10)
-    f.add_entity(entities.H5Recorder(1, (), True, 'spam.h5'))
-    f.add_entity(entities.AnalogInput(2, 0, '/dev/comedi', 0, 0, 100, '[-10,+10]', 'GRSE', 'mV'))
-    f.add_entity(entities.AnalogOutput(3, (), '/dev/comedi', 1, 0, 0.001, 'GRSE', 'pA'))
-    f.add_entity(entities.Waveform(4, (0,3), 'spam.stim', 'pA', False))
-    f.write('spam.xml')

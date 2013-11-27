@@ -11,7 +11,7 @@ purpose = '''This script allows the experimenter to deliver repetitive pulses us
 lcg-non-rt and to output also a level for synchronization with an external
 recording device.'''
 
-help = '''Usage: {} [option <value>]
+help = '''Usage: {0} [option <value>]
 Options for this script are:
     -n [2]   number of trials
     -a [2000,500]   amplitude of the pulses (pA)
@@ -19,7 +19,7 @@ Options for this script are:
     -d [2,100]    duration of the pulses (ms)
     -i [0.1] interval between trials (s)
     -D [180] duration of the trial without rin probing
-    -F [20000] sampling frequency(Hz)
+    -F [{1}] sampling frequency(Hz)
     -I [0] input channel
     -O [0,1] output channels
     --no-rin    does not include hyperpolarizing steps
@@ -40,7 +40,7 @@ def parseArgs():
         opts,args = getopt.getopt(sys.argv[1:],switches,long_switches)
     except getopt.GetoptError,err:
         print(str(err))
-        print(help.format(os.path.basename(sys.argv[0])))
+        print(help.format(os.path.basename(sys.argv[0]),os.environ['SAMPLING_RATE']))
         sys.exit(1)
     # default values
     opt = {'nreps': 2,
@@ -49,7 +49,7 @@ def parseArgs():
            'amp': [2500,500],
            'freq': [1,1],
            'pw': [2,100],
-           'srate': 20000,
+           'srate': float(os.environ['SAMPLING_RATE']),
            'ai':[0],
            'ao':[0,1],
            'kernel': True,
@@ -100,20 +100,21 @@ def createDigiStim(dur,r_in):
 def createCfg(ai,ao,fnames):
     aistr = '''[AnalogInput]
 device = {}
-range = [-10,+10]
+range = {}
 subdevice = {}
 channels = {}
 conversionFactors = {}
 reference = {}
 units = mV'''
     aistr = aistr.format(os.environ['COMEDI_DEVICE'],
+                         os.environ['RANGE'],
                          os.environ['AI_SUBDEVICE'],
                          ','.join([str(i)for i in ai]),
-                         os.environ['AI_CONVERSION_FACTOR'],
+                         os.environ['AI_CONVERSION_FACTOR_CC'],
                          os.environ['GROUND_REFERENCE'])
     aostr = '''[AnalogOutput]
 device = {}
-range = [-10,+10]
+range = {}
 subdevice = {}
 channels = {}
 conversionFactors = {},5
@@ -121,9 +122,10 @@ reference = {}
 units = mV
 stimfiles = {}'''
     aostr = aostr.format(os.environ['COMEDI_DEVICE'],
+                         os.environ['RANGE'],
                          os.environ['AO_SUBDEVICE'],
                          ','.join([str(i)for i in ao]),
-                         os.environ['AO_CONVERSION_FACTOR'],
+                         os.environ['AO_CONVERSION_FACTOR_CC'],
                          os.environ['GROUND_REFERENCE'],
                          ','.join(fnames))
     return '{}\n\n{}'.format(aistr,aostr) 

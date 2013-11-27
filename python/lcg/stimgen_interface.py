@@ -80,7 +80,7 @@ opt_defaults = {'P1':None,
                 'P2':None,
                 'P3':None,
                 'pre':1,
-                'srate':20000,
+                'srate':float(os.environ['SAMPLING_RATE']),
                 'dur':1,
                 'nreps':1,
                 'interval':1,
@@ -169,9 +169,9 @@ def check_options(opts,code):
     if opts['offset'] is None:
         opts['offset'] = 0.0
     if opts['input_factors'] is None:
-        opts['input_factors'] = [os.environ['AI_CONVERSION_FACTOR']]
+        opts['input_factors'] = [os.environ['AI_CONVERSION_FACTOR_CC']]
     if opts['output_factors'] is None:
-        opts['output_factors'] = [os.environ['AO_CONVERSION_FACTOR']]
+        opts['output_factors'] = [os.environ['AO_CONVERSION_FACTOR_CC']]
     if opts['input_units'] is None:
         opts['input_units'] = [os.environ['INPUT_UNITS']]
     if opts['output_units'] is None:

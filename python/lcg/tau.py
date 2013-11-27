@@ -18,7 +18,7 @@ def usage():
     print('          -d    Duration of the stimulation (default 10 ms).')
     print('          -n    Number of repetitions (default 30).')
     print('          -i    Interval between repetitions (default 0.5 sec).')
-    print('          -F    Sampling frequency (default 20000 Hz)).')
+    print('          -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('          -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('          -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
     print(' --no-kernel    Do not compute the kernel.')

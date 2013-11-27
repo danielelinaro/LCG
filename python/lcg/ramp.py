@@ -19,7 +19,7 @@ def usage():
     print('     -d    Duration of the ramp (default 10 sec).')
     print('     -n    Number of repetitions (default 2).')
     print('     -i    Interval between repetitions (default 20 sec).')
-    print('     -F    Sampling frequency (default 20000 Hz)).')
+    print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
     print(' --without-preamble   Do not include stability preamble.')
@@ -37,7 +37,7 @@ def main():
     duration = 10                # [s]
     reps = 2
     interval = 20                # [s]
-    sampling_frequency = 20000   # [Hz]
+    sampling_frequency = float(os.environ['SAMPLING_RATE'])   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
     with_preamble = True

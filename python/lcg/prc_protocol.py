@@ -19,7 +19,7 @@ def usage():
     print('\033[92m     -i  \033[0m  interval between repetitions (default 1 s)')
     print('\033[92m     -I  \033[0m  input channels separated by commas (default 0)')
     print('\033[92m     -O  \033[0m  output channels separated by commas (default 0)')
-    print('\033[92m     -F  \033[0m  sampling frequency (default 20000)')
+    print('\033[92m     -F  \033[0m  sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('\n\033[94mThe "steps" mode options are:\033[0m')
     print('\033[92m     -a  \033[0m  amplitude of the perturbation (default 150 pA)')
     print('\033[92m     -d  \033[0m  duration of the perturbation (default 1 ms)')
@@ -62,7 +62,7 @@ def parseGlobalArgs():
                'interval': 3,   # [s]
                'ai': [0],
                'ao': [0],
-               'srate':20000,
+               'srate':float(os.environ['SAMPLING_RATE']),
                'kernel':True,
                'with_preamble':False}
     for o,a in opts:
@@ -234,7 +234,7 @@ def main():
                                             'inputSubdevice':os.environ['AI_SUBDEVICE'],
                                             'inputRange': [-10,10],
                                             'readChannel': opts['ai'][ii],
-                                            'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],
+                                            'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR_CC'],
                                             'reference':os.environ['GROUND_REFERENCE']})
             add_xml_connections(analogInput,[0])
             id_cnt+=1
@@ -244,7 +244,7 @@ def main():
             add_xml_parameters(analogOutput,{'deviceFile':'/dev/comedi0',
                                              'outputSubdevice':os.environ['AO_SUBDEVICE'],
                                              'writeChannel': opts['ao'][ii],
-                                             'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR'],
+                                             'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR_CC'],
                                              'reference':os.environ['GROUND_REFERENCE']})
             id_cnt+=1
             waveform = etree.SubElement(e_group,"entity")
@@ -312,11 +312,11 @@ def main():
                                    'deviceFile':'/dev/comedi0',
                                    'inputSubdevice':os.environ['AI_SUBDEVICE'],
                                    'outputSubdevice':os.environ['AO_SUBDEVICE'],
-                                   'inputRange': [-10,10],
-                                   'readChannel': opts['ai'][0],
-                                   'writeChannel': opts['ao'][0],
-                                   'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],
-                                   'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR'],
+                                   'inputRange':os.environ['RANGE'],
+                                   'readChannel':opts['ai'][0],
+                                   'writeChannel':opts['ao'][0],
+                                   'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR_CC'],
+                                   'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR_CC'],
                                    'holdLastValue':True,
 
                                    'reference':os.environ['GROUND_REFERENCE']})

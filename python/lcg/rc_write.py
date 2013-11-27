@@ -21,7 +21,7 @@ def usage():
     print('     -c    channel number.')
     print('     -f    conversion factors.')
     print('     -s    subdevice number (default %s for AI, %s for AO).'%(os.environ['AI_SUBDEVICE'],os.environ['AO_SUBDEVICE']))
-    print('     -u    units (default %s for AI, %s for AO).'%(os.environ['INPUT_UNITS'],os.environ['OUTPUT_UNITS']))
+    print('     -u    units (default %s for AI, %s for AO).'%(os.environ['AI_UNITS_CC'],os.environ['AO_UNITS_CC']))
     print('     -e    (--erase) erase existing file (default no).')
     print('     -r    ground reference (default %s).'%(os.environ['GROUND_REFERENCE']))
     print('     --file    filename instead of the default (.cclamprc and .lcg-non-rt).')
@@ -106,7 +106,7 @@ def main():
         if subdevice is None:
             subdevice = os.environ['AI_SUBDEVICE']
         if conversion_factor is None:
-            conversion_factor = os.environ['AI_CONVERSION_FACTOR']
+            conversion_factor = os.environ['AI_CONVERSION_FACTOR_CC']
         if units is None:
             units = os.environ['INPUT_UNITS']
     else:
@@ -114,7 +114,7 @@ def main():
         if subdevice is None:
             subdevice = os.environ['AO_SUBDEVICE']
         if conversion_factor is None:
-            conversion_factor = os.environ['AO_CONVERSION_FACTOR']
+            conversion_factor = os.environ['AO_CONVERSION_FACTOR_CC']
         if units is None:
             units = os.environ['OUTPUT_UNITS']
 
@@ -129,7 +129,7 @@ def main():
         with file(filename,append) as fd:
             fd.write(header.format(n))
             fd.write('device = {0}\n'.format(device))
-            fd.write('range = [-10,+10]\n')
+            fd.write('range = {0}\n'.format(os.environ['RANGE']))
             fd.write('subdevice = {0}\n'.format(subdevice))
             fd.write('channel = {0}\n'.format(channel))
             fd.write('conversionFactor = {0}\n'.format(conversion_factor))
@@ -146,7 +146,7 @@ def main():
         with file(filename,append) as fd:
             fd.write(header)
             fd.write('device = {0}\n'.format(device))
-            fd.write('range = [-10,+10]\n')
+            fd.write('range = {0}\n'.format(os.environ['RANGE']))
             fd.write('subdevice = {0}\n'.format(subdevice))
             fd.write('channels = {0}\n'.format(channel))
             fd.write('conversionFactors = {0}\n'.format(conversion_factor))

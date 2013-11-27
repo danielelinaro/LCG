@@ -20,10 +20,10 @@ def usage():
     print('\033[92m     -m  \033[0m  mean (default 0 pA)')
     print('\033[92m     -d  \033[0m  duration of the noisy stimulus (default 60 s)')
     print('\033[92m     -D  \033[0m  duration of the "tail" (default 1 s)')
-    print('\033[92m     -H  \033[0m  holding current "kernel, trial"  (default 0pA for both)')
+    print('\033[92m     -H  \033[0m  holding current "kernel, trial"  (default 0 pA for both)')
     print('\033[92m     -I  \033[0m  input channels separated by commas (default 0)')
     print('\033[92m     -O  \033[0m  output channels separated by commas (default 0)')
-    print('\033[92m     -F  \033[0m  sampling frequency (default 20000)')
+    print('\033[92m     -F  \033[0m  sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('\033[92m     --no-kernel  \033[0m  do not compute the kernel.')
     print('\033[92m     --no-report  \033[0m  do not report statistics.')
     print('\033[92m     --with-preamble  \033[0m  includes a stability preamble.')
@@ -47,7 +47,7 @@ def parseArgs():
                'interval': 30,   # [s]
                'ai': [0],
                'ao': [0],
-               'srate':20000,
+               'srate':float(os.environ['SAMPLING_RATE']),
                'holding':[0,0],
                'std':[135],
                'mean':[0],
@@ -148,7 +148,7 @@ def main():
         if opts['kernel']:
             sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
                       ' -c ' + str(ao) + ' -v ' + str(opts['holding'][0]) + 
-                      ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
+                      ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
             if not opts['holding'][0] in [0]:
                 sleep(2)
             if ncells>1:
@@ -160,7 +160,7 @@ def main():
     
         sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
                  ' -c ' + str(ao) + ' -v ' + str(opts['holding'][1]) + 
-                 ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
+                 ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
         if not opts['holding'][0] == opts['holding'][1]:
             sleep(2)
         sub.call('lcg vcclamp -f ' + stim +  ' -i ' + str(opts['interval']) +

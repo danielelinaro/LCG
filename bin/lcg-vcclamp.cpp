@@ -100,21 +100,21 @@ static int write_default_configuration_file()
 
         fprintf(fid, "[AnalogInput0]\n");
         fprintf(fid, "device = %s\n", getenv("COMEDI_DEVICE"));
-        fprintf(fid, "range = %s\n", getenv("DAQ_RANGE"));
+        fprintf(fid, "range = %s\n", getenv("RANGE"));
         fprintf(fid, "subdevice = %s\n", getenv("AI_SUBDEVICE"));
         fprintf(fid, "channel = %s\n", getenv("AI_CHANNEL"));
-        fprintf(fid, "conversionFactor = %s\n", getenv("AI_CONVERSION_FACTOR"));
+        fprintf(fid, "conversionFactor = %s\n", getenv("AI_CONVERSION_FACTOR_CC"));
         fprintf(fid, "reference = %s\n", getenv("GROUND_REFERENCE"));
-        fprintf(fid, "units = %s\n", getenv("INPUT_UNITS"));
+        fprintf(fid, "units = %s\n", getenv("AI_UNITS"));
         fprintf(fid, "\n");
         fprintf(fid, "[AnalogOutput0]\n");
         fprintf(fid, "device = %s\n", getenv("COMEDI_DEVICE"));
-        fprintf(fid, "range = %s\n", getenv("DAQ_RANGE"));
+        fprintf(fid, "range = %s\n", getenv("RANGE"));
         fprintf(fid, "subdevice = %s\n", getenv("AO_SUBDEVICE"));
         fprintf(fid, "channel = %s\n", getenv("AO_CHANNEL"));
-        fprintf(fid, "conversionFactor = %s\n", getenv("AO_CONVERSION_FACTOR"));
+        fprintf(fid, "conversionFactor = %s\n", getenv("AO_CONVERSION_FACTOR_CC"));
         fprintf(fid, "reference = %s\n", getenv("GROUND_REFERENCE"));
-        fprintf(fid, "units = %s\n", getenv("OUTPUT_UNITS"));
+        fprintf(fid, "units = %s\n", getenv("AO_UNITS"));
 
         fclose(fid);
 

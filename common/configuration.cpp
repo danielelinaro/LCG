@@ -148,7 +148,7 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
                 try {
                         factors_v = split_string(pt.get<std::string>("AnalogInput.conversionFactors"), ",");
                 } catch(...) {
-                        factors_v.push_back(getenv("AI_CONVERSION_FACTOR"));
+                        factors_v.push_back(getenv("AI_CONVERSION_FACTOR_CC"));
                 }
                 if (factors_v.size() == 1) {
                         for (i=1; i<channels_v.size(); i++)
@@ -162,7 +162,7 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
                 try {
                         units_v = split_string(pt.get<std::string>("AnalogInput.units"), ",");
                 } catch(...) {
-                        units_v.push_back(getenv("INPUT_UNITS"));
+                        units_v.push_back(getenv("AI_UNITS"));
                 }
                 if (units_v.size() == 1) {
                         for (i=1; i<channels_v.size(); i++)
@@ -234,7 +234,7 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
         try {
                 factors_v = split_string(pt.get<std::string>("AnalogOutput.conversionFactors"), ",");
         } catch(...) {
-                factors_v.push_back(getenv("AO_CONVERSION_FACTOR"));
+                factors_v.push_back(getenv("AO_CONVERSION_FACTOR_CC"));
         }
         if (factors_v.size() == 1) {
                 for (i=1; i<channels_v.size(); i++)
@@ -248,7 +248,7 @@ int parse_configuration_file(const char *filename, std::vector<InputChannel*>& i
         try {
                 units_v = split_string(pt.get<std::string>("AnalogOutput.units"), ",");
         } catch(...) {
-                units_v.push_back(getenv("OUTPUT_UNITS"));
+                units_v.push_back(getenv("AO_UNITS"));
         }
         if (units_v.size() == 1) {
                 for (i=1; i<channels_v.size(); i++)

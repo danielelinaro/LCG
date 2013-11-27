@@ -32,7 +32,7 @@ def usage():
     print('     -d   Duration of the stimulation (default 30 sec).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
-    print('     -F   sampling frequency (default 20000).')
+    print('     -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -k   Frequency at which a new kernel should be computed')
     print('          (the default is at the beginning of each batch of frequencies).')
     print(' --no-kernel  Do not compute the kernel.')
@@ -73,7 +73,7 @@ def parseGlobalArgs():
                'duration': 30,   # [s]
                'kernel_frequency': 0,
                'compute_kernel': True,
-               'sampling_rate' : 20000,  # [Hz]
+               'sampling_rate' : float(os.environ['SAMPLING_RATE']),  # [Hz]
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -231,8 +231,8 @@ def writeConfigurationFile(options):
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
                                               inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))

@@ -19,7 +19,7 @@ def usage():
     print('          -i    Interval between repetitions (in sec).')
     print('          -B    Interval before the application of the stimulus (default 0.5 sec).')
     print('          -A    Interval after the application of the stimulus (default 0.5 sec).')
-    print('          -F    Sampling frequency (default 20000 Hz)).')
+    print('          -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('          -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('          -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
     print(' --no-kernel    Do not compute the kernel.')
@@ -34,12 +34,12 @@ def main():
         sys.exit(1)
 
     before = 0.5                 # [s]
-    after = 0.5                 # [s]
+    after = 0.5                  # [s]
     amplitude = None             # [pA]
     duration = None              # [s]
     reps = 1
     interval = None              # [s]
-    sampling_frequency = 20000   # [Hz]
+    sampling_frequency = float(os.environ['SAMPLING_RATE'])   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
     kernel = True
