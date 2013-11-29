@@ -18,6 +18,8 @@
 
 namespace lcg {
 
+class ComediDevice;
+
 class Channel : public Stream {
 public:
         Channel(const char *device, uint channel, double samplingRate, const char *units, uint id = GetId());
@@ -43,6 +45,13 @@ public:
         virtual void terminate();
         virtual void run(double tend);
         virtual void join(int *err);
+
+        friend class ComediDevice;
+
+protected:
+        // the length of the VALID data
+        size_t m_validDataLength;
+
 private:
         uint m_subdevice, m_range, m_reference;
         double m_conversionFactor;
@@ -64,8 +73,9 @@ public:
         const double& at(int i) const;
         virtual void run(double tend);
 private:
-        double *m_data;
+        // the REAL size of m_data
         size_t m_dataLength;
+        double *m_data;
 };
 
 class OutputChannel : public ComediChannel {
@@ -87,10 +97,10 @@ private:
         Stimulus m_stimulus;
 };
 
-class Device {
+class ComediDevice {
 public:
-        Device(const char *device, bool autoDestroy = true);
-        ~Device();
+        ComediDevice(const char *device, bool autoDestroy = true);
+        ~ComediDevice();
         bool addChannel(ComediChannel *channel);
         bool removeChannel(ComediChannel *channel);
         bool isChannelPresent(ComediChannel *channel) const;

@@ -130,7 +130,7 @@ lcg::Stream* OutputChannelFactory(string_dict& args)
 
 namespace lcg {
 
-std::map<std::string,Device*> devices;
+std::map<std::string,ComediDevice*> devices;
 
 ///// HELPER FUNCTIONS AND STRUCTURES - START /////
 
@@ -283,7 +283,7 @@ ComediChannel::ComediChannel(const char *device, uint subdevice, uint range, uin
                 uint channel, double conversionFactor, double samplingRate, const char *units, uint id)
         : Channel(device, channel, samplingRate, units, id),
           m_subdevice(subdevice), m_range(range), m_reference(reference),
-          m_conversionFactor(conversionFactor)
+          m_conversionFactor(conversionFactor), m_validDataLength(0)
 {
         setName("ComediChannel");
 }
@@ -312,7 +312,7 @@ bool ComediChannel::initialise()
 {
         std::string dev = device();
         if (!devices.count(dev))
-                devices[dev] = new Device(device());
+                devices[dev] = new ComediDevice(device());
         devices[dev]->addChannel(this);
         return true;
 }
@@ -355,7 +355,7 @@ InputChannel::~InputChannel()
 
 const double* InputChannel::data(size_t *length) const
 {
-        *length = m_dataLength;
+        *length = m_validDataLength;
         return m_data;
 }
 
@@ -391,14 +391,14 @@ void InputChannel::run(double tend)
 
 bool InputChannel::allocateDataBuffer(double tend)
 {
-        m_dataLength = ceil(tend*samplingRate());
+        m_dataLength = m_validDataLength = ceil(tend*samplingRate());
         try {
                 m_data = new double[m_dataLength];
                 if (m_data)
                         return true;
         } catch(...) {}
         // we get here only if there were problems in allocating memory
-        m_dataLength = 0;
+        m_dataLength = m_validDataLength = 0;
         m_data = NULL;
         return false;
 }
@@ -409,6 +409,7 @@ OutputChannel::OutputChannel(const char *device, uint subdevice, uint range, uin
         : ComediChannel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units, id),
           m_stimulus(1./samplingRate, stimfile)
 {
+        m_validDataLength = m_stimulus.length();
         setName("OutputChannel");
 }
 
@@ -462,30 +463,30 @@ const double* OutputChannel::metadata(size_t *dims, char *label) const
 const double* OutputChannel::data(size_t *length) const
 {
         size_t unused;
-        *length = m_stimulus.length();
+        *length = m_validDataLength;
         return m_stimulus.data(&unused);
 }
 
-Device::Device(const char *device, bool autoDestroy)
+ComediDevice::ComediDevice(const char *device, bool autoDestroy)
         : m_subdevices(), m_autoDestroy(autoDestroy),
           m_acquiring(false), m_joined(false), m_err(0),
           m_numberOfChannels(0)
 {
         strcpy(m_device, device);
-        Logger(Debug, "Created Device [%s].\n", m_device);
+        Logger(Debug, "Created ComediDevice [%s].\n", m_device);
 }
 
-Device::~Device()
+ComediDevice::~ComediDevice()
 {
-        Logger(Debug, "Destroyed Device [%s].\n", m_device);
+        Logger(Debug, "Destroyed ComediDevice [%s].\n", m_device);
 }
 
-bool Device::isSameDevice(ComediChannel *channel) const
+bool ComediDevice::isSameDevice(ComediChannel *channel) const
 {
         return strcmp(channel->device(),m_device) == 0;
 }
 
-bool Device::isChannelPresent(ComediChannel *channel) const
+bool ComediDevice::isChannelPresent(ComediChannel *channel) const
 {
         if (isSameDevice(channel) &&
             m_subdevices.count(channel->subdevice()) &&
@@ -494,7 +495,7 @@ bool Device::isChannelPresent(ComediChannel *channel) const
         return false;
 }
 
-bool Device::addChannel(ComediChannel *channel)
+bool ComediDevice::addChannel(ComediChannel *channel)
 {
         if (isChannelPresent(channel))
                 return false;
@@ -504,7 +505,7 @@ bool Device::addChannel(ComediChannel *channel)
         return true;
 }
 
-bool Device::removeChannel(ComediChannel *channel)
+bool ComediDevice::removeChannel(ComediChannel *channel)
 {
         if (isChannelPresent(channel)) {
                 m_subdevices[channel->subdevice()].erase(channel->channel());
@@ -523,7 +524,7 @@ bool Device::removeChannel(ComediChannel *channel)
         return false;
 }
 
-void Device::acquire(double tend)
+void ComediDevice::acquire(double tend)
 {
         if (m_acquiring) {
                 Logger(Debug, "Already acquiring data from device %s.\n", m_device);
@@ -543,7 +544,7 @@ void Device::acquire(double tend)
         m_joined = false;
 }
 
-void Device::join(int *err)
+void ComediDevice::join(int *err)
 {
         if (!m_joined) {
                 int *err;
@@ -555,14 +556,14 @@ void Device::join(int *err)
         *err = m_err;
 }
 
-size_t Device::numberOfChannels() const
+size_t ComediDevice::numberOfChannels() const
 {
         return m_numberOfChannels;
 }
 
-void* Device::IOThread(void *arg)
+void* ComediDevice::IOThread(void *arg)
 {
-        Device *self = static_cast<Device*>(arg);
+        ComediDevice *self = static_cast<ComediDevice*>(arg);
         comedi_t *device;
         char *calibration_file;
         comedi_calibration_t *calibration;
@@ -577,7 +578,7 @@ void* Device::IOThread(void *arg)
         size_t bytes_written;
         char *input_buffer, *output_buffer;
         pthread_t in_loop_thrd, out_loop_thrd;
-        int *in_retval = NULL, *out_retval = NULL, *err = new int;
+        int *in_nsteps = NULL, *out_nsteps = NULL, *err = new int;
         input_loop_data *in_data;
         output_loop_data *out_data;
         size_t n_input_channels, n_output_channels;
@@ -666,7 +667,7 @@ void* Device::IOThread(void *arg)
                 
                 memset(&cmd, 0, sizeof(struct comedi_cmd_struct));
                 ret = comedi_get_cmd_generic_timed(device, in_subdevice, &cmd,
-                                n_input_channels, 1000000000/input_channels[0]->samplingRate());
+                                n_input_channels, NSEC_PER_SEC/input_channels[0]->samplingRate());
                 if (ret < 0) {
                         Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
                         goto end_io;
@@ -743,7 +744,7 @@ void* Device::IOThread(void *arg)
                 
                 memset(&cmd, 0, sizeof(struct comedi_cmd_struct));
                 ret = comedi_get_cmd_generic_timed(device, out_subdevice, &cmd,
-                                n_output_channels, 1000000000/output_channels[0]->samplingRate());
+                                n_output_channels, NSEC_PER_SEC/output_channels[0]->samplingRate());
                 if (ret < 0) {
                         Logger(Critical, "Error in comedi_get_cmd_generic_timed.\n");
                         goto end_io;
@@ -838,21 +839,25 @@ void* Device::IOThread(void *arg)
                                         bytes_written, n_output_channels, out_bytes_per_sample);
                         pthread_create(&out_loop_thrd, NULL, output_loop, (void *) out_data);
                         Logger(Debug, "Waiting for output thread to complete.\n");
-                        pthread_join(out_loop_thrd, (void **) &out_retval);
-                        *err = !(*out_retval);
-                        delete out_retval;
+                        pthread_join(out_loop_thrd, (void **) &out_nsteps);
+                        *err = !(*out_nsteps);
+                        for (int i=0; i<output_channels.size(); i++)
+                                output_channels[i]->m_validDataLength = *out_nsteps;
+                        delete out_nsteps;
                         delete out_data;
                 }
         }
 
         if (n_input_channels) {
                 Logger(Debug, "Waiting for input thread to complete...\n");
-                pthread_join(in_loop_thrd, (void **) &in_retval);
-                if (*err == 0 && *in_retval > 0) // no previous errors and we have read something
+                pthread_join(in_loop_thrd, (void **) &in_nsteps);
+                if (*err == 0 && *in_nsteps > 0) // no previous errors and we have read something
                         *err = 0;
                 else
                         *err = -1;
-                delete in_retval;
+                for (int i=0; i<input_channels.size(); i++)
+                        input_channels[i]->m_validDataLength = *in_nsteps;
+                delete in_nsteps;
                 delete in_data;
         }
 

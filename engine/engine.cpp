@@ -563,7 +563,7 @@ int Simulate(std::vector<Stream*>* streams, double tend)
                                         rec->writeMetadata(streams->at(i)->id(), metadata, dims[0], dims[1]);
                                 delete dims;
                         }
-                        Logger(Info, "Stream %d recorded for %.2f seconds.\n", streams->at(i)->id(), len*GetGlobalDt());
+                        Logger(Info, "Stream %d run for %.2f seconds.\n", streams->at(i)->id(), len*GetGlobalDt());
                 }
                 else {
                         Logger(Critical, "There were some problems during the recording in stream %d.\n",
