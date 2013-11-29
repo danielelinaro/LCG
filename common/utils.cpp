@@ -15,7 +15,6 @@
 
 #include <sstream>
 #include <algorithm>
-#include <vector>
 #include <iostream>
 
 #include "utils.h"
@@ -37,25 +36,35 @@ double runTime;
 ////// COMMENTS HANDLING CODE - START //////
 
 bool readingComment = false;
+bool commentsThreadRunning = false;
 pthread_t commentsThread;
 pthread_mutex_t commentsMutex;
 pthread_cond_t commentsCV;
+std::vector< std::pair<std::string,time_t> > comments;
 
-void* CommentsReader(void *arg)
+const std::vector< std::pair<std::string,time_t> >* GetComments()
 {
-        H5RecorderCore *rec = static_cast<H5RecorderCore*>(arg);
-        Logger(Debug, "CommentsReader started.\n");
-        char c, msg[COMMENT_MAXLEN];
+        while (commentsThreadRunning)
+                ;
+        return &comments;
+}
+
+void* CommentsReader(void *)
+{
+        char c;
         time_t now;
+        std::string msg;
+        comments.clear();
+        Logger(Debug, "CommentsReader started.\n");
         while (!TERMINATE_TRIAL()) {
                 if ((c = getchar()) == 'c') {
                         pthread_mutex_lock(&commentsMutex);
                         readingComment = true;
                         getchar(); // remove the newline character
                         now = time(NULL);
-                        Logger(Critical, "Enter comment: ");
-                        std::cin.getline(msg, COMMENT_MAXLEN);
-                        rec->addComment(msg, &now);
+                        Logger(Info, "Enter comment: ");
+                        std::getline(std::cin, msg);
+                        comments.push_back(std::make_pair(msg,now));
                         readingComment = false;
                         pthread_mutex_unlock(&commentsMutex);
                 }
@@ -65,30 +74,27 @@ void* CommentsReader(void *arg)
         pthread_exit(NULL);
 }
 
-void StartCommentsReaderThread(H5RecorderCore *rec)
+void StartCommentsReaderThread()
 {
-        if (rec != NULL) {
-                int err = pthread_mutex_init(&commentsMutex, NULL);
-                if (err) {
-                        Logger(Critical, "pthread_mutex_init: %s\n", strerror(err));
-                        return;
-                }
-                err = pthread_cond_init(&commentsCV, NULL);
-                if (err) {
-                        Logger(Critical, "pthread_cond_init: %s\n", strerror(err));
-                        return;
-                }
-                err = pthread_create(&commentsThread, NULL, CommentsReader, (void *) rec);
-                if (err) {
-                        Logger(Critical, "pthread_create: %s\n", strerror(err));
-                        return;
-                }
-                else {
-                        Logger(Debug, "Comments reader thread started.\n");
-                }
+        commentsThreadRunning = false;
+        int err = pthread_mutex_init(&commentsMutex, NULL);
+        if (err) {
+                Logger(Critical, "pthread_mutex_init: %s\n", strerror(err));
+                return;
+        }
+        err = pthread_cond_init(&commentsCV, NULL);
+        if (err) {
+                Logger(Critical, "pthread_cond_init: %s\n", strerror(err));
+                return;
+        }
+        err = pthread_create(&commentsThread, NULL, CommentsReader, NULL);
+        if (err) {
+                Logger(Critical, "pthread_create: %s\n", strerror(err));
+                return;
         }
         else {
-                Logger(Important, "Not a valid H5RecorderCore object: not starting the comments reader thread.\n");
+                commentsThreadRunning = true;
+                Logger(Debug, "Comments reader thread started.\n");
         }
 }
 
@@ -99,10 +105,13 @@ void StopCommentsReaderThread()
         while (readingComment)
                 pthread_cond_wait(&commentsCV, &commentsMutex);
         pthread_mutex_unlock(&commentsMutex);
-        if (pthread_cancel(commentsThread) == 0)
+        if (pthread_cancel(commentsThread) == 0) {
+                commentsThreadRunning = false;
                 Logger(Debug, "Comments reader thread stopped.\n");
-        else
+        }
+        else {
                 Logger(Critical, "No such thread.\n");
+        }
         pthread_mutex_destroy(&commentsMutex);
         pthread_cond_destroy(&commentsCV);
 }

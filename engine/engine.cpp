@@ -486,7 +486,9 @@ int Simulate(std::vector<Entity*> *entities, double tend)
         for (int i=0; i<entities->size(); i++) {
                 rec = dynamic_cast<H5RecorderCore*>(entities->at(i));
                 if (rec) {
-                        StartCommentsReaderThread(rec);
+                        // we start the comments-reading thread only if there's a recorder,
+                        // where we will then save the comments.
+                        StartCommentsReaderThread();
                         break;
                 }
         }
@@ -501,7 +503,12 @@ int Simulate(std::vector<Entity*> *entities, double tend)
         retval = *success;
         delete success;
 
-        StopCommentsReaderThread();
+        if (rec) {
+                StopCommentsReaderThread();
+                const std::vector< std::pair<std::string,time_t> >* comments = GetComments();
+                for (int i=0; i<comments->size(); i++)
+                        rec->addComment(comments->at(i).first.c_str(), &comments->at(i).second);
+        }
 
         if (retval == 0)
                 Logger(Debug, "The simulation thread has terminated successfully.\n");
@@ -522,6 +529,12 @@ int Simulate(std::vector<Stream*>* streams, double tend)
         Logger(Debug, "Initializing all streams...\n");
         for (i=0; i<streams->size(); i++)
                 streams->at(i)->initialise();
+
+        SetTrialRun(true);
+	ResetGlobalTime();
+
+        // start the comments-reading thread
+        StartCommentsReaderThread();
 
         // start the streams
         Logger(Debug, "Starting all streams...\n");
@@ -557,8 +570,12 @@ int Simulate(std::vector<Stream*>* streams, double tend)
                                         streams->at(i)->id());
                 }
         }
-
+        SetTrialRun(true);
+        StopCommentsReaderThread();
+        const std::vector< std::pair<std::string,time_t> >* comments = GetComments();
         if (rec) {
+                for (int i=0; i<comments->size(); i++)
+                        rec->addComment(comments->at(i).first.c_str(), &comments->at(i).second);
                 rec->writeRecordingDuration(len*GetGlobalDt());
                 rec->writeTimeStep(GetGlobalDt());
                 delete rec;

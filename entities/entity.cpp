@@ -20,6 +20,7 @@
  *
  *=========================================================================*/
 
+#include <stdio.h>
 #include <dlfcn.h>
 #include "entity.h"
 #include "thread_safe_queue.h"

@@ -2,9 +2,9 @@
 #define UTILS_H
 
 #include <vector>
+#include <utility>
 #include "types.h"
 #include "common.h"
-#include "h5rec.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -77,8 +77,9 @@ void KillProgram();
 /*! Stops the execution of the current trial. */
 void TerminateTrial();
 
-void StartCommentsReaderThread(H5RecorderCore *rec);
+void StartCommentsReaderThread();
 void StopCommentsReaderThread();
+const std::vector< std::pair<std::string,time_t> >* GetComments();
 
 } // namespace lcg
 
