@@ -66,7 +66,7 @@ AC_SUBST([LIB_TAG])
 # conditional building
 AC_ARG_WITH([output-reset],
 	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on systems with Comedi)])],
-       	    [with_output_reset=yes],["WARNING: not resetting the output."])
+       	    [with_output_reset=yes],[echo "WARNING: not resetting the output."])
 AC_ARG_WITH([examples],[AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "Not building the examples."])
 AC_ARG_WITH([non-rt],[AS_HELP_STRING([--with-non-rt],[Build the lcg-non-rt executable])],
