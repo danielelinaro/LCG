@@ -8,9 +8,13 @@ AM_CPPFLAGS += -DRESET_OUTPUT
 endif
 if ANALOG_IO
 AM_CPPFLAGS += -DANALOG_IO
+if NONRT
+liblcg_common_la_SOURCES += configuration.cpp daq_io.cpp
+include_HEADERS += configuration.h daq_io.h
+endif
 if COMEDI
-liblcg_common_la_SOURCES += daq_io.cpp comedi_io.cpp configuration.cpp
-include_HEADERS += daq_io.h comedi_io.h configuration.h
+liblcg_common_la_SOURCES += comedi_io.cpp
+include_HEADERS += comedi_io.h
 endif
 if ANALOGY
 liblcg_common_la_SOURCES += analogy_io.cpp

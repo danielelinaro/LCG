@@ -5,8 +5,6 @@
 #include "config.h"
 #endif
 
-#ifdef ANALOG_IO
-
 #include <string>
 #if defined(HAVE_LIBCOMEDI)
 #include "comedi_io.h"
@@ -97,8 +95,6 @@ lcg::Entity* AnalogIOFactory(string_dict& args);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // ANALOG_IO
 
 #endif // ANALOG_IO_H
 

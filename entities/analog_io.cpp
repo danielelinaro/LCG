@@ -1,8 +1,6 @@
 #include "analog_io.h"
 #include "utils.h"
 
-#ifdef ANALOG_IO
-
 lcg::Entity* AnalogInputFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, range, reference, id;
@@ -202,9 +200,9 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
                          uint range, uint aref, const std::string& units,
                          uint id)
         : Entity(id),
-#ifdef HAVE_LIBCOMEDI
+#if defined(HAVE_LIBCOMEDI)
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, range, aref)
-#else
+#elif defined(HAVE_LIBANALOGY)
           m_input(deviceFile, inputSubdevice, &readChannel, 1, range, aref)
 #endif
 {
@@ -236,9 +234,9 @@ AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
                            const std::string& units, uint id)
         : Entity(id),
-#ifdef HAVE_LIBCOMEDI
+#if defined(HAVE_LIBCOMEDI)
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
-#else
+#elif defined(HAVE_LIBANALOGY)
           m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref)
 #endif
 {
@@ -287,10 +285,10 @@ AnalogIO::AnalogIO(const char *deviceFile, uint inputSubdevice,
                  uint outputSubdevice, uint writeChannel, double outputConversionFactor,
                  uint inputRange, uint aref, const std::string& units, uint id)
         : Entity(id),
-#ifdef HAVE_LIBCOMEDI
+#if defined(HAVE_LIBCOMEDI)
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, aref),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
-#else
+#elif defined(HAVE_LIBANALOGY)
           m_input(deviceFile, inputSubdevice, &readChannel, 1, inputRange, aref),
           m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref)
 #endif
@@ -335,6 +333,4 @@ double AnalogIO::output()
 }
 
 } // namespace lcg
-
-#endif // ANALOG_IO
 
