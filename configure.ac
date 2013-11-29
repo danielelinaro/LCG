@@ -68,13 +68,13 @@ AC_ARG_WITH([examples],
 	    [AS_HELP_STRING([--with-examples],[Build example programs])],
  	    [with_examples=yes],[echo "WARNING: not building the examples."])
 AC_ARG_WITH([output-reset],
-	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on a realtime system)])],
+	    [AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates (only on systems with Comedi)])],
        	    [with_output_reset=yes],
             [if test `expr $host_os : 'linux'` -eq 5 ; then echo "WARNING: not resetting the output." ; fi])
-AC_ARG_WITH([asynchronous-io],
-       	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
-       	    [with_asynchronous_io=yes],
-            [if test `expr $host_os : 'linux'` -eq 5 ; then echo "WARNING: using synchronous I/O." ; fi])
+#AC_ARG_WITH([asynchronous-io],
+#       	    [AS_HELP_STRING([--with-asynchronous-io],[Use asynchronous I/O (only on a realtime system)])],
+#       	    [with_asynchronous_io=yes],
+#            [if test `expr $host_os : 'linux'` -eq 5 ; then echo "WARNING: using synchronous I/O." ; fi])
 
 AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
 if test "$with_examples" = "yes" ; then
@@ -82,8 +82,7 @@ if test "$with_examples" = "yes" ; then
 fi
 
 with_output_reset=no
-with_io=no
-with_asynchronous_io=no
+with_analog_io=no
 with_comedi=no
 with_analogy=no
 with_rt=no
@@ -120,20 +119,19 @@ if test `expr $host_os : 'linux'` -eq 5 ; then
    AC_CHECK_LIB([analogy], [a4l_open], [], [echo "Analogy not found."])
    if test "$ac_cv_lib_analogy_a4l_open" = "yes" ; then
       with_analogy=yes
-      with_io=yes
+      with_analog_io=yes
    fi
    if test "$with_analogy" = "no" ; then
       AC_CHECK_LIB([comedi], [comedi_open], [], [echo "Comedi not found."])
       if test "$ac_cv_lib_comedi_comedi_open" = "yes" ; then
       	 with_comedi=yes
-      	 with_io=yes
+      	 with_analog_io=yes
       fi
    fi
 fi
 
 AM_CONDITIONAL([OUTPUT_RESET],[test "$with_output_reset" = "yes"])
-AM_CONDITIONAL([ANALOG_IO],[test "$with_io" = "yes"])
-AM_CONDITIONAL([ASYNCHRONOUS_IO],[test "$with_asynchronous_io" = "yes"])
+AM_CONDITIONAL([ANALOG_IO],[test "$with_analog_io" = "yes"])
 AM_CONDITIONAL([COMEDI],[test "$with_comedi" = "yes"])
 AM_CONDITIONAL([ANALOGY],[test "$with_analogy" = "yes"])
 AM_CONDITIONAL([REALTIME],[test "$with_rt" = "yes"])

@@ -1,3 +1,5 @@
+#ifdef ANALOG_IO
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -475,4 +477,16 @@ endMain:
         return retval;
 #endif
 }
+
+#else
+
+#include "utils.h"
+using namespace lcg;
+
+int main() {
+        Logger(Critical, "This program requires a working installation of Comedi.\n");
+        return -1;
+}
+
+#endif
 

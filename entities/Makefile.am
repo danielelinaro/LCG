@@ -6,9 +6,6 @@ include_HEADERS = entity.h dynamical_entity.h synapses.h neurons.h waveform.h po
 if OUTPUT_RESET
 AM_CPPFLAGS += -DRESET_OUTPUT
 endif
-if ASYNCHRONOUS_IO
-AM_CPPFLAGS += -DASYNCHRONOUS_IO
-endif
 if REALTIME
 AM_CPPFLAGS += -DREALTIME_ENGINE
 endif

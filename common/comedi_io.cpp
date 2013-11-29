@@ -11,31 +11,6 @@
 
 namespace lcg {
 
-#ifdef ASYNCHRONOUS_IO
-std::map<std::string,ComediAnalogIOProxy*> proxies;
-
-void MakeAnalogIOProxyKey(const char *device, uint subdevice, std::string& key) {
-        std::stringstream ss;
-        ss << device << "-" << subdevice;
-        key = ss.str();
-}
-
-ComediAnalogIOProxy* RegisterWithProxy(const char *device, uint subdevice, uint channel, uint range, uint aref)
-{
-        std::string key;
-        MakeAnalogIOProxyKey(device, subdevice, key);
-        if (proxies.count(key) == 0) {
-                Logger(Info, "Adding proxy for device %s and subdevice %d.\n", device, subdevice);
-                proxies[key] = new ComediAnalogIOProxy(device, subdevice, &channel, 1, range, aref);
-        }
-        else {
-                proxies[key]->addChannel(channel);
-        }
-        proxies[key]->increaseRefCount();
-        return proxies[key];
-}
-#endif
-
 char* CommandSource(int src,char *buf)
 {
 	buf[0]=0;
@@ -199,256 +174,6 @@ uint ComediAnalogIO::reference() const
 
 //~~~
 
-ComediAnalogIOProxy::ComediAnalogIOProxy(const char *deviceFile, uint subdevice,
-                                         uint *channels, uint nChannels,
-                                         uint range, uint aref)
-        : ComediAnalogIO(deviceFile, subdevice, channels, nChannels, range, aref),
-          m_commandRunning(false), m_tLastSample(-1.), m_refCount(0),
-          m_channelsPacked(NULL), m_hash(),
-          m_bytesToWrite(0), m_nStoredSamples(0),       // used only for analog output
-          m_bytesToRead(0)      // used only for analog input
-{
-        // this MUST be changed to have an initial value different from zero
-        memset(m_buffer, 0, PROXY_BUFSIZE);
-
-        m_subdeviceFlags = comedi_get_subdevice_flags(m_device, m_subdevice);
-        if (m_subdeviceFlags & SDF_LSAMPL)
-                m_bytesPerSample = sizeof(lsampl_t);
-        else
-                m_bytesPerSample = sizeof(sampl_t);
-        m_deviceFd = comedi_fileno(m_device);
-        Logger(Debug, "Sample size is %d bytes.\n", m_bytesPerSample);
-}
-
-ComediAnalogIOProxy::~ComediAnalogIOProxy()
-{
-        Logger(Debug, "ComediAnalogIOProxy::~ComediAnalogIOProxy()\n");
-        if (m_channelsPacked != NULL)
-                delete m_channelsPacked;
-        stopCommand();
-}
-
-void ComediAnalogIOProxy::increaseRefCount()
-{
-        m_refCount++;
-}
-
-void ComediAnalogIOProxy::decreaseRefCount()
-{
-        m_refCount--;
-        if (m_refCount == 0)
-                delete this;
-}
-
-uint ComediAnalogIOProxy::refCount() const
-{
-        return m_refCount;
-}
-
-bool ComediAnalogIOProxy::initialise()
-{
-        Logger(Debug, "ComediAnalogIOProxy::initialise()\n");
-        if (m_nChannels == 0) {
-                Logger(Critical, "No channels are configured.\n");
-                return false;
-        }
-
-        stopCommand();
-
-        packChannelsList();
-
-        // the command doesn't start immediately
-        bool flag = issueCommand();
-        if (flag) {
-                Logger(Debug, "Successfully issued the command.\n");
-                flag = startCommand();
-                if (flag)
-                        Logger(Debug, "Successfully started the command.\n");
-                else
-                        Logger(Critical, "Unable to start the command.\n");
-        }
-        else {
-                Logger(Critical, "Unable to issue the command.\n");
-        }
-
-        return flag;
-}
-
-bool ComediAnalogIOProxy::stopCommand()
-{
-        if (!m_commandRunning) {
-                Logger(Debug, "The command is not running.\n");
-                return true;
-        }
-
-        if (comedi_cancel(m_device, m_subdevice) != 0) {
-                Logger(Critical, "comedi_cancel: %s.\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-
-        Logger(Debug, "Successfully stopped running command.\n");
-
-        // read data that may have remained in the internal buffer of the card
-        /*
-        char buffer[1024];
-        size_t n;
-        while ((n = read(m_deviceFd, buffer, 1024)) > 0)
-                Logger(Info, "Read %d remaining bytes.\n");
-        */
-
-        m_commandRunning = false;
-        return true;
-}
-
-void ComediAnalogIOProxy::packChannelsList()
-{
-        if (m_channelsPacked != NULL)
-                delete m_channelsPacked;
-        m_channelsPacked = new uint[m_nChannels];
-        for (uint i=0; i<m_nChannels; i++) {
-                m_channelsPacked[i] = CR_PACK(m_channels[i], m_range, m_aref);
-                Logger(Debug, "Packed channel %d.\n", m_channels[i]);
-        }
-}
-
-
-bool ComediAnalogIOProxy::issueCommand()
-{
-        memset(&m_cmd, 0, sizeof(struct comedi_cmd_struct));
-        int ret = comedi_get_cmd_generic_timed(m_device, m_subdevice, &m_cmd,
-                        m_nChannels, int(NSEC_PER_SEC * GetGlobalDt())/OVERSAMPLING_FACTOR);
-        if (ret < 0) {
-                Logger(Critical, "comedi_get_cmd_generic_timed: %s.\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-        m_cmd.convert_arg = 0;    // this value is wrong, but will be fixed by comedi_command_test
-        m_cmd.chanlist    = m_channelsPacked;
-        m_cmd.start_src   = TRIG_INT;
-        m_cmd.stop_src    = TRIG_COUNT;
-        m_cmd.stop_arg    = (int) ceil(GetRunTime()/GetGlobalDt())*OVERSAMPLING_FACTOR;
-
-        m_bytesToRead = m_nChannels * m_bytesPerSample * OVERSAMPLING_FACTOR;
-        m_bytesToWrite = m_nChannels * m_bytesPerSample;
-
-        if (!fixCommand())
-                return false;
-
-        if (comedi_command(m_device, &m_cmd) != 0) {
-                Logger(Critical, "comedi_command: %s.\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-
-        if (comedi_get_subdevice_type(m_device, m_subdevice) == COMEDI_SUBD_AO) {
-                // preload the card buffer
-                int sz = comedi_get_max_buffer_size(m_device, m_subdevice);
-                if (sz > ceil(1./GetGlobalDt()))
-                        sz = (int) ceil(1./GetGlobalDt());
-                Logger(Important, "Preloading the card buffer with %d bytes.\n", sz);
-                char *buf = new char[sz];
-                memset(buf, 55, sz);
-                ssize_t n = write(m_deviceFd, buf, sz);
-                if (n < 0){
-                        Logger(Critical, "write: %s\n", strerror(errno));
-                        delete buf;
-                        return false;
-                }
-                else if (n < sz) {
-                        Logger(Important, "Failed to preload output buffer with %i bytes, is it too small?\n"
-                                "See the --write-buffer option of comedi_config\n", PROXY_BUFSIZE);
-                        delete buf;
-                        return false;
-                }
-                delete buf;
-        }
-
-        return true;
-}
-
-bool ComediAnalogIOProxy::fixCommand()
-{                
-        if (comedi_command_test(m_device, &m_cmd) < 0 && 
-            comedi_command_test(m_device, &m_cmd) < 0) {
-                Logger(Critical, "comedi_command_test: %s.\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-        Logger(Debug, "Successfully fixed the command.\n");
-        Logger(Debug, "--------------------------------\n");
-        DumpCommand(Debug, &m_cmd);
-        Logger(Debug, "--------------------------------\n");
-        return true;
-}
-
-bool ComediAnalogIOProxy::startCommand()
-{
-        if (m_commandRunning) {
-                Logger(Info, "The command is already running.\n");
-                return true;
-        }
-        
-        if (comedi_internal_trigger(m_device, m_subdevice, 0)) {
-                Logger(Critical, "comedi_internal_trigger: %s\n", comedi_strerror(comedi_errno()));
-                return false;
-        }
-
-        m_commandRunning = true;
-
-        return true;
-}
-
-void ComediAnalogIOProxy::acquire()
-{
-        if (!m_commandRunning)
-                startCommand();
-        double now = GetGlobalTime();
-        if (now != m_tLastSample) {
-
-                // read the data
-                size_t nBytes = 0;
-                char *ptr = m_buffer;
-                do {
-                        nBytes += read(m_deviceFd, ptr, m_bytesToRead-nBytes);
-                        ptr += nBytes;
-                } while (nBytes != 0 && nBytes < m_bytesToRead);
-
-                for (int i=0; i<m_nChannels; i++) {
-                        if (m_subdeviceFlags & SDF_LSAMPL)
-                                m_data[i] = ((lsampl_t *) m_buffer)[i];
-                        else
-                                m_data[i] = ((sampl_t *) m_buffer)[i];
-                        m_hash[m_channels[i]] = m_data[i];
-                }
-
-                // update the time of last read operation
-                m_tLastSample = now;
-        }
-}
-
-lsampl_t ComediAnalogIOProxy::value(uint channel)
-{
-        return m_hash[channel];
-}
-
-void ComediAnalogIOProxy::output(uint channel, lsampl_t value)
-{
-        //Logger(Info, "ComediAnalogIOProxy::output(uint, lsampl_t)\n");
-        m_hash[channel] = value;
-        m_nStoredSamples++;
-        if (m_nStoredSamples == m_nChannels) {
-                std::map<uint,lsampl_t>::iterator it;
-                int i;
-                for (it = m_hash.begin(), i=0; it != m_hash.end(); it++, i+=m_bytesPerSample) {
-                        if (m_subdeviceFlags & SDF_LSAMPL)
-                                m_buffer[i] = (lsampl_t) it->second;
-                        else
-                                m_buffer[i] = (sampl_t) it->second;
-                }
-                write(m_deviceFd, m_buffer, m_nChannels*m_bytesPerSample);
-                m_nStoredSamples = 0;
-        }
-}
-
-//~~~
-
 ComediAnalogIOSoftCal::ComediAnalogIOSoftCal(const char *deviceFile, uint subdevice,
                                              uint *channels, uint nChannels,
                                              uint range, uint aref)
@@ -505,25 +230,15 @@ ComediAnalogInputSoftCal::ComediAnalogInputSoftCal(const char *deviceFile, uint 
                 Logger(Critical, "comedi_get_softcal_converter: %s.\n", comedi_strerror(comedi_errno()));
                 throw "Error in comedi_get_softcal_converter()";
         }
-#ifdef ASYNCHRONOUS_IO
-        m_proxy = RegisterWithProxy(deviceFile, inputSubdevice, readChannel, range, aref);
-#endif
 }
 
 ComediAnalogInputSoftCal::~ComediAnalogInputSoftCal()
 {
-#ifdef ASYNCHRONOUS_IO
-        m_proxy->decreaseRefCount();
-#endif
 }
 
 bool ComediAnalogInputSoftCal::initialise()
 {
-#ifdef ASYNCHRONOUS_IO
-        return m_proxy->initialise();
-#else
         return true;
-#endif
 }
 
 double ComediAnalogInputSoftCal::inputConversionFactor() const
@@ -533,14 +248,8 @@ double ComediAnalogInputSoftCal::inputConversionFactor() const
 
 double ComediAnalogInputSoftCal::read()
 {
-#ifndef ASYNCHRONOUS_IO
-        lsampl_t sample;
-        comedi_data_read(m_device, m_subdevice, m_channels[0], m_range, m_aref, &sample);
-        return comedi_to_physical(sample, &m_converter) * m_inputConversionFactor;
-#else
         m_proxy->acquire();
         return comedi_to_physical(m_proxy->value(m_channels[0]), &m_converter) * m_inputConversionFactor;
-#endif
 }
 
 //~~~
@@ -558,9 +267,6 @@ ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal(const char *deviceFile, uin
                 Logger(Critical, "comedi_get_softcal_converter: %s.\n", comedi_strerror(comedi_errno()));
                 throw "Error in comedi_get_softcal_converter()";
         }
-#ifdef ASYNCHRONOUS_IO
-        m_proxy = RegisterWithProxy(deviceFile, outputSubdevice, writeChannel, PLUS_MINUS_TEN, aref);
-#endif
 #ifdef TRIM_ANALOG_OUTPUT
         // get physical data range for subdevice (min, max, phys. units)
         m_dataRange = comedi_get_range(m_device, m_subdevice, m_channels[0], m_range);
@@ -579,17 +285,10 @@ ComediAnalogOutputSoftCal::~ComediAnalogOutputSoftCal()
 #ifdef RESET_OUTPUT
         write(0.0);
 #endif
-#ifdef ASYNCHRONOUS_IO
-        m_proxy->decreaseRefCount();
-#endif
 }
 
 bool ComediAnalogOutputSoftCal::initialise()
 {
-#ifdef ASYNCHRONOUS_IO
-        if (!m_proxy->initialise())
-                return false;
-#endif
 #ifdef RESET_OUTPUT
         write(0.0);
 #endif
@@ -614,9 +313,6 @@ void ComediAnalogOutputSoftCal::write(double data)
 		//Logger(Debug, "[%f] - Trimming upper limit of the DAQ card.\n", GetGlobalTime());
 	}
 #endif
-#ifdef ASYNCHRONOUS_IO
-        m_proxy->output(m_channels[0], comedi_from_physical(sample, &m_converter));
-#else
         comedi_data_write(m_device, m_subdevice, m_channels[0], m_range, m_aref,
                 comedi_from_physical(sample, &m_converter));
 #endif

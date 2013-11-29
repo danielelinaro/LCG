@@ -1,3 +1,5 @@
+#ifdef ANALOG_IO
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
@@ -107,4 +109,16 @@ int main(int argc, char *argv[])
 
         return 0;
 }
+
+#else
+
+#include "utils.h"
+using namespace lcg;
+
+int main() {
+        Logger(Critical, "This program requires a working installation of Comedi.\n");
+        return -1;
+}
+
+#endif
 

@@ -63,60 +63,6 @@ protected:
         lsampl_t *m_data;
 };
 
-#define PROXY_BUFSIZE 1024
-
-/**
- * \brief Proxy class for analog I/O on multiple channels.
- */
-class ComediAnalogIOProxy : public ComediAnalogIO {
-public:
-        ComediAnalogIOProxy(const char *deviceFile, uint subdevice,
-                            uint *channels, uint nChannels,
-                            uint range = PLUS_MINUS_TEN,
-                            uint aref = GRSE);
-        ~ComediAnalogIOProxy();
-
-        bool initialise();
-
-        // analog input
-        void acquire();
-        lsampl_t value(uint channel);
-
-        // analog output
-        void output(uint channel, lsampl_t value);
-
-        void increaseRefCount();
-        void decreaseRefCount();
-        uint refCount() const;
-
-private:
-        bool stopCommand();
-        void packChannelsList();
-        bool issueCommand();
-        bool fixCommand();
-        bool startCommand();
-
-private:
-        char m_buffer[PROXY_BUFSIZE];
-        comedi_cmd m_cmd;
-        bool m_commandRunning;
-        double m_tLastSample;
-        uint m_refCount;
-        uint *m_channelsPacked;
-        uint m_bytesPerSample;
-        int m_subdeviceFlags;
-        int m_deviceFd;
-
-        // key -> channel number, value -> sample
-        std::map<uint,lsampl_t> m_hash;
-
-        /*** used only for analog output ***/
-        int m_bytesToWrite, m_nStoredSamples;
-
-        /*** used only for analog input ***/
-        int m_bytesToRead;
-};
-
 /**
  * \brief Base class for analog I/O with software calibration.
  */
@@ -150,9 +96,6 @@ public:
         double inputConversionFactor() const;
         double read();
 private:
-#ifdef ASYNCHRONOUS_IO
-        ComediAnalogIOProxy *m_proxy;
-#endif
         comedi_polynomial_t m_converter;
         double m_inputConversionFactor;
 };
@@ -170,9 +113,6 @@ public:
         double outputConversionFactor() const;
         void write(double data);
 private:
-#ifdef ASYNCHRONOUS_IO
-        ComediAnalogIOProxy *m_proxy;
-#endif
         comedi_polynomial_t m_converter;
 #ifdef TRIM_ANALOG_OUTPUT
         comedi_range *m_dataRange;
