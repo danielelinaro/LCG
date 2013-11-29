@@ -248,8 +248,9 @@ double ComediAnalogInputSoftCal::inputConversionFactor() const
 
 double ComediAnalogInputSoftCal::read()
 {
-        m_proxy->acquire();
-        return comedi_to_physical(m_proxy->value(m_channels[0]), &m_converter) * m_inputConversionFactor;
+        lsampl_t sample;
+        comedi_data_read(m_device, m_subdevice, m_channels[0], m_range, m_aref, &sample);
+        return comedi_to_physical(sample, &m_converter) * m_inputConversionFactor;
 }
 
 //~~~
@@ -315,7 +316,6 @@ void ComediAnalogOutputSoftCal::write(double data)
 #endif
         comedi_data_write(m_device, m_subdevice, m_channels[0], m_range, m_aref,
                 comedi_from_physical(sample, &m_converter));
-#endif
 }
 
 //~~~
@@ -411,6 +411,4 @@ void ComediAnalogOutputHardCal::write(double data)
 } // namespace lcg
 
 #endif // HAVE_LIBCOMEDI
-
-
 
