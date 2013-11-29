@@ -97,7 +97,7 @@ def main():
     comma = lambda y:','.join([str(i) for i in y])    
     stimnames = ','.join([stim_file.format(i) for i in range(len(ao))])
     duration = lcg.writePulsesStimFile(stim_freq, stim_dur, stim_amp, npulses,delay = 1,
-                                       pulses_in_burst=nburst, withRecovery=with_recovery,
+                                       pulsesInBurst=nburst, withRecovery=with_recovery,
                                        filename=stimnames.split(',')[-1])
     
     if len(ao) + len(ai) > 2:

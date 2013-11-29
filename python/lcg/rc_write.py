@@ -108,7 +108,7 @@ def main():
         if conversion_factor is None:
             conversion_factor = os.environ['AI_CONVERSION_FACTOR_CC']
         if units is None:
-            units = os.environ['INPUT_UNITS']
+            units = os.environ['AI_UNITS_CC']
     else:
         header='[AnalogOutput{0:d}]\n'
         if subdevice is None:
@@ -116,7 +116,7 @@ def main():
         if conversion_factor is None:
             conversion_factor = os.environ['AO_CONVERSION_FACTOR_CC']
         if units is None:
-            units = os.environ['OUTPUT_UNITS']
+            units = os.environ['AO_UNITS_CC']
 
     if not nonrt:
         if filename is None:

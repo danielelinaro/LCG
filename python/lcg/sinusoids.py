@@ -10,53 +10,53 @@ import copy
 
 current_file = 'current.stim'
 modulation_file = 'mod.stim'
-gexc_file = 'gexc.stim'
-ginh_file = 'ginh.stim'
 config_file = 'sinusoids.xml'
 random_seed = 5061983
 frequency_value = 7051983
 
 switches = 'f:n:i:d:I:O:k:R:r:F:v:a:s:t:m:'
-long_switches = ['with-bg','exc','inh','no-kernel','separate']
+long_switches = ['with-bg','exc','inh','no-kernel','filtered','separate']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
     print('\nThe working modes are:\n')
-    print('    current      use a sinusoidally modulated current.')
-    print('    conductance  use sinusoidally modulated conductances.')
+    print('     current   Use a sinusoidally modulated current.')
+    print(' conductance   Use sinusoidally modulated conductances.')
     print('\nThe global options are:\n')
-    print('     -h   Display this help message and exit.')
-    print('     -f   Frequencies of the sinusoids (comma-separated values).')
-    print('     -n   Number of repetitions (default 1).')
-    print('     -i   Interval between trials (default 60 s).')
-    print('     -d   Duration of the stimulation (default 30 sec).')
-    print('     -I   Input channel (default 0).')
-    print('     -O   Output channel (default 0).')
-    print('     -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -k   Frequency at which a new kernel should be computed')
-    print('          (the default is at the beginning of each batch of frequencies).')
-    print(' --no-kernel  Do not compute the kernel.')
+    print('          -h   Display this help message and exit.')
+    print('          -f   Frequencies of the sinusoids (comma-separated values).')
+    print('               If not specified, the following frequencies are tested:')
+    print('               [1,5,10,20,50,100,200,300,600,1000] Hz.')
+    print('          -n   Number of repetitions (default 1).')
+    print('          -i   Interval between trials (default 30 s).')
+    print('          -d   Duration of the stimulation (default 30 s).')
+    print('          -I   Input channel (default 0).')
+    print('          -O   Output channel (default 0).')
+    print('          -F   Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('          -k   Frequency at which a new kernel should be computed')
+    print('               (the default is at the beginning of each batch of frequencies).')
+    print(' --no-kernel   Do not compute the kernel.')
 
     print('\nThe following options are valid in the "current" working mode:\n')
-    print('     -a   Mean of the noisy component of the current (default 0 pA).')
-    print('     -s   Standard deviation of the noisy component of the current (default 0 pA).')
-    print('     -t   Time constant of the noisy component of the current (default 0 ms).')
-    print('     -m   Amplitude of the modulating current (default 30 pA).')
+    print('          -a   Mean of the noisy component of the current (default 0 pA).')
+    print('          -s   Standard deviation of the noisy component of the current (default 0 pA).')
+    print('          -t   Time constant of the noisy component of the current (default 0 ms).')
+    print('          -m   Amplitude of the modulating current (default 30 pA).')
+    print('  --separate   Inject current waveforms in two separate channels (comma-separated in the -O option, as in \'-O 0,1\').')
 
-    print('\nAdditionally, if the --with-bg option is specified, the following')
-    print('options are accepted:\n')
-    print('     -r   Firing frequency of the excitatory background population.')
-    print('     -R   Input resistance of the cell (in MOhm).')
-    print('     -v   Value of voltage at which the background activity should be balanced.')
+    print('\nAdditionally, if the --with-bg option is specified, the following options are accepted:\n')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
+    print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
 
     print('\nThe following options are valid in the "conductance" working mode:\n')
-    print('     -R   Input resistance of the cell (in MOhm).')
-    print('     -v   Value of voltage at which the background activity should be balanced.')
-    print('     -r   Baseline firing frequency of the excitatory background population.')
-    print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
-    print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
-    print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
-    print('  --separate  Injects current waveform in a separate channel (defined as the second defined in -O ) ')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
+    print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
+    print('          -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
+    print('       --exc   Modulate the firing rate of the excitatory presynaptic population.')
+    print('       --inh   Modulate the firing rate of the inhibitory presynaptic population.')
+    print('  --filtered   Filter the modulating signal with the OU process.')
     print('')
 
 def parseGlobalArgs():
@@ -66,10 +66,10 @@ def parseGlobalArgs():
         print(str(err))
         usage()
         sys.exit(1)
-        
+
     options = {'frequencies': [1,5,10,20,50,100,200,300,600,1000], # [Hz]
                'reps': 1,
-               'interval': 60,   # [s]
+               'interval': 30,   # [s]
                'duration': 30,   # [s]
                'kernel_frequency': 0,
                'compute_kernel': True,
@@ -121,7 +121,9 @@ def parseBackgroundArgs():
 
     options = {'input_resistance': None,   # [MOhm]
                'balanced_voltage': None,   # [mV]
-               'R_exc': None}              # [Hz]
+               'R_exc': 7000,              # [Hz]
+               'tau_exc': 5e-3,            # [s]
+               'tau_inh': 10e-3}           # [s]
 
     for o,a in opts:
         if o == '-R':
@@ -158,7 +160,9 @@ def parseCurrentModeArgs():
                'std': 0,                 # [pA]
                'tau': 0,                 # [ms]
                'I_modul': 30,            # [pA]
-               'separate':False}
+               'separate': False}        # whether we'll use two separate channels
+                                         # for noisy and modulating currents
+
     for o,a in opts:
         if o == '--with-bg':
             options['with_bg'] = True
@@ -205,6 +209,7 @@ def parseConductanceModeArgs():
     options['dR'] =  0.1      # [fraction]
     options['exc'] = False
     options['inh'] = False
+    options['filtered'] = False
 
     for o,a in opts:
         if o == '-m':
@@ -213,9 +218,11 @@ def parseConductanceModeArgs():
             options['exc'] = True
         elif o == '--inh':
             options['inh'] = True
+        elif o == '--filtered':
+            options['filtered'] = True
 
-    if options['dR'] < 0:
-        print('The modulating fraction must be positive.')
+    if options['dR'] <= 0:
+        print('The modulating fraction must be non-negative.')
         sys.exit(1)
 
     if not options['exc'] and not options['inh']:
@@ -225,7 +232,7 @@ def parseConductanceModeArgs():
     return options
 
 def writeConfigurationFile(options):
-    config = lcg.XMLConfigurationFile(options['sampling_rate'],options['duration'])
+    config = lcg.XMLConfigurationFile(options['sampling_rate'],options['duration']+3.61)
     config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
     config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
@@ -236,10 +243,32 @@ def writeConfigurationFile(options):
                                               inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
-    config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename=gexc_file, units='nS'))
-    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,6), filename=ginh_file, units='nS'))
-    config.add_entity(lcg.entities.ConductanceStimulus(id=5, connections=(1), E=0))
-    config.add_entity(lcg.entities.ConductanceStimulus(id=6, connections=(1), E=-80))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=3, connections=(1), E=0))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=4, connections=(1), E=-80))
+    current_id = 5
+    if options['filtered']:
+        if options['exc']:
+            config.add_entity(lcg.entities.OUNonStationary(id=current_id, connections=(0,3), tau=options['tau_exc'],
+                                                           ic=options['Gm_exc'], units='nS', interval=[2.61,2.61+options['duration']]))
+            config.add_entity(lcg.entities.Waveform(id=current_id+1, connections=(0,current_id), filename='gexc_mean.stim', units='nS'))
+            config.add_entity(lcg.entities.Waveform(id=current_id+2, connections=(0,current_id), filename='gexc_stddev.stim', units='nS'))
+            current_id += 3
+        else:
+            config.add_entity(lcg.entities.Waveform(id=current_id, connections=(0,3), filename='gexc.stim', units='nS'))
+            current_id += 1
+        if options['inh']:
+            config.add_entity(lcg.entities.OUNonStationary(id=current_id, connections=(0,4), tau=options['tau_inh'],
+                                                           ic=options['Gm_inh'], units='nS', interval=[2.61,2.61+options['duration']]))
+            config.add_entity(lcg.entities.Waveform(id=current_id+1, connections=(0,current_id), filename='ginh_mean.stim', units='nS'))
+            config.add_entity(lcg.entities.Waveform(id=current_id+2, connections=(0,current_id), filename='ginh_stddev.stim', units='nS'))
+            current_id += 3
+        else:
+            config.add_entity(lcg.entities.Waveform(id=current_id, connections=(0,4), filename='ginh.stim', units='nS'))
+            current_id += 1
+    else:
+        config.add_entity(lcg.entities.Waveform(id=current_id, connections=(0,3), filename='gexc.stim', units='nS'))
+        config.add_entity(lcg.entities.Waveform(id=current_id+1, connections=(0,4), filename='ginh.stim', units='nS'))
+        current_id += 2
     config.write(config_file)
 
 def replaceValue(stimulus, old_value, new_value=None):
@@ -251,22 +280,36 @@ def replaceValue(stimulus, old_value, new_value=None):
             else:
                 stimulus[r][c] = int(np.random.uniform(high=10000))
 
-def createSinusoidallyModOU(f, r0, dr, Rin, tau, dur, type, seed):
+def createSinusoidallyModOU(f, type, seed, opts):
     if type == 'exc':
-        g = 0.02/Rin*1e3   # [nS]
+        g = 0.02/opts['input_resistance']*1e3   # [nS]
+        R = opts['R_exc']          # [Hz]
+        tau = opts['tau_exc']      # [s]
     elif type == 'inh':
-        g = 0.06/Rin*1e3   # [nS]
+        g = 0.06/opts['input_resistance']*1e3   # [nS]
+        R = opts['R_inh']          # [Hz]
+        tau = opts['tau_inh']      # [s]
     else:
         print("Unknown type [%s]: allowed values are 'exc' or 'inh'." % type)
-        return -1
-    tau_ms = tau   # [ms]
-    tau = tau*1e-3 # [s]
-    G = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
-         [dur,-3,0,1,tau_ms,0,0,1,seed,2,0,1], # OU
-         [0,-3,g**2*tau/2*dr,f,0,g**2*tau/2*r0,0,0,0,3,2,0.5], # sine that sets the variance
-         [0,-3,g*tau*dr,f,0,g*tau*r0,0,0,0,3,1,1], # sine that sets the mean
-         [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
-    return G
+        return None
+
+    if opts['filtered']:
+        Gm = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
+              [opts['duration'],-2,g*R*tau,0,0,0,0,0,0,1,0,1], # mean
+              [0,-2,opts['dR'],f,0,1,0,0,0,3,2,1], # sinusoid
+              [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
+        Gs = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
+              [opts['duration'],-2,g*np.sqrt(0.5*R*tau),0,0,0,0,0,0,1,0,1], # std dev
+              [0,-2,opts['dR'],f,0,1,0,0,0,3,2,0.5], # sinusoid
+              [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
+        return [{'matrix':Gm,'filename':'g'+type+'_mean.stim'},{'matrix':Gs,'filename':'g'+type+'_stddev.stim'}]
+    else:
+        G = [[2.61,1,0,0,0,0,0,0,0,0,0,1], # "preamble"
+             [opts['duration'],-3,0,1,tau*1e3,0,0,1,seed,2,0,1], # OU
+             [0,-3,g**2*tau/2*opts['dR']*R,f,0,g**2*tau/2*R,0,0,0,3,2,0.5], # sine that sets the variance
+             [0,-3,g*tau*opts['dR']*R,f,0,g*tau*R,0,0,0,3,1,1], # sine that sets the mean
+             [1,1,0,0,0,0,0,0,0,0,0,1]] # one second at the end
+        return [{'matrix':G,'filename':'g'+type+'.stim'}]
 
 def main():
     mode = None
@@ -284,12 +327,18 @@ def main():
 
     if mode == 'current':
         opts = dict(parseCurrentModeArgs(), **opts)
+        if opts['separate'] and (type(opts['ao']) == int or type(opts['ai']) == int or \
+                                     len(opts['ao']) == 1 or len(opts['ai']) == 1):
+            print('When using the --separate options, two channels must be specified (use the -I and -O options).')
+            sys.exit(1)
     else:
         opts = dict(parseConductanceModeArgs(), **opts)
 
     if (mode == 'current' and opts['with_bg']) or mode == 'conductance':
         ratio = lcg.computeRatesRatio(Vm=opts['balanced_voltage'], Rin=opts['input_resistance'])
         Gm_exc,Gm_inh,Gs_exc,Gs_inh = lcg.computeSynapticBackgroundCoefficients(ratio, R_exc=opts['R_exc'], Rin=opts['input_resistance'])
+        opts['Gm_exc'] = Gm_exc
+        opts['Gm_inh'] = Gm_inh
     else:
         # no background conductances, it will be a current-clamp experiment
         gexc = None
@@ -307,54 +356,53 @@ def main():
             
         if opts['mean'] == 0 and opts['std'] == 0 and opts['tau'] == 0:
             # sinusoidal modulating current only
-            current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
             if opts['separate']:
                 current = [[opts['duration'],1,0,0,0,0,0,1,random_seed,0,0,1], # OU current
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
                 modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
                               [1,1,0,0,0,0,0,0,0,0,0,1]]
+            else:
+                current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
         elif opts['tau'] == 0:
             # sinusoid on top of a DC current
-            current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
-                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
             if opts['separate']:
                 current = [[opts['duration'],1,opts['mean'],0,0,0,0,0,random_seed,0,0,1], # OU current
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
                 modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
                               [1,1,0,0,0,0,0,0,0,0,0,1]]
-                       
+            else:
+                current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
+                           [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
         else:
             # sinusoid on top of a noisy (OU) current
-            current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
-                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
             if opts['separate']:
                 current = [[opts['duration'],2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,0,0,1], # OU current
                            [1,1,0,0,0,0,0,0,0,0,0,1]]
                 modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
                               [1,1,0,0,0,0,0,0,0,0,0,1]]
-
+            else:
+                current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
+                           [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
     else:
         # current just for the preamble
         current = [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]]
         # conductances
         opts['R_inh'] = opts['R_exc']/ratio
         if opts['exc']:
-            gexc = createSinusoidallyModOU(frequency_value, opts['R_exc'], opts['dR']*opts['R_exc'],
-                                              opts['input_resistance'], 5, opts['duration'], 'exc', random_seed)
+            gexc = createSinusoidallyModOU(frequency_value, 'exc', random_seed, opts)
         else:
-            gexc = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
-                    [opts['duration'],2,Gm_exc,Gs_exc,5,0,0,1,random_seed,0,0,1],
-                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+            gexc = [{'matrix': [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                                [opts['duration'],2,Gm_exc,Gs_exc,5,0,0,1,random_seed,0,0,1],
+                                [1,1,0,0,0,0,0,0,0,0,0,1]], 'filename': 'gexc.stim'}]
         if opts['inh']:
-            ginh = createSinusoidallyModOU(frequency_value, opts['R_inh'], opts['dR']*opts['R_inh'],
-                                              opts['input_resistance'], 10, opts['duration'], 'inh', random_seed)
+            ginh = createSinusoidallyModOU(frequency_value, 'inh', random_seed, opts)
         else:
-            ginh = [[2.61,1,0,0,0,0,0,0,0,0,0,1],
-                    [opts['duration'],2,Gm_inh,Gs_inh,10,0,0,1,random_seed,0,0,1],
-                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+            ginh = [{'matrix': [[2.61,1,0,0,0,0,0,0,0,0,0,1],
+                                [opts['duration'],2,Gm_inh,Gs_inh,10,0,0,1,random_seed,0,0,1],
+                                [1,1,0,0,0,0,0,0,0,0,0,1]], 'filename': 'ginh.stim'}]
 
     if gexc and ginh:
         writeConfigurationFile(opts)
@@ -365,15 +413,13 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                if mode  == 'current' and opts['separate']:
-                    # Run the kernel for each channel.
-                    if (type(opts['ao']) is int) or (type(opts['ai']) is int):
-                        print('Separate only works if 2 channels are specified (use -I and -O options).\n')
-                        sys.exit(1)
+                if opts['separate']:
+                    # compute a kernel for each channel
                     sub.call('lcg kernel -I ' + str(opts['ai'][0]) + ' -O ' + str(opts['ao'][0]) +
                              ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
                     sub.call('lcg kernel -I ' + str(opts['ai'][1]) + ' -O ' + str(opts['ao'][1]) +
                              ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
+                    pass
                 else:
                     sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
                              ' -F '+ str(opts['sampling_rate']), shell=True)
@@ -383,21 +429,24 @@ def main():
             I = copy.deepcopy(current)
             replaceValue(I, random_seed)
             replaceValue(I, frequency_value, f)
-            lcg.writeStimFile(current_file, I, addDefaultPreamble=True)
-            if mode == 'current' and opts['separate']:
+            lcg.writeStimFile(current_file, I, preamble=True)
+            if opts['separate']:
                 I = copy.deepcopy(modulation)
                 replaceValue(I, frequency_value, f)
-                lcg.writeStimFile(modulation_file, I, addDefaultPreamble=True)
+                lcg.writeStimFile(modulation_file, I, preamble=[0,0])
+
             if gexc and ginh:
-                G = copy.deepcopy(gexc)
-                replaceValue(G, random_seed)
-                replaceValue(G, frequency_value, f)
-                lcg.writeStimFile(gexc_file, G)
-                G = copy.deepcopy(ginh)
-                replaceValue(G, random_seed)
-                replaceValue(G, frequency_value, f)
-                lcg.writeStimFile(ginh_file, G)
-                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file + ' -F '+ str(opts['sampling_rate']),shell=True)
+                for stimulus in gexc:
+                    G = copy.deepcopy(stimulus['matrix'])
+                    replaceValue(G, random_seed)
+                    replaceValue(G, frequency_value, f)
+                    lcg.writeStimFile(stimulus['filename'], G)
+                for stimulus in ginh:
+                    G = copy.deepcopy(stimulus['matrix'])
+                    replaceValue(G, random_seed)
+                    replaceValue(G, frequency_value, f)
+                    lcg.writeStimFile(stimulus['filename'], G)
+                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
             else:
                 if opts['separate']:
                     fname = 'sinusoids.cfg'

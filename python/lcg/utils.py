@@ -2,6 +2,7 @@ import time
 import os
 import numpy as np
 import tables as tbl
+import lcg
 
 ########## Functions that write configuration files ##########
 
@@ -16,7 +17,7 @@ def conductanceBurstStim(dur, g, tau, R0, dR, Tb, taub):
         stim.append([0, -4, g*tau_sec*dR, 1, taub, 0, g*tau_sec*R0, 0, 0, 12, 1, 1])
     return stim
 
-def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulses_in_burst = 1, withRecovery=True, filename='pulses.stim'):
+def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulsesInBurst=1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.
     
@@ -26,6 +27,7 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulses_in_burst = 1, withRec
                amp - amplitude of the stimulation
                  N - number of repetitions
              delay - initial and final delay
+     pulsesInBurst - number of pulses in each group
       withRecovery - whether or not to include a recovery pulse
           filename - file to write to
 
@@ -39,25 +41,26 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulses_in_burst = 1, withRec
     if len(f) == 1:
         f = f*2
     stimulus.append([N/f[1],-2,amp,-f[0],dur,0,0,0,5061983,8,0,1])
-    stimulus.append([0,-2,1,-f[1],pulses_in_burst*(1000./f[0]),0,0,0,5061983,8,2,1])
+    stimulus.append([0,-2,1,-f[1],pulsesInBurst*(1000./f[0]),0,0,0,5061983,8,2,1])
     if withRecovery:
         stimulus.append([0.5,1,0,0,0,0,0,0,5061983,0,0,1])
         stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
     stimulus.append([delay,1,0,0,0,0,0,0,5061983,0,0,1])
     dur = writeStimFile(filename, stimulus, False)
-#    print('The total duration of the stimulus is %g sec.' % dur)
     return dur
 
-def writeStimFile(filename, stimulus, addDefaultPreamble=False):
+def writeStimFile(filename, stimulus, preamble=None):
     """
     Writes a generic stimulus file.
 
     Parameters:
-                 filename - the name of the file that will be written.
-                 stimulus - a matrix containing the stimulus.
-       addDefaultPreamble - whether to add a default preamble composed
-                of a 10 ms pulse of -300 pA and a 100 ms pulse of -100 pA.
-
+       filename - the name of the file that will be written.
+       stimulus - a matrix containing the stimulus.
+       preamble - a 2 element list containing the amplitudes of a 10 ms and a 100 ms
+                  long pulses to add at the beginning of the stimulation. It can be None,
+                  in which case no preamble is added, or True, in which case default
+                  values of -300 pA and -100 pA are used for the first and second pulse,
+                  respectively.
     Returns:
        The duration of the stimulation.
            
@@ -66,18 +69,13 @@ def writeStimFile(filename, stimulus, addDefaultPreamble=False):
         stimulus = [stimulus]
     with open(filename,'w') as fid:
         preamble_dur = 0
-        if addDefaultPreamble:
-            ### preamble for small cells
-            #preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-            #            [0.01,1,-200,0,0,0,0,0,0,0,0,1],
-            #            [0.5,1,0,0,0,0,0,0,0,0,0,1],
-            #            [0.6,1,-50,0,0,0,0,0,0,0,0,1],
-            #            [1,1,0,0,0,0,0,0,0,0,0,1]]
-            ### preamble for larger cells
+        if preamble:
+            if type(preamble) != list or len(preamble) != 2:
+                preamble = [-300,-100]
             preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.01,1,-300,0,0,0,0,0,0,0,0,1],
+                        [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
                         [0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.6,1,-100,0,0,0,0,0,0,0,0,1],
+                        [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
                         [1,1,0,0,0,0,0,0,0,0,0,1]]
             for row in preamble:
                 preamble_dur = preamble_dur + row[0]
@@ -106,12 +104,24 @@ def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim'
     for i,filename in enumerate(outfiles):
         writeStimFile(filename,G[i],False)
 
-def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, outfile, infile=''):
-    if infile == '':
-        infile = findConfigurationFile('I_plus_bg_G_template.xml')
-        if infile == '':
-            print('Unable to locate default configuration file. Aborting...')
-            return
+def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile):
+    config = lcg.XMLConfigurationFile(sampling_rate, duration+3.61)
+    config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
+    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
+                                              inputSubdevice=os.environ['AI_SUBDEVICE'],
+                                              outputSubdevice=os.environ['AO_SUBDEVICE'],
+                                              readChannel=ai, writeChannel=ao,
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
+                                              kernelFile='kernel.dat'))
+    config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename='current.stim', units='pA'))
+    config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename='gexc.stim', units='nS'))
+    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,6), filename='ginh.stim', units='nS'))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=5, connections=(1), E=0.))
+    config.add_entity(lcg.entities.ConductanceStimulus(id=6, connections=(1), E=-80.))
+    config.write(outfile)
+
     current = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
                [0.01,1,-300,0,0,0,0,0,0,0,0,1],
                [0.5,1,0,0,0,0,0,0,0,0,0,1],
@@ -143,14 +153,10 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, outfile, infile=''):
         conductance[1][8] = np.random.poisson(10000)
     writeStimFile('ginh.stim',conductance,False)
 
-    substituteStrings(infile, outfile, {'<readChannel>0</readChannel>': '<readChannel>'+str(ai)+'</readChannel>',
-                                        '<writeChannel>0</writeChannel>': '<writeChannel>'+str(ao)+'</writeChannel>',
-                                        '<tend>0</tend>': '<tend>'+str(duration+3.61)+'</tend>'})
-
-def writeSpontaneousConfig(I, G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=10, outfile='spontaneous.xml', infile=''):
+def writeSpontaneousConfig(I, G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=10, sampling_rate=20000, outfile='spontaneous.xml'):
     writeIPlusBgGConfig(I, {'m': G0_exc, 's': sigma_exc, 'tau': 5},
                         {'m': G0_inh, 's': sigma_inh, 'tau': 10},
-                        ai, ao, duration, outfile, infile)
+                        ai, ao, duration, sampling_rate, outfile)
 
 def writeSinusoidsConfig(bg_current, modulating_current, G0_exc, sigma_exc, G0_inh, sigma_inh,
                          ai=0, ao=0, duration=30, outfile='sinusoids.xml', infile=''):
