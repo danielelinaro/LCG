@@ -413,7 +413,7 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                if opts['separate']:
+                if 'separate' in opts and  opts['separate']:
                     # compute a kernel for each channel
                     sub.call('lcg kernel -I ' + str(opts['ai'][0]) + ' -O ' + str(opts['ao'][0]) +
                              ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
@@ -430,7 +430,7 @@ def main():
             replaceValue(I, random_seed)
             replaceValue(I, frequency_value, f)
             lcg.writeStimFile(current_file, I, preamble=True)
-            if opts['separate']:
+            if 'separate' in opts and opts['separate']:
                 I = copy.deepcopy(modulation)
                 replaceValue(I, frequency_value, f)
                 lcg.writeStimFile(modulation_file, I, preamble=[0,0])
@@ -448,7 +448,7 @@ def main():
                     lcg.writeStimFile(stimulus['filename'], G)
                 sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
             else:
-                if opts['separate']:
+                if 'separate' in opts and opts['separate']:
                     fname = 'sinusoids.cfg'
                     stim_file = '{0},{1}'.format(current_file,modulation_file)
                     sub.call('lcg-rcwrite -e -i -c ' + str(opts['ai'][0]) + ',' + str(opts['ai'][1]) + ' --non-rt -f ' + fname, shell=True)

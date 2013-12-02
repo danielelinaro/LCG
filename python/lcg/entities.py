@@ -6,73 +6,15 @@
 # Author: Daniele Linaro - May 2013
 #
 
-class Entity (object):
+from config_writer import XMLEntry
+
+class Entity (XMLEntry):
     def __init__(self, name, id, connections):
-        self._name = name
-        self._id = id
-        if isinstance(connections, int):
-            self._connections = tuple([connections])
-        else:
-            self._connections = connections
-        self._parameters = {}
-
-    def __str__(self):
-        s = '<entity>\n'
-        s += ('<name>'+self._name+'</name>\n')
-        s += ('<id>'+str(self._id)+'</id>\n')
-        s += '<parameters>\n'
-        for k,v in self._parameters.iteritems():
-            s += ('<'+k+'>'+str(v)+'</'+k+'>\n')
-        s += '</parameters>\n'
-        if len(self._connections) > 0:
-            s += '<connections>'
-            for i,c in enumerate(self._connections):
-                s += str(c)
-                if i < len(self._connections)-1:
-                    s += ','
-            s += '</connections>\n'
-        s += '</entity>\n'
-        return s
-
-    def add_parameter(self, key, value):
-        self._parameters[key] = value
-
-    def parameter(self, key):
-        return self._parameters[key]
-
-    def parameter_names(self):
-        return self._parameters.keys()
-    
-    def parameter_values(self):
-        return self._parameters.values()
-
-    def iter_parameters(self):
-        for k,v in self._parameters.iteritems():
-            yield k,v
-    
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def id(self):
-        return self._id
-
-    @property
-    def parameters(self):
-        return self._parameters
-
-    @property
-    def connections(self):
-        return self._connections
-
-    @property
-    def parameters(self):
-        return self._parameters
+        super(Entity,self).__init__('Entity',name,id,connections)
 
 class H5Recorder (Entity):
     def __init__(self, id, connections, compress=True, filename=''):
-        Entity.__init__(self, 'H5Recorder', id, connections)
+        super(H5Recorder,self).__init__('H5Recorder', id, connections)
         if compress:
             self.add_parameter('compress', compress)
         if len(filename) > 0:
@@ -80,7 +22,7 @@ class H5Recorder (Entity):
 
 class TriggeredH5Recorder (Entity):
     def __init__(self, id, connections, before, after, compress=True, filename=''):
-        Entity.__init__(self, 'TriggeredH5Recorder', id, connections)
+        super(TriggeredH5Recorder,self).__init__('TriggeredH5Recorder', id, connections)
         self.add_parameter('before', before)
         self.add_parameter('after', after)
         if compress:
@@ -90,32 +32,32 @@ class TriggeredH5Recorder (Entity):
 
 class ASCIIRecorder (Entity):
     def __init__(self, id, connections, compress=True, filename=''):
-        Entity.__init__(self, 'ASCIIRecorder', id, connections)
+        super(ASCIIRecorder,self).__init__('ASCIIRecorder', id, connections)
         if len(filename) > 0:
             self.add_parameter('filename', filename)
 
 class Waveform (Entity):
     def __init__(self, id, connections, filename, units, triggered=False):
-        Entity.__init__(self, 'Waveform', id, connections)
+        super(Waveform,self).__init__('Waveform', id, connections)
         self.add_parameter('filename', filename)
         self.add_parameter('units', units)
         self.add_parameter('triggered', triggered)
 
 class ConductanceStimulus (Entity):
     def __init__(self, id, connections, E):
-        Entity.__init__(self, 'ConductanceStimulus', id, connections)
+        super(ConductanceStimulus,self).__init__('ConductanceStimulus', id, connections)
         self.add_parameter('E', E)
 
 class NMDAConductanceStimulus (Entity):
     def __init__(self, id, connections, E, K1, K2):
-        Entity.__init__(self, 'NMDAConductanceStimulus', id, connections)
+        super(NMDAConductanceStimulus,self).__init__('NMDAConductanceStimulus', id, connections)
         self.add_parameter('E', E)
         self.add_parameter('K1', K1)
         self.add_parameter('K2', K2)
 
 class LIFNeuron (Entity):
     def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext):
-        Entity.__init__(self, 'LIFNeuron', id, connections)
+        super(LIFNeuron,self).__init__('LIFNeuron', id, connections)
         self.add_parameter('C', C)
         self.add_parameter('tau', tau)
         self.add_parameter('tarp', tarp)
@@ -126,7 +68,7 @@ class LIFNeuron (Entity):
 
 class IzhikevicNeuron (Entity):
     def __init__(self, id, connections, a, b, c, d, Vspk, Iext):
-        Entity.__init__(self, 'IzhikevicNeuron', id, connections)
+        super(IzhikevicNeuron,self).__init__('IzhikevicNeuron', id, connections)
         self.add_parameter('a', a)
         self.add_parameter('b', b)
         self.add_parameter('c', c)
@@ -136,7 +78,7 @@ class IzhikevicNeuron (Entity):
 
 class ConductanceBasedNeuron (Entity):
     def __init__(self, id, connections, C, gl, El, Iext, area, spike_threshold, V0):
-        Entity.__init__(self, 'ConductanceBasedNeuron', id, connections)
+        super(ConductanceBasedNeuron,self).__init__('ConductanceBasedNeuron', id, connections)
         self.add_parameter('C', C)
         self.add_parameter('gl', gl)
         self.add_parameter('El', El)
@@ -150,7 +92,7 @@ class RealNeuron (Entity):
                  outputSubdevice, readChannel, writeChannel, inputConversionFactor,
                  outputConversionFactor, inputRange, reference, kernelFile = '',
                  holdLastValue = False, adaptiveThreshold = False):
-        Entity.__init__(self, 'RealNeuron', id, connections)
+        super(RealNeuron,self).__init__('RealNeuron', id, connections)
         self.add_parameter('spikeThreshold', spikeThreshold)
         self.add_parameter('V0', V0)
         self.add_parameter('deviceFile', deviceFile)
@@ -172,7 +114,7 @@ class RealNeuron (Entity):
 class AnalogInput (Entity):
     def __init__(self, id, connections, deviceFile, inputSubdevice, readChannel,
                  inputConversionFactor, range, aref, units):
-        Entity.__init__(self, 'AnalogInput', id, connections)
+        super(AnalogInput,self).__init__('AnalogInput', id, connections)
         self.add_parameter('deviceFile', deviceFile)
         self.add_parameter('inputSubdevice', inputSubdevice)
         self.add_parameter('readChannel', readChannel)
@@ -184,7 +126,7 @@ class AnalogInput (Entity):
 class AnalogOutput (Entity):
     def __init__(self, id, connections, deviceFile, outputSubdevice, writeChannel,
                  outputConversionFactor, aref, units):
-        Entity.__init__(self, 'AnalogOutput', id, connections)
+        super(AnalogOutput,self).__init__('AnalogOutput', id, connections)
         self.add_parameter('deviceFile', deviceFile)
         self.add_parameter('outputSubdevice', outputSubdevice)
         self.add_parameter('writeChannel', writeChannel)
@@ -194,29 +136,29 @@ class AnalogOutput (Entity):
         
 class Connection (Entity):
     def __init__(self, id, connections, delay):
-        Entity.__init__(self, 'Connection', id, connections)
+        super(Connection,self).__init__('Connection', id, connections)
         self.add_parameter('delay', delay)
 
 class SynapticConnection (Entity):
     def __init__(self, id, connections, delay, weight):
-        Entity.__init__(self, 'SynapticConnection', id, connections)
+        super(SynapticConnection,self).__init__('SynapticConnection', id, connections)
         self.add_parameter('delay', delay)
         self.add_parameter('weight', weight)
 
 class VariableDelayConnection (Entity):
     def __init__(self, id, connections):
-        Entity.__init__(self, 'VariableDelayConnection', id, connections)
+        super(VariableDelayConnection,self).__init__('VariableDelayConnection', id, connections)
 
 class Constant (Entity):
     def __init__(self, id, connections, value, units=''):
-        Entity.__init__(self, 'Constant', id, connections)
+        super(Constant,self).__init__('Constant', id, connections)
         self.add_parameter('value', value)
         if len(units) > 0:
             self.add_parameter('units', units)
 
 class ConstantFromFile (Entity):
     def __init__(self, id, connections, filename='', units=''):
-        Entity.__init__(self, 'ConstantFromFile', id, connections)
+        super(ConstantFromFile,self).__init__('ConstantFromFile', id, connections)
         if len(filename) > 0:
             self.add_parameter('filename', filename)
         if len(units) > 0:
@@ -224,18 +166,18 @@ class ConstantFromFile (Entity):
 
 class Converter (Entity):
     def __init__(self, id, connections, parameter_name):
-        Entity.__init__(self, 'Converter', id, connections)
+        super(Converter,self).__init__('Converter', id, connections)
         self.add_parameter('parameterName', parameter_name)
 
 class Delay (Entity):
     def __init__(self, id, connections, n_samples=1):
-        Entity.__init__(self, 'Delay', id, connections)
+        super(Delay,self).__init__('Delay', id, connections)
         self.add_parameter('nSamples', n_samples)
 
 class EventCounter (Entity):
     def __init__(self, id, connections, max_count, auto_reset=True,
                  event_to_count='SPIKE', event_to_send='TRIGGER'):
-        Entity.__init__(self, 'EventCounter', id, connections)
+        super(EventCounter,self).__init__('EventCounter', id, connections)
         self.add_parameter('maxCount', max_count)
         self.add_parameter('autoReset', auto_reset)
         self.add_parameter('eventToCount', event_to_count)
@@ -243,13 +185,13 @@ class EventCounter (Entity):
 
 class FrequencyEstimator (Entity):
     def __init__(self, id, connections, tau, initial_frequency=0.):
-        Entity.__init__(self, 'FrequencyEstimator', id, connections)
+        super(FrequencyEstimator,self).__init__('FrequencyEstimator', id, connections)
         self.add_parameter('tau', tau)
         self.add_parameter('initialFrequency', initial_frequency)
 
 class PeriodicPulse (Entity):
     def __init__(self, id, connections, frequency, duration, amplitude, units=''):
-        Entity.__init__(self, 'PeriodicPulse', id, connections)
+        super(PeriodicPulse,self).__init__('PeriodicPulse', id, connections)
         self.add_parameter('frequency', frequency)
         self.add_parameter('duration', duration)
         self.add_parameter('amplitude', amplitude)
@@ -258,7 +200,7 @@ class PeriodicPulse (Entity):
 
 class PID (Entity):
     def __init__(self, id, connections, baseline, gp, gi, gd=0.0):
-        Entity.__init__(self, 'PID', id, connections)
+        super(PID,self).__init__('PID', id, connections)
         self.add_parameter('baselineCurrent', baseline)
         self.add_parameter('gp', gp)
         self.add_parameter('gi', gi)
@@ -266,14 +208,14 @@ class PID (Entity):
 
 class Poisson (Entity):
     def __init__(self, id, connections, rate, seed):
-        Entity.__init__(self, 'Poisson', id, connections)
+        super(Poisson,self).__init__('Poisson', id, connections)
         self.add_parameter('rate', rate)
         self.add_parameter('seed', seed)
 
 class ProbabilityEstimator (Entity):
     def __init__(self, id, connections, tau, stimulation_frequency,
                  window, initial_probability):
-        Entity.__init__(self, 'ProbabilityEstimator', id, connections)
+        super(ProbabilityEstimator,self).__init__('ProbabilityEstimator', id, connections)
         self.add_parameter('tau', tau)
         self.add_parameter('stimulationFrequency', stimulation_frequency)
         self.add_parameter('window', window)
@@ -281,28 +223,28 @@ class ProbabilityEstimator (Entity):
 
 class PeriodicTrigger (Entity):
     def __init__(self, id, connections, frequency):
-        Entity.__init__(self, 'PeriodicTrigger', id, connections)
+        super(PeriodicTrigger,self).__init__('PeriodicTrigger', id, connections)
         self.add_parameter('frequency', frequency)
 
 class Synapse (Entity):
     def __init__(self, name, id, connections, E):
-        Entity.__init__(self, name, id, connections)
+        super(Synapse,self).__init__('Synapse', id, connections)
         self.add_parameter('E', E)
 
 class ExponentialSynapse (Synapse):
     def __init__(self, id, connections, E, tau):
-        Synapse.__init__(self, 'ExponentialSynapse', id, connections, E)
+        super(ExponentialSynapse,self).__init__('ExponentialSynapse', id, connections, E)
         self.add_parameter('tau', tau)
 
 class Exp2Synapse (Synapse):
     def __init__(self, id, connections, E, tau_rise, tau_decay):
-        Synapse.__init__(self, 'Exp2Synapse', id, connections, E)
+        super(Exp2Synapse,self).__init__('Exp2Synapse', id, connections, E)
         self.add_parameter('tauRise', tau_rise)
         self.add_parameter('tauDecay', tau_decay)
 
 class TMGSynapse (Synapse):
     def __init__(self, id, connections, E, U, tau1, tau_rec, tau_facil):
-        Synapse.__init__(self, 'TMGSynapse', id, connections, E)
+        super(TMGSynapse,self).__init__('TMGSynapse', id, connections, E)
         self.add_parameter('U', U)
         self.add_parameter('tau1', tau1)
         self.add_parameter('tau_rec', tau_rec)
@@ -310,37 +252,37 @@ class TMGSynapse (Synapse):
 
 class IonicCurrent (Entity):
     def __init__(self, name, id, connections, area, gbar, E):
-        Entity.__init__(self, name, id, connections)
+        super(IonicCurrent,self).__init__('IonicCurrent', id, connections)
         self.add_parameter('area', area)
         self.add_parameter('gbar', gbar)
         self.add_parameter('E', E)
 
 class HHSodium (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.12, E=50.):
-        IonicCurrent.__init__(self, 'HHSodium', id, connections, area, gbar, E)
+        super(HHSodium,self).__init__('HHSodium', id, connections, area, gbar, E)
 
 class HHPotassium (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.036, E=-77.):
-        IonicCurrent.__init__(self, 'HHPotassium', id, connections, area, gbar, E)
+        super(HHPotassium,self).__init__('HHPotassium', id, connections, area, gbar, E)
 
 class HH2Sodium (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.12, E=50.,
                  vtraub=-63., temperature=36):
-        IonicCurrent.__init__(self, 'HH2Sodium', id, connections, area, gbar, E)
+        super(HH2Sodium,self).__init__('HH2Sodium', id, connections, area, gbar, E)
         self.add_parameter('vtraub', vtraub)
         self.add_parameter('temperature', temperature)
 
 class HH2Potassium (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.005, E=-90.,
                  vtraub=-63., temperature=36):
-        IonicCurrent.__init__(self, 'HH2Potassium', id, connections, area, gbar, E)
+        super(HH2Potassium,self).__init__('HH2Potassium', id, connections, area, gbar, E)
         self.add_parameter('vtraub', vtraub)
         self.add_parameter('temperature', temperature)
 
 class MCurrent (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.005, E=-90.,
                  tau_max=1000., temperature=36):
-        IonicCurrent.__init__(self, 'MCurrent', id, connections, area, gbar, E)
+        super(MCurrent,self).__init__('MCurrent', id, connections, area, gbar, E)
         self.add_parameter('taumax', tau_max)
         self.add_parameter('temperature', temperature)
 
@@ -348,7 +290,7 @@ class TCurrent (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.002, E=120.,
                  q10=3., shift=2., cao=2., caiInf=2.4e-4, taur=0.005,
                  depth=0.1, temperature=36.):
-        IonicCurrent.__init__(self, 'TCurrent', id, connections, area, gbar, E)
+        super(TCurrent,self).__init__('TCurrent', id, connections, area, gbar, E)
         self.add_parameter('q10', q10)
         self.add_parameter('shift', shift)
         self.add_parameter('cao', cao)
@@ -359,15 +301,16 @@ class TCurrent (IonicCurrent):
 
 class NoisyIonicCurrent (IonicCurrent):
     def __init__(self, name, id, connections, area, gbar, E, gamma, seed=None):
-        IonicCurrent.__init__(self, name, id, connections, area, gbar, E)
+        super(NoisyIonicCurrent,self).__init__('NoisyIonicCurrent', id, connections, area, gbar, E)
         self.add_parameter('gamma', gamma)
         if seed:
             self.add_parameter('seed', seed)
 
 class HHSodiumCN (NoisyIonicCurrent):
     def __init__(self, id, connections, area, gbar=0.12, E=50., gamma=10, seed=None):
-        NoisyIonicCurrent.__init__(self, 'HHSodiumCN', id, connections, area, gbar, E, gamma, seed)
+        super(HHSodiumCN,self).__init__('HHSodiumCN', id, connections, area, gbar, E)
 
 class HHPotassiumCN (NoisyIonicCurrent):
     def __init__(self, id, connections, area, gbar=0.036, E=-77, gamma=10, seed=None):
-        NoisyIonicCurrent.__init__(self, 'HHPotassiumCN', id, connections, area, gbar, E, gamma, seed)
+        super(HHPotassiumCN,self).__init__('HHPotassiumCN', id, connections, area, gbar, E)
+
