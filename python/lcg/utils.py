@@ -385,7 +385,7 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
             if len(interval) != 2:
                 idx = np.nonzero(ntt['metadata'][:,0] > 5)[0][0]
                 interval = stimtimes[idx-1:idx+1]
-        elif ntt['name'] == 'AnalogInput' and ntt['units'] == 'mV':
+        elif (ntt['name'] == 'AnalogInput' or ntt['name'] == 'InputChannel') and ntt['units'] == 'mV':
             V = ntt['data']
     t = np.arange(len(V)) * info['dt']
     idx = np.intersect1d(np.nonzero(t >= interval[0])[0], np.nonzero(t <= interval[1])[0])
@@ -403,6 +403,9 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     while True:
         try:
             startTail = int(raw_input('Enter index of tail start (1 ms = %d samples): ' % int(1e-3/info['dt'])))
+            if startTail >= len(K):
+                print('The index must be smaller than %d.' % len(K))
+                continue
         except:
             continue
         Ke,Km = aec.electrode_kernel(K,startTail,True)
@@ -435,7 +438,7 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
         plt[1].set_ylabel('V (mV)')
         plt[1].legend(loc='best')
         fig.show()
-        # Ask user on what to do
+        # Ask user what to do
         ok = raw_input('Ke[-1] / max(Ke) = %.2f %%. Ok? [Y/n] ' % (Ke[-1]/np.max(Ke)*100))
         if len(ok) == 0 or ok.lower() == 'y' or ok.lower() == 'yes':
             break
