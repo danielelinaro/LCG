@@ -26,7 +26,7 @@ __all__ = ['writePulsesStimFile','writeIPlusBgGConfig', 'writeGainModulationConf
 import common
 import utils
 from utils import writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
-from config_writer import XMLConfigurationFile
+from config_writer import XMLConfigurationFile,writeIOConfigurationFile
 import entities
-
+import streams
 

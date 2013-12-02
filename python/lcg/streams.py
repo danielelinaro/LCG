@@ -11,7 +11,7 @@ class Stream (XMLEntry):
     def __init__(self, name, id, connections):
         super(Stream,self).__init__('Stream',name,id,connections)
 
-class InputChannel (Entity):
+class InputChannel (Stream):
     def __init__(self, id, connections, device, subdevice, channel,
                  conversionFactor, range, reference, units, samplingRate):
         super(InputChannel,self).__init__('InputChannel', id, connections)
@@ -24,9 +24,9 @@ class InputChannel (Entity):
         self.add_parameter('units', units)
         self.add_parameter('samplingRate', samplingRate)
         
-class OutputChannel (Entity):
+class OutputChannel (Stream):
     def __init__(self, id, connections, device, subdevice, channel,
-                 conversionFactor, reference, units, samplingRate):
+                 conversionFactor, reference, units, stimulusFile, samplingRate):
         super(OutputChannel,self).__init__('OutputChannel', id, connections)
         self.add_parameter('device', device)
         self.add_parameter('subdevice', subdevice)
@@ -34,4 +34,5 @@ class OutputChannel (Entity):
         self.add_parameter('conversionFactor', conversionFactor)
         self.add_parameter('reference', reference)
         self.add_parameter('units', units)
+        self.add_parameter('stimfile', stimulusFile)
         self.add_parameter('samplingRate', samplingRate)

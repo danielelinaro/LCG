@@ -7,6 +7,7 @@ import subprocess as sub
 import glob
 from numpy import random as rnd
 import lcg
+import lcg.streams
 
 stim_file = 'kernel.stim'
 
@@ -106,10 +107,11 @@ def main():
     lcg.writeStimFile(stim_file,stim,True)
     if nonrt:
         print('Using non-realtime kernel!')
-        fname = 'kernel.cfg'
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' --non-rt --file ' + fname + ' -f ' + str(input_factor) + ' -u ' + input_units, shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' --non-rt --file ' + fname + ' -p ' + stim_file + ' -f ' + str(output_factor) + ' -u ' + output_units, shell=True)
-        sub.call('lcg-non-rt -c ' + fname + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
+        config_file = 'kernel.xml'
+        channels = [{'type':'input', 'channel':ai, 'factor':input_factor, 'units':input_units},
+                    {'type':'output', 'channel':ao, 'factor':output_factor, 'units':output_units, 'stimfile':stim_file}]
+        lcg.writeIOConfigurationFile(config_file,sampling_rate,duration+3.61,channels)
+        sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
     else:
         sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' -f '+ str(input_factor) + ' -u ' + input_units, shell=True)
         sub.call('lcg-rcwrite -o -c ' + str(ao) + ' -f ' + str(output_factor) + ' -u ' + output_units, shell=True)

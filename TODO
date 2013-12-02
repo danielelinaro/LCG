@@ -1,18 +1,18 @@
 
-=== PARAMOUNT
+=== Urgent
 
--) Add signal handling to lcg-non-rt.
+-) add offset in output channel.
+-) add output reset in output channel.
+-) change OUTPUT_RESET from global option to an option of the output channels?
+-) channels are not being recorded in the order they are specified in non-rt config file.
+-) include the channel number on the H5 entity when recording.
 
 === Short term (and therefore relatively simple) ===
 
--) add output reset in output stream.
 -) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
 -) control output trimming in comedi_io.cpp.
--) analog output should also be proxied in asynchronous mode.
 -) finish to add the ionic currents for LTS neurons.
--) Add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
--) Channels are not being recorded in the order they are specified in non-rt config file.
--) Include the channel number on the H5 entity when recording.
+-) add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
 
 === Long term (and therefore possibly complicated) ===
 

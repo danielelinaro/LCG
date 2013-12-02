@@ -1,7 +1,9 @@
 
+import os
 from lxml import etree
+import lcg
 
-__all__ = ['XMLEntry','XMLConfigurationFile']
+__all__ = ['XMLEntry','XMLConfigurationFile','completeWithDefaultValues','writeIOConfigurationFile']
 
 class XMLEntry (object):
     def __init__(self, entry, name, id, connections):
@@ -141,3 +143,65 @@ class XMLConfigurationFile (object):
         Saves the file.
         '''
         etree.ElementTree(self._xml_root).write(filename, pretty_print=True)
+
+def completeWithDefaultValues(opt):
+    if opt['type'] != 'input' and opt['type'] != 'output':
+        print('Unknown channel type [%s].' % opt['type'])
+    else:
+        if 'mode' not in opt:
+            opt['mode'] = 'CC'
+        if 'device' not in opt:
+            opt['device'] = os.environ['COMEDI_DEVICE']
+        if 'subdevice' not in opt:
+            if opt['type'] == 'input':
+                opt['subdevice'] = os.environ['AI_SUBDEVICE']
+            else:
+                opt['subdevice'] = os.environ['AO_SUBDEVICE']
+        if 'channel' not in opt:
+            if opt['type'] == 'input':
+                opt['channel'] = os.environ['AI_CHANNEL']
+            else:
+                opt['channel'] = os.environ['AO_CHANNEL']
+        if 'conversionFactor' not in opt:
+            if opt['type'] == 'input':
+                opt['factor'] = os.environ['AI_CONVERSION_FACTOR_' + opt['mode']]
+            else:
+                opt['factor'] = os.environ['AO_CONVERSION_FACTOR_' + opt['mode']]
+        if opt['type'] == 'input' and 'range' not in opt:
+            opt['range'] = os.environ['RANGE']
+        if 'reference' not in opt:
+            opt['reference'] = os.environ['GROUND_REFERENCE']
+        if 'units' not in opt:
+            if opt['type'] == 'input':
+                opt['units'] = os.environ['AI_UNITS_' + opt['mode']]
+            else:
+                opt['units'] = os.environ['AO_UNITS_' + opt['mode']]
+    return opt
+
+def writeIOConfigurationFile(config_file, sampling_rate, duration, channels):
+    config = lcg.XMLConfigurationFile(sampling_rate,duration)
+    ID = 0
+    for chan in channels:
+        try:
+            chan = completeWithDefaultValues(chan)
+        except KeyError:
+            print('Each channel must contain a "type" key.')
+            return False
+        if chan['type'] == 'input':
+            config.add_stream(lcg.streams.InputChannel(id=ID, connections=(), device=chan['device'],
+                                                       subdevice=chan['subdevice'], channel=chan['channel'],
+                                                       conversionFactor=chan['factor'], range=chan['range'],
+                                                       reference=chan['reference'], units=chan['units'],
+                                                       samplingRate=sampling_rate))
+        else:
+            config.add_stream(lcg.streams.OutputChannel(id=ID, connections=(), device=chan['device'],
+                                                        subdevice=chan['subdevice'], channel=chan['channel'],
+                                                        conversionFactor=chan['factor'],
+                                                        reference=chan['reference'], units=chan['units'],
+                                                        stimulusFile=chan['stimfile'],
+                                                        samplingRate=sampling_rate))
+        ID += 1
+        
+    config.write(config_file)
+    return True
+
