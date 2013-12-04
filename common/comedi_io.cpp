@@ -257,9 +257,9 @@ double ComediAnalogInputSoftCal::read()
 
 ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal(const char *deviceFile, uint outputSubdevice,
                                                      uint writeChannel, double outputConversionFactor,
-                                                     uint aref)
+                                                     uint aref, bool resetOutput)
         : ComediAnalogIOSoftCal(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref),
-          m_outputConversionFactor(outputConversionFactor)
+          m_outputConversionFactor(outputConversionFactor), m_resetOutput(resetOutput)
 {
         Logger(Debug, "ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal()\n");
         int flag = comedi_get_softcal_converter(m_subdevice, m_channels[0], m_range,
@@ -283,16 +283,14 @@ ComediAnalogOutputSoftCal::ComediAnalogOutputSoftCal(const char *deviceFile, uin
 
 ComediAnalogOutputSoftCal::~ComediAnalogOutputSoftCal()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 bool ComediAnalogOutputSoftCal::initialise()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
         return true;
 }
 
@@ -362,21 +360,20 @@ double ComediAnalogInputHardCal::read()
 //~~~
 
 ComediAnalogOutputHardCal::ComediAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
-                                                     uint writeChannel, double outputConversionFactor, uint aref)
+                                                     uint writeChannel, double outputConversionFactor,
+                                                     uint aref, bool resetOutput)
         : ComediAnalogIO(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref),
           m_outputConversionFactor(outputConversionFactor)
 {
         initialise();
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 ComediAnalogOutputHardCal::~ComediAnalogOutputHardCal()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 bool ComediAnalogOutputHardCal::initialise()

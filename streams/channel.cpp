@@ -86,7 +86,8 @@ lcg::Stream* OutputChannelFactory(string_dict& args)
 {
         uint subdevice, channel, reference, id;
         std::string device, referenceStr, units, stimfile;
-        double conversionFactor, samplingRate;
+        double conversionFactor, samplingRate, offset;
+        bool resetOutput;
 
         id = lcg::GetIdFromDictionary(args);
 
@@ -123,9 +124,17 @@ lcg::Stream* OutputChannelFactory(string_dict& args)
                 units = "pA";
         }
 
+        if (! lcg::CheckAndExtractDouble(args, "offset", &offset)) {
+                offset = 0.;
+        }
+
+        if (! lcg::CheckAndExtractBool(args, "resetOutput", &resetOutput)) {
+                resetOutput = true;
+        }
+
         return new lcg::OutputChannel(device.c_str(), subdevice, PLUS_MINUS_TEN, reference,
                                       channel, conversionFactor, samplingRate, units.c_str(),
-                                      stimfile.c_str(), id);
+                                      stimfile.c_str(), offset, resetOutput, id);
 }
 
 namespace lcg {
@@ -135,14 +144,14 @@ std::map<std::string,ComediDevice*> devices;
 ///// HELPER FUNCTIONS AND STRUCTURES - START /////
 
 struct input_loop_data {
-        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<ComediChannel*>* chan)
+        input_loop_data(comedi_t *dev, int subdev, char *buf, size_t buflen, comedi_polynomial_t *conv, std::vector<InputChannel*>* chan)
                 : device(dev), subdevice(subdev), buffer(buf), buffer_length(buflen), converters(conv), channels(chan) {}
         comedi_t *device;
         uint subdevice;
         char *buffer;
         size_t buffer_length;
         comedi_polynomial_t *converters;
-        std::vector<ComediChannel*>* channels;
+        std::vector<InputChannel*>* channels;
 };
 
 struct output_loop_data {
@@ -405,12 +414,62 @@ bool InputChannel::allocateDataBuffer(double tend)
 
 OutputChannel::OutputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate, const char *units,
-                const char *stimfile, uint id)
+                const char *stimfile, double offset, bool resetOutput, uint id)
         : ComediChannel(device, subdevice, range, reference, channel, conversionFactor, samplingRate, units, id),
-          m_stimulus(1./samplingRate, stimfile)
+          m_stimulus(1./samplingRate, stimfile), m_offset(offset), m_resetOutput(resetOutput)
 {
         m_validDataLength = m_stimulus.length();
         setName("OutputChannel");
+}
+
+void OutputChannel::terminate()
+{
+        double lastOutput = m_stimulus[m_stimulus.length()-1];
+        if (m_resetOutput) {
+                Logger(Debug, "OutputChannel::terminate >> resetting the output.\n");
+                comedi_t *dev;
+                char *calibrationFile;
+                comedi_calibration_t *calibration;
+                comedi_polynomial_t converter;
+                dev = comedi_open(device());
+                if (dev == NULL) {
+                        Logger(Important, "Unable to reset the output: error in comedi_open: %s.\n", comedi_strerror(comedi_errno()));
+                        goto write_log_file;
+                }
+                calibrationFile = comedi_get_default_calibration_path(dev);
+                if (calibrationFile == NULL) {
+                        Logger(Important, "Unable to reset the output: error in comedi_get_default_calibration_path: %s.\n", comedi_strerror(comedi_errno()));
+                        comedi_close(dev);
+                        goto write_log_file;
+                }
+                calibration = comedi_parse_calibration_file(calibrationFile);
+                if (calibration == NULL) {
+                        Logger(Important, "Unable to reset the output: error in comedi_parse_calibration_file: %s.\n", comedi_strerror(comedi_errno()));
+                        free(calibrationFile);
+                        comedi_close(dev);
+                        goto write_log_file;
+                }
+                if (comedi_get_softcal_converter(subdevice(), channel(), range(), COMEDI_FROM_PHYSICAL, calibration, &converter) != 0) {
+                        Logger(Important, "Unable to reset the output: error in comedi_get_softcal_converter: %s.\n", comedi_strerror(comedi_errno()));
+                        comedi_cleanup_calibration(calibration);
+                        free(calibrationFile);
+                        comedi_close(dev);
+                        goto write_log_file;
+                }
+                if (comedi_data_write(dev, subdevice(), channel(), range(), reference(), comedi_from_physical(0., &converter)) == 1)
+                        lastOutput = 0.0;
+                else
+                        Logger(Important, "Unable to reset the output: error in comedi_data_write: %s.\n", comedi_strerror(comedi_errno()));
+                comedi_cleanup_calibration(calibration);
+                free(calibrationFile);
+                comedi_close(dev);
+        }
+write_log_file:
+        FILE *fid = fopen(LOGFILE,"w");
+        if (fid != NULL) {
+                fprintf(fid, "%f", lastOutput);
+                fclose(fid);
+        }
 }
 
 const Stimulus* OutputChannel::stimulus() const
@@ -465,6 +524,11 @@ const double* OutputChannel::data(size_t *length) const
         size_t unused;
         *length = m_validDataLength;
         return m_stimulus.data(&unused);
+}
+
+double OutputChannel::offset() const
+{
+        return m_offset;
 }
 
 ComediDevice::ComediDevice(const char *device, bool autoDestroy)
@@ -582,7 +646,8 @@ void* ComediDevice::IOThread(void *arg)
         input_loop_data *in_data;
         output_loop_data *out_data;
         size_t n_input_channels, n_output_channels;
-        std::vector<ComediChannel*> input_channels, output_channels;
+        std::vector<InputChannel*> input_channels;
+        std::vector<OutputChannel*> output_channels;
 
         // indicates that there's been an error
         *err = -1;
@@ -626,11 +691,11 @@ void* ComediDevice::IOThread(void *arg)
         std::map< int, std::map<int, ComediChannel*> >::iterator it;
         for (it=self->m_subdevices.begin(); it!=self->m_subdevices.end(); it++) {
                 if (dynamic_cast<InputChannel*>(it->second.begin()->second)) {
-                        input_channels.push_back(it->second.begin()->second);
+                        input_channels.push_back(dynamic_cast<InputChannel*>(it->second.begin()->second));
                         Logger(Debug, "Subdevice %d is an input subdevice.\n", it->first);
                 }
                 else {
-                        output_channels.push_back(it->second.begin()->second);
+                        output_channels.push_back(dynamic_cast<OutputChannel*>(it->second.begin()->second));
                         Logger(Debug, "Subdevice %d is an output subdevice.\n", it->first);
                 }
         }
@@ -789,7 +854,8 @@ void* ComediDevice::IOThread(void *arg)
                 lsampl_t *lptr = (lsampl_t*) output_buffer;
                 for (i=0; i<nsteps; i++) {
                         for (j=0; j<n_output_channels; j++) {
-                                sample = output_channels[j]->at(i) * output_channels[j]->conversionFactor();
+                                sample = (output_channels[j]->offset() + output_channels[j]->at(i))
+                                        * output_channels[j]->conversionFactor();
                                 if (flags & SDF_LSAMPL)
                                         *lptr = comedi_from_physical(sample, &out_converters[j]);
                                 else

@@ -149,7 +149,8 @@ lcg::Entity* AnalogIOFactory(string_dict& args)
 
         return new lcg::AnalogIO(deviceFile.c_str(), inputSubdevice, readChannel,
                                       inputConversionFactor, outputSubdevice,
-                                      writeChannel, outputConversionFactor, inputRange, reference, units, id);
+                                      writeChannel, outputConversionFactor, inputRange,
+                                      reference, units, id);
 }
 
 lcg::Entity* AnalogOutputFactory(string_dict& args)
@@ -157,6 +158,7 @@ lcg::Entity* AnalogOutputFactory(string_dict& args)
         uint outputSubdevice, writeChannel, reference, id;
         std::string deviceFile, referenceStr, units;
         double outputConversionFactor;
+        bool resetOutput;
 
         id = lcg::GetIdFromDictionary(args);
 
@@ -189,8 +191,12 @@ lcg::Entity* AnalogOutputFactory(string_dict& args)
                 units = "pA";
         }
 
+        if (! lcg::CheckAndExtractBool(args, "resetOutput", &resetOutput)) {
+                resetOutput = true;
+        }
+
         return new lcg::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
-                                          outputConversionFactor, reference, units, id);
+                                          outputConversionFactor, reference, units, resetOutput, id);
 }
 
 namespace lcg {
@@ -232,12 +238,12 @@ double AnalogInput::output()
 
 AnalogOutput::AnalogOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel, double outputConversionFactor, uint aref,
-                           const std::string& units, uint id)
-        : Entity(id),
+                           const std::string& units, bool resetOutput, uint id)
+        : Entity(id), m_resetOutput(resetOutput),
 #if defined(HAVE_LIBCOMEDI)
-          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref)
+          m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, aref, resetOutput)
 #elif defined(HAVE_LIBANALOGY)
-          m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref)
+          m_output(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref, resetOutput)
 #endif
 {
         setName("AnalogOutput");
@@ -251,18 +257,16 @@ AnalogOutput::~AnalogOutput()
 
 void AnalogOutput::terminate()
 {
-#ifdef RESET_OUTPUT
-        m_output.write(0.0);
-#endif
+        if (m_resetOutput)
+                m_output.write(0.0);
 }
 
 bool AnalogOutput::initialise()
 {
         if (! m_output.initialise())
                 return false;
-#ifdef RESET_OUTPUT
-        m_output.write(0.0);
-#endif
+        if (m_resetOutput)
+                m_output.write(0.0);
         return true;
 }
 

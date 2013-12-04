@@ -9,9 +9,6 @@ lcg_zero_SOURCES = lcg-zero.cpp
 lcg_vcclamp_SOURCES = lcg-vcclamp.cpp
 lcg_test_daq_SOURCES = lcg-test-daq.cpp
 lcg_output_SOURCES = lcg-output.cpp
-if OUTPUT_RESET
-AM_CPPFLAGS += -DRESET_OUTPUT
-endif
 if REALTIME
 AM_CPPFLAGS += -DREALTIME_ENGINE
 endif

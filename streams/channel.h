@@ -82,7 +82,9 @@ class OutputChannel : public ComediChannel {
 public:
         OutputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate,
-                const char *units, const char *stimfile, uint id = GetId());
+                const char *units, const char *stimfile, double offset = 0.,
+                bool resetOutput = true, uint id = GetId());
+        virtual void terminate();
         const char* stimulusFile() const;
         bool setStimulusFile(const char *filename);
         const double* data(size_t *length) const;
@@ -91,10 +93,13 @@ public:
         double& at(int i);
         const double& at(int i) const;
         const Stimulus* stimulus() const;
+        double offset() const;
         virtual bool hasMetadata(size_t *ndims) const;
         virtual const double* metadata(size_t *dims, char *label) const;
 private:
         Stimulus m_stimulus;
+        double m_offset;
+        bool m_resetOutput;
 };
 
 class ComediDevice {

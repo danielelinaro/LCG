@@ -1,9 +1,7 @@
 
 === Urgent
 
--) add offset in output channel.
--) add output reset in output channel.
--) change OUTPUT_RESET from global option to an option of the output channels?
+-) where is LOGFILE used and does it still make sense to use it?
 -) channels are not being recorded in the order they are specified in non-rt config file.
 -) include the channel number on the H5 entity when recording.
 

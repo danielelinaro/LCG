@@ -107,7 +107,7 @@ class ComediAnalogOutputSoftCal : public ComediAnalogIOSoftCal {
 public:
         ComediAnalogOutputSoftCal(const char *deviceFile, uint outputSubdevice,
                                   uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE);
+                                  uint aref = GRSE, bool resetOutput = true);
         ~ComediAnalogOutputSoftCal();
         bool initialise();
         double outputConversionFactor() const;
@@ -118,6 +118,7 @@ private:
         comedi_range *m_dataRange;
 #endif
         double m_outputConversionFactor;
+        bool m_resetOutput;
 };
 
 /**
@@ -144,7 +145,7 @@ class ComediAnalogOutputHardCal : public ComediAnalogIO {
 public:
         ComediAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
                                   uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE);
+                                  uint aref = GRSE, bool resetOutput = true);
         ~ComediAnalogOutputHardCal();
         bool initialise();
         double outputConversionFactor() const;
@@ -153,6 +154,7 @@ private:
         comedi_range *m_dataRange;
         lsampl_t m_maxData;
         double m_outputConversionFactor;
+        bool m_resetOutput;
 };
 
 } // namespace lcg

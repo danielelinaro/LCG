@@ -225,21 +225,20 @@ double AnalogyAnalogInputHardCal::read()
 //~~~
 
 AnalogyAnalogOutputHardCal::AnalogyAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
-                                                     uint writeChannel, double outputConversionFactor, uint aref)
+                                                     uint writeChannel, double outputConversionFactor,
+                                                     uint aref, bool resetOutput)
         : AnalogyAnalogIO(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref),
-          m_outputConversionFactor(outputConversionFactor)
+          m_outputConversionFactor(outputConversionFactor), m_resetOutput(resetOutput)
 {
         initialise();
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 AnalogyAnalogOutputHardCal::~AnalogyAnalogOutputHardCal()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 bool AnalogyAnalogOutputHardCal::initialise()
@@ -358,9 +357,9 @@ double AnalogyAnalogInputSoftCal::read()
 
 AnalogyAnalogOutputSoftCal::AnalogyAnalogOutputSoftCal(const char *deviceFile, uint outputSubdevice,
                                                      uint writeChannel, double outputConversionFactor,
-                                                     uint aref)
+                                                     uint aref, bool resetOutput)
         : AnalogyAnalogIOSoftCal(deviceFile, outputSubdevice, &writeChannel, 1, PLUS_MINUS_TEN, aref),
-          m_outputConversionFactor(outputConversionFactor)
+          m_outputConversionFactor(outputConversionFactor), m_resetOutput(resetOutput)
 {
         Logger(Debug, "AnalogyAnalogOutputSoftCal::AnalogyAnalogOutputSoftCal()\n");
         int flag = comedi_get_softcal_converter(m_subdevice, m_channels[0], m_range,
@@ -373,16 +372,14 @@ AnalogyAnalogOutputSoftCal::AnalogyAnalogOutputSoftCal(const char *deviceFile, u
 
 AnalogyAnalogOutputSoftCal::~AnalogyAnalogOutputSoftCal()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
 }
 
 bool AnalogyAnalogOutputSoftCal::initialise()
 {
-#ifdef RESET_OUTPUT
-        write(0.0);
-#endif
+        if (m_resetOutput)
+                write(0.0);
         return true;
 }
 

@@ -125,7 +125,7 @@ class AnalogInput (Entity):
         
 class AnalogOutput (Entity):
     def __init__(self, id, connections, deviceFile, outputSubdevice, writeChannel,
-                 outputConversionFactor, aref, units):
+                 outputConversionFactor, aref, units, resetOutput):
         super(AnalogOutput,self).__init__('AnalogOutput', id, connections)
         self.add_parameter('deviceFile', deviceFile)
         self.add_parameter('outputSubdevice', outputSubdevice)
@@ -133,6 +133,7 @@ class AnalogOutput (Entity):
         self.add_parameter('outputConversionFactor', outputConversionFactor)
         self.add_parameter('aref', aref)
         self.add_parameter('units', units)
+        self.add_parameter('resetOutput', resetOutput)
         
 class Connection (Entity):
     def __init__(self, id, connections, delay):

@@ -26,7 +26,8 @@ class InputChannel (Stream):
         
 class OutputChannel (Stream):
     def __init__(self, id, connections, device, subdevice, channel,
-                 conversionFactor, reference, units, stimulusFile, samplingRate):
+                 conversionFactor, reference, units, stimulusFile, samplingRate,
+                 offset, resetOutput):
         super(OutputChannel,self).__init__('OutputChannel', id, connections)
         self.add_parameter('device', device)
         self.add_parameter('subdevice', subdevice)
@@ -36,3 +37,5 @@ class OutputChannel (Stream):
         self.add_parameter('units', units)
         self.add_parameter('stimfile', stimulusFile)
         self.add_parameter('samplingRate', samplingRate)
+        self.add_parameter('offset', offset)
+        self.add_parameter('resetOutput', resetOutput)

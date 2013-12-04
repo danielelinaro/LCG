@@ -77,7 +77,7 @@ class AnalogyAnalogOutputHardCal : public AnalogyAnalogIO {
 public:
         AnalogyAnalogOutputHardCal(const char *deviceFile, uint outputSubdevice,
                                   uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE);
+                                  uint aref = GRSE, bool resetOutput = true);
         ~AnalogyAnalogOutputHardCal();
         bool initialise();
         double outputConversionFactor() const;
@@ -86,6 +86,7 @@ private:
         comedi_range *m_dataRange;
         lsampl_t m_maxData;
         double m_outputConversionFactor;
+        bool m_resetOutput;
 };
 */
 
@@ -105,7 +106,6 @@ protected:
 
 protected:
         char *m_calibrationFile;
-        //comedi_calibration_t *m_calibration;
 };
 
 /**
@@ -123,7 +123,6 @@ public:
         double read();
 private:
         double m_inputConversionFactor;
-        //comedi_polynomial_t m_converter;
 };
 
 /**
@@ -133,14 +132,14 @@ class AnalogyAnalogOutputSoftCal : public AnalogyAnalogIOSoftCal {
 public:
         AnalogyAnalogOutputSoftCal(const char *deviceFile, uint outputSubdevice,
                                   uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE);
+                                  uint aref = GRSE, bool resetOutput = true);
         ~AnalogyAnalogOutputSoftCal();
         bool initialise();
         double outputConversionFactor() const;
         void write(double data);
 private:
         double m_outputConversionFactor;
-        //comedi_polynomial_t m_converter;
+        bool m_resetOutput;
 };
 
 } // namespace lcg

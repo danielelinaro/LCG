@@ -39,7 +39,8 @@ public:
         AnalogOutput(const char *deviceFile, uint outputSubdevice,
                      uint writeChannel, double outputConversionFactor,
                      uint aref = GRSE,
-                    const std::string& units = "pA",
+                     const std::string& units = "pA",
+                     bool resetOutput = true,
                      uint id = GetId());
         ~AnalogOutput();
         virtual bool initialise();
@@ -48,6 +49,7 @@ public:
         virtual double output();
 private:
         double m_data;
+        bool m_resetOutput;
 #if defined(HAVE_LIBCOMEDI)
         ComediAnalogOutputSoftCal m_output;
 #elif defined(HAVE_LIBANALOGY)
