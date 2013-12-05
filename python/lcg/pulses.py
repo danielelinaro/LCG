@@ -6,114 +6,140 @@ import getopt
 import subprocess as sub
 import lcg
 
+configFile = 'pulses.xml'
+stimFile = 'pulses.stim'
+
 def usage():
+    print('')
+    print('   %s - Inject a train of brief pulses of current in a cell to test connectivity.' % os.path.basename(sys.argv[0]))
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('          -h    display this help message and exit.')
-    print('          -f    frequency of the stimulation.')
-    print('          -O    output channel.')
-    print('          -I    input channels (in the form 0,1 where 0 and 1 are')
-    print('                the channels corresponding to the pre-synaptic and')
-    print('                post-synaptic neurons, respectively).')
-    print('          -n    number of pulses (default 10).')
-    print('          -F    sampling frequency (default 15000).')
-    print('          -d    stimulation duration (default 1 ms).')
-    print('          -a    stimulation amplitude (default 4000 pA).')
-    print('          -N    number of repetitions (default 10).')
-    print('          -i    interval between repetitions (default 10 s).')
-    print(' --no-kernel    do not compute the kernel.')
-    print('    --non-rt    use the non-real-time version of the software.')
+    print('            -h    display this help message and exit.')
+    print('            -f    frequency of the stimulation.')
+    print('            -O    output channel.')
+    print('            -I    input channels (in the form 0,1 where 0 and 1 are the channels corresponding to the pre- and post-synaptic cell).')
+    print('            -n    number of pulses in the train (default 10).')
+    print('            -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('            -d    stimulation duration (default 1 ms).')
+    print('            -A    stimulation amplitude.')
+    print('            -N    number of repetitions of the stimulation (default 10).')
+    print('            -i    interTrialInterval between repetitions (default 10 s).')
+    print('            -b    time before the beginning of the stimulation (default 0.5 s).')
+    print('            -a    time after the end of the stimulation (default 1 s).')
+    print('            -p    duration of the pause between the last pulse in the train and the recovery one (default 0.5 s).')
+    print('   --no-kernel    do not compute the computeKernel.')
+    print(' --no-recovery    do not include a recovery pulse in the stimulation.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hN:n:f:F:d:a:I:O:', ['help','non-rt','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hN:n:f:F:d:A:b:a:p:I:O:i:', ['help','no-kernel','no-recovery'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(1)
 
-    fstim = None
-    ao = None
-    ai = []
+    stimulusFrequency = None        # [Hz]
+    analogOutput = None
+    analogInput = []
+    stimulusAmplitude = None      # [pA]
 
-    trials = 10
-    npulses = 10
-    fsampl = 15000
-    stimfile = 'pulses.stim'
-    stimdur = 1
-    stimamp = 4000
-    interval = 10
-    nonrt = False
-    kernel = True
+    nTrials = 10
+    nPulses = 10
+    samplingRate = float(os.environ['SAMPLING_RATE'])  # [Hz]
+    stimulusDuration = 1         # [ms]
+    interTrialInterval = 10       # [s]
+    computeKernel = True
+    withRecovery = True
+    pre = 0.5           # [s]
+    post = 1            # [s]
+    pause = 0.5         # [s]
 
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
             sys.exit(0)
         elif o == '-N':
-            trials = int(a)
+            nTrials = int(a)
         elif o == '-n':
-            npulses = int(a)
+            nPulses = int(a)
         elif o == '-f':
-            fstim = float(a)
+            stimulusFrequency = float(a)
         elif o == '-F':
-            fsampl = float(a)
+            samplingRate = float(a)
         elif o == '-d':
-            stimdur = float(a)
-        elif o == '-a':
-            stimamp = float(a)
+            stimulusDuration = float(a)
+        elif o == '-A':
+            stimulusAmplitude = float(a)
         elif o == '-i':
-            interval = float(a)
+            interTrialInterval = float(a)
+        elif o == '-b':
+            pre = float(a)
+        elif o == '-a':
+            post = float(a)
+        elif o == '-p':
+            pause = float(a)
         elif o == '-I':
-            ai = []
+            analogInput = []
             for ch in a.split(','):
-                ai.append(int(ch))
+                analogInput.append(int(ch))
         elif o == '-O':
-            ao = int(a)
-        elif o == '--non-rt':
-            nonrt=True
+            analogOutput = int(a)
         elif o == '--no-kernel':
-            kernel=False
+            computeKernel = False
+        elif o == '--no-recovery':
+            withRecovery = False
 
-    
-    if fstim == None:
-        print('You must specify the stimulation frequency.')
-        usage()
+    if stimulusFrequency == None:
+        print('You must specify the stimulation frequency (-f switch).')
         sys.exit(1)
 
-    if len(ai) != 2:
-        print('You must specify the input channels.')
-        usage()
+    if len(analogInput) != 2:
+        print('You must specify the input channels (-I switch).')
         sys.exit(1)
 
-    if ao == None:
-        print('You must specify the output channel.')
-        usage()
+    if analogOutput == None:
+        print('You must specify the output channel (-O switch).')
         sys.exit(1)
 
-    if not nonrt:
-        if kernel:
-            sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) + ' -O ' + str(ao), shell=True)
+    if stimulusAmplitude is None:
+        print('You must specify the amplitude of the stimulation (-A switch)')
+        sys.exit(1)
 
-        sub.call('cclamprc_write -e -o -c ' + str(ao), shell=True)
-        sub.call('cclamprc_write -i -c ' + str(ai[0]), shell=True)
-        sub.call('cclamprc_write -i -c ' + str(ai[1]), shell=True)
+    if interTrialInterval <= 0:
+        print('The interTrialInterval between repetitions must be positive.')
+        sys.exit(1)
 
-        lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
+    if pre <= 0:
+        print('The interTrialInterval before the beginning of the stimulation must be positive.')
+        sys.exit(1)
 
-        sub.call('lcg vcclamp -f ' + stimfile + ' -n ' + str(trials) + ' -i ' + str(interval), shell=True)
-    else:
-        if kernel:
-            sub.call('lcg kernel -a -F ' + str(fsampl) + ' -I ' + str(ai[0]) 
-                     + ' -O ' + str(ao) + ' --non-rt', shell=True)
-        fname = 'pulses.cfg'
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai[0])+',' + str(ai[1]) + ' --non-rt -f '+ fname, shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao)+' -p ' + stimfile + ' --non-rt -f '+ fname, shell=True)
-        lcg.writePulsesStimFile(fstim, stimdur, stimamp, npulses, delay=1, withRecovery=True, filename=stimfile)
+    if post <= 0:
+        print('The interTrialInterval after the end of the stimulation must be positive.')
+        sys.exit(1)
 
-        sub.call('lcg-non-rt -c ' + fname + ' -n ' + str(trials) + ' -i ' + str(interval) + ' -F ' + str(fsampl), shell=True)
+    if withRecovery and pause <= 0:
+        print('The interTrialInterval between pulse train and recovery pulse must positive.')
+        sys.exit(1)
 
+    if computeKernel:
+        sub.call('lcg computeKernel -a -F ' + str(samplingRate) + ' -I ' + str(analogInput[0]) + ' -O ' + str(analogOutput) + ' --non-rt', shell=True)
+
+    stim = [[pre,1,0,0,0,0,0,0,0,0,0,1],
+            [nPulses/stimulusFrequency,8,stimulusAmplitude,-stimulusFrequency,stimulusDuration,0,0,0,0,0,0,1]]
+    if withRecovery:
+        stim.append([pause-(1./stimulusFrequency-stimulusDuration*1e-3),1,0,0,0,0,0,0,0,0,0,1])
+        stim.append([stimulusDuration*1e-3,1,stimulusAmplitude,0,0,0,0,0,0,0,0,1])
+    stim.append([post,1,0,0,0,0,0,0,0,0,0,1])
+    totalDuration = lcg.writeStimFile(stimFile, stim, False)
+    channels = [{'type':'input', 'channel':analogInput[0]},{'type':'input', 'channel':analogInput[1]},
+                {'type':'output', 'channel':analogOutput, 'stimfile':stimFile}]
+    lcg.writeIOConfigurationFile(configFile,samplingRate,totalDuration,channels)
+
+    for i in range(nTrials):
+        sub.call(lcg.common.prog_name + ' -c ' + configFile,shell=True)
+        if i < nTrials-1:
+            sub.call('sleep',shell=True)
 
 if __name__ == '__main__':
     main()

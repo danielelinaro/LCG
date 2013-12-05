@@ -6,7 +6,7 @@ _lcg()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    subcommands="annotate ap correlations cv experiment extracellular fclamp fi fopt help kernel ltpltd non-rt ou output pspopt pulse pulses pulses-with-level ramp rate-steps rcwrite sinusoids steps stimgen tau test_daq vcclamp vi zero"
+    subcommands="annotate ap correlations cv experiment extracellular fclamp fi fopt help kernel ltpltd non-rt ou output pspopt pulse pulses pulses-with-level ramp rate-steps rcwrite sinusoids steps stimgen tau test-daq vcclamp vi zero"
     case "$prev" in
 	"lcg"|"help")
             COMPREPLY=( $(compgen -W "${subcommands}" -- $cur) )
