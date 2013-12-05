@@ -12,16 +12,16 @@ stimuli_directory = 'stimuli'
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -a    stimulation amplitudes (start,[stop,step])')
-    print('     -d    stimulation duration (default 1 sec)')
-    print('     -t    tail duration (0 pA of output after the stimulation, default 1 sec)')
+    print('     -a    stimulation amplitudes (start,[stop,step] pA)')
+    print('     -d    stimulation duration (default 1 s)')
+    print('     -t    tail duration (0 pA of output after the stimulation, default 1 s)')
     print('     -n    number of repetitions of each amplitude (default 1)')
     print('     -i    interval between repetitions (default 1 s)')
     print('\nAcquisition options:')
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
-    print('     -F    sampling frequency (default 20000)')
-    print('     -H    holding (default 0)')
+    print('     -F    sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
+    print('     -H    holding (default 0 pA)')
     print('\nAdditional options:')
     print(' --with-preamble   include stability preamble.')
     print(' --no-shuffle      do not shuffle trials.')
@@ -37,7 +37,7 @@ def main():
 
     ao = 0
     ai = 0
-    samplf = 20000    # [Hz]
+    samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
     holding = 0    # [pA]
     with_preamble = False
     shuffle = True

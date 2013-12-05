@@ -22,7 +22,7 @@ def usage():
     print('     -T    Duration of the protocol (default 30 sec).')
     print('     -n    Number of repetitions (default 1).')
     print('     -w    Interval between repetitions (default 60 sec).')
-    print('     -F    Sampling rate (default 20000 Hz).')
+    print('     -F    Sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -I    Input channel (default 0).')
     print('     -O    Output channel (default 0).')
     print('')
@@ -37,7 +37,7 @@ def parseArgs():
 
     options = {'amplitude': None, 'max_freq': 30, 'min_freq': 5,
                'gp': 0.001, 'gi': 1, 'gd': 0, 'tau': 1, 'duration': 30,
-               'trials': 1, 'interval': 60, 'sampling_rate': 20000, 'ai': 0, 'ao': 0}
+               'trials': 1, 'interval': 60, 'sampling_rate': float(os.environ['SAMPLING_RATE']), 'ai': 0, 'ao': 0}
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -84,9 +84,9 @@ def writeFiles(options):
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
+                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.PID(id=2, connections=(0,1), baseline=options['amplitude'],
                                        gp=options['gp'], gi=options['gi'], gd=options['gd']))

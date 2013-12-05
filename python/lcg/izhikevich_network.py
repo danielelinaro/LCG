@@ -17,7 +17,7 @@ def usage():
     print('\n\033[94mThe global options are:\033[0m')
     print('\033[92m     -n  \033[0m  number of repetitions (default 100)')
     print('\033[92m     -i  \033[0m  interval between repetitions (default 1 s)')
-    print('\033[92m     -F  \033[0m  sampling frequency (default 20000)')
+    print('\033[92m     -F  \033[0m  sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('\033[92m     -N  \033[0m  number of neurons (use commas to separate between types)')
     print('\033[92m     -s  \033[0m  number of synapses (randomly picked from all neurons)')
     print('\033[92m     -w  \033[0m  synaptic weight')
@@ -51,7 +51,7 @@ def parseGlobalArgs():
 
     options = {'nreps': 1,
                'interval': 3,   # [s]
-               'srate':20000,
+               'srate':float(os.environ['SAMPLING_RATE']),
                'tend':1,
                'N':[20,5,5],
                'a':[[0.019,0.021],[0.02,0.021],[0.08,0.11]],
@@ -286,11 +286,11 @@ def main():
                                    'deviceFile':'/dev/comedi0',
                                    'inputSubdevice':os.environ['AI_SUBDEVICE'],
                                    'outputSubdevice':os.environ['AO_SUBDEVICE'],
-                                   'inputRange': '[-10,+10]',
-                                   'readChannel': opts['ai'],
-                                   'writeChannel': opts['ao'],
-                                   'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR'],
-                                   'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR'],
+                                   'inputRange':os.environ['RANGE'],
+                                   'readChannel':opts['ai'],
+                                   'writeChannel':opts['ao'],
+                                   'inputConversionFactor':os.environ['AI_CONVERSION_FACTOR_CC'],
+                                   'outputConversionFactor':os.environ['AO_CONVERSION_FACTOR_CC'],
                                    'holdLastValue':True,
                                    'reference':os.environ['GROUND_REFERENCE']})
         connections = rn_syn_p[np.where(rn_syn_p[:,1]==real_neuron)[0],0]

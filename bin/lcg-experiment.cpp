@@ -14,6 +14,7 @@
 #include "waveform.h"
 #include "engine.h"
 #include "recorders.h"
+#include "stream.h"
 
 #include "sha1.h"
 
@@ -54,7 +55,7 @@ static struct option longopts[] = {
         {NULL, 0, NULL, 0}
 };
 
-const char lcg_vcclamp_usage_string[] =
+const char lcg_experiment_usage_string[] =
         "This program performs closed loop, hybrid, dynamic-clamp experiments: you name it, we got it...\n\n"
         "Usage: lcg experiment [<options> ...]\n"
         "where options are:\n"
@@ -68,7 +69,7 @@ const char lcg_vcclamp_usage_string[] =
 
 static void usage()
 {
-        printf("%s\n", lcg_vcclamp_usage_string);
+        printf("%s\n", lcg_experiment_usage_string);
 }
 
 void parse_args(int argc, char *argv[], options *opts)
@@ -133,13 +134,16 @@ void parse_args(int argc, char *argv[], options *opts)
         opts->iti = (useconds_t) (1e6 * iti);
 }
 
-int parse_configuration_file(const std::string& filename, std::vector<Entity*>& entities, double *tend, double *dt)
+int parse_configuration_file(const std::string& filename,
+                             std::vector<Entity*>& entities, std::vector<Stream*>& streams,
+                             double *tend, double *dt)
 {
         ptree pt;
         uint id;
         std::string name, conn;
         std::map< uint, std::vector<uint> > connections;
         std::map< uint, Entity* > ntts;
+        std::map< uint, Stream* > strms;
 
         try {
                 read_xml(filename, pt);
@@ -166,61 +170,95 @@ int parse_configuration_file(const std::string& filename, std::vector<Entity*>& 
                 SetRunTime(*tend);
 
                 /*** entities ***/
-                BOOST_FOREACH(ptree::value_type &ntt, pt.get_child("lcg.entities")) {
-                        string_dict args;
-                        name = ntt.second.get<std::string>("name");
-                        id = ntt.second.get<uint>("id");
-                        if (ntts.count(id) == 1) {
-                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
-                                entities.clear();
-                                return -1;
-                        }
-                        args["id"] = ntt.second.get<std::string>("id");
-                        BOOST_FOREACH(ptree::value_type &pars, ntt.second.get_child("parameters")) {
-                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
-                                        args[pars.first] = std::string(pars.second.data());
-                        }
+                const char *children[2] = {"lcg.entities","lcg.streams"};
+                for (int i=0; i<2; i++) {
                         try {
-                                conn = ntt.second.get<std::string>("connections");
-                                // this test allows to have <connections></connections> in the configuration file
-                                if (conn.length() > 0) {
-                                        connections[id] = std::vector<uint>();
-                                        size_t start=0, stop;
-                                        int post;
-                                        Logger(Debug, "Entity #%d is connected to entities", id);
-                                        while ((stop = conn.find(",",start)) != conn.npos) {
-                                                std::stringstream ss(conn.substr(start,stop-start));
-                                                ss >> post;
-                                                connections[id].push_back(post);
-                                                start = stop+1;
-                                                Logger(Debug, " #%d", post);
+                                BOOST_FOREACH(ptree::value_type &vt, pt.get_child(children[i])) {
+                                        string_dict args;
+                                        name = vt.second.get<std::string>("name");
+                                        id = vt.second.get<uint>("id");
+                                        if (ntts.count(id) == 1 || strms.count(id) == 1) {
+                                                Logger(Critical, "Duplicate ID in configuration file: [%d].\n", id);
+                                                entities.clear();
+                                                return -1;
                                         }
-                                        std::stringstream ss(conn.substr(start,stop-start));
-                                        ss >> post;
-                                        connections[id].push_back(post);
-                                        Logger(Debug, " #%d.\n", post);
+                                        args["id"] = vt.second.get<std::string>("id");
+                                        BOOST_FOREACH(ptree::value_type &pars, vt.second.get_child("parameters")) {
+                                                if (pars.first.substr(0,12).compare("<xmlcomment>") != 0)
+                                                        args[pars.first] = std::string(pars.second.data());
+                                        }
+                                        try {
+                                                conn = vt.second.get<std::string>("connections");
+                                                // this test allows to have <connections></connections> in the configuration file
+                                                if (conn.length() > 0) {
+                                                        connections[id] = std::vector<uint>();
+                                                        size_t start=0, stop;
+                                                        int post;
+                                                        Logger(Debug, "Entity #%d is connected to entities", id);
+                                                        while ((stop = conn.find(",",start)) != conn.npos) {
+                                                                std::stringstream ss(conn.substr(start,stop-start));
+                                                                ss >> post;
+                                                                connections[id].push_back(post);
+                                                                start = stop+1;
+                                                                Logger(Debug, " #%d", post);
+                                                        }
+                                                        std::stringstream ss(conn.substr(start,stop-start));
+                                                        ss >> post;
+                                                        connections[id].push_back(post);
+                                                        Logger(Debug, " #%d.\n", post);
+                                                }
+                                        } catch(std::exception e) {
+                                                Logger(Debug, "No connections for entity #%d.\n", id);
+                                        }
+                                        if (i == 0) {
+                                                Entity *entity;
+                                                try {
+                                                        entity = EntityFactory(name.c_str(), args);
+                                                        if (entity == NULL)
+                                                                throw "Entity factory is missing";
+                                                } catch(const char *err) {
+                                                        Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
+                                                        for (int i=0; i<entities.size(); i++)
+                                                                delete entities[i];
+                                                        entities.clear();
+                                                        return -1;
+                                                }
+                                                entities.push_back(entity);
+                                                ntts[id] = entity;
+                                        }
+                                        else {
+                                                Stream *stream;
+                                                try {
+                                                        stream = StreamFactory(name.c_str(), args);
+                                                        if (stream == NULL)
+                                                                throw "Stream factory is missing";
+                                                } catch(const char *err) {
+                                                        Logger(Critical, "Unable to create stream [%s]: %s.\n", name.c_str(), err);
+                                                        for (int i=0; i<entities.size(); i++)
+                                                                delete entities[i];
+                                                        entities.clear();
+                                                        for (int i=0; i<streams.size(); i++)
+                                                                delete streams[i];
+                                                        streams.clear();
+                                                        return -1;
+                                                }
+                                                streams.push_back(stream);
+                                                strms[id] = stream;
+                                        }
                                 }
-                        } catch(std::exception e) {
-                                Logger(Debug, "No connections for entity #%d.\n", id);
+        
+                                if (i == 0) {
+                                        EntitySorter sorter;
+                                        std::sort(entities.begin(), entities.end(), sorter);
+                                }
+                                else {
+                                        StreamSorter sorter;
+                                        std::sort(streams.begin(), streams.end(), sorter);
+                                }
+                        } catch (...) {
+                                Logger(Debug, "No children %s.\n", children[i]);
                         }
-                        Entity *entity;
-                        try {
-                                entity = EntityFactory(name.c_str(), args);
-                                if (entity == NULL)
-                                        throw "Entity factory is missing";
-                        } catch(const char *err) {
-                                Logger(Critical, "Unable to create entity [%s]: %s.\n", name.c_str(), err);
-                                for (int i=0; i<entities.size(); i++)
-                                        delete entities[i];
-                                entities.clear();
-                                return -1;
-                        }
-                        entities.push_back(entity);
-                        ntts[id] = entity;
                 }
-
-                EntitySorter sorter;
-                std::sort(entities.begin(), entities.end(), sorter);
 
                 /*** connections ***/
                 uint idPre, idPost;
@@ -231,6 +269,15 @@ int parse_configuration_file(const std::string& filename, std::vector<Entity*>& 
                                 idPost = connections[idPre][j];
                                 entities[i]->connect(ntts[idPost]);
                                 Logger(Debug, "Connecting entity #%d to entity #%d.\n", idPre, idPost);
+                        }
+                }
+                for (int i=0; i<streams.size(); i++) {
+                        idPre = streams[i]->id();
+                        Logger(Debug, "Id = %d.\n", idPre);
+                        for (int j=0; j<connections[idPre].size(); j++) {
+                                idPost = connections[idPre][j];
+                                streams[i]->connect(strms[idPost]);
+                                Logger(Debug, "Connecting stream #%d to stream #%d.\n", idPre, idPost);
                         }
                 }
 
@@ -317,6 +364,182 @@ int sha1(const char *filename, unsigned *messageDigest)
             Logger(Important, "Could not compute SHA-1 digest for [%s]\n", filename);
             return -1;
         }
+        return 0;
+}
+
+int store(int argc, char *argv[])
+{
+        ptree pt;
+
+        // find the most recent H5 file
+        DIR *dirp = opendir(".");
+        if (dirp == NULL) {
+                Logger(Important, "Unable to open current directory for traversing the files.\n");
+                return -1;
+        }
+        else {
+                Logger(Debug, "Traversing the files in the current directory.\n");
+        }
+
+        struct dirent *dp;
+        char latest_h5_file[32] = {0};
+        while ((dp = readdir(dirp)) != NULL) {
+                if (dp->d_name[0] != '.' && !strcmp(dp->d_name+strlen(dp->d_name)-3, ".h5")) {
+                        if (!strlen(latest_h5_file))
+                                strcpy(latest_h5_file, dp->d_name);
+                        else if (strcmp(dp->d_name, latest_h5_file) > 0)
+                                strcpy(latest_h5_file, dp->d_name);
+                }
+        }
+        Logger(Debug, "Most recent file: %s\n", latest_h5_file);
+        closedir(dirp);
+        
+        int flag, i;
+        char directory[128], path[128] = {0}, config_file[128] = {0};
+
+        sprintf(directory, "%s/%s", LCG_DIR, latest_h5_file);
+        directory[strlen(directory)-3] = 0;
+
+        // create an invisible directory where all data will be stored
+        flag = mkdir(LCG_DIR, 0755);
+        if (flag == 0) {
+                Logger(Debug, "Created directory [%s].\n", LCG_DIR);
+        }
+        else {
+                if (errno == EEXIST) {
+                        Logger(Debug, "mkdir: [%s]: directory exists.\n", LCG_DIR);
+                }
+                else {
+                        Logger(Important, "mkdir: [%s]: %s.\n", LCG_DIR, strerror(errno));
+                        return -1;
+                }
+        }
+        
+        flag = mkdir(directory, 0755);
+        if (flag == 0) {
+                Logger(Debug, "Created directory [%s].\n", directory);
+        }
+        else {
+                // either the directory exists already or there's been an error: in the first
+                // case we continue, otherwise we stop here.
+                if (errno == EEXIST) {
+                        Logger(Debug, "mkdir: [%s]: directory exists.\n", directory);
+                }
+                else {
+                        Logger(Important, "mkdir: [%s]: %s.\n", directory, strerror(errno));
+                        return -1;
+                }
+        }
+
+        // write a very simple script that runs lcg again with the options used for calling it now
+        sprintf(path, "%s/%s", directory, REPLAY_SCRIPT);
+        FILE *fid = fopen(path, "w");
+        if (fid == NULL) {
+                Logger(Important, "Unable to create file [%s].\n", path);
+                return -1;
+        }
+        fprintf(fid, "#!/bin/bash\n");
+        for (i=0; i<argc; i++) {
+                fprintf(fid, "%s ", argv[i]);
+                if (strncmp(argv[i], "-c", 2) == 0) { // switch for the configuration file: the next argument is the name of the XML configuration file
+                        sprintf(config_file, "%s/%s", directory, argv[i+1]);
+                        if (cp(config_file, argv[i+1]) == 0) {
+                                Logger(Debug, "Copied file [%s] to directory [%s].\n",
+                                                argv[i+1], directory);
+                        }
+                        else {
+                                Logger(Important, "Unable to copy configuration file [%s] to directory [%s].\n",
+                                                argv[i+1], directory);
+                                return -1;
+                        }
+                }
+        }
+        fprintf(fid, "-r 0\n"); // turn enable replay off, so that a .lcg directory is not created when replaying the experiment
+        fclose(fid);
+        chmod(path, 0755);
+        Logger(Debug, "Written file [%s/%s].\n", directory, REPLAY_SCRIPT);
+
+        // copy the stim files to the directory 
+        try {
+                read_xml(config_file, pt);
+                const char *children[2] = {"lcg.entities","lcg.streams"};
+                const char *parameter_names[2] = {"parameters.filename","parameters.stimfile"};
+                for (int i=0; i<2; i++) {
+                        try {
+                                BOOST_FOREACH (ptree::value_type &vt, pt.get_child(children[i])) {
+                                        if (vt.second.get<std::string>("name").compare("Waveform") == 0 ||
+                                            vt.second.get<std::string>("name").compare("OutputChannel") == 0) {
+                                                char src[128] = {0}, dest[128] = {0};
+                                                strcpy(src, vt.second.get<std::string>(parameter_names[i]).c_str());
+                                                sprintf(dest, "%s/%s", directory, src);
+                                                if (cp(dest, src) == 0) {
+                                                        Logger(Debug, "Copied stimulus file [%s] to directory [%s].\n",
+                                                                        src, directory);
+                                                }
+                                                else {
+                                                        Logger(Important, "Unable to copy stimulus file [%s] to directory [%s].\n",
+                                                                        src, directory);
+                                                }
+                                        }
+                                }
+                        } catch (...) {}
+                }
+        } catch (...) {
+                Logger(Critical, "Unable to read the configuration file [%s].\n", config_file);
+        }
+
+        // compute the hash for the H5 file and for all files in the directory
+        unsigned md[5];
+        sprintf(path, "%s/%s", directory, HASHES_FILE);
+
+        struct stat buf;
+        if (stat(path, &buf) == 0) {
+                // the file already exists, we need to change its access mode
+                chmod(path, 0644);
+                Logger(Debug, "[%s] already exists, changing its access mode to 0644\n", path);
+        }
+
+        fid = fopen(path, "w");
+        if (fid == NULL) {
+                Logger(Important, "Unable to create hashes file [%s].\n", path);
+                return -1;
+        }
+        else {
+                Logger(Debug, "Successfully created hashes file [%s].\n", path);
+        }
+
+        if (sha1(latest_h5_file, md) == 0)
+                fprintf(fid, "%08x%08x%08x%08x%08x *../../%s\n", md[0], md[1], md[2], md[3], md[4], latest_h5_file);
+        else
+                Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", latest_h5_file);
+
+        dirp = opendir(directory);
+        if (dirp == NULL) {
+                Logger(Important, "Unable to open directory [%s] for traversing the files.\n", directory);
+                fclose(fid);
+                return -1;
+        }
+        else {
+                Logger(Debug, "Traversing the files in directory [%s].\n", directory);
+        }
+
+        while ((dp = readdir(dirp)) != NULL) {
+                if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
+                        sprintf(path, "%s/%s", directory, dp->d_name);
+                        if (sha1(path, md) == 0)
+                                fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], dp->d_name);
+                        else
+                                Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", path);
+                }
+        }
+
+        closedir(dirp);
+        fclose(fid);
+
+        // change the access mode of the hashes file to read-only
+        sprintf(path, "%s/%s", directory, HASHES_FILE);
+        chmod(path, 0444);
+
         return 0;
 }
 
@@ -495,9 +718,9 @@ int main(int argc, char *argv[])
         int success;
         double tend, dt;
         std::vector<Entity*> entities;
-        lcg::generators::Waveform *stimulus;
+        std::vector<Stream*> streams;
 
-        if (parse_configuration_file(opts.configFile, entities, &tend, &dt) != 0) {
+        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt) != 0) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
@@ -510,11 +733,14 @@ int main(int argc, char *argv[])
         for (int i=0; i<opts.nTrials; i++) {
                 Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
                 ResetGlobalTime();
-                success = Simulate(&entities,tend);
+                if (!entities.empty())
+                        success = Simulate(&entities,tend);
+                else
+                        success = Simulate(&streams,tend);
                 if (success!=0 || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)
-                        store(argc, argv, entities);
+                        store(argc, argv);
                 if (i != opts.nTrials-1)
                         usleep(opts.iti);
         }
@@ -522,6 +748,8 @@ int main(int argc, char *argv[])
 endMain:
         for (int i=0; i<entities.size(); i++)
                 delete entities[i];
+        for (int i=0; i<streams.size(); i++)
+                delete streams[i];
 
         return 0;
 }

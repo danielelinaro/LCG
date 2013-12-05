@@ -19,8 +19,7 @@ __all__ = ['writePulsesStimFile','writeIPlusBgGConfig', 'writeGainModulationConf
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
            'computeRatesRatio', 'computeSynapticBackgroundCoefficients','computeElectrodeKernel',
-           'findSpikes','loadH5Trace',
-           'lcg_xml']
+           'findSpikes','loadH5Trace', 'lcg_xml']
 
 import common
 import utils
@@ -28,7 +27,7 @@ from utils import writePulsesStimFile, writeIPlusBgGConfig, writeGainModulationC
     writeSpontaneousConfig, writePulsesStimFile, writefIStim, writeNoisyBackgroundConfig, writeGStimFiles, \
     writeStimFile, computeRatesRatio, computeSynapticBackgroundCoefficients, computeElectrodeKernel, \
     findSpikes, loadH5Trace
-from config_writer import XMLConfigurationFile
+from config_writer import XMLConfigurationFile, writeIOConfigurationFile
 import entities
-
+import streams
 

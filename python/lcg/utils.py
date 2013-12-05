@@ -17,7 +17,7 @@ def conductanceBurstStim(dur, g, tau, R0, dR, Tb, taub):
         stim.append([0, -4, g*tau_sec*dR, 1, taub, 0, g*tau_sec*R0, 0, 0, 12, 1, 1])
     return stim
 
-def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename='pulses.stim'):
+def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulsesInBurst=1, withRecovery=True, filename='pulses.stim'):
     """
     Writes a stimulation file containing a series of pulses, with an optional "recovery" pulse.
     
@@ -27,6 +27,7 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename=
                amp - amplitude of the stimulation
                  N - number of repetitions
              delay - initial and final delay
+     pulsesInBurst - number of pulses in each group
       withRecovery - whether or not to include a recovery pulse
           filename - file to write to
 
@@ -34,19 +35,18 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, withRecovery=True, filename=
        The duration of the stimulation.
 
     """
-    dur = dur*1e-3
     stimulus = [[delay,1,0,0,0,0,0,0,5061983,0,0,1]]
-    T = 1./f - dur
-    for i in range(N):
-        stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
-        if i != N-1:
-            stimulus.append([T,1,0,0,0,0,0,0,5061983,0,0,1])
+    if type(f) != list:
+        f = [f]
+    if len(f) == 1:
+        f = f*2
+    stimulus.append([N/f[1],-2,amp,-f[0],dur,0,0,0,5061983,8,0,1])
+    stimulus.append([0,-2,1,-f[1],pulsesInBurst*(1000./f[0]),0,0,0,5061983,8,2,1])
     if withRecovery:
         stimulus.append([0.5,1,0,0,0,0,0,0,5061983,0,0,1])
         stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
     stimulus.append([delay,1,0,0,0,0,0,0,5061983,0,0,1])
     dur = writeStimFile(filename, stimulus, False)
-    print('The total duration of the stimulus is %g sec.' % dur)
     return dur
 
 def writeStimFile(filename, stimulus, preamble=None):
@@ -336,7 +336,7 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
             if len(interval) != 2:
                 idx = np.nonzero(ntt['metadata'][:,0] > 5)[0][0]
                 interval = stimtimes[idx-1:idx+1]
-        elif ntt['name'] == 'AnalogInput' and ntt['units'] == 'mV':
+        elif (ntt['name'] == 'AnalogInput' or ntt['name'] == 'InputChannel') and ntt['units'] == 'mV':
             V = ntt['data']
     t = np.arange(len(V)) * info['dt']
     idx = np.intersect1d(np.nonzero(t >= interval[0])[0], np.nonzero(t <= interval[1])[0])
@@ -354,6 +354,9 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     while True:
         try:
             startTail = int(raw_input('Enter index of tail start (1 ms = %d samples): ' % int(1e-3/info['dt'])))
+            if startTail >= len(K):
+                print('The index must be smaller than %d.' % len(K))
+                continue
         except:
             continue
         Ke,Km = aec.electrode_kernel(K,startTail,True)
@@ -386,7 +389,7 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
         plt[1].set_ylabel('V (mV)')
         plt[1].legend(loc='best')
         fig.show()
-        # Ask user on what to do
+        # Ask user what to do
         ok = raw_input('Ke[-1] / max(Ke) = %.2f %%. Ok? [Y/n] ' % (Ke[-1]/np.max(Ke)*100))
         if len(ok) == 0 or ok.lower() == 'y' or ok.lower() == 'yes':
             break

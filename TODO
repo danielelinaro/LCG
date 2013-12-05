@@ -1,12 +1,16 @@
 
+=== Urgent
+
+-) where is LOGFILE used and does it still make sense to use it?
+-) channels are not being recorded in the order they are specified in non-rt config file.
+-) include the channel number on the H5 entity when recording.
+
 === Short term (and therefore relatively simple) ===
 
--) control output trimming in comedi_io.cpp
--) remove useless scripts!
--) analog output should also be proxied in asynchronous mode.
--) add a Logger object.
+-) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
+-) control output trimming in comedi_io.cpp.
 -) finish to add the ionic currents for LTS neurons.
--) Add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
+-) add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
 
 === Long term (and therefore possibly complicated) ===
 
@@ -19,4 +23,5 @@ Modify the random library to have one base class for UniformRandom and two subcl
 >> Use a buffer also for the SW implementation of random number generators (i.e., in UniformRandom) ? <<
 
 >> Allow AnalogOutput and AnalogInput objects to be executed only at half the realtime sampling rate (e.g. acquiring 2 samples every time and stepping half the times).
+
 

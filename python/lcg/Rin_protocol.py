@@ -17,7 +17,7 @@ def usage():
     print('     -D    total duration (default 60 s)')
     print('     -I    input channel (default 0)')
     print('     -O    output channel (default 0)')
-    print('     -F    sampling frequency (default 20000 Hz)')
+    print('     -F    sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
 
     print('\nThe option --poisson allows to specify that the intervals between')
     print('pulses should be distributed as a Poisson distribution.')
@@ -37,7 +37,7 @@ def main():
     duration = 60           # [s]
     ai = 0
     ao = 0
-    srate = 20000
+    srate = float(os.environ['SAMPLING_RATE'])
     poisson = False
 
     for o,a in opts:

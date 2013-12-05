@@ -6,6 +6,8 @@ import getopt
 import subprocess as sub
 import lcg
 from time import sleep
+import glob
+import aec
 
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
@@ -17,17 +19,18 @@ def usage():
     print('\033[92m     -t  \033[0m  time constant (default 5 ms)')
     print('\033[92m     -m  \033[0m  mean (default 0 pA)')
     print('\033[92m     -d  \033[0m  duration of the noisy stimulus (default 60 s)')
-    print('\033[92m     -D  \033[0m  duration of the trial (default 65 s)')
-    print('\033[92m     -H  \033[0m  holding current "kernel, trial"  (default 0pA for both)')
+    print('\033[92m     -D  \033[0m  duration of the "tail" (default 1 s)')
+    print('\033[92m     -H  \033[0m  holding current "kernel, trial"  (default 0 pA for both)')
     print('\033[92m     -I  \033[0m  input channels separated by commas (default 0)')
     print('\033[92m     -O  \033[0m  output channels separated by commas (default 0)')
-    print('\033[92m     -F  \033[0m  sampling frequency (default 20000)')
+    print('\033[92m     -F  \033[0m  sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('\033[92m     --no-kernel  \033[0m  do not compute the kernel.')
+    print('\033[92m     --no-report  \033[0m  do not report statistics.')
     print('\033[92m     --with-preamble  \033[0m  includes a stability preamble.')
 
 
-switches = 'n:I:O:F:i:t:m:d:s:H:'
-long_switches = ['no-kernel','with-preamble']
+switches = 'n:I:O:F:i:t:D:m:d:s:H:'
+long_switches = ['no-kernel','with-preamble','no-report']
 
 def parseArgs():
     '''
@@ -44,15 +47,16 @@ def parseArgs():
                'interval': 30,   # [s]
                'ai': [0],
                'ao': [0],
-               'srate':20000,
+               'srate':float(os.environ['SAMPLING_RATE']),
                'holding':[0,0],
                'std':[135],
                'mean':[0],
                'tau':[5],
                'duration':60,
-               'tail':63,
+               'tail':1,
                'kernel':True,
-               'preamble':False}
+               'preamble':False,
+               'report':True}
                
     for o,a in opts:
         if o == '-n':
@@ -79,6 +83,8 @@ def parseArgs():
             options['srate'] = float(a)
         elif o == '--no-kernel':
             options['kernel'] = False
+        elif o == '--no-report':
+            options['report'] = False
         elif o == '--with-preamble':
             options['preamble'] = True
     options['tail'] = options['tail']-options['duration']
@@ -100,6 +106,27 @@ def create_ou_stimulus(m,s,t,d,tail,preamble):
     stimulus.append([tail,1,0,0,0,0,0,0,0,0,0,1])
     return stimulus
 
+def analyse_last_file():
+    '''
+    Extracts the spiketrain statistics from the last file.
+    '''
+    files = glob.glob('*.h5')
+    files.sort()
+    data_file = files[-1]
+    ent,info = lcg.loadH5Trace(data_file)
+    V = ent[1]['data']
+    I = ent[0]['data']
+    kernel_file = glob.glob('*.dat')
+    kernel_file.sort()
+    if len(kernel_file):
+        kernel_file = kernel_file[-1]
+        Ke = np.loadtxt(kernel_file)
+        V = aec.compensate(V,I,Ke/1.0e9)
+    t = np.arange(0,len(V)-1)*info['dt']
+    spks = lcg.findSpikes(t, V, thresh=-10)
+    isi = np.diff(spks)
+    return np.mean(isi), np.std(isi)/np.mean(isi),np.mean(V),np.std(V) 
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ('-h','--help','help'):
         usage()
@@ -114,12 +141,14 @@ def main():
         stimulus = create_ou_stimulus(opts['mean'],opts['std'],
                                       opts['tau'],opts['duration'],
                                       opts['tail'],opts['preamble'])         
-        lcg.writeStimFile(stim_file[ii], stimulus, opts['preamble'])                
+        lcg.writeStimFile(stim_file[ii], stimulus, opts['preamble'])
+	if len(opts['holding']) < 2:
+		opts['holding'] = opts['holding']*2
     for ai,ao,stim in zip(opts['ai'],opts['ao'],stim_file):
         if opts['kernel']:
             sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
                       ' -c ' + str(ao) + ' -v ' + str(opts['holding'][0]) + 
-                      ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
+                      ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
             if not opts['holding'][0] in [0]:
                 sleep(2)
             if ncells>1:
@@ -131,12 +160,20 @@ def main():
     
         sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
                  ' -c ' + str(ao) + ' -v ' + str(opts['holding'][1]) + 
-                 ' -f ' + os.environ['AO_CONVERSION_FACTOR'], shell=True)
+                 ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
         if not opts['holding'][0] == opts['holding'][1]:
             sleep(2)
         sub.call('lcg vcclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
                  ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][1]), shell=True)
-
+        if opts['report']:
+            isim,cv,Vm,Vsd = analyse_last_file()
+            
+            print('Report from the last file')
+            print('Mean firing rate: {0}'.format(1./isim))
+            print('Coefficient of variation: {0}'.format(cv))
+            print('Mean membrane voltage (Vm): {0}'.format(Vm))
+            print('Standard deviation of Vm: {0}'.format(Vsd))
+            
 if __name__ == '__main__':
     main()
 

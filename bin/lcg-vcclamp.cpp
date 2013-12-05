@@ -1,3 +1,5 @@
+#ifdef ANALOG_IO
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -100,21 +102,21 @@ static int write_default_configuration_file()
 
         fprintf(fid, "[AnalogInput0]\n");
         fprintf(fid, "device = %s\n", getenv("COMEDI_DEVICE"));
-        fprintf(fid, "range = %s\n", getenv("DAQ_RANGE"));
+        fprintf(fid, "range = %s\n", getenv("RANGE"));
         fprintf(fid, "subdevice = %s\n", getenv("AI_SUBDEVICE"));
         fprintf(fid, "channel = %s\n", getenv("AI_CHANNEL"));
-        fprintf(fid, "conversionFactor = %s\n", getenv("AI_CONVERSION_FACTOR"));
+        fprintf(fid, "conversionFactor = %s\n", getenv("AI_CONVERSION_FACTOR_CC"));
         fprintf(fid, "reference = %s\n", getenv("GROUND_REFERENCE"));
-        fprintf(fid, "units = %s\n", getenv("INPUT_UNITS"));
+        fprintf(fid, "units = %s\n", getenv("AI_UNITS"));
         fprintf(fid, "\n");
         fprintf(fid, "[AnalogOutput0]\n");
         fprintf(fid, "device = %s\n", getenv("COMEDI_DEVICE"));
-        fprintf(fid, "range = %s\n", getenv("DAQ_RANGE"));
+        fprintf(fid, "range = %s\n", getenv("RANGE"));
         fprintf(fid, "subdevice = %s\n", getenv("AO_SUBDEVICE"));
         fprintf(fid, "channel = %s\n", getenv("AO_CHANNEL"));
-        fprintf(fid, "conversionFactor = %s\n", getenv("AO_CONVERSION_FACTOR"));
+        fprintf(fid, "conversionFactor = %s\n", getenv("AO_CONVERSION_FACTOR_CC"));
         fprintf(fid, "reference = %s\n", getenv("GROUND_REFERENCE"));
-        fprintf(fid, "units = %s\n", getenv("OUTPUT_UNITS"));
+        fprintf(fid, "units = %s\n", getenv("AO_UNITS"));
 
         fclose(fid);
 
@@ -406,8 +408,9 @@ int main(int argc, char *argv[])
         SetLoggingLevel(Info);
         
 	parse_args(argc, argv, &opts);
-
-        if (parse_configuration_file(entities, &opts) != 0) {
+        SetGlobalDt(opts.dt);
+	
+	if (parse_configuration_file(entities, &opts) != 0) {
                 write_default_configuration_file();
                 parse_configuration_file(entities, &opts);
         }
@@ -424,8 +427,6 @@ int main(int argc, char *argv[])
 			goto endMain;
 		}
 	}
-
-        SetGlobalDt(opts.dt);
 
         Logger(Info, "Number of batches: %d.\n", opts.nBatches);
         Logger(Info, "Number of trials: %d.\n", opts.nTrials);
@@ -482,4 +483,16 @@ endMain:
         return retval;
 #endif
 }
+
+#else
+
+#include "utils.h"
+using namespace lcg;
+
+int main() {
+        Logger(Critical, "This program requires a working installation of Comedi.\n");
+        return -1;
+}
+
+#endif
 

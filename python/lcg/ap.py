@@ -18,7 +18,7 @@ def usage():
     print('     -d    Duration of the stimulation (default 1 ms).')
     print('     -n    Number of repetitions (default 20).')
     print('     -i    Interval between repetitions (default 1 sec).')
-    print('     -F    Sampling frequency (default 20000 Hz)).')
+    print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
     print('')
@@ -59,7 +59,7 @@ def main():
     if add_duration: cmd += ' -d 1'
     if add_reps: cmd += ' -n 20'
     if add_interval: cmd += ' -i 1'
-
+ 
     sub.call(cmd, shell=True)
 
 if __name__ == '__main__':

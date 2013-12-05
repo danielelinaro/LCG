@@ -26,7 +26,7 @@ setup(
             'lcg-fopt = lcg.fopt:main',
             'lcg-fclamp = lcg.fclamp:main',
             'lcg-pspopt = lcg.psp_opt:main',
-            'lcg-pulses = lcg.pulses_protocol:main',
+            'lcg-pulses = lcg.pulses:main',
             'reliability_disynaptic = lcg.reliability_disynaptic:main',
             'lcg-sinusoids = lcg.sinusoids:main',
             'lcg-steps = lcg.step:main',
@@ -41,8 +41,11 @@ setup(
             'lcg-pulse = lcg.pulse:main',
             'lcg-ramp = lcg.ramp:main',
             'lcg-vi = lcg.vi:main',
+            'lcg-rcwrite = lcg.rc_write:main',
             'lcg-kernel = lcg.kernel:main',
-            'lcg-rate-steps = lcg.rate_steps:main'
+            'lcg-rate-steps = lcg.rate_steps:main',
+            'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main',
+            'lcg-stimgen = lcg.stimgen_interface:main'
             ]
         }
     )

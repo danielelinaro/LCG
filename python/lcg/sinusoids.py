@@ -9,12 +9,13 @@ import lcg
 import copy
 
 current_file = 'current.stim'
+modulation_file = 'mod.stim'
 config_file = 'sinusoids.xml'
 random_seed = 5061983
 frequency_value = 7051983
 
 switches = 'f:n:i:d:I:O:k:R:r:F:v:a:s:t:m:'
-long_switches = ['with-bg','exc','inh','no-kernel','filtered']
+long_switches = ['with-bg','exc','inh','no-kernel','filtered','separate']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
@@ -25,29 +26,29 @@ def usage():
     print('          -h   Display this help message and exit.')
     print('          -f   Frequencies of the sinusoids (comma-separated values).')
     print('               If not specified, the following frequencies are tested:')
-    print('               [1,5,10,20,50,100,200,300,600,1000].')
+    print('               [1,5,10,20,50,100,200,300,600,1000] Hz.')
     print('          -n   Number of repetitions (default 1).')
     print('          -i   Interval between trials (default 30 s).')
-    print('          -d   Duration of the stimulation (default 30 sec).')
+    print('          -d   Duration of the stimulation (default 30 s).')
     print('          -I   Input channel (default 0).')
     print('          -O   Output channel (default 0).')
-    print('          -F   sampling frequency (default 20000).')
+    print('          -F   Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('          -k   Frequency at which a new kernel should be computed')
     print('               (the default is at the beginning of each batch of frequencies).')
     print(' --no-kernel   Do not compute the kernel.')
-
-    print('\nThe following options are valid in the "current" working mode:\n')
+    print('\nThe following options are valid in the \'current\' working mode:\n')
     print('          -a   Mean of the noisy component of the current (default 0 pA).')
     print('          -s   Standard deviation of the noisy component of the current (default 0 pA).')
     print('          -t   Time constant of the noisy component of the current (default 0 ms).')
     print('          -m   Amplitude of the modulating current (default 30 pA).')
-
+    print('  --separate   Inject current waveforms in two separate channels.')
+    print('               With this option, two channels must be specified both for the input and for the output.')
+    print('               e.g. \'-O 0,1 -I 0,1\'.')
     print('\nAdditionally, if the --with-bg option is specified, the following options are accepted:\n')
     print('          -R   Input resistance of the cell (in MOhm).')
     print('          -v   Value of voltage at which the background activity should be balanced.')
     print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
-
-    print('\nThe following options are valid in the "conductance" working mode:\n')
+    print('\nThe following options are valid in the \'conductance\' working mode:\n')
     print('          -R   Input resistance of the cell (in MOhm).')
     print('          -v   Value of voltage at which the background activity should be balanced.')
     print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
@@ -71,7 +72,7 @@ def parseGlobalArgs():
                'duration': 30,   # [s]
                'kernel_frequency': 0,
                'compute_kernel': True,
-               'sampling_rate' : 20000,  # [Hz]
+               'sampling_rate' : float(os.environ['SAMPLING_RATE']),  # [Hz]
                'ai': 0, 'ao': 0}
 
     for o,a in opts:
@@ -84,9 +85,13 @@ def parseGlobalArgs():
         elif o == '-i':
             options['interval'] = float(a)
         elif o == '-I':
-            options['ai'] = int(a)
+            options['ai'] = [int(i) for i in a.split(',')]
+            if len(options['ai']) == 1:
+                options['ai'] = options['ai'][0]
         elif o == '-O':
-            options['ao'] = int(a)
+            options['ao'] = [int(i) for i in a.split(',')]
+            if len(options['ao']) == 1:
+                options['ao'] = options['ao'][0]
         elif o == '-F':
             options['sampling_rate'] = float(a)
         elif o == '-d':
@@ -153,7 +158,9 @@ def parseCurrentModeArgs():
                'mean': 0,                # [pA]
                'std': 0,                 # [pA]
                'tau': 0,                 # [ms]
-               'I_modul': 30}              # [pA]
+               'I_modul': 30,            # [pA]
+               'separate': False}        # whether we'll use two separate channels
+                                         # for noisy and modulating currents
 
     for o,a in opts:
         if o == '--with-bg':
@@ -167,6 +174,8 @@ def parseCurrentModeArgs():
             options['tau'] = float(a)
         elif o == '-m':
             options['I_modul'] = float(a)
+        elif o == '--separate':
+            options['separate'] = True
 
     if options['std'] < 0:
         print('The standard deviation of the noisy current must be positive.')
@@ -228,8 +237,8 @@ def writeConfigurationFile(options):
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
                                               inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=current_file, units='pA'))
@@ -317,6 +326,10 @@ def main():
 
     if mode == 'current':
         opts = dict(parseCurrentModeArgs(), **opts)
+        if opts['separate'] and (type(opts['ao']) == int or type(opts['ai']) == int or \
+                                     len(opts['ao']) == 1 or len(opts['ai']) == 1):
+            print('When using the --separate options, two channels must be specified (use the -I and -O options).')
+            sys.exit(1)
     else:
         opts = dict(parseConductanceModeArgs(), **opts)
 
@@ -342,18 +355,36 @@ def main():
             
         if opts['mean'] == 0 and opts['std'] == 0 and opts['tau'] == 0:
             # sinusoidal modulating current only
-            current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],1,0,0,0,0,0,1,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
+            else:
+                current = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
         elif opts['tau'] == 0:
             # sinusoid on top of a DC current
-            current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
-                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],1,opts['mean'],0,0,0,0,0,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
+            else:
+                current = [[opts['duration'],-2,opts['mean'],0,0,0,0,0,0,1,0,1],
+                           [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
         else:
             # sinusoid on top of a noisy (OU) current
-            current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
-                       [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
-                       [1,1,0,0,0,0,0,0,0,0,0,1]]
+            if opts['separate']:
+                current = [[opts['duration'],2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,0,0,1], # OU current
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
+                modulation = [[opts['duration'],3,opts['I_modul'],frequency_value,0,0,0,0,0,0,0,1],
+                              [1,1,0,0,0,0,0,0,0,0,0,1]]
+            else:
+                current = [[opts['duration'],-2,opts['mean'],opts['std'],opts['tau'],0,0,1,random_seed,2,0,1], # OU current
+                           [0,-2,opts['I_modul'],frequency_value,0,0,0,0,0,3,1,1],
+                           [1,1,0,0,0,0,0,0,0,0,0,1]]
     else:
         # current just for the preamble
         current = [[opts['duration']+1,1,0,0,0,0,0,0,0,0,0,1]]
@@ -381,8 +412,16 @@ def main():
         np.random.shuffle(opts['frequencies'])
         for f in opts['frequencies']:
             if opts['compute_kernel'] and cnt%opts['kernel_frequency'] == 0:
-                sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
-                         ' -F '+ str(opts['sampling_rate']), shell=True)
+                if 'separate' in opts and  opts['separate']:
+                    # compute a kernel for each channel
+                    sub.call('lcg kernel -I ' + str(opts['ai'][0]) + ' -O ' + str(opts['ao'][0]) +
+                             ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
+                    sub.call('lcg kernel -I ' + str(opts['ai'][1]) + ' -O ' + str(opts['ao'][1]) +
+                             ' -F '+ str(opts['sampling_rate']) + ' --non-rt --append', shell=True)
+                    pass
+                else:
+                    sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) +
+                             ' -F '+ str(opts['sampling_rate']), shell=True)
             cnt = cnt+1
             print('[%02d/%02d] F = %g Hz.' % (cnt,tot,f))
             
@@ -390,6 +429,10 @@ def main():
             replaceValue(I, random_seed)
             replaceValue(I, frequency_value, f)
             lcg.writeStimFile(current_file, I, preamble=True)
+            if 'separate' in opts and opts['separate']:
+                I = copy.deepcopy(modulation)
+                replaceValue(I, frequency_value, f)
+                lcg.writeStimFile(modulation_file, I, preamble=[0,0])
             if gexc and ginh:
                 for stimulus in gexc:
                     G = copy.deepcopy(stimulus['matrix'])
@@ -403,7 +446,14 @@ def main():
                     lcg.writeStimFile(stimulus['filename'], G)
                 sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
             else:
-                sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
+                if 'separate' in opts and opts['separate']:
+                    channels = [{'type':'input', 'channel':opts['ai'][0]},{'type':'input', 'channel':opts['ai'][1]},
+                                {'type':'output', 'channel':opts['ao'][0], 'stimfile':current_file},
+                                {'type':'output', 'channel':opts['ao'][1], 'stimfile':modulation_file}]
+                    lcg.writeIOConfigurationFile(config_file,opts['sampling_rate'],opts['duration']+3.61,channels)
+                    sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
+                else:
+                    sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
 
             if cnt != tot:
                 sub.call(['sleep', str(opts['interval'])])

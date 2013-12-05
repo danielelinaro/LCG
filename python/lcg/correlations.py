@@ -49,7 +49,7 @@ def usage():
     print('     -d   Duration of the stimulation (default 1.1 sec).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
-    print('     -F   Sampling rate (default 20000 Hz).')
+    print('     -F   Sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -k   Frequency at which a new kernel should be computed (the default is just at the beginning).')
     print('     -b   Time before stimulus onset (default 0.1 sec).')
     print('     -a   Time after stimulus offset (default 0.3 sec).')
@@ -81,7 +81,7 @@ def parseGlobalArgs():
                'duration': 1.1,   # [s]
                'kernel_frequency': 0,
                'correlation_coefficients': None,
-               'sampling_rate': 20000, # [Hz]
+               'sampling_rate': float(os.environ['SAMPLING_RATE']), # [Hz]
                'before': 0.1, 'after': 0.3, # [s]
                'ai': 0, 'ao': 0}
 
@@ -252,9 +252,9 @@ def writeConfigFile(options):
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
+                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,3), filename=stim_files['gampa'], units='nS'))
     config.add_entity(lcg.entities.ConductanceStimulus(id=3, connections=(1), E=0.))
@@ -336,10 +336,11 @@ def main():
                     print('[%02d/%02d]' % (cnt,tot))
         else:
             np.random.shuffle(opts['balanced_voltages'])
-            gnmda['m'] = (1-c)*opts['nmda_mean']
-            gnmda['mc'] = c*opts['nmda_mean']
-            gnmda['s'] = np.sqrt(1-c)*opts['nmda_std']
-            gnmda['sc'] = np.sqrt(c)*opts['nmda_std']
+            if opts['with_nmda']:
+                gnmda['m'] = (1-c)*opts['nmda_mean']
+                gnmda['mc'] = c*opts['nmda_mean']
+                gnmda['s'] = np.sqrt(1-c)*opts['nmda_std']
+                gnmda['sc'] = np.sqrt(c)*opts['nmda_std']
             for v in opts['balanced_voltages']:
                 ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
                 gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(

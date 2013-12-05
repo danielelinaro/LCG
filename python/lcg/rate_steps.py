@@ -22,7 +22,7 @@ def usage():
     print('     -a   Time after the end of the stimulation (default 0.1 s).')
     print('     -I   Input channel (default 0).')
     print('     -O   Output channel (default 0).')
-    print('     -F   sampling frequency (default 20000).')
+    print('     -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('     -k   Frequency at which a new kernel should be computed (default is just at the beginning)')
     print('     -R   Input resistance of the cell (in MOhm).')
     print('     -v   Value of voltage at which the background activity should be balanced.')
@@ -46,7 +46,7 @@ def parseArgs():
                'interval': 2,             # [s]
                'step_duration': 0.5,      # [s]
                'kernel_frequency': None,
-               'sampling_rate' : 20000,   # [Hz]
+               'sampling_rate' : float(os.environ['SAMPLING_RATE']),   # [Hz]
                'input_resistance': None,  # [MOhm]
                'balanced_voltage': None,  # [mV]
                'R_exc': None,             # [Hz]
@@ -151,8 +151,8 @@ def writeConfigurationFile(options):
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=options['ai'], writeChannel=options['ao'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
                                               inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,4), filename=gexc_file, units='nS'))

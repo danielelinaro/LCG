@@ -1,0 +1,64 @@
+<lcg>
+  <entities>
+
+    <entity>
+      <name>H5Recorder</name>
+      <id>0</id>
+      <parameters>
+	<filename>wb_neuron.h5</filename>
+        <compress>true</compress>
+      </parameters>
+    </entity>
+
+    <entity>
+      <name>Waveform</name>
+      <id>1</id>
+      <parameters><filename>cbn_step.stim</filename></parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>ConductanceBasedNeuron</name>
+      <id>2</id>
+      <parameters>
+	<C>1.0</C>
+	<gl>0.0001</gl>
+	<El>-65</El>
+	<Iext>0</Iext>
+	<area>10000</area>
+	<spikeThreshold>0</spikeThreshold>
+	<V0>-65</V0>
+      </parameters>
+      <connections>0</connections>
+    </entity>
+    
+    <entity>
+      <name>WBSodium</name>
+      <id>3</id>
+      <parameters>
+	<area>10000</area>
+	<gbar>0.035</gbar>
+	<E>55</E>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>WBPotassium</name>
+      <id>4</id>
+      <parameters>
+	<area>10000</area>
+	<gbar>0.009</gbar>
+	<E>-90</E>
+      </parameters>
+      <connections>0,2</connections>
+    </entity>
+
+  </entities>
+
+  <simulation>
+    <tend>5</tend>
+    <rate>100000</rate>
+  </simulation>
+
+</dynamicclamp>

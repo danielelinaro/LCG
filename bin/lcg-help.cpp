@@ -11,13 +11,20 @@ const char lcg_usage_string[] =
         "Authors: Daniele Linaro (danielelinaro@gmail.com)\n"
         "         Joao Couto (jpcouto@gmail.com)\n\n"
         "Usage: lcg [--version,-v] [--help,-h] <command> [<args>]\n\n"
-        "The most commonly used lcg commands are:\n"
-        "   experiment    performs a (possibly) hybrid or closed loop experiment\n"
-        "                 described in an XML configuration file\n"
-        "   vcclamp       performs a voltage or current clamp experiment using\n"
-        "                 a stimulus file\n"
-        "   annotate      adds comments into an existing H5 file\n\n"
-        "Type 'lcg help <command>' for more information on a specific command.\n";
+        "The most commonly used commands at present available in LCG are:\n";
+
+const char *lcg_commands[] = {
+        "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
+        "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
+        "   annotate      Add comments to an existing H5 file",
+        "   zero          Output zero to all channels of the DAQ board",
+        "   kernel        Inject a noisy current for the computation of the kernel used for Active Electrode Compensation",
+        "   ap            Inject a brief depolarizing pulse of current to elicit a single action potential",
+        "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
+        "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",
+        "   steps         Inject steps of voltage or current into a neuron",
+        NULL
+};
 
 static struct option longopts[] = {
         {"version", no_argument, NULL, 'v'},
@@ -27,7 +34,11 @@ static struct option longopts[] = {
 
 void usage()
 {
+        int i=0;
         printf("%s\n", lcg_usage_string);
+        while (lcg_commands[i])
+                printf("%s\n", lcg_commands[i++]);
+        printf("\nType 'lcg help COMMAND' for more information on a specific command.\n");
 }
 
 void parse_args(int argc, char *argv[])

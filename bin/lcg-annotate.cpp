@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <getopt.h>
 
 #include "common.h"
@@ -50,11 +52,39 @@ void parse_args(int argc, char *argv[], options *opts)
                         sprintf(opts->comment, "%s", optarg);
                         break;
                 case 'h':
+                        usage();
+                        exit(1);
                 default:
-                        Logger(Critical, "Enter 'lcg help annotate' for help on how to use this program.\n");
+                        Logger(Info, "Enter 'lcg help annotate' for help on how to use this program.\n");
                         exit(1);
                 }
         }
+}
+
+int find_latest_h5_file(char *filename)
+{
+        DIR *dirp = opendir(".");
+        if (dirp == NULL) {
+                Logger(Important, "Unable to open current directory for traversing the files.\n");
+                return -1;
+        }
+        else {
+                Logger(Debug, "Traversing the files in the current directory.\n");
+        }
+        struct dirent *dp;
+        filename[0] = 0;
+        while ((dp = readdir(dirp)) != NULL) {
+                if (dp->d_name[0] != '.' && !strcmp(dp->d_name+strlen(dp->d_name)-3, ".h5")) {
+                        if (!strlen(filename))
+                                strcpy(filename, dp->d_name);
+                        else if (strcmp(dp->d_name, filename) > 0)
+                                strcpy(filename, dp->d_name);
+                }
+        }
+        closedir(dirp);
+        if (strlen(filename))
+                return 0;
+        return -1;
 }
 
 herr_t counter(hid_t location_id /*in*/, const char *attr_name /*in*/,
@@ -91,7 +121,7 @@ int writeComment(const char *filename, const char *comment)
         Logger(Debug, "Successfully opened HDF5 file %s.\n", filename);
 
         // open the comments group
-        grp = H5Gopen(fid, COMMENTS_GROUP, H5P_DEFAULT);
+        grp = H5Gopen2(fid, COMMENTS_GROUP, H5P_DEFAULT);
         if (grp < 0) {
                 Logger(Critical, "%s: unable to open group.\n", COMMENTS_GROUP);
                 H5Fclose(fid);
@@ -181,13 +211,23 @@ int writeComment(const char *filename, const char *comment)
 int main(int argc, char *argv[])
 {
         options opts;
+        char latest_h5_file[128];
 
         parse_args(argc, argv, &opts);
 
         if (!strlen(opts.filename)) {
-                fprintf(stdout, "Enter the name of the file you want to annotate: ");
-                fscanf(stdin, "%s", opts.filename);
-                fflush(stdin);
+                if (find_latest_h5_file(latest_h5_file)) {
+                        fprintf(stdout, "Enter the name of the file you want to annotate: ");
+                        fgets(opts.filename, sizeof(opts.filename), stdin);
+                        fflush(stdin);
+                }
+                else {
+                        fprintf(stdout, "Enter the name of the file you want to annotate [%s]: ", latest_h5_file);
+                        fgets(opts.filename, sizeof(opts.filename), stdin);
+                        fflush(stdin);
+                        if (strlen(opts.filename))
+                                strcpy(opts.filename, latest_h5_file);
+                }
         }
 
         if (!strlen(opts.comment)) {
@@ -197,7 +237,7 @@ int main(int argc, char *argv[])
         }
 
         // add a timestamp to the comment
-        recorders::Comment comment(opts.comment);
+        Comment comment(opts.comment);
 
         return writeComment(opts.filename, comment.message());
 }
