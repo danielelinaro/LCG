@@ -688,15 +688,14 @@ void* ComediDevice::IOThread(void *arg)
         Logger(Debug, "Successfully parsed calibration file.\n");
 
         // split the channels into input and output channels
-        std::map< int, std::map<int, ComediChannel*> >::iterator it;
-        for (it=self->m_subdevices.begin(); it!=self->m_subdevices.end(); it++) {
-                if (dynamic_cast<InputChannel*>(it->second.begin()->second)) {
-                        input_channels.push_back(dynamic_cast<InputChannel*>(it->second.begin()->second));
-                        Logger(Debug, "Subdevice %d is an input subdevice.\n", it->first);
-                }
-                else {
-                        output_channels.push_back(dynamic_cast<OutputChannel*>(it->second.begin()->second));
-                        Logger(Debug, "Subdevice %d is an output subdevice.\n", it->first);
+        std::map< int, std::map<int, ComediChannel*> >::iterator subdev_it;
+        for (subdev_it=self->m_subdevices.begin(); subdev_it!=self->m_subdevices.end(); subdev_it++) {
+                std::map<int, ComediChannel*>::iterator channel_it;
+                for (channel_it=subdev_it->second.begin(); channel_it!=subdev_it->second.end(); channel_it++) {
+                        if (dynamic_cast<InputChannel*>(channel_it->second))
+                                input_channels.push_back(dynamic_cast<InputChannel*>(channel_it->second));
+                        else
+                                output_channels.push_back(dynamic_cast<OutputChannel*>(channel_it->second));
                 }
         }
         n_input_channels = input_channels.size();

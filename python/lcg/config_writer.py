@@ -176,6 +176,11 @@ def completeWithDefaultValues(opt):
                 opt['units'] = os.environ['AI_UNITS_' + opt['mode']]
             else:
                 opt['units'] = os.environ['AO_UNITS_' + opt['mode']]
+        if opt['type'] == 'output':
+            if 'offset' not in opt:
+                opt['offset'] = 0.
+            if 'resetOutput' not in opt:
+                opt['resetOutput'] = True
     return opt
 
 def writeIOConfigurationFile(config_file, sampling_rate, duration, channels):
@@ -198,8 +203,10 @@ def writeIOConfigurationFile(config_file, sampling_rate, duration, channels):
                                                         subdevice=chan['subdevice'], channel=chan['channel'],
                                                         conversionFactor=chan['factor'],
                                                         reference=chan['reference'], units=chan['units'],
-                                                        stimulusFile=chan['stimfile'],
-                                                        samplingRate=sampling_rate))
+                                                        stimulusFile=chan['stimfile'], samplingRate=sampling_rate,
+                                                        offset=chan['offset'], resetOutput=chan['resetOutput']))
+                              
+                              
         ID += 1
         
     config.write(config_file)

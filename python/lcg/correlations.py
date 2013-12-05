@@ -336,10 +336,11 @@ def main():
                     print('[%02d/%02d]' % (cnt,tot))
         else:
             np.random.shuffle(opts['balanced_voltages'])
-            gnmda['m'] = (1-c)*opts['nmda_mean']
-            gnmda['mc'] = c*opts['nmda_mean']
-            gnmda['s'] = np.sqrt(1-c)*opts['nmda_std']
-            gnmda['sc'] = np.sqrt(c)*opts['nmda_std']
+            if opts['with_nmda']:
+                gnmda['m'] = (1-c)*opts['nmda_mean']
+                gnmda['mc'] = c*opts['nmda_mean']
+                gnmda['s'] = np.sqrt(1-c)*opts['nmda_std']
+                gnmda['sc'] = np.sqrt(c)*opts['nmda_std']
             for v in opts['balanced_voltages']:
                 ratio = lcg.computeRatesRatio(Vm=v, Rin=opts['input_resistance'])
                 gampa['m'],ggaba['m'],gampa['s'],ggaba['s'] = lcg.computeSynapticBackgroundCoefficients(
