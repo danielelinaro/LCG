@@ -24,6 +24,7 @@ const char *lcg_commands[] = {
         "   output        Output a constant value to a certain channel of the DAQ board",
         "   pulses        Inject a train of brief pulses of current in a cell to test connectivity",
         "   ramp          Inject a ramp of current into a neuron",
+        "   Rin           Inject a series of hyperpolarizing pulses to compute the input resistance of a cell",
         "   spontaneous   Record spontaneous activity from a number of channels on a single subdevice",
         "   steps         Inject steps of voltage or current into a neuron",
         "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
