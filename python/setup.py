@@ -10,7 +10,7 @@ setup(
     name = 'lcg',
     version = '0.9',
     author = 'Daniele Linaro and Joao Couto',
-    author_email = 'daniele.linaro@ua.ac.be',
+    author_email = 'danielelinaro@gmail.com',
     description = ('lcg module for Python.'),
     long_description = read('README'),
     license = 'GPL',
@@ -45,7 +45,8 @@ setup(
             'lcg-kernel = lcg.kernel:main',
             'lcg-rate-steps = lcg.rate_steps:main',
             'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main',
-            'lcg-stimgen = lcg.stimgen_interface:main'
+            'lcg-stimgen = lcg.stimgen_interface:main',
+            'lcg-spontaneous = lcg.spontaneous:main'
             ]
         }
     )

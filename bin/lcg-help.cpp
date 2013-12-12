@@ -14,21 +14,22 @@ const char lcg_usage_string[] =
         "The most commonly used commands at present available in LCG are:\n";
 
 const char *lcg_commands[] = {
-        "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
-        "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
         "   annotate      Add comments to an existing H5 file",
-        "   zero          Output zero to all channels of the DAQ board",
-        "   output        Output a constant value to a certain channel of the DAQ board",
-        "   kernel        Inject a noisy current for the computation of the kernel used for Active Electrode Compensation",
         "   ap            Inject a brief depolarizing pulse of current to elicit a single action potential",
-        "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
-        "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",
-        "   steps         Inject steps of voltage or current into a neuron",
-        "   pulses        Inject a train of brief pulses of current in a cell to test connectivity",
-        "   fi            Compute an f-I curve using a PID controller",
+        "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
         "   fclamp        Find the current necessary to make a neuron spike at a given frequency",
-        "   ramp          Inject a ramp of current into a neuron",
+        "   fi            Compute an f-I curve using a PID controller",
+        "   kernel        Inject a noisy current for the computation of the kernel used for Active Electrode Compensation",
         "   ou            Inject Ornstein-Uhlenbeck noise into a neuron",
+        "   output        Output a constant value to a certain channel of the DAQ board",
+        "   pulses        Inject a train of brief pulses of current in a cell to test connectivity",
+        "   ramp          Inject a ramp of current into a neuron",
+        "   spontaneous   Record spontaneous activity from a number of channels on a single subdevice",
+        "   steps         Inject steps of voltage or current into a neuron",
+        "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
+        "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
+        "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",
+        "   zero          Output zero to all channels of the DAQ board",
         NULL
 };
 
