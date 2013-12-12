@@ -36,22 +36,21 @@ def usage():
     print('          -k   Frequency at which a new kernel should be computed')
     print('               (the default is at the beginning of each batch of frequencies).')
     print(' --no-kernel   Do not compute the kernel.')
-
-    print('\nThe following options are valid in the "current" working mode:\n')
+    print('\nThe following options are valid in the \'current\' working mode:\n')
     print('          -a   Mean of the noisy component of the current (default 0 pA).')
     print('          -s   Standard deviation of the noisy component of the current (default 0 pA).')
     print('          -t   Time constant of the noisy component of the current (default 0 ms).')
     print('          -m   Amplitude of the modulating current (default 30 pA).')
-    print('  --separate   Inject current waveforms in two separate channels (comma-separated in the -O option, as in \'-O 0,1\').')
-
+    print('  --separate   Inject current waveforms in two separate channels.')
+    print('               With this option, two channels must be specified both for the input and for the output.')
+    print('               e.g. \'-O 0,1 -I 0,1\'.')
     print('\nAdditionally, if the --with-bg option is specified, the following options are accepted:\n')
-    print('          -v   Value of voltage at which the background activity should be balanced.')
     print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
     print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
-
-    print('\nThe following options are valid in the "conductance" working mode:\n')
-    print('          -v   Value of voltage at which the background activity should be balanced.')
+    print('\nThe following options are valid in the \'conductance\' working mode:\n')
     print('          -R   Input resistance of the cell (in MOhm).')
+    print('          -v   Value of voltage at which the background activity should be balanced.')
     print('          -r   Baseline firing frequency of the excitatory background population (default 7000 Hz).')
     print('          -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
     print('       --exc   Modulate the firing rate of the excitatory presynaptic population.')
@@ -434,7 +433,6 @@ def main():
                 I = copy.deepcopy(modulation)
                 replaceValue(I, frequency_value, f)
                 lcg.writeStimFile(modulation_file, I, preamble=[0,0])
-
             if gexc and ginh:
                 for stimulus in gexc:
                     G = copy.deepcopy(stimulus['matrix'])

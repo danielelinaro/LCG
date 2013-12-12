@@ -4,4 +4,4 @@ if EXAMPLES
 SUBDIRS += examples
 endif
 EXTRA_DIST = CHANGES LICENSE
-dist_doc_DATA = README
+dist_doc_DATA = README.md

@@ -111,9 +111,9 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile)
                                               inputSubdevice=os.environ['AI_SUBDEVICE'],
                                               outputSubdevice=os.environ['AO_SUBDEVICE'],
                                               readChannel=ai, writeChannel=ao,
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR'],
-                                              inputRange='[-10,+10]', reference=os.environ['GROUND_REFERENCE'],
+                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
+                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename='current.stim', units='pA'))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,5), filename='gexc.stim', units='nS'))
@@ -203,34 +203,6 @@ def writeGainModulationConfig(G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, 
                [1,1,0,0,0,0,0,0,3532765,0,0,1]]
     writeStimFile('template.stim',current,False)
 
-def writeFClampConfig(F, I0, duration, gp, gi, gd=0, tau=1, outfile='fclamp.xml', ai=0, ao=0,
-                      with_bg=False, G0_exc=0, sigma_exc=0, G0_inh=0, sigma_inh=0):
-    if not with_bg:
-        infile = findConfigurationFile('fclamp_template.xml')
-    else:
-        infile = findConfigurationFile('fclamp_plus_bg_G_template.xml')
-    if infile == '':
-        print('Unable to locate default configuration file. Aborting...')
-        return
-
-    writeStimFile('frequency.stim', [duration,1,F,0,0,0,0,0,0,0,0,1], False)
-
-    if with_bg:
-        conductance = [duration,2,0,0,0,0,0,0,0,0,0,1]
-        conductance[2] = G0_exc
-        conductance[3] = sigma_exc
-        conductance[4] = 5
-        conductance[8] = np.random.poisson(10000)
-        writeStimFile('gexc.stim',conductance,False)
-        conductance[2] = G0_inh
-        conductance[3] = sigma_inh
-        conductance[4] = 10
-        conductance[8] = np.random.poisson(10000)
-        writeStimFile('ginh.stim',conductance,False)
-
-    substituteStrings(infile, outfile, {'TEND': duration, 'AI': ai, 'AO': ao, 'TAU': tau,
-                                        'F0': 0.75*F, 'I0': I0, 'GP': gp, 'GI': gi, 'GD': gd})
-
 def writefIStim(Imin,Imax,Istep,noisy=False):
     A = [[0.5,1,0,0,0,0,0,0,3532765,0,0,1],
          [0.01,1,-300,0,0,0,0,0,3532765,0,0,1],
@@ -282,27 +254,6 @@ def makeOutputFilename(prefix='', extension='.out'):
         k = k+1
         suffix = '_%d' % k
     return filename + suffix + extension
-
-def findConfigurationFile(filename):
-    try:
-        configsPath = os.environ['CONFIGURATIONS_PATH']
-    except:
-        configsPath = os.environ['HOME'] + '/configurations'
-    path = configsPath + '/' + filename
-    if not os.path.exists(path):
-        return ''
-    return path
-
-def substituteStrings(infile, outfile, rules):
-    fid = open(infile,'r')
-    text = fid.readlines()
-    fid.close()
-    fid = open(outfile,'w')
-    for line in text:
-        for k in rules.keys():
-            line = line.replace(str(k), str(rules[k]))
-        fid.write(line)
-    fid.close()
 
 def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
     """

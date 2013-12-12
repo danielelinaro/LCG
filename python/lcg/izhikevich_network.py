@@ -347,7 +347,7 @@ def main():
         sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']) + 
                  ' -F ' + str(opts['srate']) + ' -a', shell=True)
     sub.call(lcg.common.prog_name + ' -c ' + config_file +  ' -i ' + str(opts['interval']) +
-             ' -I ' + str(opts['interval']) + ' -n ' + str(opts['nreps']), shell=True)
+             ' -n ' + str(opts['nreps']), shell=True)
 
 if __name__ == '__main__':
     main()

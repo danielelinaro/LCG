@@ -1,4 +1,4 @@
-<dynamicclamp>
+<xml>
   <entities>
     <entity>
       <name>H5Recorder</name>
@@ -99,4 +99,4 @@
     <rate>100000</rate>
   </simulation>
 
-</dynamicclamp>
+</xml>

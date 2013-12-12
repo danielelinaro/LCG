@@ -15,18 +15,19 @@ Authors:
 """
 
 __all__ = ['writePulsesStimFile','writeIPlusBgGConfig', 'writeGainModulationConfig',
-           'writeSinusoidsConfig', 'writeFClampConfig', 'writeSpontaneousConfig',
+           'writeSinusoidsConfig', 'writeSpontaneousConfig',
            'writePulsesStimFile', 'writefIStim','writeNoisyBackgroundConfig',
            'writeGStimFiles','writeStimFile',
-           'substituteStrings',
            'computeRatesRatio', 'computeSynapticBackgroundCoefficients','computeElectrodeKernel',
-           'findSpikes','loadH5Trace',
-           'lcg_xml']
+           'findSpikes','loadH5Trace', 'lcg_xml']
 
 import common
 import utils
-from utils import writePulsesStimFile,writeIPlusBgGConfig, writeGainModulationConfig,writeSinusoidsConfig, writeFClampConfig, writeSpontaneousConfig,writePulsesStimFile, writefIStim,writeNoisyBackgroundConfig,writeGStimFiles,writeStimFile,computeRatesRatio,computeSynapticBackgroundCoefficients,computeElectrodeKernel,findSpikes,loadH5Trace,substituteStrings
-from config_writer import XMLConfigurationFile,writeIOConfigurationFile
+from utils import writePulsesStimFile, writeIPlusBgGConfig, writeGainModulationConfig, writeSinusoidsConfig, \
+    writeSpontaneousConfig, writePulsesStimFile, writefIStim, writeNoisyBackgroundConfig, writeGStimFiles, \
+    writeStimFile, computeRatesRatio, computeSynapticBackgroundCoefficients, computeElectrodeKernel, \
+    findSpikes, loadH5Trace
+from config_writer import XMLConfigurationFile, writeIOConfigurationFile
 import entities
 import streams
 

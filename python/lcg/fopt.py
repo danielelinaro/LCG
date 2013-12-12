@@ -8,10 +8,10 @@ import subprocess as sub
 import numpy as np
 import lcg
 
-def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1):
+def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1, sampling_rate=20000):
     ratio = lcg.computeRatesRatio(Vm=Vbal, Rin=Rm)
     G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], R_exc, Rin=Rm)
-    lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, outfile='spontaneous.xml')
+    lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, sampling_rate, outfile='spontaneous.xml')
     if interval > 0:
         sub.call(['sleep', str(interval)])
     sub.call(lcg.common.prog_name + ' -c spontaneous.xml -V 4', shell=True)
@@ -48,12 +48,13 @@ def usage():
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
     print('     -v    maximum (depolarized) voltage (default -40 mV).')
     print('     -I    input channel (default 0).')
-    print('     -O    output channel (default 0).\n')
+    print('     -O    output channel (default 0).')
+    print('     -F    sampling frequency (default 20000 Hz).')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hf:r:R:d:i:V:v:I:O:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hf:r:R:d:i:V:v:I:O:F:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -68,6 +69,7 @@ def main():
     Vmax = -40             # [mV]
     ai = 0
     ao = 0
+    sampling_rate = 20000  # [Hz]
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
@@ -90,6 +92,8 @@ def main():
             ai = int(a)
         elif o == '-O':
             ao = int(a)
+        elif o == '-F':
+            sampling_rate = float(a)
 
     if Vmin >= Vmax:
         print('\n>>> Error: Vmin must be smaller than Vmax. <<<')
@@ -101,10 +105,15 @@ def main():
         usage()
         sys.exit(1)
 
+    if sampling_rate <= 0:
+        print('\n>>> Error: the sampling rate must be positive. <<<');
+        usage()
+        sys.exit(1)
+
     sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao), shell=True)
     import scipy.optimize as opt
     Vbal,err,ierr,numfunc = opt.fminbound(frequency_error, Vmin, Vmax,
-                                          args = [targetFrequency, Rm, rate, ai, ao, duration, interval],
+                                          args = [targetFrequency, Rm, rate, ai, ao, duration, interval, sampling_rate],
                                           xtol=0.5, maxfun=15, full_output=1, disp=1)
 
     print('The optimal value of the balanced voltage is %.3f mV (error = %.5f Hz^2).' % (Vbal,err))

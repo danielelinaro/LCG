@@ -7,3 +7,4 @@ lcg-output
 lcg-test-daq
 lcg-vcclamp
 lcg-zero
+lcg-non-rt

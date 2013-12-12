@@ -1,6 +1,0 @@
-To install type:
-
-autoreconf -i
-./configure --prefix=$HOME/local
-make
-make install
