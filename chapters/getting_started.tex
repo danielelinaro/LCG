@@ -1,0 +1,358 @@
+\paragraph{}
+This chapter will help you undestanding some basic concepts related to \progname. It starts by giving a notion of the basic commands using an artificial neuron and continues to interfacing with live cells. While it does not intend to be a detailed tutorial on either matlab nor python, some indications on how to use these software packages will be provided.
+
+\section{Requirements}
+\paragraph{}
+You need to have \progname\ installed on your system. If you are not certain whether this has been done type \texttt{which \progname} in a terminal window. In case the program has not been installed, follow the installation notes (section \ref{chap:install}).
+
+\paragraph{}
+We assumes that you are familiarised with the Linux distribution that you are using (you need to be able of opening a terminal window at this point). Check the webpage of your linux distribution (e.g. \href{http://www.debian.org}{Debian}; \href{http://www.ubuntu.com}{Canonical Ubuntu}; \href{http://www.fedoraproject.org}{Fedora})or the \href{http://www.linux.org/tutorial}{linux.org} tutorials for help on getting started and the Advanced Bash-Scripting guide from \href{http://www.tldp.org}{The Linux Documentation Project}.
+
+\paragraph{}
+Some MATLAB and Python code will be used to demonstrate the basic loading of data. Knowledge of these languages can be beneficial.
+Before getting started using \texttt{\progname} you may want to take a look at Appendix \ref{appendix:matlabReference} for a short Matlab introduction and Appendix \ref{appendix:unixReference} for some notes on UNIX basic commands.
+
+\section{What is \progname?}
+
+\paragraph{}
+\textbf{\progname} is the name of a UNIX program that interfaces with \texttt{lib\progname}\  - a C++ library that interfaces with a realtime kernel can be used to conduct electrophysiological experiments using simple stimulation protocols but also to highly complex paradigms such as hybrid networks interfaces and/or dynamic clamp. If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation.
+
+\paragraph{}
+The most important concepts can be understood by using a computational model of a Neuron. A Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}) is integrated into \progname. The initial part of this guide does not require a realtime kernel installation (see \ref{install:nokernel} for details on how to install \progname\ without a realtime kernel).
+We will illustrate some basic concepts of data analysis of intracellular data using Matlab. This should allow a user that is not familiar with \matlab\ to understand the basics of the programming language,a although it does not intend to be a full fletched tutorial, for that use \cite{wallisch2011} or the resources at \href{http://www.mathworks.com}{The Mathworks} website. We will also try to highlight some basic UNIX commands to handle file operations but you can also use a graphical user interface to do this. 
+
+\section{Configuration files}
+\paragraph{}
+A configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>} or \texttt{vi <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
+
+\paragraph{}
+The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We communicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chap:entities} for a description of the built in entities.
+
+Lets examine one of these files closely:
+
+\renewcommand{\lstlistingname}{Example}
+\begin{lstlisting}[caption={A simple example of a configuration file with a simulated integrate and fire neuron.},label={gettingStarted:example0},language=XML,morekeywords={dynamic clamp,entities,entity,name,id,C,tau,tarp,Er,E0,Vth,Iext,parameters,connections,simulation,tend,rate}]
+<dynamicclamp>
+  <entities>
+    	<entity>
+      		<name>LIFNeuron</name>
+      		<id>1</id>
+      		<parameters>
+			<C>0.08</C>
+			<tau>0.0075</tau>
+			<tarp>0.0014</tarp>
+			<Er>-65.2</Er>
+			<E0>-70</E0>
+			<Vth>-50</Vth>
+			<Iext>220</Iext>
+      		</parameters>
+      		<connections></connections>
+    	</entity>
+  </entities>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
+</dynamicclamp>
+
+\end{lstlisting}
+ 
+This file is composed layers. The most general is the \texttt{<dynamicclamp>} layer; this basically tells the program that this is a configuration file. Inside this layer there are two other:
+\begin{itemize}
+\item
+\emph{ \texttt{<entities>}}  - where the entities are listed and connected to each other. Generally each \emph{ \texttt{<entity>}} has a 
+	\begin{itemize}
+	\item \emph{ \texttt{<name>}} - the global descriptor of the entitiy. 
+	\item \emph{ \texttt{<id>}} - the global identification number of an entity. This is used to connect entities and the ids have to be unique.
+	\item \emph{ \texttt{<parameters>}} - the parameters of the entity. These vary between each entity. You can use the manual section \ref{chap:entities}.
+	\item \emph{ \texttt{<connections>}} - the global \texttt{id}s to which this entity is connected.
+	\end{itemize}
+\item
+\emph{ \texttt{<simulation>}} - where the general parameters are defined e.g. the sampling rate (\texttt{rate}) and the duration (\texttt{tend}).
+\end{itemize}
+
+\paragraph{}
+Now lets create a file called \texttt{example.xml}. Open a terminal and copy the following lines one by one:
+
+\begin{lstlisting}[escapeinside=\{\}]
+mkdir ~/examples  # this creates a directory called under your home folder (that's what the tilt is for)
+cd ~/examples # goes inside this directory
+gedit example1.xml # creates and opens a file called example.xml in the current folder using gnome text editor.
+\end{lstlisting}
+
+Note that if you do have a system without \texttt{gnome} like Mac OS the command \texttt{gedit} will not work; any text editor can be used. Now copy the example (\ref{gettingStarted:example0}) above to this file. If you use copy and paste make sure that there are \textbf{no extra spaces}, this will depend on the your choice of editor. Save and close it. You can now run the example by doing: \texttt{\progname\ -c example.xml}
+
+The \texttt{-c} option stands for \textbf{configuration file} can be used to tell \progname\ that we are going to pass a configuration file as an argument.
+
+\paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded. In the next section you will see how you can record the data.
+
+\section{Your first recording}
+\paragraph{}
+The example \ref{gettingStarted:example0} can solely help you check that \texttt{\progname} is installed, but it does not record/log anything on the disk. One way to save data is to use a Recorder object such as the \nameref{entities:h5recorder}.
+
+Lets then extend the previous example by adding a \nameref{entities:h5recorder} entity to the \texttt{entities} layer. 
+
+Note that the global \texttt{id} of the \texttt{H5Recorder} is different from the \texttt{LIFNeuron}, it is mandatory that all entities have a different global \texttt{id}.
+
+\begin{lstlisting}[caption={Example of a configuration file with a the H5Recorder entity.},label={gettingStarted:example1},language=XML,morekeywords={dynamic clamp,entities,entity,name,id,filename,compress,C,tau,tarp,Er,E0,Vth,Iext,parameters,connections,simulation,tend,rate}]]
+<dynamicclamp>
+  <entities>
+  	<entity>
+ 	       <name>H5Recorder</name>
+        	<id>0</id>
+        	<parameters>
+		      <filename>example1.h5</filename>
+		      <compress>true</compress>
+	       </parameters>
+    	</entity>
+    	<entity>
+      		<name>LIFNeuron</name>
+      		<id>1</id>
+      		<parameters>
+			<C>0.08</C>
+			<tau>0.0075</tau>
+			<tarp>0.0014</tarp>
+			<Er>-65.2</Er>
+			<E0>-70</E0>
+			<Vth>-50</Vth>
+			<Iext>220</Iext>
+      		</parameters>
+      		<connections>0</connections>
+    	</entity>
+  </entities>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
+</dynamicclamp>
+
+\end{lstlisting}
+
+As for the example \ref{gettingStarted:example0}, create a file called \texttt{example1.xml}  - \inlineCode{gedit example1.xml};and copy the example \ref{gettingStarted:example1} to this file. Check which files are in this directory; you can do this with the command \texttt{ls} - check the \nameref{appendix:unixReference} for help on UNIX commands. To run the file use:
+\begin{lstlisting}[escapeinside=\{\}]
+{\progname} -c example1.xml
+\end{lstlisting}
+
+This will now create a file named \texttt{example1.h5} (use \texttt{ls}) to check for this.
+
+\paragraph{} One of the most important advantages with using a realtime kernel is that the data analysis can be done on the same machine (as opposed to the target - host architectures that are typical of high performance realtime systems), and since it uses priorities you can even do the analysis (virtually) at the same time you are running a realtime task. We will now see how to use \textbf{\matlab} to read this file and extract the timing of the spikes. 
+
+First open \matlab\ in a terminal window with the command: 
+\begin{lstlisting} 
+matlab -nodesktop 
+\end{lstlisting}
+
+You should see something like:
+\begin{lstlisting}[numbers=none,language=xml]
+		< M A T L A B (R) >
+Copyright 1984-2012 The MathWorks, Inc.
+	R2012b (8.0.0.783) 64-bit (maci64)
+		August 22, 2012
+
+To get started, type one of these: helpwin, helpdesk, or demo.
+For product information, visit www.mathworks.com.
+ 
+>> 
+\end{lstlisting}
+
+We will use \matlab\ without desktop in these examples if you prefer to use the desktop mode, you can launch \matlab\ with the command \inlineCode{matlab &}; all this assuming \matlab\ binaries have been added to path.
+
+\paragraph{}
+\matlab\ can be used to automate the analysis method in a highly efficient manner however in this section we will focus on the basic concepts. Rest assured: once you get a grip of \matlab\ and \matlab\ functions you will greatly reduce the amount of time that you require to analyse these sort of traces.
+
+\subsection{\matlab\ functions and the path}
+\paragraph{}
+You could load these file only using the built in functions of \matlab\ to read HDF5 files however this would be rather time consuming. The basic notions of \matlab\ that you need to get acquainted with before continuing the are the concept of \texttt{functions} and \texttt{path}.
+\paragraph{}
+The terminal that you have in front of you is interactive and the commands you type there will be ran as \matlab\ commands. Some of the power of \matlab\ lays in how simple it is to create functions. A function can be seen as a generic box that receives inputs and returns outputs. The computations processed to transform the inputs into the outputs are the core of the function. In \matlab functions are defined by naming a file with the name of the function and placing the code \inlineCode{function [out] = functionName(in)} in the first line of that file.
+
+\paragraph{}
+This said, \matlab\ functions are just files which are named as the function. \matlab\ does not search for functions in all directories of your disk (this is a good thing!) and because of that you have to tell \matlab\ where to search for functions. In order to do so you can use the \texttt{add path} command. 
+
+Every \matlab\ function/command has a documentation built in. You can access this by typing \inlineCode{help <name>}.
+
+Now you need to add the functions that ship with \progname\ to the path (in case they are not already there). You can do this (for the current \matlab\ session) by doing:
+
+\begin{lstlisting}[escapeinside=\{\}]
+addpath([getenv('{\progname}_path'),'\matlab'])
+\end{lstlisting}
+
+Note that the above command will not work if you haven't defined the variable \texttt{\progname\_path} in your environment (\texttt{\$HOME/.bashrc} file) as the location of the source code of \progname. Although this command may seem complicated to the first time user of \matlab, the only thing it does is retrieving the environment variable '\texttt{\progname\_path}' and concatenating it with the \texttt{'\textbackslash matlab'} string. This because the we want to add the files that are in this folder to the \matlab\ path.
+
+\subsection{Loading and plotting the recorded traces}
+
+Now that you added the function in the source path of \progname\ to the path of \matlab\ with the command:
+
+\begin{lstlisting}[escapeinside=\{\}]
+addpath([getenv('{\progname}_path'),'\matlab'])
+\end{lstlisting}
+
+The function \texttt{loadH5Trace} will be available for \matlab. Type \inlineCode{help loadH5Trace} to access the help of this function.
+You can load and plot the data with the commands:
+
+\begin{lstlisting}[language=matlab,morekeywords={loadH5Trace,ls},escapeinside=\{\}]
+files = dir({\textquotesingle}*.h5{\textquotesingle});
+[entities,info] = loadH5Trace(files(1).name)
+entities(1).name
+Vm = entities(1).data;
+time = [0:length(Vm)-1]*info.dt;
+plot(time,Vm,{\textquotesingle}k{\textquotesingle})
+\end{lstlisting}
+
+The first line uses \matlab 's command \texttt{dir} to list all directories. Then \texttt{loadH5Trace} loads the data into the variables \texttt{entities} and \texttt{info} -  it loads one structure per entity connected to the \nameref{entities:h5recorder} and thus we will think of it as a structure array (read about \matlab\ datatypes).
+
+The third line in the above code is solely for illustration of how you can find out the name of an entity in the \texttt{entities} array. This can be particularly useful since it lets you find a particular entity based on it's type. Later we will see how to take advantage of this feature.
+The fourth and fifth line we associate the variable Vm to the recorded membrane potential of the \nameref{entities:lifneuron} and create a time vector with the size of \texttt{Vm} and using the time step that is saved in the \texttt{info} structure.
+
+The last line plots the time versus the voltage using the colour black.
+
+\subsection{Detecting the peak of the spikes}
+
+There are several ways of detecting the peaks of the spikes. We will focus on a relatively robust yet simple method of doing so by taking advantage of the \matlab\ function \texttt{findpeaks}.
+
+\begin{lstlisting}[language=matlab,morekeywords={findpeaks,THRESHOLD,MINPEAKDISTANCE},escapeinside=\{\}]
+% Define the refractory period of the peak detector (1ms); this can be useful when dealing with noisy signals.
+refractory = 1.e-3/info.dt; 
+% The following uses the function find peaks to find the spikes with threshold crossing at 0mV and a refractory period. 
+[peaks, loc] = findpeaks(Vm,{\textquotesingle}THRESHOLD{\textquotesingle},0,{\textquotesingle}MINPEAKDISTANCE{\textquotesingle},refractory);
+% The spikes are the locations of the peaks on the time vector
+spks = time(loc);
+% Plot time versus membrane potential
+plot(time, Vm,{\textquotesingle}k{\textquotesingle})
+hold on
+% Plot the spike times and the peaks of the Action Potentials. The {\textquotesingle}hold on{\textquotesingle} command makes that the plots overlap.
+plot(spks, peaks,{\textquotesingle}b.{\textquotesingle})
+\end{lstlisting}
+
+The above commands will get you to extract the peaks of the action potentials and the spike times and to plot them on the membrane voltage trace.
+These commands should work also with very noisy signals, as long as the threshold and the refractory period are defined accordingly.
+\paragraph{}
+Now it would be useful to know the mean interspike interval. First we need to compute the interspike intervals, that can be easily done by using the \texttt{diff} command. 
+
+\begin{lstlisting}[language=matlab,morekeywords={findpeaks,THRESHOLD,MINPEAKDISTANCE},escapeinside=\{\}]
+% Compute te interspike intervals
+isi = diff(spks);
+% And the mean can be computed in a straight forward manner:
+mean(isi)
+% The reciprocal will give you the result in Hz
+1./mean(isi)
+\end{lstlisting}
+
+
+\section{Adding stimulation}
+\paragraph{}
+Intracellular or virtually every form of stimulation or pulse triggering can be done with \progname. In this section we will introduce the \nameref{entities:waveform} entity.
+The \nameref{entities:waveform} entity interfaces with Stimulus Generator Library - see appendix \ref{appendix:stimgen}; in short an elementary waveform (and linear combinations of elementary waveforms) can be represented by 12 numbers:
+
+\begin{center}
+\footnotesize\ttfamily
+\begin{tabular}{rrrrrrrrrrrr}
+[T & CODE & P1 & P2 & P3 & P & P1 & FIXSEED & MYSEED & SUBCODE & OPERATOR & EXPON]
+\end{tabular}
+\end{center}
+
+The waveform types range from constant values to double exponential decays and stochastic processes realisations. In order to start using the \nameref{entities:waveform} entity lets consider the example \ref{gettingStarted:example1} and add one more entity as bellow:
+
+\begin{lstlisting}[caption={Example of a configuration file with a the \nameref{entities:waveform} entity.},label={gettingStarted:example2}, language=XML,morekeywords={dynamic clamp,entities,entity,name,id,filename,compress,C,tau,tarp,Er,E0,Vth,Iext,parameters,connections,simulation,tend,rate}]
+<dynamicclamp>
+  <entities>
+  	<entity>
+ 	       <name>H5Recorder</name>
+        	<id>0</id>
+        	<parameters>
+		      <filename>example2.h5</filename>
+		      <compress>true</compress>
+	       </parameters>
+    	</entity>
+    	<entity>
+      		<name>LIFNeuron</name>
+      		<id>1</id>
+      		<parameters>
+			<C>0.08</C>
+			<tau>0.0075</tau>
+			<tarp>0.0014</tarp>
+			<Er>-65.2</Er>
+			<E0>-70</E0>
+			<Vth>-50</Vth>
+			<Iext>220</Iext>
+      		</parameters>
+      		<connections>0</connections>
+    	</entity>
+    	<entity>
+      		<name>Waveform</name>
+      		<id>2</id>
+      		<parameters>
+			<filename>current.stim</filename>
+      		</parameters>
+      		<connections>0,1</connections>
+    	</entity>	
+  </entities>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
+</dynamicclamp>
+
+\end{lstlisting}
+
+\paragraph{}
+We connected the \nameref{entities:waveform} entity (2) to both the \nameref{entities:lifneuron} (1) and the \nameref{entities:h5recorder} (0). In this way we can both stimulate the neuron (current injection) and record the stimulation trace; as well as the response of the neuron as it is connected to the \nameref{entities:h5recorder} (0).
+You can see that the Waveform has a parameter \texttt{filename} that points to  "current.stim" where the stimulus is described using the \nameref{appendix:stimgen} nomenclature.
+
+\paragraph{}
+Now lets create a file named \texttt{current.stim} using \texttt{gedit current.stim}. Copy and paste the following lines to it:
+\begin{center}
+\ttfamily
+\begin{tabular}{rrrrrrrrrrrr}
+2 & 1 & 0.0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 &0 & 1 \\
+1 & 1 & 200.0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+2 & 1 & 0.0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 1 \\
+\end{tabular}
+\end{center}
+
+ \paragraph{}
+ Note the second row (that represents the code of the elementary waveform) uses \textbf{code 1} in all lines: this stands for a DC or stationary current.
+ The first line has a duration of 2 seconds (first row) with amplitude (third row) 0; is followed by 1 second of amplitude 200 (pA) \footnote{The convention of the \nameref{entities:lifneuron} is that it's inputs units are the pico ampere (pA).} and by again 2 seconds of amplitude zero. Since the stimulation lasts 5 seconds this will just cause a pulse of 200pA and 1 second duration after a baseline recording for 2 seconds. 
+ 
+ \paragraph{}
+ Lets now copy example \ref{gettingStarted:example2} to a file (\texttt{gedit example2.xml}) and run this simulation (\texttt{\progname\ -c example2.xml}).
+ The result has been saved into the \texttt{example2.h5} file. We will now analyse this data with \matlab.
+ 
+ \paragraph{}
+ As for the previous section open matlab (\texttt{matlab -nodesktop}) and using the interactive mode lets plot the results and detect the spikes\footnote{Remember that in \matlab text that follows the percent sign (\%) are just comments and will hence be ignored.}.
+ 
+\begin{lstlisting}[language=matlab,morekeywords={loadH5Trace,ls},escapeinside=\{\}]
+% List files that follow the filter *.h5
+files = dir({\textquotesingle}*.h5{\textquotesingle})
+% Load the second trace (example2.h5) file
+[entities,info] = loadH5Trace(files(2).name)
+% Display the name of the entities
+{\{} entities.name {\}}
+% The voltage is in entity 1 given the order that the entities were specified.
+Vm = entities(1).data;
+% And the current (I) will be from the waveform.
+I = entities(2).data;
+% Generate a time vector
+time = [0:length(Vm)-1]*info.dt;
+% Make 2 plots in a figure 
+subplot(2,1,1)
+% One for the membrane voltage
+plot(time,Vm,{\textquotesingle}k{\textquotesingle})
+% And another for the injected current
+subplot(2,1,2)
+plot(time,I,{\textquotesingle}r{\textquotesingle})
+% Detect the time of the spike peaks.
+refractory = 1.e-3/info.dt; 
+% The following uses the function find peaks to find the spikes with threshold crossing at 0mV and a refractory period. 
+[peaks, loc] = findpeaks(Vm,{\textquotesingle}THRESHOLD{\textquotesingle},0,{\textquotesingle}MINPEAKDISTANCE{\textquotesingle},refractory);
+% The spikes are the locations of the peaks on the time vector
+spks = time(loc);
+% Plot on the voltage plot (you need to use hold on to keep the previous plot)
+subplot(2,1,1)
+hold on
+% Plot the spike times and the peaks of the Action Potentials. The {\textquotesingle}hold on{\textquotesingle} command makes that the plots overlap.
+plot(spks, peaks,{\textquotesingle}b.{\textquotesingle})
+
+\end{lstlisting}
+ 
+ 

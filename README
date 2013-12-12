@@ -1,0 +1,4 @@
+Latex documentation and getting started manual.
+To compile the manual do:
+pdflatex manual.tex
+
