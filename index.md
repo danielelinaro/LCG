@@ -15,6 +15,9 @@ integrated.
 ### Installation
 Detailed installation instructions can be found [here](installation.html).
 
+### Documentation
+An extensive documentation of the STIMGEN format is available [here](stimgen_doc.pdf).
+
 ### Authors and Contributors
 LCG is mostly written and maintained by [Daniele Linaro](mailto:danielelinaro@gmail.com).
 [João Couto](mailto:jpcouto@gmail.com) contributed code and design ideas, while [Michele

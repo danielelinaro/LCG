@@ -55,7 +55,7 @@ The following procedure should have you up and running:
         # make menuconfig
 
    This will evoke a user interface to configure the kernel options.
-   The following options are important for a correct function of the real-time system:
+   The following options are important for a correct function of the real-time system:  
       + Set the Preemption model to Fully Preemptible Kernel (RT) in the Processor type and features.
       + Disable CPU Frequency scaling under Power Management and ACPI options.
       + Disable Check for stack overflow and the options under Tracers in Kernel hacking.
@@ -79,7 +79,7 @@ The following procedure should have you up and running:
 LCG requires the following libraries:
 
 1. [**BOOST**](http://www.boost.org/).  
-   This library is used for several thing, among which
+   This library is used for several things, among which
    are multithreading, argument parsing, XML parsing and a few others. The website provides extensive
    documentation on how to install the library, but generally it is sufficient to type (for example
    with version 1.53.0):
@@ -127,7 +127,7 @@ LCG requires the following libraries:
    This library is used for data storage and management with high performance and efficiency. These libraries can be installed
    from source or, on Debian, by typing:
 
-        # apt-get install hdf5-tools hdf5-serial-dev
+        # apt-get install libhdf5-serial-1.8.4 libhdf5-serial-dev
 
 ### Compile and install the LCG library and applications
 
@@ -147,10 +147,10 @@ Alternatively, LCG can be installed to other locations by changing the prefix.
 
 Some features such as kernel estimation for the Active Electrode Compensation require the installation
 of an additional Python module. This requires you to install [Numpy](http://www.numpy.org/), [Scipy](http://www.scipy.org/),
-[Matplotlib](http://matplotlib.org/) and [PyTables](http://www.pytables.org). This can
+[Matplotlib](http://matplotlib.org/), [PyTables](http://www.pytables.org) and [lxml](http://lxml.de). This can
 be done either from source or, if you are using Debian, by issuing the following command:
 
-        # apt-get install python-numpy python-scipy python-matlablib python-tables
+        # apt-get install python-numpy python-scipy python-matplotlib python-tables python-lxml
 
 In the LCG root directory, type:
 
