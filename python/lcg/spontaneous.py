@@ -45,7 +45,7 @@ def main():
 
     duration = None    # [s]
     repetitions = 1
-    interval = 1       # [s]
+    interval = 0       # [s]
 
     samplingRate = float(os.environ['SAMPLING_RATE'])    # [Hz]
 
@@ -73,8 +73,8 @@ def main():
                 sys.exit(1)
         elif o in ('-i','--interval'):
             interval = float(a)
-            if interval <= 0:
-                print('The interval between repetitions must be positive.')
+            if interval < 0:
+                print('The interval between repetitions must be non-negative.')
                 sys.exit(1)
         elif o in ('-F','--sampling-rate'):
             samplingRate = float(a)

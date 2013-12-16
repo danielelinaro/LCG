@@ -67,9 +67,9 @@ def main():
         elif o == '-s':
             amplitude = float(a)
         elif o == '--output-factor':
-            output_factor = double(a)
+            output_factor = float(a)
         elif o == '--input-factor':
-            input_factor = double(a)
+            input_factor = float(a)
         elif o == '--output-units':
             output_units = a
         elif o == '--input-units':
