@@ -1,1 +1,306 @@
-In this chapter, we describe the electrophysiology protocols that come with \progname.
+In this chapter, we describe the electrophysiology protocols that come
+with \progname. However, before delving into the details of the
+protocols, it is worthwhile spending a few words on the organizing
+principles behind the working of \progname.
+
+The entry point of all \progname protocols is the program called
+\verb+lcg+. Its purpose is merely to parse its arguments and
+call the appropriate protocol with the arguments with which it was
+invoked. To clarify this concept, let's look at the following example:
+\begin{lstlisting}
+lcg steps -a -200,100,50 -d 2
+\end{lstlisting}
+This command instructs \verb+lcg+ to look for a program called
+\verb+lcg-steps+ in the directories where executable files are
+located,\footnote{These are usually stored in the \inlineCode{\$PATH}
+environment variable.} and invoke it with the subsequent arguments
+unchanged. The previous call is therefore equivalent to
+\begin{lstlisting}
+lcg-steps -a -200,100,50 -d 2
+\end{lstlisting}
+This approach is particularly suited to adding extensions to
+\progname: to do so, it is sufficient to follow the naming scheme just
+described and place additional scripts or programs where
+\verb+lcg+ can find them, i.e., anywhere in the path.
+ 
+\progname comes with a \verb+help+ command, that can be used to
+display general information about \progname and a list of the most
+commonly used protocols, by simply invoking
+\begin{lstlisting}
+lcg help
+\end{lstlisting}
+Alternatively, \verb+lcg-help+ accepts one single argument,
+which must be the name of a recognized protocol and invokes it with
+the \verb+-h+ option. For example, the following four commands
+produce the same result:
+\begin{lstlisting}
+lcg help steps
+lcg-help steps
+lcg steps -h
+lcg-steps -h
+\end{lstlisting}
+For this to work, all protocols must accept the \verb+-h+ option
+and interpret it as a request for help. All protocols that come with
+\progname adhere to this convention, and additional protocols should
+do the same.
+
+We now describe the most commonly used commands that are present at
+the time of this writing in \progname. All protocols allow the user to
+specify the sampling frequency (usually with a \verb+-F+ switch,
+but be careful of exceptions) and the input and output channels
+(usually with the \verb+-I+ and \verb+-O+ options, respectively,
+but be \emph{extremely} careful of exceptions).
+
+Of the following protocols, only those for the computation of f-I
+curves with a Proportional-Integral-Derivative (PID) controller and
+for clamping the frequency of a neuron require a real-time kernel. For
+all other protocols, a Comedi installation is sufficient.
+
+Note that, whenever in the following voltage clamp or current clamp
+are mentioned, \progname does not communicate with the amplifier to
+switch modes: it is up to the user to do so.
+
+An up-to-date list of the more commonly used protocols can be obtained
+by entering
+\begin{lstlisting}
+lcg help
+\end{lstlisting}
+
+\section{Action potential protocol}
+This protocol consists in injecting a brief (the default value is
+$1\,\milli\second$) depolarizing pulse of current to elicit a single
+action potential to extract its salient electrophysiological
+properties. The duration of the pulse should be short enough in order
+not to interfere with the actual shape of the action potential. The
+user can specify the amplitude and duration of the pulse, as well as
+the number of repetitions and the interval between them.\\
+For example, the following command
+\begin{lstlisting}
+lcg ap -a 2000 -d 1 -n 10 -i 5
+\end{lstlisting}
+injects $10$ pulses of amplitude $2000\,\pico\ampere$ and duration
+$1\,\milli\second$ with intervals of $5\,\second$. The voltage is
+recorded for $0.5\,\second$ before and after the application of the pulse.
+
+\section{V-I curve protocol}
+This protocol consists in injecting a series of hyperpolarizing and/or
+depolarizing steps of current to compute a V-I curve. The default
+is to inject steps of current from $-300$ to $50\,\pico\ampere$ in
+steps of $50\,\pico\ampere$, which is suited for cortical pyramidal
+neurons or other large types of cells. Alternatively, the user can
+specify the values of current by using the \verb+-a+ option.\\
+For example, the following command
+\begin{lstlisting}
+lcg vi -a -100,40,20 -d 1
+\end{lstlisting}
+instructs the protocol to inject steps of current from $-100$ to
+$40\,\pico\ampere$ in steps of $20\,\pico\ampere$ with a duration of
+$1\,\second$.
+
+\section{Time constant protocol}
+This protocol is identical to the action potential protocol described
+previously, with the sole exception that the injected pulses of
+current are hyperpolarizing and can therefore be used to compute the
+time constant of a cell. The default values of amplitude and duration
+of the pulses are $-300\,\pico\ampere$ and $10\,\milli\second$, but
+they can be changed using the \verb+-a+ and \verb+-d+
+options, respectively. \\
+For example, the command
+\begin{lstlisting}
+lcg tau -n 20
+\end{lstlisting}
+instructs the protocol to inject 20 pulses, instead of the default 30.
+
+\section{Current ramp protocol}
+This protocol injects an increasing ramp of current into a cell, to
+find its threshold for spiking. The user can specify the initial and
+final values of the ramp, as well as its duration.\\
+For example, the command
+\begin{lstlisting}
+lcg ramp -a 50 -A 300 -d 15
+\end{lstlisting}
+instructs the protocol to inject a $15\,\second$ ramp, starting from
+$50\,\pico\ampere$ and ending at $300\,\pico\ampere$.
+
+\section{White noise protocol}
+This protocol injects white noise into a cell. It is primarily used to
+compute the electrode kernel for the Active Electrode Compensation
+technique described in \cite{Brette:2008}.\\
+For example, the command
+\begin{lstlisting}
+lcg kernel -s 100
+\end{lstlisting}
+instructs the protocol to inject a noisy trace lasting $10\,\second$,
+with zero mean and standard deviation of $100\,\pico\ampere$. The
+default value of standard deviation is $250\,\pico\ampere$, which is
+suited for cortical pyramidal cells. The script also calls
+\verb+lcg-extract-kernels+ to extract the electrode kernel and
+saves the result in a file called \verb+kernel.dat+. An
+additional option is provided (\verb+-H+) to inject an
+additional \emph{holding} current that is not taken into account in
+the actual computation of the electrode kernel. This option is useful
+for spontaneously active cells, like Purkinje cells, or for \emph{in
+vivo} experiments.
+
+\section{Filtered noise protocol}
+This protocol injects a Ornstein-Uhlenbeck process into a cell. It can
+be used either to analyze the reliability and precision of cells, as
+was done in \cite{Mainen:1995}, or to extract the parameters of an
+exponential integrate and fire model, as described in
+\cite{Badel:2008}.\\
+For example, the command
+\begin{lstlisting}
+lcg ou -n 20 -i 5 -m 100 -s 100 -t 20 -d 3
+\end{lstlisting}
+instructs the protocol to inject 20 repetitions of a noisy current
+with mean and standard deviation equal to $100\,\pico\ampere$ and time
+constant of $20\,\milli\second$. The duration of each injection is
+$3\,\second$ and the interval between repetitions is $5\,\second$.
+
+\section{Input resistance}
+This protocol injects a train of hyperpolarizing pulses suited to
+compute the input resistance of a cell \emph{in vivo}, as described in
+\cite{Crochet:2006}.\\
+For example, the command
+\begin{lstlisting}
+lcg rin -a -100 -d 300 -f 1 -D 90
+\end{lstlisting}
+instructs the protocol to inject $300\,\milli\second$-long pulses of
+amplitude $-100\,\pico\ampere$ at a frequency of $1\,\hertz$. The
+total duration of the recording is specified by the \verb+-D+
+option, in this case $90\,\second$. Alternatively, the user can
+specify, with the \verb+-N+ option, the number of pulses to
+inject.
+
+\section{DC steps protocol}
+This protocol injects DC steps of current into a cell, and is a
+generalization of the previously described protocol for the
+computation of the V-I curve. It has additional parameters that allow
+to specify the duration of the recording after the application of the
+stimulus and an optional holding value.\\
+For example, the command
+\begin{lstlisting}
+lcg steps -a 100,400,50 -d 2 -n 4 -i 5
+\end{lstlisting}
+instructs the protocol to inject steps of current from $100$ to
+$400\,\pico\ampere$ in steps of $50\,\pico\ampere$ with a duration of
+$2\,\second$ and interval of $5\,\second$. Each amplitude is repeated
+4 times. Additionally, this protocol has a \verb+--vclamp+
+option, which instructs the program to consider the steps as voltage ones
+and use, as a consequence, the appropriate default conversion factors
+(contained in the \verb+.lcg-env.sh+ file, see
+Sec.~\ref{sec:configuration}). In this case, the command
+\begin{lstlisting}
+lcg steps -a -100,0,20 --vclamp
+\end{lstlisting}
+instructs the program to inject \emph{voltage} steps at values ranging from
+$-100$ to $0\,\milli\volt$, in steps of $20\,\milli\volt$. For all the
+other options, default values are used.\\
+Note that in both cases, the amplitudes of the steps are shuffled, in
+order to minimize the effects due to adaptation to increasing (or
+decreasing) stimulation amplitudes. However, an option is provided
+(\verb+--no-shuffle+) to inject the steps in a linear order.
+
+\section{f-I curve protocol}
+Input-output curves, also known as f-I curves, can be easily computed
+with \progname in two ways: the most straightforward and traditional
+one is to use \verb+lcg-steps+ to inject steps of current and
+subsequently count the number of spikes emitted for each amplitude.
+
+An alternative way is to use a PID
+controller and have the neuron follow an increasing ramp of
+frequency. The protocol that implements this algorithm is
+\verb+lcg-fi+, which requires a real-time kernel to operate correctly
+and can be called as follows:
+\begin{lstlisting}
+lcg fi -a 150 -m 5 -M 30 -T 30 -n 2 -w 60
+\end{lstlisting}
+which instructs the protocol to initially inject a current of
+$150\,\pico\ampere$ and drive the cell from a minimum of $5$ to a
+maximum of $30\,\hertz$. The protocol is repeated twice, with each
+trial lasting $30\,\second$ and an interval of $60\,\second$ between
+trials. Note that here the inter-trial interval option is specified by
+the \verb+-w+ option, instead of the more common \verb+-i+, which is
+used, together with \verb+-p+ and \verb+-d+, to specify the integral,
+proportional and derivative gains of the controller,
+respectively. Note also that, for optimal results, the initial value
+of current ($150\,\pico\ampere$ in the example) should be chosen such
+that it elicits spiking in the cell at a frequency as close as
+possible to the minimum required value (here equal to $5\,\hertz$).
+
+\section{Frequency clamp protocol}
+In a sense, this protocol is the dual of an injection of
+suprathreshold current: in that case, a constant current is injected
+(clamped) and the firing frequency of the cell can be measured. Here,
+the protocol finds the current necessary to make the cell spike at a
+given frequency. To do so, it uses a PID controller in much the same
+way as the protocol for the computation of a f-I curve, with the
+difference that here the value of frequency is a constant instead of a
+ramp.\\
+For example, the command
+\begin{lstlisting}
+lcg fclamp -f 10 -a 100
+\end{lstlisting}
+instructs the protocol to clamp the firing frequency of the cell at a
+value of $10\,\hertz$, starting with an injected current of
+$100\,\pico\ampere$, which must be above threshold, in order for the
+frequency estimator to work properly.
+
+\section{Spontaneous activity protocol}
+This protocol can be used to record spontaneous activity from an
+arbitrary number of input channels and is suited both for \emph{in
+vitro} and \emph{in vivo} experiments. The user can specify the
+duration of the recording, the device, subdevice, channels and gains
+to be used in the recording. The only limitation is that all channels
+need be on the same device and subdevice.\\
+For example, the command
+\begin{lstlisting}
+lcg spontaneous -d 60 -I 0,1,2,3
+\end{lstlisting}
+instructs the protocol to record for $60\,\second$ from channels 0, 1,
+2 and 3. If not specified, the default device file and input subdevice
+are taken from the \verb+.lcg-env.sh+ file, see
+Sec.~\ref{sec:configuration}.
+
+\section{Train  of pulses protocol}
+This protocol injects a train of brief depolarizing protocols into a
+cell to elicit action potentials, while simultaneously recording from
+two cells, the stimulated one and another that might be connected to
+it. The purpose of this protocol is therefore to test the connectivity
+between pairs of cells and to measure their short-term synaptic
+properties.\\
+For example, the command
+\begin{lstlisting}
+lcg pulses -N 8 -O 0 -I 0,1 -f 30 -d 1 -A 3000
+\end{lstlisting}
+instructs the protocol to stimulate a presynaptic cell with a train of
+8 pulses of duration $1\,\milli\second$ and amplitude
+$3000\,\pico\ampere$ at a frequency of $30\,\hertz$. The output
+channel (i.e., the channel used to inject current into the presynaptic
+cell) is number 0, while the input channels are numbers 0 and 1, with
+0 being the channel connected to the presynaptic cell and 1 that of
+the postsynaptic cell. The default is to record the presynaptic cell
+in current clamp and the postsynaptic one in voltage clamp, but the
+option \verb+--cclamp+ allows to instruct the protocol to record both
+channels in current clamp mode.
+
+\section{Utility programs}
+\progname contains some additional programs that are not protocols,
+but that can be used in various occasions during an electrophysiology
+experiment. They are described in brief in the following, and we refer
+the user to their help (i.e., \inlineCode{lcg help utility_name}) for
+an in depth description of their options.
+\begin{itemize}
+\item \inlineCode{lcg zero} outputs zero on all channels of a DAQ
+board. It is particularly useful at the beginning of an experiment,
+when the output of the DAQ board is undefined.
+\item \inlineCode{lcg output} outputs a given value on some channels
+of the DAQ board. It can be useful when it is required to hold a cell
+with a certain current or to a certain voltage, for example in voltage
+clamp experiments.
+\item \inlineCode{lcg annotate} allows the user to add comments into
+an existing H5 data file. It accepts two options, \verb+-f+ for the
+filename and \verb+-m+ for the comment message. If no options are
+specified, the program prompts the user for the file name and for a
+message.
+\end{itemize}
