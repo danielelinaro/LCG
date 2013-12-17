@@ -213,7 +213,7 @@ def main():
     lcg.writeIOConfigurationFile(configFile,samplingRate,totalDuration,channels)
 
     for i in range(nTrials):
-        #sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+        sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
         if i < nTrials-1:
             sub.call('sleep ' + str(interTrialInterval), shell=True)
 
