@@ -203,7 +203,7 @@ def main():
     stim = [[pre,1,0,0,0,0,0,0,0,0,0,1],
             [nPulses/stimulusFrequency,8,stimulusAmplitude,-stimulusFrequency,stimulusDuration,0,0,0,0,0,0,1]]
     if withRecovery:
-        stim.append([pause-(1./stimulusFrequency-stimulusDuration*1e-3),1,0,0,0,0,0,0,0,0,0,1])
+        stim.append([pause-1./stimulusFrequency,1,0,0,0,0,0,0,0,0,0,1])
         stim.append([stimulusDuration*1e-3,1,stimulusAmplitude,0,0,0,0,0,0,0,0,1])
     stim.append([post,1,0,0,0,0,0,0,0,0,0,1])
     totalDuration = lcg.writeStimFile(stimFile, stim, False)
@@ -213,7 +213,7 @@ def main():
     lcg.writeIOConfigurationFile(configFile,samplingRate,totalDuration,channels)
 
     for i in range(nTrials):
-        sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+        #sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
         if i < nTrials-1:
             sub.call('sleep ' + str(interTrialInterval), shell=True)
 

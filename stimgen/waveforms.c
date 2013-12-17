@@ -332,7 +332,7 @@ void POISSON_SHOT1(double amplitude, double frequency, double width, double *out
 
         /* Modified by Daniele Linaro on Jun 25, 2012 */
         /* START */
-        k = (uint) -tmp;       // period, in number of samples
+        k = (uint) round(-srate/frequency);       // period, in number of samples
         i = -1;                 // number of periods
         for (j=0; j<Ni; j++, (*index)++) {
                 if (j%k == 0)
