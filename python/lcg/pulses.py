@@ -180,19 +180,19 @@ def main():
         sys.exit(1)
 
     if interTrialInterval <= 0:
-        print('The interTrialInterval between repetitions must be positive.')
+        print('The interval between repetitions must be positive.')
         sys.exit(1)
 
     if pre <= 0:
-        print('The interTrialInterval before the beginning of the stimulation must be positive.')
+        print('The interval before the beginning of the stimulation must be positive.')
         sys.exit(1)
 
     if post <= 0:
-        print('The interTrialInterval after the end of the stimulation must be positive.')
+        print('The interval after the end of the stimulation must be positive.')
         sys.exit(1)
 
     if withRecovery and pause <= 0:
-        print('The interTrialInterval between pulse train and recovery pulse must positive.')
+        print('The interval between pulse train and recovery pulse must positive.')
         sys.exit(1)
 
     if computeKernel:
