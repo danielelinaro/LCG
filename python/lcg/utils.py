@@ -415,7 +415,12 @@ def findSpikes(t, V, thresh=0):
 ########## Data loading functions ##########
 
 def loadH5Trace(filename):
-    fid = tbl.openFile(filename,mode='r')
+    try:
+        fid = tbl.openFile(filename,mode='r')
+    except:
+        print('%s: not a valid H5 file.' % filename)
+        fid.close()
+        return None,None
     try:
         version = fid.root.Info._v_attrs.version
     except:
