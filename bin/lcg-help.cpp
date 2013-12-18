@@ -27,6 +27,7 @@ const char *lcg_commands[] = {
         "   Rin           Inject a series of hyperpolarizing pulses to compute the input resistance of a cell",
         "   spontaneous   Record spontaneous activity from a number of channels on a single subdevice",
         "   steps         Inject steps of voltage or current into a neuron",
+        "   stimulus      Perform a stimulation defined in a stimulus file",
         "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
         "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
         "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",

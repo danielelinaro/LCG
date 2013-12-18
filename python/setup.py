@@ -45,7 +45,8 @@ setup(
             'lcg-sinusoids = lcg.sinusoids:main',
             'lcg-spontaneous = lcg.spontaneous:main',
             'lcg-steps = lcg.step:main',
-            'lcg-stimgen = lcg.stimgen_interface:main',
+            'lcg-stimgen = lcg.stimgen:main',
+            'lcg-stimulus = lcg.stimulus:main',
             'lcg-tau = lcg.tau:main',
             'lcg-vi = lcg.vi:main'
             ]

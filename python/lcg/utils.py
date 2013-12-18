@@ -49,47 +49,6 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulsesInBurst=1, withRecover
     dur = writeStimFile(filename, stimulus, False)
     return dur
 
-def writeStimFile(filename, stimulus, preamble=None):
-    """
-    Writes a generic stimulus file.
-
-    Parameters:
-       filename - the name of the file that will be written.
-       stimulus - a matrix containing the stimulus.
-       preamble - a 2 element list containing the amplitudes of a 10 ms and a 100 ms
-                  long pulses to add at the beginning of the stimulation. It can be None,
-                  in which case no preamble is added, or True, in which case default
-                  values of -300 pA and -100 pA are used for the first and second pulse,
-                  respectively.
-    Returns:
-       The duration of the stimulation.
-           
-    """
-    if type(stimulus) == list and type(stimulus[0]) != list:    # a 1-dimensional list
-        stimulus = [stimulus]
-    with open(filename,'w') as fid:
-        preamble_dur = 0
-        if preamble:
-            if type(preamble) != list or len(preamble) != 2:
-                preamble = [-300,-100]
-            preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
-                        [0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
-                        [1,1,0,0,0,0,0,0,0,0,0,1]]
-            for row in preamble:
-                preamble_dur = preamble_dur + row[0]
-                for value in row:
-                    fid.write(str(value)+'\t')
-                fid.write('\n')
-        for row in stimulus:
-            if row[0] == 0 and row[1] > 0:   # don't write lines that have zero duration
-                continue
-            for value in row:
-                fid.write(str(value)+'\t')
-            fid.write('\n')
-    return preamble_dur + np.sum([row[0] for row in stimulus])
-    
 def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim','ginh.stim']):
     G = [[[before,1,0,0,0,0,0,0,0,0,0,1],
           [duration,2,Gexc['m'],Gexc['s'],Gexc['tau'],0,0,1,np.random.poisson(10000),0,0,1],
