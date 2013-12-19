@@ -54,6 +54,7 @@ def main():
         usage()
         sys.exit(1)
 
+    # default values
     stimfiles = None
     stimdir = None
     repetitions = 1
@@ -72,6 +73,7 @@ def main():
 
     suffix = 'CC'
 
+    # parse arguments
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
@@ -125,6 +127,7 @@ def main():
         elif o in ('-V','--vclamp'):
             suffix = 'VC'
 
+    # check the correctness of the arguments
     if len(inputChannels) == 0:
         inputChannels = [int(os.environ['AI_CHANNEL'])]
 
@@ -152,8 +155,15 @@ def main():
         sys.exit(1)
 
     if stimfiles is None and stimdir is None:
-        print('You must specify one of -s or -d.')
-        sys.exit(0)
+        # no -s or -d option: check whether a stimulus file was piped from lcg-stimgen
+        stimulus = sys.stdin.read()
+        if len(stimulus):
+            stimfiles = ['/tmp/tmp.stim']
+            with open(stimfiles[0],'w') as fid:
+                fid.write(stimulus)
+        else:
+            print('You must specify one of -s or -d.')
+            sys.exit(0)
 
     if stimdir is not None:
         if stimfiles is not None:

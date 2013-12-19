@@ -44,7 +44,7 @@ def usage():
     print('                  <waveform_N> [option <value>] parameter_1 parameter_2 ... parameter_5')
     print('')
     print('The following global options must be passed before any waveform-specific option:')
-    print('   -o, --output   output file name.')
+    print('   -o, --output   output file name (if not specified, stdout is used).')
     print('   -a, --append   the waveform definition is appended to the stimulus file.')
     print('')
     print('The waveform specific options are the following:')
@@ -85,7 +85,7 @@ def parse_global_args(argv):
     except getopt.GetoptError, err:
         usage()
         sys.exit(1)
-    options = {'append': False}
+    options = {'append': False, 'output_filename': None}
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
@@ -94,8 +94,8 @@ def parse_global_args(argv):
             options['output_filename'] = a
         elif o in ('-a','--append'):
             options['append'] = True
-    if not 'output_filename' in options:
-        print('You must specify the name of the output file (-o switch).')
+    if options['append'] and options['output_filename'] is None:
+        print('You cannot use -a without -o.')
         sys.exit(1)
     return options
 
@@ -223,7 +223,8 @@ def writeStimFile(filename, stimulus, preamble=None):
     Writes a generic stimulus file.
 
     Parameters:
-       filename - the name of the file that will be written.
+       filename - the name of the file that will be written. It can be None, in which case
+                  stdout is used.
        stimulus - a matrix containing the stimulus.
        preamble - a 2 element list containing the amplitudes of a 10 ms and a 100 ms
                   long pulses to add at the beginning of the stimulation. It can be None,
@@ -236,27 +237,33 @@ def writeStimFile(filename, stimulus, preamble=None):
     """
     if type(stimulus) == list and type(stimulus[0]) != list:    # a 1-dimensional list
         stimulus = [stimulus]
-    with open(filename,'w') as fid:
-        preamble_dur = 0
-        if preamble:
-            if type(preamble) != list or len(preamble) != 2:
-                preamble = [-300,-100]
-            preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
-                        [0.5,1,0,0,0,0,0,0,0,0,0,1],
-                        [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
-                        [1,1,0,0,0,0,0,0,0,0,0,1]]
-            for row in preamble:
-                preamble_dur = preamble_dur + row[0]
-                for value in row:
-                    fid.write(str(value)+'\t')
-                fid.write('\n')
-        for row in stimulus:
-            if row[0] == 0 and row[1] > 0:   # don't write lines that have zero duration
-                continue
+    if filename is None:
+        fid = sys.stdout
+    else:
+        fid = open(filename,'w')
+
+    preamble_dur = 0
+    if preamble:
+        if type(preamble) != list or len(preamble) != 2:
+            preamble = [-300,-100]
+        preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
+                    [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
+                    [0.5,1,0,0,0,0,0,0,0,0,0,1],
+                    [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
+                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+        for row in preamble:
+            preamble_dur = preamble_dur + row[0]
             for value in row:
                 fid.write(str(value)+'\t')
             fid.write('\n')
+    for row in stimulus:
+        if row[0] == 0 and row[1] > 0:   # don't write lines that have zero duration
+            continue
+        for value in row:
+            fid.write(str(value)+'\t')
+        fid.write('\n')
+    if fid != sys.stdout:
+        fid.close()
     return preamble_dur + np.sum([row[0] for row in stimulus])
     
 def main():
