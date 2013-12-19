@@ -185,7 +185,7 @@ that it is easier to have multiple installations for different users.
 mkdir $HOME/local
 git clone https://github.com/danielelinaro/dynclamp.git lcg
 cd lcg
-./autoreconf -i
+autoreconf -i
 ./configure --prefix=$HOME/local
 make
 make install
