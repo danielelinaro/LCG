@@ -19,6 +19,9 @@ config.*
 *.bbl
 *.blg
 *.toc
+*.stim
+*.dat
+*.xml
 Makefile
 Makefile.in
 configure

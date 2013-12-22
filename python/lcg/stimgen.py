@@ -33,9 +33,8 @@ default_waveform_options = {'name': None,
 
 def usage():
     print('This script writes stimulus files that can be used by LCG to perform voltage')
-    print('or current clamp experiments.')
-    print('Consult the STIMGEN manual to undestand which parameters are meaningful for')
-    print('each waveform.')
+    print('or current clamp experiments. Consult the STIMGEN manual to undestand which ')
+    print('parameters are meaningful for each waveform.')
     print('')
     print('Usage: %s -o|--output filename [-a|--append] '  % os.path.basename(sys.argv[0]))
     print('                  <waveform_1> [option <value>] parameter_1 parameter_2 ... parameter_5')
@@ -44,18 +43,22 @@ def usage():
     print('                  <waveform_N> [option <value>] parameter_1 parameter_2 ... parameter_5')
     print('')
     print('The following global options must be passed before any waveform-specific option:')
-    print('   -o, --output   output file name (if not specified, stdout is used).')
-    print('   -a, --append   the waveform definition is appended to the stimulus file.')
     print('')
-    print('The waveform specific options are the following:')
-    print(' -d, --duration   duration of the waveform, in seconds.')
-    print(' -s, --seed       the seed to use (default is not to fix the seed).')
-    print(' -e, --exponent   exponent to which the waveform is raised (default 1).')
-    print(' -p, --plus       sum this and the following waveform.')
-    print(' -m, --minus      subtract the followin waveformg from this one.')
-    print(' -M, --multiply   multiply this and the following waveform.')
-    print(' -D, --divide     divide this and the following waveform.')
-    print(' -E, --equal      compute the composite waveform. This option is required for the last waveform in a series.')
+    print('   -o, --output     output file name (if not specified, stdout is used)')
+    print('   -a, --append     the waveform definition is appended to the stimulus file')
+    print('')
+    print('The waveform specific options are the following (note that these MUST be passed')
+    print('BEFORE the positional arguments that define the parameters of the subwaveform):')
+    print('')
+    print('   -d, --duration   duration of the waveform, in seconds (in a composite waveform it')
+    print('                    can be omitted from the second subwaveform onward)')
+    print('   -s, --seed       the seed to use (default is not to fix the seed)')
+    print('   -e, --exponent   exponent to which the waveform is raised (default 1)')
+    print('   -p, --plus       sum this and the following waveform')
+    print('   -m, --minus      subtract the followin waveformg from this one')
+    print('   -M, --multiply   multiply this and the following waveform')
+    print('   -D, --divide     divide this and the following waveform')
+    print('   -E, --equal      compute the composite waveform: this option is required for the last waveform in a series')
     print('The parameters can also be specified with `--pi\' switches, with i ranging from 1 to 5.')
     print('')
     print('The following codes are accepted (in a case-insensitive fashion):')
@@ -64,12 +67,16 @@ def usage():
     print('To know which parameters are required for each waveform, type \'%s help <waveform>\'' % os.path.basename(sys.argv[0])) 
     print('')
     print('Examples:')
+    print('')
     print('  Create a constant waveform of duration 1 sec and amplitude 100:')
     print('    %s -o dc.stim dc -d 1 100' % os.path.basename(sys.argv[0]))
     print('  Create a sine waveform of duration 2 sec, amplitude 50, frequency 10, phase 0 and offset 5:')
     print('    %s -o sine.stim sine --p1 50 --p2 10 --p3 0 --p4 5 -d 2' % os.path.basename(sys.argv[0]))
     print('  Append to the previous stimulus file the constant waveform of the first example:')
     print('    %s -o sine.stim -a dc -d 1 100' % os.path.basename(sys.argv[0]))
+    print('  Create a composite waveform given by the multiplication of a sine with a filtered noise:')
+    print('    %s -o multi.stim sine -M -d 2 1 1 0 0 ou -E 100 10 20' % os.path.basename(sys.argv[0]))
+    print('')
     
 def waveform_usage(waveform):
     if len(waveform_parameters[waveform]) == 1:
@@ -77,7 +84,7 @@ def waveform_usage(waveform):
     else:
         print('Waveform `%s\' takes %d parameters:' % (waveform,len(waveform_parameters[waveform])))
     for i,par in enumerate(waveform_parameters[waveform]):
-        print('     --p%d: %s' % (i+1,par))
+        print('   %d) %s (--p%d)' % (i+1,par,i+1))
 
 def parse_global_args(argv):
     try:
@@ -201,7 +208,7 @@ def createStimulusEntry(opts):
     return stimulus
 
 def createStimulusGroup(entries):
-    operator_codes = {'plus': 1, 'minus': 2, 'multiply': 3, 'divide': 4}
+    operator_codes = {'plus': 1, 'minus': 3, 'multiply': 2, 'divide': 4}
     stimulus = []
     for i,entry in enumerate(entries):
         if not entry['duration'] is None and entry['duration'] != entries[0]['duration']:
