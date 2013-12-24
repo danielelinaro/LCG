@@ -27,6 +27,9 @@ python setup.py build
 python setyp.py install --prefix=$HOME/local
 ```
 
+LCG also requires some environment variables, which can be set following
+the instructions [this page](http://danielelinaro.github.io/dynclamp/installation.html).
+
 ## Usage
 LCG consists of a main executable, called lcg, which takes as arguments
 commands and related options.
@@ -40,6 +43,19 @@ To display information about each command, type:
 ```
 lcg help command
 lcg command -h
+```
+
+## Documentation
+The GitHub Pages website of LCG can be found [here](http://danielelinaro.github.io/dynclamp).
+It contains detailed installation instruction as well as a link to the LCG manual.
+The latest version of the manual can be obtained by checking out the manual branch and
+compiling the LaTeX source:
+```
+git checkout manual
+pdflatex manual.tex
+pdflatex manual.tex
+bibtex manual
+pdflatex manual.tex
 ```
 
 ### Version
