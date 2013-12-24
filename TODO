@@ -1,14 +1,13 @@
 
 === Urgent
 
--) Add parameters to H5 files when using streams.
 -) Extend lcg-steps with a --vclamp option.
 
 === Short term (and therefore relatively simple) ===
 
+-) the H5 filename should be the timestamp of the beginning of the experiment, also when using streams.
 -) where is LOGFILE used and does it still make sense to use it?
 -) channels are not being recorded in the order they are specified in non-rt config file.
--) include the channel number on the H5 entity when recording.
 -) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
 -) control output trimming in comedi_io.cpp.
 -) finish to add the ionic currents for LTS neurons.

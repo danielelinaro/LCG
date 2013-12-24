@@ -264,10 +264,13 @@ void dump_cmd(LogLevel level, comedi_cmd *cmd)
 ///// CHANNEL CLASSES - START /////
 
 Channel::Channel(const char *device, uint channel, double samplingRate, const char *units, uint id)
-        : Stream(id), m_channel(channel), m_samplingRate(samplingRate) {
+        : Stream(id), m_channel(channel), m_samplingRate(samplingRate)
+{
         strncpy(m_device, device, FILENAME_MAXLEN);
         setName("Channel");
         setUnits(units);
+        m_parameters["channel"] = (double) m_channel;
+        m_parameters["sampling_rate"] = m_samplingRate;
 }
 
 Channel::~Channel()
@@ -295,6 +298,10 @@ ComediChannel::ComediChannel(const char *device, uint subdevice, uint range, uin
           m_conversionFactor(conversionFactor), m_validDataLength(0)
 {
         setName("ComediChannel");
+        m_parameters["subdevice"] = (double) m_subdevice;
+        m_parameters["range"] = (double) m_range;
+        m_parameters["reference"] = (double) m_reference;
+        m_parameters["conversion_factor"] = m_conversionFactor;
 }
 
 uint ComediChannel::subdevice() const

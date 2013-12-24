@@ -266,7 +266,7 @@ def main():
             lcg.writeIOConfigurationFile(configFile,samplingRate,duration,channels)
             sys.stdout.write('\rTrial %02d/%02d ' % (cnt,total))
             sys.stdout.flush()
-            #sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+            sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
             if cnt < total:
                 sub.call('sleep ' + str(interval), shell=True)
             else:
@@ -283,7 +283,7 @@ def main():
                 lcg.writeIOConfigurationFile(configFile,samplingRate,duration,channels)
                 sys.stdout.write('\rTrial %02d/%02d ' % (cnt,total))
                 sys.stdout.flush()
-                #sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+                sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
                 if cnt < total:
                     sub.call('sleep ' + str(interval), shell=True)
                 else:
