@@ -3,20 +3,30 @@ layout: modernist
 title: Welcome
 ---
 
-LCG is a software to perform electrophysiological experiments.
+LCG is a software suite for electrophysiological experiments.
 
-It offers functionalities for performing not only standard current- and voltage-clamp
-experiments, but also dynamic-clamp and closed-loop experiments. Additionally, LCG makes
-it easy to perform hybrid experiments, in which real and simulated elements are seamlessly
+It offers functionalities for performing not only standard current and
+voltage clamp experiments, but also dynamic clamp and closed loop
+experiments. Additionally, LCG makes it easy to perform hybrid
+experiments, in which real and simulated elements are seamlessly
 integrated.
 
 ### Features
+The main features of LCG are the following:
+- dynamic clamp capabilities, with built-in active electrode compensation; 
+- straightforward design and implementation of closed loop and hybrid experiments; 
+- command-line operability; 
+- ease of automation by scripting; 
+- compact description of stimulation waveforms; 
+- simple implementation of non real time protocols (e.g., current and voltage clamp); 
+- support for multiple real time engines; 
+- simple installation and operation procedures. 
 
 ### Installation
 Detailed installation instructions can be found [here](installation.html).
 
 ### Documentation
-An extensive documentation of the STIMGEN format is available [here](stimgen_doc.pdf).
+Extensive documentation on the usage of LCG can be found [here](manual.html).
 
 ### Authors and Contributors
 LCG is mostly written and maintained by [Daniele Linaro](mailto:danielelinaro@gmail.com).
@@ -37,6 +47,6 @@ is kindly ackowledged.
 ### Contacts
 Daniele Linaro - <danielelinaro@gmail.com>  
 Jo&atilde;o Couto - <jpcouto@gmail.com>  
-Michele Giugliano - <michele.giugliano@ua.ac.be>
+Michele Giugliano - <michele.giugliano@uantwerpen.be>
 
 
