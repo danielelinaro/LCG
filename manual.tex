@@ -50,6 +50,7 @@
 % string literal style
   stringstyle=\color{mauve},      
   tabsize=4,
+  deletekeywords={local,env},
   literate={\$}{{{\$}}}1
 }
 
@@ -57,9 +58,9 @@
 \newcommand{\progname}{\textsc{lcg}\xspace}
 \newcommand{\matlab}{Matlab\textsuperscript{\textregistered}}
 
-\title{\textbf{\progname} \\ User manual}
+\title{\textbf{LCG} - electrophysiology on the command-line \\ User manual}
 \author{Daniele Linaro \\ Jo\~ao Couto \\ Michele Giugliano}
-\date{}
+\date{\today}
 \hypersetup{
  pdftitle = {\progname, command-line electrophysiology},
  pdfkeywords = {electrophysiology,dynamic clamp,real-time},
@@ -85,7 +86,7 @@
 %\input{chapters/getting_started}
 
 \chapter{Installation}
-\label{chap:install}
+\label{chap:installation}
 \input{chapters/installation}
 
 \chapter{Electrophysiology protocols}

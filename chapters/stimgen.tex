@@ -10,7 +10,26 @@ use \emph{configuration} files to describe arbitrary experiments,
 interactions of elementary objects. Configuration files and such
 objects, called \emph{entities} in the context pf \progname, are
 described in detail in Chapters~\ref{chap:configuration} and
-\ref{chap:entities}, respectively.
+\ref{chap:entities}, respectively. This chapter describes how to use
+\progname to inject arbitrary waveforms, described in stimulus files.
 
-This chapter describes how to use \progname to inject arbitrary
-waveforms, described in stimulus files.
+In principle, all traditional electrophysiology protocols (i.e., those
+that do not require real-time control over the recorded quantities),
+can be implemented in \progname by using just two commands,
+\verb+lcg-stimgen+ and \verb+lcg-stimulus+: the former produces
+stim-files\footnote{The syntax of stim-files is explained in great
+  detail in the companion manual, which must be read to properly
+  understand the following instructions.} according to the
+specification of the user, and the
+latter applies the synthesized waveforms to the appropriate output
+channels while at the same time recording from an arbitrary number of
+input channels. 
+
+As a matter of fact, all the protocols described in
+Chapter~\ref{chap:protocols}, with the exception of f-I
+curve and frequency clamp protocols described in Sections~\ref{sec:fi}
+and \ref{sec:fclamp}, respectively, can be implemented using only
+\verb+lcg-stimgen+ and \verb+lcg-stimulus+. The reason for their
+existence is simply the possibility to define appropriate default
+values, which make the application of the protocols even simpler.
+

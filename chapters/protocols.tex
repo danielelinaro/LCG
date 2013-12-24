@@ -1,51 +1,7 @@
 In this chapter, we describe the electrophysiology protocols that come
-with \progname. However, before delving into the details of the
-protocols, it is worthwhile spending a few words on the organizing
-principles behind the working of \progname.
+with \progname.
 
-The entry point of all \progname protocols is the program called
-\verb+lcg+. Its purpose is merely to parse its arguments and
-call the appropriate protocol with the arguments with which it was
-invoked. To clarify this concept, let's look at the following example:
-\begin{lstlisting}
-lcg steps -a -200,100,50 -d 2
-\end{lstlisting}
-This command instructs \verb+lcg+ to look for a program called
-\verb+lcg-steps+ in the directories where executable files are
-located,\footnote{These are usually stored in the \inlineCode{\$PATH}
-environment variable.} and invoke it with the subsequent arguments
-unchanged. The previous call is therefore equivalent to
-\begin{lstlisting}
-lcg-steps -a -200,100,50 -d 2
-\end{lstlisting}
-This approach is particularly suited to adding extensions to
-\progname: to do so, it is sufficient to follow the naming scheme just
-described and place additional scripts or programs where
-\verb+lcg+ can find them, i.e., anywhere in the path.
- 
-\progname comes with a \verb+help+ command, that can be used to
-display general information about \progname and a list of the most
-commonly used protocols, by simply invoking
-\begin{lstlisting}
-lcg help
-\end{lstlisting}
-Alternatively, \verb+lcg-help+ accepts one single argument,
-which must be the name of a recognized protocol and invokes it with
-the \verb+-h+ option. For example, the following four commands
-produce the same result:
-\begin{lstlisting}
-lcg help steps
-lcg-help steps
-lcg steps -h
-lcg-steps -h
-\end{lstlisting}
-For this to work, all protocols must accept the \verb+-h+ option
-and interpret it as a request for help. All protocols that come with
-\progname adhere to this convention, and additional protocols should
-do the same.
-
-We now describe the most commonly used commands that are present at
-the time of this writing in \progname. All protocols allow the user to
+All protocols allow the user to
 specify the sampling frequency (usually with a \verb+-F+ switch,
 but be careful of exceptions) and the input and output channels
 (usually with the \verb+-I+ and \verb+-O+ options, respectively,
@@ -201,7 +157,7 @@ order to minimize the effects due to adaptation to increasing (or
 decreasing) stimulation amplitudes. However, an option is provided
 (\verb+--no-shuffle+) to inject the steps in a linear order.
 
-\section{f-I curve protocol}
+\section{f-I curve protocol}\label{sec:fi}
 Input-output curves, also known as f-I curves, can be easily computed
 with \progname in two ways: the most straightforward and traditional
 one is to use \verb+lcg-steps+ to inject steps of current and
@@ -228,7 +184,7 @@ of current ($150\,\pico\ampere$ in the example) should be chosen such
 that it elicits spiking in the cell at a frequency as close as
 possible to the minimum required value (here equal to $5\,\hertz$).
 
-\section{Frequency clamp protocol}
+\section{Frequency clamp protocol}\label{sec:fclamp}
 In a sense, this protocol is the dual of an injection of
 suprathreshold current: in that case, a constant current is injected
 (clamped) and the firing frequency of the cell can be measured. Here,

@@ -1,1 +1,88 @@
-This manual describes the functionalities of \progname, a tool to perform electrophysiology experiments.
+This manual describes the functionalities of \progname, a suite of
+programs -- called {\it commands} -- that can be used to
+perform electrophysiological experiments.\\
+\progname was developed by Daniele Linaro and Jo\~ao Couto while at
+the Theoretical Neurobiology and Neuroengineering Laboratory of the
+University of Antwerp. Michele Giugliano developed the concept and
+meta-description of stimulus files and implemented the first version
+of the related source code.
+
+The main features of \progname are the following:
+\begin{itemize}
+\item dynamic clamp capabilities, with built-in active electrode
+compensation \cite{Brette:2008};
+\item straightforward design and implementation of closed loop and
+hybrid experiments;
+\item command-line operability;
+\item ease of automation by scripting;
+\item compact description of stimulation waveforms;
+\item simple implementation of non real time protocols (e.g., current
+  and voltage clamp);
+\item support for multiple real time engines;
+\item simple installation and operation procedures.
+\end{itemize}
+
+The entry point of all \progname protocols is the program called
+\verb+lcg+. Its purpose is merely to parse its arguments and
+call the appropriate protocol with the arguments with which it was
+invoked. To clarify this concept, let's look at the following example:
+\begin{lstlisting}
+lcg steps -a -200,100,50 -d 2
+\end{lstlisting}
+This command instructs \verb+lcg+ to look for a program called
+\verb+lcg-steps+ in the directories where executable files are
+located,\footnote{These are usually stored in the \inlineCode{\$PATH}
+environment variable.} and invoke it with the subsequent arguments
+unchanged. The previous call is therefore equivalent to
+\begin{lstlisting}
+lcg-steps -a -200,100,50 -d 2
+\end{lstlisting}
+This approach is particularly suited to adding extensions to
+\progname: to do so, it is sufficient to follow the naming scheme just
+described and place additional scripts or programs where
+\verb+lcg+ can find them, i.e., anywhere in the path.
+ 
+\progname comes with a \verb+help+ command, that can be used to
+display general information about \progname and a list of the most
+commonly used protocols, by simply invoking
+\begin{lstlisting}
+lcg help
+\end{lstlisting}
+Alternatively, \verb+lcg-help+ accepts one single argument,
+which must be the name of a recognized protocol and invokes it with
+the \verb+-h+ option. For example, the following four commands
+produce the same result:
+\begin{lstlisting}
+lcg help steps
+lcg-help steps
+lcg steps -h
+lcg-steps -h
+\end{lstlisting}
+For this to work, all protocols must accept the \verb+-h+ option
+and interpret it as a request for help. All protocols that come with
+\progname adhere to this convention, and additional protocols should
+do the same.
+
+The manual is organized as follows: Chap.~\ref{chap:installation}
+covers in detail the installation of a real time operating system and of
+\progname and its dependencies. Chapter~\ref{chap:protocols} describes
+the most commonly used electrophysiological protocols that are
+embedded within \progname, while Chap.~\ref{chap:stimgen} explains how
+stimulus files can be used to apply arbitrary stimulation protocols,
+in traditional voltage and current clamp
+experiments. Chapter~\ref{chap:datafiles} covers the internal
+organization of the data files saved by \progname and contains a few
+examples that show how to load \progname data files using both Matlab
+and Python. Chapters~\ref{chap:configuration} through
+\ref{chap:entities} explain how configuration files can be used to
+describe custom experimental protocols, and which basic building blocks
+-- called {\it entities} or {\it streams} -- are available in \progname.
+Finally, Chap.~\ref{chap:features} covers some additional features of
+\progname.
+
+In the simplest scenario, in which \progname is already installed on a
+machine and the experimentalist only wants to perform conventional
+voltage and/or current clamp experiments, without the need for real
+time control over the experiment, Chapters~\ref{chap:protocols} and
+\ref{chap:stimgen} with some parts of Chap.~\ref{chap:datafiles} are
+sufficient to get going.

@@ -48,8 +48,8 @@ libtool bison flex autoconf flex libgsl0-dev
 \item \textbf{Check which kernels and patches are available.}
   It is advisable to install the real-time patch on a ``vanilla''
   kernel. To do so, navigate to
-  \texttt{\href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the
-      kernel.org ``rt'' project page}} and check which patches are
+  \href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the
+      kernel.org ``rt'' project page} and check which patches are
   available for the kernel that you wish to install. 
 \item \textbf{Download the kernel and the realtime patch} The
   directory \textbf{/usr/src} is a common place to install the Linux
@@ -115,7 +115,7 @@ name of the newly installed kernel in
     wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
     tar --bzip2 -xvf boost_1_53_0.tar.bz2
     cd boost_1_53_0.tar.bz2
-    ./bootstrap.sh
+    ./bootstrap.sh --prefix=/usr/local
     ./b2 install
   \end{lstlisting}
 \item \textbf{Comedi.}
@@ -168,8 +168,17 @@ The \href{http://www.hdfgroup.org/HDF5/}{HDF Group} designed a set of
 libraries for data storage and management with high performance,
 efficiency and high volume/complexity in mind. \textbf{\progname} uses
 this library to save binary data files. The
-library can be installed from source or using Debian repositories
-(as root):
+library can be installed from source in the following way (the last
+command should be run as root):
+\begin{lstlisting}
+tar xjf hdf5-1.8.9.tar.bz2
+cd hdf5-1.8.9
+./configure --prefix=/usr/local --enable-shared
+make
+make install
+\end{lstlisting}
+Alternatively, it is possible to use a package manager, such as
+Debian's \verb+apt-get+: 
 \begin{lstlisting}
 apt-get install hdf5-tools hdf5-serial-dev
 \end{lstlisting}
@@ -182,7 +191,8 @@ To install \progname, start by getting it from the
   repository}. We recommend to install \progname in a local folder, so
 that it is easier to have multiple installations for different users.
 \begin{lstlisting}
-mkdir $HOME/local
+mkdir -p $HOME/local/src
+cd $HOME/local/src
 git clone https://github.com/danielelinaro/dynclamp.git lcg
 cd lcg
 autoreconf -i
@@ -191,8 +201,9 @@ make
 make install
 \end{lstlisting}
 
-To allow non-root users to run \progname, you need to create a
-realtime group to which users will be added. To do so, as root add
+If you are installing \progname on a real-time machine,
+you need to create a realtime group to allow non-root
+users to run \progname commands. To do so, as root add
 the following lines to \texttt{/etc/security/limits.conf}.
 \begin{lstlisting}
 @realtime       -       rtprio  99
@@ -318,6 +329,8 @@ such as Linux and Mac OS X. To do so, you just need to install
 Sec.~\ref{install:required}). The procedure to install \progname is
 the same as described in Sec.~\ref{install:program}: the
 \inlineCode{configure} script will detect the absence of Comedi and of
-the real-time kernel and not compile parts of \progname.
+the real-time kernel and not compile parts of \progname. If you are
+installing \progname on Mac OS X, note that the equivalent of the
+\verb+.bashrc+ file is called \verb+.profile+.
 
 
