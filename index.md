@@ -43,12 +43,6 @@ Emerging Technology ["ENLIGHTENMENT" project](http://enlightenment-fp7.eu/), con
 the Interuniversity Attraction Poles Program initiated by the [Belgian
 Science Policy Office](http://www.belspo.be/) (contract n. IUAP-VII/20), and the [University
 of Antwerp](https://www.uantwerpen.be/en/) is kindly acknowledged.
-<!--
-Additional financial support from the European Commission
-(FP7-ICT-FET [BRAINLEAP project](http://www.brainleap.eu/), contract
-n. 306502) and from the [University of Antwerp](http://www.ua.ac.be/)
-is kindly ackowledged.
--->
 
 ### External links
 [Laboratory of Theoretical Neurobiology and Neuroengineering](http://www.tnb.ua.ac.be/).  
