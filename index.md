@@ -34,15 +34,25 @@ LCG is mostly written and maintained by [Daniele Linaro](mailto:danielelinaro@gm
 Giugliano](mailto:michele.giugliano@ua.ac.be) wrote the STIMGEN library used to generate arbitrary stimuli.
 
 ### Funding sources
+
 Daniele Linaro is supported by the [Flanders Research
 Foundation](http://www.fwo.be/) (contract no. 12C9112N).  
+Additional financial support from the 7th Framework Programme of the European
+Commission (Marie Curie Network ["C7"](http://www.cerebellumc7.eu/), contract n. 238214; ICT Future
+Emerging Technology ["ENLIGHTENMENT" project](http://enlightenment-fp7.eu/), contract n. 306502),
+the Interuniversity Attraction Poles Program initiated by the [Belgian
+Science Policy Office](http://www.belspo.be/) (contract n. IUAP-VII/20), and the [University
+of Antwerp](https://www.uantwerpen.be/en/) is kindly acknowledged.
+<!--
 Additional financial support from the European Commission
 (FP7-ICT-FET [BRAINLEAP project](http://www.brainleap.eu/), contract
 n. 306502) and from the [University of Antwerp](http://www.ua.ac.be/)
 is kindly ackowledged.
+-->
 
 ### External links
-[Laboratory of Theoretical Neurobiology and Neuroengineering](http://www.tnb.ua.ac.be/).
+[Laboratory of Theoretical Neurobiology and Neuroengineering](http://www.tnb.ua.ac.be/).  
+[University of Antwerp](http://www.uantwerpen.be/)
 
 ### Contacts
 Daniele Linaro - <danielelinaro@gmail.com>  
