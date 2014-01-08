@@ -2,7 +2,7 @@
 AC_PREREQ([2.61])
 
 # init autoconf, automake and libtool
-AC_INIT([lcg], [0.9.2], [danielelinaro@gmail.com])
+AC_INIT([lcg], [0.9.9], [danielelinaro@gmail.com])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_SRCDIR([common/utils.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -38,8 +38,7 @@ AC_CONFIG_FILES([Makefile
                 entities/Makefile
                 streams/Makefile
                 engine/Makefile
-		bin/Makefile
-		bin/scripts/Makefile])
+		bin/Makefile])
 
 # required functions and types
 AC_CHECK_FUNCS([floor pow sqrt])
@@ -64,15 +63,8 @@ AC_SUBST([LIB_VER])
 AC_SUBST([LIB_TAG])
 
 # conditional building
-AC_ARG_WITH([examples],[AS_HELP_STRING([--with-examples],[Build example programs])],
- 	    [with_examples=yes],[echo "Not building the examples."])
 AC_ARG_WITH([non-rt],[AS_HELP_STRING([--with-non-rt],[Build the lcg-non-rt executable])],
        	    [with_non_rt=yes],[echo "Not building lcg-non-rt."])
-
-AM_CONDITIONAL([EXAMPLES],[test "$with_examples" = "yes"])
-if test "$with_examples" = "yes" ; then
-        AC_CONFIG_FILES([examples/Makefile])
-fi
 
 with_analog_io=no
 with_comedi=no

@@ -1,1 +1,0 @@
-bin_SCRIPTS = gain_modulation_protocol reliability_autaptic cclamprc_write zap_protocol

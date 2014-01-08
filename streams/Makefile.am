@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I../stimgen -I../common -I../entities -I.
+AM_CPPFLAGS = -I@top_srcdir@/stimgen -I@top_srcdir@/common -I@top_srcdir@/entities
 lib_LTLIBRARIES = liblcg_streams.la
 liblcg_streams_la_SOURCES = stream.cpp
 liblcg_streams_la_LDFLAGS = -version-info ${LIB_VER}
