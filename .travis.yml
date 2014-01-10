@@ -1,4 +1,13 @@
-language: cpp
+language:
+  cpp
 compiler:
   - gcc
-script: autoreconf -i && ./configure && make
+before_install:
+  autoreconf -i
+  sudo apt-get update
+install:
+  sudo apt-get install libhdf5-dev
+  sudo apt-get install libboost-dev
+  sudo apt-get install libboost-thread-dev
+script:
+  ./configure && make
