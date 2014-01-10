@@ -3,11 +3,8 @@ language:
 compiler:
   - gcc
 before_install:
-  autoreconf -i
   sudo apt-get update
 install:
-  sudo apt-get install libhdf5-dev
-  sudo apt-get install libboost-dev
-  sudo apt-get install libboost-thread-dev
+  sudo apt-get install libhdf5-dev libboost-dev libboost-thread-dev
 script:
-  ./configure && make
+  autoreconf -i && ./configure && make
