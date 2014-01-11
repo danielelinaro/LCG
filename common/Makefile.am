@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I@top_srcdir@/stimgen -I@top_srcdir@/entities
+AM_CPPFLAGS = -I@top_srcdir@/stimgen -I@top_srcdir@/entities -L@top_srcdir@/stimgen -llcg_stimgen
 lib_LTLIBRARIES = liblcg_common.la
 liblcg_common_la_SOURCES = randlib.cpp utils.cpp aec.cpp sha1.c stimulus.cpp h5rec.cpp
 liblcg_common_la_LDFLAGS = -version-info ${LIB_VER}
