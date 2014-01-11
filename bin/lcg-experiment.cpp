@@ -344,26 +344,28 @@ out_error:
         return -1;
 }
 
-int sha1(const char *filename, unsigned *messageDigest)
+#define SHA1_BUFSIZE 1048576    // 1 Megabyte
+
+int sha1(const char *filename, uint8_t *messageDigest)
 {
-        FILE *fp = fopen(filename, "rb");
-        if (fp == NULL) {
+        struct sha1_ctx ctx;
+        uint8_t buf[SHA1_BUFSIZE];
+        ssize_t nbytes;
+        int fd;
+        fd = open(filename, O_RDONLY);
+        if (fd < -1) {
                 Logger(Important, "Unable to open [%s] for computing the SHA-1 digest.\n", filename);
                 return -1;
         }
-        char c;
-        SHA1 sha;
-        sha.Reset();
-        c = fgetc(fp);
-        while (!feof(fp)) {
-            sha.Input(c);
-            c = fgetc(fp);
+        sha1_init((void *) &ctx);
+        while ((nbytes = read(fd, (void *) buf, SHA1_BUFSIZE)) > 0)
+                sha1_update((void *) &ctx, (uint8_t *) buf, nbytes);
+        close(fd);
+        if (nbytes == -1) {
+                Logger(Important, "Unable to properly read the file [%s].\n", filename);
+                return -1;
         }
-        fclose(fp);
-        if (!sha.Result(messageDigest)) {
-            Logger(Important, "Could not compute SHA-1 digest for [%s]\n", filename);
-            return -1;
-        }
+        sha1_final((void* ) &ctx, messageDigest);
         return 0;
 }
 
@@ -489,7 +491,7 @@ int store(int argc, char *argv[])
         }
 
         // compute the hash for the H5 file and for all files in the directory
-        unsigned md[5];
+        uint8_t md[20];
         sprintf(path, "%s/%s", directory, HASHES_FILE);
 
         struct stat buf;
@@ -508,10 +510,14 @@ int store(int argc, char *argv[])
                 Logger(Debug, "Successfully created hashes file [%s].\n", path);
         }
 
-        if (sha1(latest_h5_file, md) == 0)
-                fprintf(fid, "%08x%08x%08x%08x%08x *../../%s\n", md[0], md[1], md[2], md[3], md[4], latest_h5_file);
-        else
+        if (sha1(latest_h5_file, md) == 0) {
+                for (int k=0; k<20; k++)
+                        fprintf(fid, "%02x", md[k]);
+                fprintf(fid, " *../../%s\n", latest_h5_file);
+        }
+        else {
                 Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", latest_h5_file);
+        }
 
         dirp = opendir(directory);
         if (dirp == NULL) {
@@ -526,10 +532,14 @@ int store(int argc, char *argv[])
         while ((dp = readdir(dirp)) != NULL) {
                 if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
                         sprintf(path, "%s/%s", directory, dp->d_name);
-                        if (sha1(path, md) == 0)
-                                fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], dp->d_name);
-                        else
+                        if (sha1(path, md) == 0) {
+                                for (int k=0; k<20; k++)
+                                        fprintf(fid, "%02x", md[k]);
+                                fprintf(fid, "  %s\n", dp->d_name);
+                        }
+                        else {
                                 Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", path);
+                        }
                 }
         }
 
@@ -642,7 +652,7 @@ int store(int argc, char *argv[], const std::vector<Entity*>& entities)
         }
 
         // compute the hash for the H5 file and for all files in the directory
-        unsigned md[5];
+        uint8_t md[20];
         sprintf(path, "%s/%s", directory, HASHES_FILE);
 
         struct stat buf;
@@ -663,10 +673,16 @@ int store(int argc, char *argv[], const std::vector<Entity*>& entities)
 
         if (rec != NULL) {
                 if (sha1(rec->filename(), md) == 0) {
-                        if (strcmp(rec->filename()+strlen(rec->filename())-3,".h5"))
-                                fprintf(fid, "%08x%08x%08x%08x%08x %s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
-                        else // this is the H5 file...
-                                fprintf(fid, "%08x%08x%08x%08x%08x *../../%s\n", md[0], md[1], md[2], md[3], md[4], rec->filename());
+                        if (strcmp(rec->filename()+strlen(rec->filename())-3,".h5")) {
+                                for (int k=0; k<20; k++)
+                                        fprintf(fid, "%02x", md[k]);
+                                fprintf(fid, "  %s\n", rec->filename());
+                        }
+                        else { // this is the H5 file...
+                                for (int k=0; k<20; k++)
+                                        fprintf(fid, "%02x", md[k]);
+                                fprintf(fid, " *../../%s\n", rec->filename());
+                        }
                 }
                 else {
                         Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", rec->filename());
@@ -687,10 +703,14 @@ int store(int argc, char *argv[], const std::vector<Entity*>& entities)
         while ((dp = readdir(dirp)) != NULL) {
                 if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
                         sprintf(path, "%s/%s", directory, dp->d_name);
-                        if (sha1(path, md) == 0)
-                                fprintf(fid, "%08x%08x%08x%08x%08x  %s\n", md[0], md[1], md[2], md[3], md[4], dp->d_name);
-                        else
+                        if (sha1(path, md) == 0) {
+                                for (int k=0; k<20; k++)
+                                        fprintf(fid, "%02x", md[k]);
+                                fprintf(fid, "  %s\n", dp->d_name);
+                        }
+                        else {
                                 Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", path);
+                        }
                 }
         }
 

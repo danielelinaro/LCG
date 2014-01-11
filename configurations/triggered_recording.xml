@@ -1,4 +1,4 @@
-<xml>
+<lcg>
   <entities>
 
     <entity>
@@ -74,4 +74,4 @@
     <rate>20000</rate>
   </simulation>
 
-</xml>
+</lcg>
