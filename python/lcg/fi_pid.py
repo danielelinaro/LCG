@@ -13,13 +13,15 @@ def usage():
     print('\nwhere options are:\n')
     print('     -h    Display this help message and exit.')
     print('     -a    Initial amplitude of the injected current.')
+    print('     -s    Standard deviation of the additionally injected noisy current (default 0 pA).')
+    print('     -t    Time constant of the additionally injected noisy current (default 20 ms).')
     print('     -m    Minimal frequency (default 5 Hz).')
     print('     -M    Maximal frequency (default 30 Hz).')
-    print('     -p    Proportional gain of the controller (default 0.01).')
-    print('     -i    Integral gain of the controller (default 1).')
-    print('     -d    Derivative gain of the controller (default 0).')
-    print('     -t    Time constant of the frequency estimator (default 1 sec).')
-    print('     -T    Duration of the protocol (default 30 sec).')
+    print('     -P    Proportional gain of the controller (default 0.01).')
+    print('     -I    Integral gain of the controller (default 1).')
+    print('     -D    Derivative gain of the controller (default 0).')
+    print('     -T    Time constant of the frequency estimator (default 1 sec).')
+    print('     -d    Duration of the protocol (default 30 sec).')
     print('     -n    Number of repetitions (default 1).')
     print('     -w    Interval between repetitions (default 60 sec).')
     print('     -F    Sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
@@ -29,13 +31,13 @@ def usage():
 
 def parseArgs():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:p:i:d:t:T:n:w:F:I:O:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:s:t:P:I:D:T:d:n:w:F:I:O:', ['help'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(1)
 
-    options = {'amplitude': None, 'max_freq': 30, 'min_freq': 5,
+    options = {'amplitude': None, 'current_tau': 20, 'max_freq': 30, 'min_freq': 5,
                'gp': 0.001, 'gi': 1, 'gd': 0, 'tau': 1, 'duration': 30,
                'trials': 1, 'interval': 60, 'sampling_rate': float(os.environ['SAMPLING_RATE']), 'ai': 0, 'ao': 0}
 
@@ -45,19 +47,23 @@ def parseArgs():
             sys.exit(0)
         elif o == '-a':
             options['amplitude'] = float(a)
+        elif o == '-s':
+            options['current_std'] = float(a)
+        elif o == '-t':
+            options['current_tau'] = float(a)
         elif o == '-m':
             options['min_freq'] = float(a)
         elif o == '-M':
             options['max_freq'] = float(a)
-        elif o == '-p':
+        elif o == '-P':
             options['gp'] = float(a)
-        elif o == '-i':
+        elif o == '-I':
             options['gi'] = float(a)
-        elif o == '-d':
+        elif o == '-D':
             options['gd'] = float(a)
-        elif o == '-t':
-            options['tau'] = float(a)
         elif o == '-T':
+            options['tau'] = float(a)
+        elif o == '-d':
             options['duration'] = float(a)
         elif o == '-n':
             options['trials'] = int(a)
@@ -70,7 +76,7 @@ def parseArgs():
         elif o == '-O':
             options['ao'] = int(a)
 
-    if not options['amplitude']:
+    if options['amplitude'] is None:
         print('You must specify the initial amplitude of the injected current (-a switch).')
         sys.exit(1)
     
@@ -93,12 +99,19 @@ def writeFiles(options):
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,2), filename='frequency.stim', units='Hz'))
     config.add_entity(lcg.entities.FrequencyEstimator(id=4, connections=(0,2), tau=options['tau'],
                                                       initial_frequency=options['min_freq']))
+    if 'current_std' in options:
+        config.add_entity(lcg.entities.Waveform(id=5, connections=(0,1), filename='current.stim', units='pA'))
+        # Noisy current stim-file
+        current = [[options['duration'],2,0,options['current_std'],options['current_tau'],0,0,0,0,0,0,1]]
+        lcg.writeStimFile('current.stim',current,False)
+
     config.write(config_file)
 
-    # Stim file
+    # Frequency stim-file
     frequency=[[options['duration'],-2,options['min_freq'],0,0,0,0,0,0,1,0,1],
                [options['duration'],-2,options['max_freq']-options['min_freq'],0,0,0,0,0,0,7,1,1]]
     lcg.writeStimFile('frequency.stim',frequency,False)
+
 
 def main():
     opts = parseArgs()
