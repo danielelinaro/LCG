@@ -83,21 +83,20 @@ def main():
         print('The interval between repetitions must be non-negative.')
         sys.exit(1)
 
-    if not with_preamble:
-        stim = [[before,1,0,0,0,0,0,0,0,0,0,1]]
+    stimulus = 'lcg stimgen -o %s ' % stim_file
+    if with_preamble:
+        stimulus += 'dc -d 0.5 0 dc -d 0.01 -- -300 dc -d 0.5 0 dc -d 0.6 -- -100 dc -d 1 0 '
     else:
-        stim = []
+        stimulus += 'dc -d %g 0 ' % before
     if amplitude[0] != 0:
-        stim.append([duration,-2,amplitude[0],0,0,0,0,0,0,1,0,1])
-        stim.append([0,-2,amplitude[1],0,0,0,0,0,0,7,1,1])
+        stimulus += 'dc -p -d %g -- %g ramp -E -- %g ' % (duration,amplitude[0],amplitude[1]-amplitude[0])
     else:
-        stim.append([duration,7,amplitude[1],0,0,0,0,0,0,0,0,1])
-    stim.append([after,1,0,0,0,0,0,0,0,0,0,1])
+        stimulus += 'ramp -d %g -- %g ' % (duration,amplitude[1])
+    stimulus += 'dc -d %g 0' % after
 
-    lcg.writeStimFile(stim_file,stim,with_preamble)
-    
-    sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(sampling_frequency), shell=True)
-    sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(reps) + ' -i ' + str(interval) + ' -F ' + str(sampling_frequency), shell=True)
+    sub.call(stimulus, shell=True)
+    sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,sampling_frequency), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -f %s -n %d -i %g -F %g' % (ai,ao,stim_file,reps,interval,sampling_frequency), shell=True)
 
 if __name__ == '__main__':
     main()

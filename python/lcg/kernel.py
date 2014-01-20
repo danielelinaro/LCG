@@ -9,6 +9,7 @@ from numpy import random as rnd
 import lcg
 import lcg.streams
 
+config_file = 'kernel.xml'
 stim_file = 'kernel.stim'
 
 def usage():
@@ -54,7 +55,7 @@ def main():
     sampling_rate = float(os.environ['SAMPLING_RATE'])  # [Hz]
     holding_current = 0    # [pA]
     append = False
-    nonrt = False
+    realtime = True
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -83,7 +84,7 @@ def main():
         elif o == '-H':
             holding_current = float(a)
         elif o == '--non-rt':
-            nonrt = True
+            realtime = False
 
     if input_factor <= 0. or output_factor <= 0. or sampling_rate <= 0.:
         print('Conversion factors and sampling rate must be positive.')
@@ -105,18 +106,10 @@ def main():
     stim = [[duration,11,0,amplitude,0,0,0,1,int(rnd.uniform(high=10000)),0,0,1],
             [1,1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(stim_file,stim,True)
-    if nonrt:
-        print('Using non-realtime kernel!')
-        config_file = 'kernel.xml'
-        channels = [{'type':'input', 'channel':ai, 'factor':input_factor, 'units':input_units},
-                    {'type':'output', 'channel':ao, 'factor':output_factor, 'units':output_units, 'stimfile':stim_file}]
-        lcg.writeIOConfigurationFile(config_file,sampling_rate,duration+3.61,channels)
-        sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
-    else:
-        sub.call('lcg-rcwrite -e -i -c ' + str(ai) + ' -f '+ str(input_factor) + ' -u ' + input_units, shell=True)
-        sub.call('lcg-rcwrite -o -c ' + str(ao) + ' -f ' + str(output_factor) + ' -u ' + output_units, shell=True)
-        sub.call('lcg vcclamp -f ' + stim_file + ' -F ' + str(sampling_rate) + ' -H ' + str(holding_current), shell=True)
-
+    channels = [{'type':'input', 'channel':ai, 'factor':input_factor, 'units':input_units},
+                {'type':'output', 'channel':ao, 'factor':output_factor, 'units':output_units, 'stimfile':stim_file}]
+    lcg.writeIOConfigurationFile(config_file,sampling_rate,duration+3.61,channels,realtime)
+    sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
     files = glob.glob('*.h5')
     files.sort()
     data_file = files[-1]

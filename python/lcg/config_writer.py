@@ -183,32 +183,46 @@ def completeWithDefaultValues(opt):
                 opt['resetOutput'] = True
     return opt
 
-def writeIOConfigurationFile(config_file, sampling_rate, duration, channels):
+def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True):
     config = lcg.XMLConfigurationFile(sampling_rate,duration)
     ID = 0
+    if realtime:
+        config.add_entity(lcg.entities.H5Recorder(id=ID, connections=()))
+        ID += 1
     for chan in channels:
         try:
             chan = completeWithDefaultValues(chan)
         except KeyError:
             print('Each channel must contain a "type" key.')
             return False
-        if chan['type'] == 'input':
-            config.add_stream(lcg.streams.InputChannel(id=ID, connections=(), device=chan['device'],
-                                                       subdevice=chan['subdevice'], channel=chan['channel'],
-                                                       conversionFactor=chan['factor'], range=chan['range'],
-                                                       reference=chan['reference'], units=chan['units'],
-                                                       samplingRate=sampling_rate))
+        if realtime:
+            if chan['type'] == 'input':
+                config.add_entity(lcg.entities.AnalogInput(id=ID, connections=(0), deviceFile=chan['device'],
+                                                           inputSubdevice=chan['subdevice'], readChannel=chan['channel'],
+                                                           inputConversionFactor=chan['factor'], range=chan['range'],
+                                                           aref=chan['reference'], units=chan['units']))
+            else:
+                config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
+                                                           outputSubdevice=chan['subdevice'], writeChannel=chan['channel'],
+                                                           outputConversionFactor=chan['factor'],
+                                                           aref=chan['reference'], units=chan['units'], resetOutput=True))
+                config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID), filename=chan['stimfile'], units=chan['units']))
+                ID += 1
         else:
-            config.add_stream(lcg.streams.OutputChannel(id=ID, connections=(), device=chan['device'],
-                                                        subdevice=chan['subdevice'], channel=chan['channel'],
-                                                        conversionFactor=chan['factor'],
-                                                        reference=chan['reference'], units=chan['units'],
-                                                        stimulusFile=chan['stimfile'], samplingRate=sampling_rate,
-                                                        offset=chan['offset'], resetOutput=chan['resetOutput']))
-                              
-                              
+            if chan['type'] == 'input':
+                config.add_stream(lcg.streams.InputChannel(id=ID, connections=(), device=chan['device'],
+                                                           subdevice=chan['subdevice'], channel=chan['channel'],
+                                                           conversionFactor=chan['factor'], range=chan['range'],
+                                                           reference=chan['reference'], units=chan['units'],
+                                                           samplingRate=sampling_rate))
+            else:
+                config.add_stream(lcg.streams.OutputChannel(id=ID, connections=(), device=chan['device'],
+                                                            subdevice=chan['subdevice'], channel=chan['channel'],
+                                                            conversionFactor=chan['factor'],
+                                                            reference=chan['reference'], units=chan['units'],
+                                                            stimulusFile=chan['stimfile'], samplingRate=sampling_rate,
+                                                            offset=chan['offset'], resetOutput=chan['resetOutput']))
         ID += 1
-        
     config.write(config_file)
     return True
 

@@ -96,13 +96,9 @@ def main():
     if not poisson:
         pulse_frequency = -pulse_frequency
 
-    stimulus = [[1,1,0,0,0,0,0,0,0,0,0,1],
-                [duration,8,pulse_amplitude,pulse_frequency,pulse_duration,0,0,0,0,0,0,1],
-                [1,1,0,0,0,0,0,0,0,0,0,1]]
-
-    #sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F '+ str(srate), shell=True)
-    lcg.writeStimFile(stim_file, stimulus, False)
-    #sub.call('lcg vcclamp -f ' + stim_file + ' -F '+ str(srate), shell=True)
+    sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,srate), shell=True)
+    sub.call('lcg stimgen -o %s dc -d 1 0 poisson-reg -d %g -- %g %g %g dc -d 1 0' % (stim_file,duration,pulse_amplitude,pulse_frequency,pulse_duration), shell=True)
+    sub.call('lcg stimulus -f %s -F %g' % (stim_file,srate), shell=True)
 
 if __name__ == '__main__':
     main()

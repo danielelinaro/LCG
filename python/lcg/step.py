@@ -92,9 +92,16 @@ def main():
     try:
         os.mkdir(stimuli_directory,0755)
     except:
-        ok = raw_input('The directory ['+stimuli_directory+'] already exists: shall I continue [y/N] ')
+        ok = raw_input('The directory ['+stimuli_directory+'] already exists: shall I continue (deleting its content)? [y/N] ')
         if ok != 'y':
             sys.exit(0)
+        for f in os.listdir(stimuli_directory):
+            try:
+                if os.path.isfile(os.path.join(stimuli_directory,f)):
+                    os.unlink(os.path.join(stimuli_directory,f))
+            except e:
+                print e
+                sys.exit(1)
 
     if with_preamble:
         stimulus = [[duration,1,0,0,0,0,0,0,0,0,0,1],
@@ -111,10 +118,9 @@ def main():
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
 	
     if kernel:
-        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(samplf) + ' -H ' + str(holding), shell=True)
+        sub.call('lcg kernel --non-rt -I %d -O %d -F %g -H %g' % (ai,ao,samplf,holding), shell=True)
     
-    sub.call('lcg vcclamp -D ' + stimuli_directory + ' -i ' + str(interval) +
-              ' -I ' + str(interval) + ' -N ' + str(nreps) + ' -F ' + str(samplf) + ' -H ' + str(holding), shell=True)
+    sub.call('lcg stimulus -D %s -i %g -I %d -O %d -n %d -F %g' % (stimuli_directory,interval,ai,ao,nreps,samplf), shell=True)
 
 if __name__ == '__main__':
     main()

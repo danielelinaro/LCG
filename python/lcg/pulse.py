@@ -96,19 +96,17 @@ def main():
         print('The time after the stimulation must be greater or equal than zero.')
         sys.exit(1)
 
-
-    if after > 0:
-        stim = [[before,1,0,0,0,0,0,0,0,0,0,1]]
-    else:
-        stim = []
-    stim.append([duration,1,amplitude,0,0,0,0,0,0,0,0,1])
+    stimgen = 'lcg stimgen -o %s ' % stim_file
     if before > 0:
-        stim.append([before,1,0,0,0,0,0,0,0,0,0,1])
+        stimgen += 'dc -d %f 0 ' % before
+    stimgen += 'dc -d %f -- %f ' % (duration,amplitude)
+    if after > 0:
+        stimgen += 'dc -d %f 0' % after
 
-    lcg.writeStimFile(stim_file,stim,False)
+    sub.call(stimgen, shell=True)
     if kernel:
-        sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + ' -F ' + str(sampling_frequency), shell=True)
-    sub.call('lcg vcclamp -f ' + stim_file + ' -n ' + str(reps) + ' -i ' + str(interval) + ' -F ' + str(sampling_frequency), shell=True)
+        sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,sampling_frequency), shell=True)
+    sub.call('lcg stimulus -f %s -n %d -i %g -F %g' % (stim_file,reps,interval,sampling_frequency), shell=True)
 
 if __name__ == '__main__':
     main()
