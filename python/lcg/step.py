@@ -120,7 +120,7 @@ def main():
     if kernel:
         sub.call('lcg kernel --non-rt -I %d -O %d -F %g -H %g' % (ai,ao,samplf,holding), shell=True)
     
-    sub.call('lcg stimulus -D %s -i %g -I %d -O %d -n %d -F %g' % (stimuli_directory,interval,ai,ao,nreps,samplf), shell=True)
+    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g' % (stimuli_directory,interval,ai,ao,nreps,samplf), shell=True)
 
 if __name__ == '__main__':
     main()

@@ -8,7 +8,8 @@ import os
 import subprocess as sub
 import sys
 
-configFile = 'stimulus.xml'
+config_file = 'stimulus.xml'
+max_steps = 50
 
 def usage():
     print('This program applies the stimulation described by one or more stimulus files')
@@ -263,10 +264,18 @@ def main():
                 for j in range(len(outputChannels)):
                     channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
                                      'units':outputUnits[j], 'stimfile':stimfiles[j]})
-            lcg.writeIOConfigurationFile(configFile,samplingRate,duration,channels)
-            sys.stdout.write('\rTrial %02d/%02d ' % (cnt,total))
+            lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+            sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
+            percent = float(cnt)/total
+            n_steps = int(round(percent*max_steps))
+            for i in range(n_steps-1):
+                sys.stdout.write('=')
+            sys.stdout.write('>')
+            for i in range(max_steps-n_steps):
+                sys.stdout.write(' ')
+            sys.stdout.write('] ')
             sys.stdout.flush()
-            sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+            sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
             if cnt < total:
                 sub.call('sleep ' + str(interval), shell=True)
             else:
@@ -280,10 +289,18 @@ def main():
                              'units':inputUnits[j]} for j in range(len(inputChannels))]
                 channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
                                  'units':outputUnits[0], 'stimfile':f})
-                lcg.writeIOConfigurationFile(configFile,samplingRate,duration,channels)
-                sys.stdout.write('\rTrial %02d/%02d ' % (cnt,total))
+                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+                sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
+                percent = float(cnt)/total
+                n_steps = int(round(percent*max_steps))
+                for i in range(n_steps-1):
+                    sys.stdout.write('=')
+                sys.stdout.write('>')
+                for i in range(max_steps-n_steps):
+                    sys.stdout.write(' ')
+                sys.stdout.write('] ')
                 sys.stdout.flush()
-                sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
                 if cnt < total:
                     sub.call('sleep ' + str(interval), shell=True)
                 else:

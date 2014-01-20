@@ -98,7 +98,7 @@ def main():
 
     sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,srate), shell=True)
     sub.call('lcg stimgen -o %s dc -d 1 0 poisson-reg -d %g -- %g %g %g dc -d 1 0' % (stim_file,duration,pulse_amplitude,pulse_frequency,pulse_duration), shell=True)
-    sub.call('lcg stimulus -f %s -F %g' % (stim_file,srate), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -s %s -F %g' % (ai,ao,stim_file,srate), shell=True)
 
 if __name__ == '__main__':
     main()
