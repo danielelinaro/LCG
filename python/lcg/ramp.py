@@ -96,7 +96,7 @@ def main():
 
     sub.call(stimulus, shell=True)
     sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,sampling_frequency), shell=True)
-    sub.call('lcg stimulus -I %d -O %d -f %s -n %d -i %g -F %g' % (ai,ao,stim_file,reps,interval,sampling_frequency), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g' % (ai,ao,stim_file,reps,interval,sampling_frequency), shell=True)
 
 if __name__ == '__main__':
     main()

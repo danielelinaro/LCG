@@ -610,7 +610,7 @@ void ComediDevice::acquire(double tend)
                 m_err = -1;
                 return;
         }
-        Logger(Info, "Started I/O thread. Expected duration: %.2f seconds.\n", tend);
+        Logger(Info, "Expected duration: %.2f seconds.\n", tend);
         m_acquiring = true;
         m_joined = false;
 }
