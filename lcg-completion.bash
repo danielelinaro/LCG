@@ -30,6 +30,12 @@ _lcg()
 		return 0
 	    fi
 	    ;;
+	"stimulus")
+	    if [[ $prev == "-s" ]] ; then
+		COMPREPLY=( $(compgen -f -X "!*.stim" -- $cur) )
+		return 0
+	    fi
+	    ;;
     esac
 }
 

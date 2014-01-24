@@ -1,9 +1,6 @@
 
 === Urgent
 
--) Extend lcg-steps with a --vclamp option.
--) Add holding value to lcg-stimulus.
-
 === Short term (and therefore relatively simple) ===
 
 -) the H5 filename should be the timestamp of the beginning of the experiment, also when using streams.

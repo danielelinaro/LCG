@@ -22,10 +22,13 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 
+#ifdef __APPLE__
+#include <libgen.h>
+#endif
+
 using boost::property_tree::ptree;
 
 #define LCG_DIR    ".lcg"
-#define TMP_DIR       ".tmp"
 #define REPLAY_SCRIPT "replay"
 #define HASHES_FILE   "hashes.sha"
 
@@ -444,7 +447,7 @@ int store(int argc, char *argv[])
         for (i=0; i<argc; i++) {
                 fprintf(fid, "%s ", argv[i]);
                 if (strncmp(argv[i], "-c", 2) == 0) { // switch for the configuration file: the next argument is the name of the XML configuration file
-                        sprintf(config_file, "%s/%s", directory, argv[i+1]);
+                        sprintf(config_file, "%s/%s", directory, basename(argv[i+1]));
                         if (cp(config_file, argv[i+1]) == 0) {
                                 Logger(Debug, "Copied file [%s] to directory [%s].\n",
                                                 argv[i+1], directory);
@@ -473,15 +476,13 @@ int store(int argc, char *argv[])
                                             vt.second.get<std::string>("name").compare("OutputChannel") == 0) {
                                                 char src[128] = {0}, dest[128] = {0};
                                                 strcpy(src, vt.second.get<std::string>(parameter_names[i]).c_str());
-                                                sprintf(dest, "%s/%s", directory, src);
-                                                if (cp(dest, src) == 0) {
+                                                sprintf(dest, "%s/%s", directory, basename(src));
+                                                if (cp(dest, src) == 0)
                                                         Logger(Debug, "Copied stimulus file [%s] to directory [%s].\n",
                                                                         src, directory);
-                                                }
-                                                else {
+                                                else
                                                         Logger(Important, "Unable to copy stimulus file [%s] to directory [%s].\n",
                                                                         src, directory);
-                                                }
                                         }
                                 }
                         } catch (...) {}
@@ -529,177 +530,6 @@ int store(int argc, char *argv[])
                 Logger(Debug, "Traversing the files in directory [%s].\n", directory);
         }
 
-        while ((dp = readdir(dirp)) != NULL) {
-                if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
-                        sprintf(path, "%s/%s", directory, dp->d_name);
-                        if (sha1(path, md) == 0) {
-                                for (int k=0; k<20; k++)
-                                        fprintf(fid, "%02x", md[k]);
-                                fprintf(fid, "  %s\n", dp->d_name);
-                        }
-                        else {
-                                Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", path);
-                        }
-                }
-        }
-
-        closedir(dirp);
-        fclose(fid);
-
-        // change the access mode of the hashes file to read-only
-        sprintf(path, "%s/%s", directory, HASHES_FILE);
-        chmod(path, 0444);
-
-        return 0;
-}
-
-int store(int argc, char *argv[], const std::vector<Entity*>& entities)
-{
-        int flag, i;
-        char directory[1024] = {0}, path[1024] = {0}, configFile[1024] = {0};
-
-        // find the H5 recorder that was used: this is necessary
-        // because we will create a directory inside LCG_DIR with
-        // the same name (except the .h5 suffix) as the one saved
-        // by the H5 recorder
-        BaseH5Recorder *rec = NULL;
-        for (i=0; i<entities.size(); i++) {
-                rec = dynamic_cast<BaseH5Recorder*>(entities[i]);
-                if (rec != NULL) {
-                        sprintf(directory, "%s/%s", LCG_DIR, rec->filename());
-                        directory[strlen(directory)-3] = 0;
-                        break;
-                }
-        }
-        if (i == entities.size())
-                return -2;
-
-        // create an invisible directory where all data will be stored
-        flag = mkdir(LCG_DIR, 0755);
-        if (flag == 0) {
-                Logger(Debug, "Created directory [%s].\n", LCG_DIR);
-        }
-        else {
-                if (errno == EEXIST) {
-                        Logger(Debug, "mkdir: [%s]: directory exists.\n", LCG_DIR);
-                }
-                else {
-                        Logger(Important, "mkdir: [%s]: %s.\n", LCG_DIR, strerror(errno));
-                        return -1;
-                }
-        }
-        
-        flag = mkdir(directory, 0755);
-        if (flag == 0) {
-                Logger(Debug, "Created directory [%s].\n", directory);
-        }
-        else {
-                // either the directory exists already or there's been an error: in both
-                // cases, we stop here.
-                if (errno == EEXIST) {
-                        Logger(Debug, "mkdir: [%s]: directory exists.\n", directory);
-                }
-                else {
-                        Logger(Important, "mkdir: [%s]: %s.\n", directory, strerror(errno));
-                        return -1;
-                }
-        }
-
-        // write a very simple script that runs lcg again with the options used for calling it now
-        sprintf(path, "%s/%s", directory, REPLAY_SCRIPT);
-        FILE *fid = fopen(path, "w");
-        if (fid == NULL) {
-                Logger(Important, "Unable to create file [%s].\n", path);
-                return -1;
-        }
-        fprintf(fid, "#!/bin/bash\n");
-        for (i=0; i<argc; i++) {
-                fprintf(fid, "%s ", argv[i]);
-                if (strncmp(argv[i], "-c", 2) == 0) { // switch for the configuration file: the next argument is the name of the XML configuration file
-                        sprintf(configFile, "%s/%s", directory, argv[i+1]);
-                        if (cp(configFile, argv[i+1]) == 0) {
-                                Logger(Debug, "Copied file [%s] to directory [%s].\n",
-                                                argv[i+1], directory);
-                        }
-                        else {
-                                Logger(Important, "Unable to copy configuration file [%s] to directory [%s].\n",
-                                                argv[i+1], directory);
-                                return -1;
-                        }
-                }
-        }
-        fprintf(fid, "-r 0\n"); // turn enable replay off, so that a .lcg directory is not created when replaying the experiment
-        fclose(fid);
-        chmod(path, 0755);
-        Logger(Debug, "Written file [%s/%s].\n", directory, REPLAY_SCRIPT);
-
-        // look for Waveform objects and copy their stimulation files into the directory
-        for (i=0; i<entities.size(); i++) {
-                Waveform *wave = dynamic_cast<Waveform*>(entities[i]);
-                if (wave != NULL) {
-                        sprintf(path, "%s/%s", directory, wave->stimulusFile());
-                        if (cp(path, wave->stimulusFile()) == 0) {
-                                Logger(Debug, "Copied file [%s] to directory [%s].\n",
-                                                wave->stimulusFile(), directory);
-                        }
-                        else {
-                                Logger(Important, "Unable to copy file [%s] to directory [%s].\n",
-                                                wave->stimulusFile(), directory);
-                                return -1;
-                        }
-                        continue;
-                }
-        }
-
-        // compute the hash for the H5 file and for all files in the directory
-        uint8_t md[20];
-        sprintf(path, "%s/%s", directory, HASHES_FILE);
-
-        struct stat buf;
-        if (stat(path, &buf) == 0) {
-                // the file already exists, we need to change its access mode
-                chmod(path, 0644);
-                Logger(Debug, "[%s] already exists, changing its access mode to 0644\n", path);
-        }
-
-        fid = fopen(path, "w");
-        if (fid == NULL) {
-                Logger(Important, "Unable to create hashes file [%s].\n", path);
-                return -1;
-        }
-        else {
-                Logger(Debug, "Successfully created hashes file [%s].\n", path);
-        }
-
-        if (rec != NULL) {
-                if (sha1(rec->filename(), md) == 0) {
-                        if (strcmp(rec->filename()+strlen(rec->filename())-3,".h5")) {
-                                for (int k=0; k<20; k++)
-                                        fprintf(fid, "%02x", md[k]);
-                                fprintf(fid, "  %s\n", rec->filename());
-                        }
-                        else { // this is the H5 file...
-                                for (int k=0; k<20; k++)
-                                        fprintf(fid, "%02x", md[k]);
-                                fprintf(fid, " *../../%s\n", rec->filename());
-                        }
-                }
-                else {
-                        Logger(Important, "Unable to compute the SHA-1 message digest for [%s].\n", rec->filename());
-                }
-        }
-
-        DIR *dirp = opendir(directory);
-        if (dirp == NULL) {
-                Logger(Important, "Unable to open directory [%s] for traversing the files.\n", directory);
-                fclose(fid);
-                return -1;
-        }
-        else {
-                Logger(Debug, "Traversing the files in directory [%s].\n", directory);
-        }
-
-        struct dirent *dp;
         while ((dp = readdir(dirp)) != NULL) {
                 if (dp->d_name[0] != '.' && strcmp(dp->d_name, HASHES_FILE) != 0) {
                         sprintf(path, "%s/%s", directory, dp->d_name);

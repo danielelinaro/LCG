@@ -10,22 +10,25 @@ import lcg
 stimuli_directory = 'stimuli'
 
 def usage():
-    print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
-    print('\nwhere options are:\n')
-    print('     -a    stimulation amplitudes (start,[stop,step] pA)')
-    print('     -d    stimulation duration (default 1 s)')
-    print('     -t    tail duration (0 pA of output after the stimulation, default 1 s)')
-    print('     -n    number of repetitions of each amplitude (default 1)')
-    print('     -i    interval between repetitions (default 1 s)')
-    print('\nAcquisition options:')
-    print('     -I    input channel (default 0)')
-    print('     -O    output channel (default 0)')
-    print('     -F    sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
-    print('     -H    holding (default 0 pA)')
-    print('\nAdditional options:')
+    print('This script injects a constant step of current into a cell.')
+    print('')
+    print('Usage: %s [option <value>]' % os.path.basename(sys.argv[0]))
+    print('')
+    print('where options are:')
+    print('')
+    print('              -a   stimulation amplitudes in the form start,[stop,step] (in pA).')
+    print('              -d   stimulation duration (in seconds).')
+    print('              -t   tail duration (0 pA of output after the stimulation, default 1 s)')
+    print('              -n   number of repetitions of each amplitude (default 1)')
+    print('              -i   interval between repetitions (default 1 s)')
+    print('              -I   input channel (default %s)' % os.environ['AI_CHANNEL'])
+    print('              -O   output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('              -F   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
+    print('              -H   holding current (default 0 pA)')
     print(' --with-preamble   include stability preamble.')
-    print(' --no-shuffle      do not shuffle trials.')
-    print(' --no-kernel       do not compute the electrode kernel.')
+    print('    --no-shuffle   do not shuffle trials.')
+    print('     --no-kernel   do not compute the electrode kernel.')
+    print('')
 
 def main():
     try:
@@ -43,7 +46,7 @@ def main():
     shuffle = True
     kernel = True
     nreps = 1
-    duration = 1       # [s]
+    duration = None    # [s]
     interval = 1       # [s]
     tail = 1           # [s]
     stim_ampl = []     # [pA]
@@ -77,6 +80,10 @@ def main():
             shuffle = False
         elif o == '--no-kernel':
             kernel = False
+
+    if duration is None:
+        print('You must specify the duration of the stimulation (-d switch)')
+        sys.exit(1)
 
     if len(stim_ampl) == 1:
         stim_ampl.append(stim_ampl[0])
@@ -120,7 +127,7 @@ def main():
     if kernel:
         sub.call('lcg kernel --non-rt -I %d -O %d -F %g -H %g' % (ai,ao,samplf,holding), shell=True)
     
-    sub.call('lcg stimulus -D %s -i %g -I %d -O %d -n %d -F %g' % (stimuli_directory,interval,ai,ao,nreps,samplf), shell=True)
+    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g' % (stimuli_directory,interval,ai,ao,nreps,samplf), shell=True)
 
 if __name__ == '__main__':
     main()
