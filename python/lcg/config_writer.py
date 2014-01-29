@@ -162,7 +162,7 @@ def completeWithDefaultValues(opt):
                 opt['channel'] = os.environ['AI_CHANNEL']
             else:
                 opt['channel'] = os.environ['AO_CHANNEL']
-        if 'conversionFactor' not in opt:
+        if 'factor' not in opt:
             if opt['type'] == 'input':
                 opt['factor'] = os.environ['AI_CONVERSION_FACTOR_' + opt['mode']]
             else:
