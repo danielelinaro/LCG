@@ -281,6 +281,8 @@ def main():
                 for j in range(len(outputChannels)):
                     channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
                                      'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j]})
+                    if suffix == 'VC':
+                        channels[-1]['resetOutput'] = False
             lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
             sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
             percent = float(cnt)/total
@@ -306,6 +308,8 @@ def main():
                              'units':inputUnits[j]} for j in range(len(inputChannels))]
                 channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
                                  'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0]})
+                if suffix == 'VC':
+                    channels[-1]['resetOutput'] = False
                 lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
                 percent = float(cnt)/total
