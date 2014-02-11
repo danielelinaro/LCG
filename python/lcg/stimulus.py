@@ -40,6 +40,7 @@ def usage():
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
     print(' -V, --vclamp          use default conversion factor and units for voltage clamp')
+    print(' -E --conductance      Inject conductances (comma separated values for the value of the reversal potential (mV))')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -57,11 +58,11 @@ def get_stimulus_duration(stimfile):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:V',
+        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:V:E',
                                   ['help','stimulus=','directory=','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
-                                   'output-channels=','output-gains=','output-units=',
+                                   'output-channels=','output-gains=','output-units=','conductance=',
                                    'vclamp'])
     except getopt.GetoptError, err:
         print(str(err))
@@ -85,6 +86,7 @@ def main():
     outputChannels = []
     outputGains = []
     outputUnits = []
+    reversalPotentials = []
 
     suffix = 'CC'
 
@@ -114,7 +116,7 @@ def main():
                 sys.exit(1)
         elif o in ('-F','--sampling-rate'):
             samplingRate = float(a)
-            if interval <= 0:
+            if samplingRate <= 0:
                 print('The sampling rate must be positive.')
                 sys.exit(1)
         elif o in ('-D','--device'):
@@ -164,6 +166,9 @@ def main():
         elif o in ('-U','--output-units'):
             for unit in a.split(','):
                 outputUnits.append(unit)
+        elif o in ('-E','--conductance'):
+            for E in a.split(','):
+                reversalPotentials.append(E)
         elif o in ('-V','--vclamp'):
             suffix = 'VC'
 
@@ -237,6 +242,10 @@ def main():
             print('There are %d output channels and %d stimulus files: I don\'t know what to do.' % (len(outputChannels),len(stimfiles)))
             sys.exit(1)
 
+    if len(reversalPotentials)>0 and suffix in ['VC']:
+        print('Conductance experiment should be done in CC mode. Stopping here...')
+        sys.exit(1)
+
     if outputChannels is None or len(stimfiles) == len(outputChannels):
         total = repetitions
     else:
@@ -264,7 +273,10 @@ def main():
                 for j in range(len(outputChannels)):
                     channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
                                      'units':outputUnits[j], 'stimfile':stimfiles[j]})
-            lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+            if len(reversalPotentials) == 0:
+                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+            else:
+                lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
             sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
             percent = float(cnt)/total
             n_steps = int(round(percent*max_steps))
@@ -289,7 +301,11 @@ def main():
                              'units':inputUnits[j]} for j in range(len(inputChannels))]
                 channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
                                  'units':outputUnits[0], 'stimfile':f})
-                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+                if len(reversalPotentials) == 0:
+                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+                else:
+                    lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
+
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
                 percent = float(cnt)/total
                 n_steps = int(round(percent*max_steps))

@@ -1,9 +1,8 @@
-
 import os
 from lxml import etree
 import lcg
 
-__all__ = ['XMLEntry','XMLConfigurationFile','completeWithDefaultValues','writeIOConfigurationFile']
+__all__ = ['XMLEntry','XMLConfigurationFile','completeWithDefaultValues','writeIOConfigurationFile','writeConductanceStimulusConfigurationFile']
 
 class XMLEntry (object):
     def __init__(self, entry, name, id, connections):
@@ -223,6 +222,63 @@ def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, rea
                                                             stimulusFile=chan['stimfile'], samplingRate=sampling_rate,
                                                             offset=chan['offset'], resetOutput=chan['resetOutput']))
         ID += 1
+    config.write(config_file)
+    return True
+
+def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, duration, channels, reversal):
+    config = lcg.XMLConfigurationFile(sampling_rate,duration)
+    ID = 0
+    realtime = True # Conductance stimulus requires a realtime engine for the moment.
+    if realtime:
+        config.add_entity(lcg.entities.H5Recorder(id=ID, connections=()))
+        ID += 1
+    input_channels = []
+    output_channels = []
+    used_outputs = []
+    used_outputs_ids = []
+    for chan in channels:
+        try:
+            chan = completeWithDefaultValues(chan)
+        except KeyError:
+            print('Each channel must contain a "type" key.')
+            return False
+        if chan['type'] == 'input':
+            input_channels.append(chan)
+        else:
+            output_channels.append(chan)
+    for ii in range(len(reversal)):
+        chan = input_channels[ii]
+        outchan = output_channels[ii]
+        if not outchan in used_outputs: # To allow multiple conductances to the same neuron 
+            config.add_entity(lcg.entities.RealNeuron(id=ID, connections=(0), spikeThreshold = -10, V0 = -65, deviceFile=chan['device'],
+                                                      inputSubdevice=chan['subdevice'], outputSubdevice=outchan['subdevice'],
+                                                      readChannel=chan['channel'], writeChannel=outchan['channel'],
+                                                      inputConversionFactor=chan['factor'], outputConversionFactor=outchan['factor'],
+                                                      inputRange=chan['range'], reference=chan['reference'], kernelFile='kernel.dat'))
+            config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID+2), filename=outchan['stimfile'], units='nS'))
+            config.add_entity(lcg.entities.ConductanceStimulus(id=ID+2, connections=(0,ID),E = reversal[ii]))
+            used_outputs.append(outchan['channel'])
+            used_outputs_ids.append(ID)
+            ID += 3
+        else:
+            neuron_id = used_outputs_ids[np.nonzero(np.array(used_outputs)==outchan['channel'])]
+            config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID+2), filename=outchan['stimfile'], units='nS'))
+            config.add_entity(lcg.entities.ConductanceStimulus(id=ID+2, connections=(0,neuron_id),E = reversal[ii]))
+            ID += 2
+    for ii in range(len(input_channels)):
+        if ii > len(reversal):
+            chan = input_channels[ii]
+            config.add_entity(lcg.entities.AnalogInput(id=ID, connections=(0), deviceFile=chan['device'],
+                                                       inputSubdevice=chan['subdevice'], readChannel=chan['channel'],
+                                                       inputConversionFactor=chan['factor'], range=chan['range'],
+                                                       aref=chan['reference'], units=chan['units']))
+            ID += 1
+    for ii in range(len(output_channels)):
+        if ii > len(reversal):
+            chan = output_channels[ii]
+            config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
+                                                        aref=chan['reference'], units=chan['units'], resetOutput=True))
+            ID += 1
     config.write(config_file)
     return True
 
