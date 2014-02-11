@@ -263,7 +263,7 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
             ID += 3
         else:
             # Channel already used
-            neuron_id = used_outputs_ids[np.nonzero(np.array(used_outputs)==outchan['channel'])]
+            neuron_id = used_outputs_ids[np.nonzero(np.array(used_outputs)==outchan['channel'])[0]]
             config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID+2), filename=outchan['stimfile'], units='nS'))
             config.add_entity(lcg.entities.ConductanceStimulus(id=ID+2, connections=(0,neuron_id),E = reversal[ii]))
             ID += 2
