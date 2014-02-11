@@ -1,6 +1,7 @@
 import os
 from lxml import etree
 import lcg
+import numpy as np
 
 __all__ = ['XMLEntry','XMLConfigurationFile','completeWithDefaultValues','writeIOConfigurationFile','writeConductanceStimulusConfigurationFile']
 
@@ -249,7 +250,7 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
     for ii in range(len(reversal)):
         chan = input_channels[ii]
         outchan = output_channels[ii]
-        if not outchan in used_outputs: # To allow multiple conductances to the same neuron 
+        if not outchan['channel'] in used_outputs: # To allow multiple conductances to the same neuron 
             config.add_entity(lcg.entities.RealNeuron(id=ID, connections=(0), spikeThreshold = -10, V0 = -65, deviceFile=chan['device'],
                                                       inputSubdevice=chan['subdevice'], outputSubdevice=outchan['subdevice'],
                                                       readChannel=chan['channel'], writeChannel=outchan['channel'],
@@ -261,6 +262,7 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
             used_outputs_ids.append(ID)
             ID += 3
         else:
+            # Channel already used
             neuron_id = used_outputs_ids[np.nonzero(np.array(used_outputs)==outchan['channel'])]
             config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID+2), filename=outchan['stimfile'], units='nS'))
             config.add_entity(lcg.entities.ConductanceStimulus(id=ID+2, connections=(0,neuron_id),E = reversal[ii]))
