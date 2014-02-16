@@ -48,7 +48,8 @@ setup(
             'lcg-stimgen = lcg.stimgen:main',
             'lcg-stimulus = lcg.stimulus:main',
             'lcg-tau = lcg.tau:main',
-            'lcg-vi = lcg.vi:main'
+            'lcg-vi = lcg.vi:main',
+            'lcg-plot = lcg.plot_file:main'
             ]
         }
     )
