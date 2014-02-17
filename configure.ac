@@ -10,10 +10,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 LT_INIT
 
-# pyconfigure stuff
-m4_include([m4/python.m4])
-PC_INIT([2.7], [3.3.2])
-
 # operating system's information
 AC_CANONICAL_HOST
 
@@ -42,8 +38,7 @@ AC_CONFIG_FILES([Makefile
                 entities/Makefile
                 streams/Makefile
                 engine/Makefile
-		bin/Makefile
-		python/setup.py])
+		bin/Makefile])
 
 # required functions and types
 AC_CHECK_FUNCS([floor pow sqrt])
