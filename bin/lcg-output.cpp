@@ -22,10 +22,10 @@ struct options {
         options() {
                 strncpy(device, getenv("COMEDI_DEVICE"), FILENAME_MAXLEN);
                 subdevice = atoi(getenv("AO_SUBDEVICE"));
-                channel = -1;   // all channels
+                channel = atoi(getenv("AO_CHANNEL"));
                 reference = strncmp(getenv("GROUND_REFERENCE"), "NRSE", 5) ? AREF_GROUND : AREF_COMMON;
                 value = 0.0;
-                factor = atof(getenv("AO_CONVERSION_FACTOR_CC"));
+                factor = -1.;
         }
         char device[FILENAME_MAXLEN];
         uint subdevice, reference;
@@ -41,31 +41,35 @@ static struct option longopts[] = {
         {"reference", required_argument, NULL, 'r'},
         {"value", required_argument, NULL, 'v'},
         {"factor", required_argument, NULL, 'f'},
+        {"voltage-clamp", no_argument, NULL, 'v'},
         {NULL, 0, NULL, 0}
 };
 
 const char lcg_output_usage_string[] =
-        "This program outputs a constant value to a certain channel of the DAQ board.\n\n"
-        "Usage: lcg output [<options> ...]\n"
-        "where options are:\n"
-        "   -h, --help       Print this help message and exit.\n"
-        "   -v, --value      Constant value to output.\n"
-        "   -f, --factor     Conversion factor.\n"
-        "   -d, --device     Path of the DAQ device.\n"
-        "   -s, --subdevice  Subdevice number.\n"
-        "   -c, --channel    Channel number (if not specified, all channels are reset).\n"
-        "   -r, --reference  Ground reference (either GRSE or NRSE).\n";
+        "This program outputs a constant value to a given channel of the DAQ board.\n\n"
+        "Usage: lcg output [<options> ...] value\n\n"
+        "where options are:\n\n"
+        "   -h, --help           Print this help message and exit.\n"
+        "   -d, --device         Path of the DAQ device (default %s).\n"
+        "   -s, --subdevice      Subdevice number (default %s).\n"
+        "   -c, --channel        Channel number (default %s).\n"
+        "   -r, --reference      Ground reference (GRSE or NRSE, default %s).\n"
+        "   -f, --factor         Conversion factor (default %s in current clamp mode, %s in voltage clamp mode).\n"
+        "   -v, --voltage-clamp  Use voltage clamp conversion factor.\n";
 
 void usage()
 {
-        printf("%s\n", lcg_output_usage_string);
+        printf(lcg_output_usage_string, getenv("AO_CONVERSION_FACTOR_CC"), getenv("AO_CONVERSION_FACTOR_VC"),
+                getenv("COMEDI_DEVICE"), getenv("AO_SUBDEVICE"), getenv("AO_CHANNEL"), getenv("GROUND_REFERENCE"));
 }
 
 void parse_args(int argc, char *argv[], options *opts)
 {
         int ch;
         struct stat buf;
-        while ((ch = getopt_long(argc, argv, "hd:s:c:r:v:f:", longopts, NULL)) != -1) {
+        bool vclamp = false;
+        opts->factor = -1.;
+        while ((ch = getopt_long(argc, argv, "hd:s:c:r:f:v", longopts, NULL)) != -1) {
                 switch(ch) {
                 case 'h':
                         usage();
@@ -95,9 +99,6 @@ void parse_args(int argc, char *argv[], options *opts)
                         }
                         strncmp(opts->device, optarg, FILENAME_MAXLEN);
                         break;
-                case 'v':
-                        opts->value = atof(optarg);
-                        break;
                 case 'f':
                         opts->factor = atof(optarg);
                         if (opts->factor <= 0.) {
@@ -105,11 +106,28 @@ void parse_args(int argc, char *argv[], options *opts)
                                 exit(1);
                         }
                         break;
+                case 'v':
+                        vclamp = true;
+                        break;
                 default:
                         Logger(Critical, "Enter 'lcg help output' for help on how to use this program.\n");
                         exit(1);
                 }
         }
+        if (opts->factor < 0.) {
+                if (vclamp)
+                        opts->factor = atof(getenv("AO_CONVERSION_FACTOR_VC"));
+                else
+                        opts->factor = atof(getenv("AO_CONVERSION_FACTOR_CC"));
+        }
+        else if (vclamp) {
+                Logger(Important, "Ignoring voltage clamp option since you explicitly passed a conversion factor.\n"); 
+        }
+        if (optind != argc-1) {
+                Logger(Critical, "You must specify a value to output.\n");
+                exit(1);
+        }
+        opts->value = atof(argv[optind]);
 }
 
 int main(int argc, char *argv[])
@@ -123,7 +141,8 @@ int main(int argc, char *argv[])
 
         parse_args(argc, argv, &opts);
 
-        Logger(Info, "Outputting %g on device [%s], subdevice [%d], channel [%d].\n", opts.value, opts.device, opts.subdevice, opts.channel);
+        Logger(Info, "Outputting %g on device [%s], subdevice [%d], channel [%d], conversion factor = %g.\n",
+                        opts.value, opts.device, opts.subdevice, opts.channel, opts.factor);
 
         device = comedi_open(opts.device);
         calibration_file = comedi_get_default_calibration_path(device);

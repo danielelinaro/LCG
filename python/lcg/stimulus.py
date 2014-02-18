@@ -40,7 +40,8 @@ def usage():
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
     print(' -V, --vclamp          use default conversion factor and units for voltage clamp')
-    print(' -E --conductance      Inject conductances (comma separated values for the value of the reversal potential (mV))')
+    print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
+    print(' -o, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -58,12 +59,12 @@ def get_stimulus_duration(stimfile):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:V:E',
+        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:',
                                   ['help','stimulus=','directory=','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
-                                   'output-channels=','output-gains=','output-units=','conductance=',
-                                   'vclamp'])
+                                   'output-channels=','output-gains=','output-units=',
+                                   'vclamp','offset=','conductance='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -89,6 +90,8 @@ def main():
     reversalPotentials = []
 
     suffix = 'CC'
+
+    offsets = []
 
     # parse arguments
     for o,a in opts:
@@ -171,14 +174,21 @@ def main():
                 reversalPotentials.append(E)
         elif o in ('-V','--vclamp'):
             suffix = 'VC'
+        elif o in ('-o','--offset'):
+            for offset in a.split(','):
+                offsets.append(float(offset))
 
     if inputChannels is None and outputChannels is None:
-        print('No input or output channels specified. Stopping here...')
+        print('No input or output channels specified. I cowardly refuse to continue.')
         sys.exit(0)
 
-    if not outputChannels is None and not duration is None:
+    if not outputChannels is None and not duration is None and (not stimfiles is None or not stimdir is None):
         print('Warning: if at least one output channel is specified, the duration of the recording')
         print('is given by the duration of the stimulus. Ignoring your %s option.' % duration_option)
+
+    if outputChannels is None and not offset is None:
+        print('You specified an offset but no output channel(s). I don\'t know what to do.')
+        sys.exit(0)
 
     # check the correctness of the arguments
     if not inputChannels is None:
@@ -188,7 +198,7 @@ def main():
             inputGains = [float(os.environ['AI_CONVERSION_FACTOR_' + suffix]) for i in range(len(inputChannels))]
         if len(inputUnits) == 0:
             inputUnits = [os.environ['AI_UNITS_' + suffix] for i in range(len(inputChannels))]
-        if (len(inputChannels) != len(inputGains)) or (len(inputChannels) != len(inputUnits)):
+        if len(inputChannels) != len(inputGains) or len(inputChannels) != len(inputUnits):
             print('The number of input channels, input gains and input units must be the same.')
             sys.exit(1)
 
@@ -199,20 +209,27 @@ def main():
             outputGains = [float(os.environ['AO_CONVERSION_FACTOR_' + suffix]) for i in range(len(outputChannels))]
         if len(outputUnits) == 0:
             outputUnits = [os.environ['AO_UNITS_' + suffix] for i in range(len(outputChannels))]
-        if (len(outputChannels) != len(outputGains)) or (len(outputChannels) != len(outputUnits)):
-            print('The number of output channels, output gains and output units must be the same.')
+        if len(offsets) == 0:
+            offsets = [0. for i in range(len(outputChannels))]
+        if len(outputChannels) != len(outputGains) or len(outputChannels) != len(outputUnits) or len(outputChannels) != len(offsets):
+            print('The number of output channels, output gains, output units and offsets must be the same.')
             sys.exit(1)
 
         if stimfiles is None and stimdir is None:
-            # no -s or -d option: check whether a stimulus file was piped from lcg-stimgen
-            stimulus = sys.stdin.read()
-            if len(stimulus):
+            # no -s or -d option: check whether an offset and a duration were specified...
+            if len(offset) > 0 and not duration is None:
                 stimfiles = ['/tmp/tmp.stim']
-                with open(stimfiles[0],'w') as fid:
-                    fid.write(stimulus)
+                sub.call('lcg stimgen -o %s dc -d %g 0' % (stimfiles[0],duration), shell=True)
             else:
-                print('You must specify one of -s or -d.')
-                sys.exit(0)
+                # or whether a stimulus file was piped from lcg-stimgen
+                stimulus = sys.stdin.read()
+                if len(stimulus):
+                    stimfiles = ['/tmp/tmp.stim']
+                    with open(stimfiles[0],'w') as fid:
+                        fid.write(stimulus)
+                else:
+                    print('You must specify one of -s or -d.')
+                    sys.exit(0)
 
         if stimdir is not None:
             if stimfiles is not None:
@@ -242,8 +259,8 @@ def main():
             print('There are %d output channels and %d stimulus files: I don\'t know what to do.' % (len(outputChannels),len(stimfiles)))
             sys.exit(1)
 
-    if len(reversalPotentials)>0 and suffix in ['VC']:
-        print('Conductance experiment should be done in CC mode. Stopping here...')
+    if len(reversalPotentials)>0 and suffix == 'VC':
+        print('Conductance clamp requires current clamp mode. Stopping here...')
         sys.exit(1)
 
     if outputChannels is None or len(stimfiles) == len(outputChannels):
@@ -272,7 +289,9 @@ def main():
                     print('Warning: not all stimulus files have the same duration. Will use the longest, %g sec.' % duration)
                 for j in range(len(outputChannels)):
                     channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
-                                     'units':outputUnits[j], 'stimfile':stimfiles[j]})
+                                     'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j]})
+                    if suffix == 'VC':
+                        channels[-1]['resetOutput'] = False
             if len(reversalPotentials) == 0:
                 lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
             else:
@@ -300,12 +319,13 @@ def main():
                 channels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
                              'units':inputUnits[j]} for j in range(len(inputChannels))]
                 channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
-                                 'units':outputUnits[0], 'stimfile':f})
+                                 'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0]})
+                if suffix == 'VC':
+                    channels[-1]['resetOutput'] = False
                 if len(reversalPotentials) == 0:
                     lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
                 else:
                     lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
-
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
                 percent = float(cnt)/total
                 n_steps = int(round(percent*max_steps))

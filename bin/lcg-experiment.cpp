@@ -22,6 +22,10 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/foreach.hpp>
 
+#ifdef __APPLE__
+#include <libgen.h>
+#endif
+
 using boost::property_tree::ptree;
 
 #define LCG_DIR    ".lcg"

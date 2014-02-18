@@ -3,7 +3,6 @@
 *.lo
 *.a
 *.la
-*.m4
 *.h5
 *.pyc
 config.*
@@ -34,4 +33,4 @@ install-sh
 libtool
 ltmain.sh
 stamp-h1
-
+aclocal.m4

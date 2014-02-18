@@ -23,29 +23,31 @@ def main():
 
     if len(sys.argv) == 1:
         directory = '.'
-        files = parseDirectory(directory, abortIfEmpty=True)
+        FILES = [f for f in os.listdir('.') if f.lower().endswith('.h5')]
     elif len(sys.argv) == 2 and sys.argv[1] in ('-h','--help'):
         usage()
         sys.exit(0)
     else:
-        for arg in sys.argv[1:]:
-            if os.path.isdir(arg):
-                files = [f for f in os.listdir(dir) if f.lower().endswith('.h5')]
-                for f in files:
-                    print('Processing file [%s].' % f)
-                    try:
-                        lcg.computeElectrodeKernel(directory + '/' + f)
-                    except:
-                        print('%s: not a valid H5 file.' % (directory+'/'+f))
-            elif os.path.isfile(arg):
-                print('Processing file [' + arg + '].')
+        FILES = sys.argv[1:]
+
+    for F in FILES:
+        if os.path.isdir(F):
+            files = [f for f in os.listdir(F) if f.lower().endswith('.h5')]
+            for f in files:
+                print('Processing file [%s/%s].' % (F,f))
                 try:
-                    lcg.computeElectrodeKernel(arg)
+                    lcg.computeElectrodeKernel(F + '/' + f)
                 except:
-                    print('%s: not a valid H5 file.' % arg)
-            else:
-                print(arg + ': no such file or directory.')
-                sys.exit(1)
+                    print('%s/%s: not a valid H5 file.' % (F,f))
+        elif os.path.isfile(F):
+            print('Processing file [' + F + '].')
+            try:
+                lcg.computeElectrodeKernel(F)
+            except:
+                print('%s: not a valid H5 file.' % F)
+        else:
+            print(F + ': no such file or directory.')
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()
