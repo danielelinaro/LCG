@@ -59,8 +59,8 @@ const char lcg_output_usage_string[] =
 
 void usage()
 {
-        printf(lcg_output_usage_string, getenv("AO_CONVERSION_FACTOR_CC"), getenv("AO_CONVERSION_FACTOR_VC"),
-                getenv("COMEDI_DEVICE"), getenv("AO_SUBDEVICE"), getenv("AO_CHANNEL"), getenv("GROUND_REFERENCE"));
+        printf(lcg_output_usage_string, getenv("COMEDI_DEVICE"), getenv("AO_SUBDEVICE"), getenv("AO_CHANNEL"),
+                getenv("GROUND_REFERENCE"), getenv("AO_CONVERSION_FACTOR_CC"), getenv("AO_CONVERSION_FACTOR_VC"));
 }
 
 void parse_args(int argc, char *argv[], options *opts)
