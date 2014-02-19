@@ -38,7 +38,8 @@ AC_CONFIG_FILES([Makefile
                 entities/Makefile
                 streams/Makefile
                 engine/Makefile
-		bin/Makefile])
+		bin/Makefile
+                lcg-env.sh])
 
 # required functions and types
 AC_CHECK_FUNCS([floor pow sqrt])
@@ -123,5 +124,6 @@ AM_CONDITIONAL([RTAI],[test "$with_rtai" = "yes"])
 AM_CONDITIONAL([XENOMAI],[test "$with_xenomai" = "yes"])
 AM_CONDITIONAL([RTLINUX],[test "$with_rtlinux" = "yes"])
 
+AC_SUBST(with_rt)
 AC_OUTPUT
 
