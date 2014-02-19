@@ -1,6 +1,8 @@
 
 === Urgent
 
+-) Finish fixing extracellular_protocol.py
+
 === Short term (and therefore relatively simple) ===
 
 -) the H5 filename should be the timestamp of the beginning of the experiment, also when using streams.

@@ -38,8 +38,8 @@ def main():
         usage()
         sys.exit(1)
 
-    ao = 0
-    ai = 0
+    ao = int(os.environ['AO_CHANNEL'])
+    ai = int(os.environ['AI_CHANNEL'])
     samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
     holding = 0    # [pA]
     with_preamble = False

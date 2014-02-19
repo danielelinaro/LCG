@@ -19,7 +19,7 @@ def usage():
     print('     -n    number of repetitions.')
     print('     -k    period, in minutes, at which a new kernel should be computed (default 10).')
     print('     -s    duration of the extracellular stimulation (default 0.1 ms).')
-    print('     -I    input channel (default 0).')
+    print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('     -O    output channels, in the form 0,1 where 0 and 1 are')
     print('           the channels corresponding to the extracellular')
     print('           and intracellular stimulation, respectively (default 0,1).')
@@ -75,7 +75,7 @@ def main():
     pre = 0.5             # [s]
     post = 1              # [s]
     interval = None       # [s]
-    ai = 0
+    ai = int(os.environ['AI_CHANNEL'])
     ao = {'intra': 0, 'extra': 1}
     stim_freq = None      # [Hz]
     stim_dur = {'extra': 0.1, 'intra': 1}  # [ms]

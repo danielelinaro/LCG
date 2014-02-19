@@ -47,9 +47,9 @@ def usage():
     print('     -d    duration of the stimulation (default 10 s).')
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
     print('     -v    maximum (depolarized) voltage (default -40 mV).')
-    print('     -I    input channel (default 0).')
-    print('     -O    output channel (default 0).')
-    print('     -F    sampling frequency (default 20000 Hz).')
+    print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('     -O    output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('     -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('')
 
 def main():
@@ -67,9 +67,9 @@ def main():
     Rm = -1                # [MOhm]
     Vmin = -60             # [mV]
     Vmax = -40             # [mV]
-    ai = 0
-    ao = 0
-    sampling_rate = 20000  # [Hz]
+    ai = int(os.environ['AI_CHANNEL'])
+    ao = int(os.environ['AO_CHANNEL'])
+    sampling_rate = float(os.environ['SAMPLING_RATE'])  # [Hz]
     for o,a in opts:
         if o in ('-h','--help'):
             usage()

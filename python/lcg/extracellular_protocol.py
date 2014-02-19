@@ -12,21 +12,22 @@ cfg_file = 'pulses.cfg'
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -h    display this help message and exit.')
-    print('     -f    frequency of pulses (multiple frequencies will be used as intra,inter bursts).')
-    print('     -n    number of pulses (default 10).')
-    print('     -b    number of bursts (default 1).')
-    print('     -d    duration of each pulse (default 0.1 msec).')
-    print('     -a    amplitude of each pulse (default 5 V).')
-    print('     -i    interval between trials (default 5 sec).')
-    print('     -N    number of repetitions (default 20).')
-    print('     -F    sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    input channel (default 0).')
-    print('     -O    output channel for extracellular stimulation (default 1).')
+    print('                  -h    display this help message and exit.')
+    print('                  -f    frequency of pulses (multiple frequencies will be used as intra,inter bursts).')
+    print('                  -n    number of pulses (default 10).')
+    print('                  -b    number of bursts (default 1).')
+    print('                  -d    duration of each pulse (default 0.1 msec).')
+    print('                  -a    amplitude of each pulse (default 5 V).')
+    print('                  -i    interval between trials (default 5 sec).')
+    print('                  -N    number of repetitions (default 20).')
+    print('                  -F    sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('                  -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('                  -O    output channel for extracellular stimulation.')
+    print('                  -o    output channel for intracellular stimulation (default %s).' % os.environ['AI_CHANNEL'])
+    print('                  -H    holding value (in pA).')
     print(' --no-recovery-pulse    do not include a recovery pulse in the stimulation.')
     print('    --compute-kernel    run a kernel protocol for the input.')
-    print('\nIn case the --compute-kernel option is specified, the following option is accepted:\n')
-    print('     -o    output channel for kernel computation (default 0).')
+    print('Note that the -H and --compute-kernel options imply usage of the intracellular output channel.')
     print('')
 
 def main():
@@ -40,16 +41,16 @@ def main():
 
     repetitions = 20      # [1]
     interval = 5          # [s]
-    ai = [0]
-    ao = [1]
+    ai = int(os.environ['AI_CHANNEL'])
+    ao = {'extra': None, 'intra': None}
     stim_freq = None      # [Hz]
     stim_dur = 0.1        # [ms]
     stim_amp = 10         # [V]
     npulses = 10
     nburst = 1
-    holding = 0
+    holding = None
     srate = float(os.environ['SAMPLING_RATE'])
-    with_recovery = False
+    with_recovery = True
     compute_kernel = False
     extracellular_conversion_factor = 1
     for o,a in opts:
@@ -71,28 +72,36 @@ def main():
         elif o == '-N':
             repetitions = int(a)
         elif o == '-I':
-            ai = [int(i) for i in a.split(',')]
+            ai = int(a)
         elif o == '-O':
-            ao = [int(i) for i in a.split(',')]
+            ao['extra'] = int(a)
         elif o == '-F':
             srate = int(a)
         elif o == '-H':
             holding = float(a)
+        elif o == '-o':
+            ao['intra'] = int(a)
         elif o == '--compute-kernel':
             compute_kernel = True
         elif o == '--no-recovery-pulse':
             with_recovery = False
 
     run = lambda p:sub.call(p,shell=True)
-    #run = lambda p:sys.stdout.write(str(p)+'\n')
+
+    if ao['extra'] is None:
+        print('You must specify the output channel for extracellular stimulation (-O switch).')
+        sys.exit(0)
 
     if not stim_freq:
         print('You must specify the stimulation frequency (-f switch).')
         sys.exit(1)
-    if len(ao) < 2 and not holding == 0.0:
-        print "Wrong number of channels specified -O must have"
-        print" intracellular,extracellular channels when used with the -H option."
-        sys.exit(1)
+
+    if holding is None and not compute_kernel and not ao['intra'] is None:
+        print('Ignoring the -o option, since you specified neither -H nor --compute-kernel.')
+    elif (not holding is None or compute_kernel) and ao['intra'] is None:
+        ao['intra'] = int(os.environ['AI_CHANNEL'])
+
+    ### continue here ###
 
     comma = lambda y:','.join([str(i) for i in y])    
     stimnames = ','.join([stim_file.format(i) for i in range(len(ao))])

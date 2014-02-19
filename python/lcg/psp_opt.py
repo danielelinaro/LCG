@@ -8,7 +8,7 @@ import glob
 import numpy as np
 import lcg
 
-def deflection_error(weight, target, templateFile, trials=10, window=30e-3, ai=0, ao=0):
+def deflection_error(weight, target, templateFile, trials=10, window=30e-3, ai=int(os.environ['AI_CHANNEL']), ao=int(os.environ['AO_CHANNEL'])):
     try:
         w = weight[0]
     except:
@@ -63,8 +63,8 @@ def usage():
     print('     -M    maximum value of the synaptic weight (default 500).')
     print('     -w    time window for extracting the peak of the PSP (default 30 ms).')
     print('     -t    number of trials for averaging the amplitude of the PSP (default 10).')
-    print('     -I    input channel (default 0).')
-    print('     -O    output channel (default 0).\n')
+    print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('     -O    output channel (default %s).\n' % os.environ['AO_CHANNEL'])
     print('')
 
 def main():
@@ -80,8 +80,8 @@ def main():
     maxWeight = 50          # [a.u.]
     window = 30             # [ms]
     trials = 10
-    ai = 0
-    ao = 0
+    ai = int(os.environ['AI_CHANNEL'])
+    ao = int(os.environ['AO_CHANNEL'])
     try:
         configurationsDir = os.environ['CONFIGURATIONS_PATH']
     except:

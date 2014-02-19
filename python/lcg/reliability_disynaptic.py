@@ -28,8 +28,8 @@ def usage():
     print('   -T   the duration of the stimulus (default 5 s)')
     print('   -n   the number of trials (default 10)')
     print('   -i   the interval between trials (default 30 s)')
-    print('   -I   input channel (default 0).')
-    print('   -O   output channel (default 0).\n')
+    print('   -I   input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('   -O   output channel (default %s).\n' % os.environ['AO_CHANNEL'])
     print('')
 
 def writeStimFile(filename, stimulus):
@@ -59,8 +59,8 @@ def main():
     trials = 10     # [1]
     interval = 30   # [s]
     seed = 5061983  # [1]
-    ai = 0
-    ao = 0
+    ai = int(os.environ['AI_CHANNEL'])
+    ao = int(os.environ['AO_CHANNEL'])
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
