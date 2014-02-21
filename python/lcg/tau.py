@@ -7,10 +7,9 @@ import lcg
 import subprocess as sub
 
 def usage():
-    print('\nThis script injects a single (brief) pulse of current. Its purpose is to')
-    print('elicit a single spike to extract its salient electrophysiological properties.')
-    print('The duration of the pulse should be short enough in order not to interfere')
-    print('with the actual shape of the action potential.')
+    print('\nThis script injects a single (brief) hyperpolarizing pulse of current.')
+    print('Its purpose is to cause a negative deflection that can be used to compute')
+    print('the membrane time constant of the cell.')
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('          -h    Display this help message and exit.')
