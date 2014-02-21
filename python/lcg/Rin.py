@@ -26,12 +26,13 @@ def usage():
     print('         -I   input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('         -O   output channel (default %s)' % os.environ['AO_CHANNEL'])
     print('         -F   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
-    print('  --poisson   the intervals between stimulations will have a Poisson distribution.')
+    print('       --rt   use real-time system (yes or no, default %s)' % os.environ['LCG_REALTIME'])
+    print('  --poisson   the intervals between stimulations will have a Poisson distribution')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:f:D:N:I:O:F:', ['help','poisson'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:f:D:N:I:O:F:', ['help','rt=','poisson'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -45,6 +46,7 @@ def main():
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
     srate = float(os.environ['SAMPLING_RATE'])
+    realtime = os.environ['LCG_REALTIME']
     poisson = False
 
     for o,a in opts:
@@ -82,6 +84,8 @@ def main():
             if srate <= 0:
                 print('The sampling frequency must be positive.')
                 sys.exit(1)
+        elif o == '--rt':
+            realtime = a
         elif o == '--poisson':
             poisson = True
     
@@ -96,9 +100,10 @@ def main():
     if not poisson:
         pulse_frequency = -pulse_frequency
 
-    sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,srate), shell=True)
-    sub.call('lcg stimgen -o %s dc -d 1 0 poisson-reg -d %g -- %g %g %g dc -d 1 0' % (stim_file,duration,pulse_amplitude,pulse_frequency,pulse_duration), shell=True)
-    sub.call('lcg stimulus -I %d -O %d -s %s -F %g' % (ai,ao,stim_file,srate), shell=True)
+    sub.call('lcg kernel -I %d -O %d -F %g --rt %s' % (ai,ao,srate,realtime), shell=True)
+    sub.call('lcg stimgen -o %s dc -d 1 0 poisson-reg -d %g -- %g %g %g dc -d 1 0' %
+             (stim_file,duration,pulse_amplitude,pulse_frequency,pulse_duration), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -s %s -F %g --rt %s' % (ai,ao,stim_file,srate,realtime), shell=True)
 
 if __name__ == '__main__':
     main()

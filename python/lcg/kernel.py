@@ -31,14 +31,14 @@ def usage():
     print('   --input-units    input units (default %s).' % os.environ['AI_UNITS_CC'])
     print('  --output-units    output units (default %s).' % os.environ['AO_UNITS_CC'])
     print('    -a, --append    append channel numbers to kernel.dat file (default no).')
-    print('        --non-rt    do not use real-time capabilities (default no).')
+    print('            --rt    use real-time engine (yes or no, default %s).' % os.environ['LCG_REALTIME'])
     print('')
 
 def main():
     try:
         opts,args = getopt.getopt(sys.argv[1:], 'hd:s:I:O:F:H:a',
                                   ['input-units=','output-units=','input-factor=','output-factor=',
-                                   'help','append','non-rt'])
+                                   'help','append','rt='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -55,7 +55,7 @@ def main():
     sampling_rate = float(os.environ['SAMPLING_RATE'])  # [Hz]
     holding_current = 0    # [pA]
     append = False
-    realtime = True
+    realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -83,8 +83,8 @@ def main():
             sampling_rate = float(a)
         elif o == '-H':
             holding_current = float(a)
-        elif o == '--non-rt':
-            realtime = False
+        elif o == '--rt':
+            realtime = a.lower() == 'yes'
 
     if input_factor <= 0. or output_factor <= 0. or sampling_rate <= 0.:
         print('Conversion factors and sampling rate must be positive.')

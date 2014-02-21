@@ -20,14 +20,15 @@ def usage():
     print('     -n    Number of repetitions (default 2).')
     print('     -i    Interval between repetitions (default 20 sec).')
     print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
-    print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('   --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
     print(' --without-preamble   Do not include stability preamble.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hA:a:d:n:i:I:O:F:', ['help','without-preamble'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hA:a:d:n:i:I:O:F:', ['help','without-preamble','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -43,6 +44,7 @@ def main():
     with_preamble = True
     before = 0.5                 # [s]
     after = 0.5                  # [s]
+    realtime = os.environ['LCG_REALTIME']
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -66,6 +68,8 @@ def main():
             sampling_frequency = float(a)
         elif o == '--without-preamble':
             with_preamble = False
+        elif o == '--rt':
+            realtime = a
 
     if not amplitude[1]:
         print('You must specify the final amplitude of the ramp (-A switch).')
@@ -95,8 +99,8 @@ def main():
     stimulus += 'dc -d %g 0' % after
 
     sub.call(stimulus, shell=True)
-    sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,sampling_frequency), shell=True)
-    sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g' % (ai,ao,stim_file,reps,interval,sampling_frequency), shell=True)
+    sub.call('lcg kernel -I %d -O %d -F %g --rt %s' % (ai,ao,sampling_frequency,realtime), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g --rt %s' % (ai,ao,stim_file,reps,interval,sampling_frequency,realtime), shell=True)
 
 if __name__ == '__main__':
     main()

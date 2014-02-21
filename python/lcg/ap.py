@@ -19,13 +19,14 @@ def usage():
     print('     -n    Number of repetitions (default 20).')
     print('     -i    Interval between repetitions (default 1 sec).')
     print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
-    print('     -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('   --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:', ['help','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
