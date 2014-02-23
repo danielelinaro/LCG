@@ -1,0 +1,2 @@
+lcg-ap::
+	Inject a brief depolarizing pulse of current to elicit a single action potential

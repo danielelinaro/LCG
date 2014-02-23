@@ -1,0 +1,10 @@
+<!-- manpage-base-url.xsl:
+     special settings for manpages rendered from newer docbook -->
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+		version="1.0">
+
+<!-- set a base URL for relative links -->
+<xsl:param name="man.base.url.for.relative.links"
+	>@prefix@/share/doc/lcg</xsl:param>
+
+</xsl:stylesheet>

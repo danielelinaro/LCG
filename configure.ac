@@ -38,7 +38,9 @@ AC_CONFIG_FILES([Makefile
                 entities/Makefile
                 streams/Makefile
                 engine/Makefile
-		bin/Makefile])
+		bin/Makefile
+                man/Makefile
+                man/manpage-base-url.xsl])
 
 # required functions and types
 AC_CHECK_FUNCS([floor pow sqrt])

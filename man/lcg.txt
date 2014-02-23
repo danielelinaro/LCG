@@ -1,0 +1,46 @@
+lcg(1)
+======
+
+NAME
+----
+lcg - command line electrophysiology toolbox
+
+SYNOPSIS
+--------
+[verse]
+'lcg'  [-h|--help] [-v|--version] <command> [<args>]
+
+DESCRIPTION
+-----------
+LCG is a toolbox for performing electrophysiological experiments.
+
+OPTIONS
+-------
+-v::
+--version::
+        Prints the LCG suite version that the 'lcg' program came from.
+
+-h::
+--help::
+        Prints the synopsis and a list of the most commonly used commands.
+
+LCG COMMANDS
+------------
+LCG consists of a suite of programs, called commands, that can be used to
+perform electrophysiology experiments. We distinguish between low-level,
+general-purpose commands, implemented in C++, and high-level commands, implemented
+in Python, that are suited for a specific type of experiment.
+
+Low-level commands
+------------------
+
+include::cmds-lowlevel.txt[]
+
+High-level commands
+-------------------
+
+include::cmds-highlevel.txt[]
+
+Environment variables
+---------------------
+LCG uses several environment variables, defined in the file lcg-env.sh.

@@ -1,0 +1,14 @@
+lcg-annotate::
+	Add comments to an existing H5 file
+
+lcg-experiment::
+	Perform a voltage, current or dynamic clamp experiment described in an XML configuration file
+
+lcg-output::
+	Output a constant value to a certain channel of the DAQ board
+
+lcg-vcclamp::
+	Perform a voltage or current clamp experiment using a stimulus file
+
+lcg-zero::
+	Reset to zero the output of all channels of the DAQ board
