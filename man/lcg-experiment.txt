@@ -1,0 +1,66 @@
+lcg-experiment(1)
+=================
+
+NAME
+----
+lcg-experiment - Perform a voltage, current or dynamic clamp experiment described in an XML configuration file
+
+SYNOPSIS
+--------
+[verse]
+'lcg experiment' [-h | --help] [-v | --version] [-V | --verbosity]
+	       [-i | --iti <seconds>] [-n | --ntrials <num>]
+	       [-r | --disable-replay]
+	       [-c | --config-file <xml file>]
+
+DESCRIPTION
+-----------
+'lcg-experiment' is the main program contained in the LCG suite. Its purpose is to parse a
+configuration file and instantiate and interconnect the objects that
+are described in it. The configuration file should also contain an indication of the duration
+of the experiment and the value of the sampling rate: given this information, 'lcg-experiment'
+can run the experiment. The real-time capabilities are used only if the objects in the
+configuration file are entities, since streams do not require real-time operation. See the man
+page for 'entities' and 'streams' for more information about the differences between them.
+
+OPTIONS
+-------
+-h::
+--help::
+        Print a help message.
+
+-v::
+--version::
+        Print the LCG suite version that the 'lcg-experiment' program came from.
+
+-V::
+--verbosity::
+	Set the verbosity level of the program. Accepted values range from 0 (maximum verbosity)
+	to 4 (minimum verbosity). The default level is 2.
+
+-i <seconds>::
+--iti <seconds>::
+	Specify the inter-trial interval, i.e. the time the program will wait between trials.
+	This option is meaningful only if the number of trials is greater than 1.
+
+-n <num>::
+--ntrials::
+	Specify the number of trials, i.e. the repetitions of the same protocol that the program
+	will run. The default value is 1.
+
+-r::
+--disable-replay::
+	Instruct 'lcg-experiment' to not save additional metadata in the directory .lcg.
+
+-c <file>::
+--config-file <file>::
+	Specify the configuration file to be used.
+
+EXAMPLES
+--------
+The following command can be used to run 'lcg-experiment' 10 times, with an inter-trial interval
+of 5 seconds, using the configuration file called stim.xml.
+
+   $ lcg experiment -n 10 -i 5 -c stim.xml
+
+

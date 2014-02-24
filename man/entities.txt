@@ -1,0 +1,15 @@
+LCG entities(1)
+===============
+
+NAME
+----
+entities - LCG basic building blocks
+
+DESCRIPTION
+-----------
+Entities in LCG are the basic blocks used to build experiments. Entities require real-time
+capabilities.
+
+EXAMPLES
+--------
+We provide below a description of some of the most commonly used entities.

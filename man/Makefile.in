@@ -1,6 +1,12 @@
 
 MAN1_TXT =
 MAN1_TXT += lcg.txt
+MAN1_TXT += lcg-experiment.txt
+MAN1_TXT += lcg-annotate.txt
+MAN1_TXT += lcg-output.txt
+MAN1_TXT += lcg-zero.txt
+MAN1_TXT += entities.txt
+MAN1_TXT += streams.txt
 
 ASCIIDOC = asciidoc
 MANPAGE_XSL = manpage-normal.xsl

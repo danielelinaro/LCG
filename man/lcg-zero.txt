@@ -1,0 +1,50 @@
+lcg-zero(1)
+===========
+
+NAME
+----
+lcg-zero - Resets to zero the output(s) of the DAQ board
+
+SYNOPSIS
+--------
+[verse]
+'lcg zero' [-h | --help] [-d | --device <path>] [-s | --subdevice <number>]
+         [-c | --channel <number>] [-r | --reference <NRSE | GRSE>]
+
+DESCRIPTION
+-----------
+'lcg-zero' is used to set to zero the outputs of one of the installed data acquisition cards.
+
+OPTIONS
+-------
+-h::
+--help::
+        Print a help message.
+
+-d <path>::
+--device <path>::
+        Specify the path of the data acquisition card. If not specified, the value
+        of the environment variable COMEDI_DEVICE is used.
+
+-s <number>::
+--subdevice <number>::
+        Specify the number of the subdevice to be used. If not specified, the value
+        of the environment variable AO_SUBDEVICE is used.
+
+-c <number>::
+--channel <number>::
+        Specify the number of the channel to be used. If not specified, all output
+        channels are reset.
+
+-r <NRSE | GRSE>::
+--reference <NRSE | GRSE>::
+        Specify the ground reference to be used. If not specified, the value
+        of the environment variable GROUND_REFERENCE is used.
+
+EXAMPLES
+--------
+The following command resets the output of all channels of the DAQ board.
+
+   $ lcg zero
+
+

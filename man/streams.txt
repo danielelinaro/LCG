@@ -1,0 +1,15 @@
+LCG streams(1)
+==============
+
+NAME
+----
+streams - LCG basic building blocks
+
+DESCRIPTION
+-----------
+Streams in LCG are the basic blocks used to build experiments. They differ from entities in that
+they don't require real-time capabilities.
+
+EXAMPLES
+--------
+We provide below a description of some of the most commonly used streams.

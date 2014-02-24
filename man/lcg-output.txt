@@ -1,0 +1,69 @@
+lcg-output(1)
+=============
+
+NAME
+----
+lcg-output - Output a constant value to a given channel of the DAQ board
+
+SYNOPSIS
+--------
+[verse]
+'lcg output' [-h | --help] [-d | --device <path>] [-s | --subdevice <number>]
+           [-c | --channel <number>] [-r | --reference <NRSE | GRSE>]
+           [-f | --factor <gain>] [-v | --voltage-clamp] value
+
+DESCRIPTION
+-----------
+'lcg-output' is used to output a given constant value from a channel of one of
+the installed data acquisition cards.
+
+OPTIONS
+-------
+-h::
+--help::
+        Print a help message.
+
+-d <path>::
+--device <path>::
+        Specify the path of the data acquisition card. If not specified, the value
+        of the environment variable COMEDI_DEVICE is used.
+
+-s <number>::
+--subdevice <number>::
+        Specify the number of the subdevice to be used. If not specified, the value
+        of the environment variable AO_SUBDEVICE is used.
+
+-c <number>::
+--channel <number>::
+        Specify the number of the channel to be used. If not specified, the value
+        of the environment variable AO_CHANNEL is used.
+
+-r <NRSE | GRSE>::
+--reference <NRSE | GRSE>::
+        Specify the ground reference to be used. If not specified, the value
+        of the environment variable GROUND_REFERENCE is used.
+
+-f <gain>::
+--factor <gain>::
+        Specify the gain to be used. If not specified, the value
+        of the environment variable AO_CONVERSION_FACTOR_CC is used. If the option --voltage-clamp
+        is passed, then 'lcg-output' uses AO_CONVERSION_FACTOR_VC as a default if this option is
+        not specified.
+
+-v::
+--voltage-clamp::
+        Specify whether to use the default conversion factor for voltage clamp. This
+        option is ignored if the -f option is used.
+
+EXAMPLES
+--------
+The following command outputs 100 pA to the first output channel of the DAQ board.
+
+   $ lcg output -c 0 100
+
+The following command outputs a voltage command of -70 mV to the second output channel.
+
+   $ lcg output -c 1 --voltage-clamp -- -70
+
+
+
