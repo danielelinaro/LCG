@@ -1,0 +1,38 @@
+
+MAN1_TXT =
+MAN1_TXT += lcg.txt
+
+ASCIIDOC = asciidoc
+MANPAGE_XSL = manpage-normal.xsl
+XMLTO = xmlto
+XMLTO_EXTRA =
+INSTALL = install
+RM = rm -f
+
+XMLTO_EXTRA += -m manpage-base-url.xsl
+
+DOC_MAN1 = $(patsubst %.txt,%.1,$(MAN1_TXT))
+
+DESTDIR = @prefix@
+mandir  = $(DESTDIR)/share/man
+man1dir = $(mandir)/man1
+
+all: man
+
+man: man1
+man1: $(DOC_MAN1)
+
+install: install-man
+
+install-man: man
+	$(INSTALL) -d -m 755 $(man1dir)
+	$(INSTALL) -m 644 $(DOC_MAN1) $(man1dir)
+
+%.1: %.xml manpage-base-url.xsl
+	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
+
+%.xml: %.txt 
+	$(ASCIIDOC) -b docbook -d manpage -alcg_version=1.0 -o $@ $< 
+
+clean:
+	$(RM) *.xml *.1

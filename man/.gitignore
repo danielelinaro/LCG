@@ -1,2 +1,3 @@
 manpage-base-url.xsl
 *.1
+!Makefile.in
