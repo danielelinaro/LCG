@@ -1,0 +1,85 @@
+LCG environment(1)
+==================
+
+NAME
+----
+lcg-env - Definition of LCG environment variables
+
+DESCRIPTION
+-----------
+LCG uses a number of environment variables, described in the following. The distribution
+of LCG contains a file, 'lcg-env.sh', that contains default values for these variables.
+Such file should be copied in the home directory of the user, as explained in the Examples
+section, and tailored to his/her needs.
+
+VARIABLES
+---------
+
+COMEDI_DEVICE::
+	The path to the device file from which data is read.
+
+AI_CONVERSION_FACTOR_CC::
+        The conversion factor to be used for the analog input, in current clamp mode.
+
+AO_CONVERSION_FACTOR_CC::
+        The conversion factor to be used for the analog output, in current clamp mode.
+
+AI_CONVERSION_FACTOR_VC::
+        The conversion factor to be used for the analog input, in voltage clamp mode.
+
+AO_CONVERSION_FACTOR_VC::
+        The conversion factor to be used for the analog output, in current clamp mode.
+
+RANGE::
+        The range of the output to the analog card.
+
+AI_SUBDEVICE::
+        The analog input subdevice on the acquisition card.
+
+AI_CHANNEL::
+        The default channel used for analog input.
+
+AO_SUBDEVICE::
+        The analog output subdevice on the acquisition card.
+
+AO_CHANNEL::
+        The default channel used for analog output.
+
+AI_UNITS_CC::
+        The units for the analog input, in current clamp mode.
+
+AO_UNITS_CC::
+        The units for the analog output, in current clamp mode.
+
+AI_UNITS_VC::
+        The units for the analog input, in voltage clamp mode.
+
+AO_UNITS_VC::
+        The units for the analog output, in voltage clamp mode.
+
+SAMPLING_RATE::
+        The default sampling rate of the acquisition.
+
+GROUND_REFERENCE::
+        The ground reference of the acquisition card. At present,
+        Ground-Referenced Single Ended (GRSE) and Non-Referenced
+        Single Ended (NRSE) are supported.
+
+LCG_REALTIME::
+        Whether to use real-time capabilities also when performing
+        conventional voltage- and current-clamp experiments. If the
+        system has a real-time kernel, then the default value of this
+        variable is "yes", otherwise it is "no".
+
+EXAMPLES
+--------
+The following example shows how to copy the default lcg-env.sh file that comes with
+the distribution of LCG to the user's home directory and how to source it.
+
+   $ cp lcg-env.sh $HOME/.lcg-env.sh
+   $ source $HOME/.lcg-env.sh
+
+The last line of the previous example should be added to a file that is read every time
+the user logs in: typedefhis is usually $HOME/.bashrc on Linux systems or $HOME/.profile on OS X
+systems.
+
