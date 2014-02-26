@@ -42,6 +42,7 @@ def usage():
     print(' -V, --vclamp          use default conversion factor and units for voltage clamp')
     print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
     print(' -o, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
+    print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -64,7 +65,7 @@ def main():
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance='])
+                                   'vclamp','offset=','conductance=','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -92,6 +93,8 @@ def main():
     suffix = 'CC'
 
     offsets = []
+
+    realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
 
     # parse arguments
     for o,a in opts:
@@ -177,6 +180,8 @@ def main():
         elif o in ('-o','--offset'):
             for offset in a.split(','):
                 offsets.append(float(offset))
+        elif o == '--rt':
+            realtime = a.lower() == 'yes'
 
     if inputChannels is None and outputChannels is None:
         print('No input or output channels specified. I cowardly refuse to continue.')
@@ -186,7 +191,7 @@ def main():
         print('Warning: if at least one output channel is specified, the duration of the recording')
         print('is given by the duration of the stimulus. Ignoring your %s option.' % duration_option)
 
-    if outputChannels is None and not offset is None:
+    if outputChannels is None and len(offsets) != 0:
         print('You specified an offset but no output channel(s). I don\'t know what to do.')
         sys.exit(0)
 
@@ -217,7 +222,7 @@ def main():
 
         if stimfiles is None and stimdir is None:
             # no -s or -d option: check whether an offset and a duration were specified...
-            if len(offset) > 0 and not duration is None:
+            if len(offsets) > 0 and not duration is None:
                 stimfiles = ['/tmp/tmp.stim']
                 sub.call('lcg stimgen -o %s dc -d %g 0' % (stimfiles[0],duration), shell=True)
             else:
@@ -293,7 +298,7 @@ def main():
                     if suffix == 'VC':
                         channels[-1]['resetOutput'] = False
             if len(reversalPotentials) == 0:
-                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime)
             else:
                 lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
             sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
@@ -306,7 +311,7 @@ def main():
                 sys.stdout.write(' ')
             sys.stdout.write('] ')
             sys.stdout.flush()
-            sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
+            sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
             if cnt < total:
                 sub.call('sleep ' + str(interval), shell=True)
             else:
@@ -323,7 +328,7 @@ def main():
                 if suffix == 'VC':
                     channels[-1]['resetOutput'] = False
                 if len(reversalPotentials) == 0:
-                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,False)
+                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime)
                 else:
                     lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
@@ -336,7 +341,7 @@ def main():
                     sys.stdout.write(' ')
                 sys.stdout.write('] ')
                 sys.stdout.flush()
-                sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
+                sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
                 if cnt < total:
                     sub.call('sleep ' + str(interval), shell=True)
                 else:

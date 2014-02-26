@@ -22,12 +22,13 @@ def usage():
     print('          -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('          -I    Input channel (default %s)' % os.environ['AI_CHANNEL'])
     print('          -O    Output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('        --rt    Use real-time system (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print(' --no-kernel    Do not compute the kernel.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:B:A:', ['help','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:B:A:', ['help','no-kernel','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -43,6 +44,7 @@ def main():
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
     kernel = True
+    realtime = os.environ['LCG_REALTIME'].lower()
     for o,a in opts:
         if o in ('-h','--help'):
             usage()
@@ -67,6 +69,8 @@ def main():
             sampling_frequency = float(a)
         elif o == '--no-kernel':
             kernel = False
+        elif o == '--rt':
+            realtime = a.lower()
 
     if not amplitude:
         print('You must specify the amplitude of the stimulation (-a switch).')
@@ -105,8 +109,8 @@ def main():
 
     sub.call(stimgen, shell=True)
     if kernel:
-        sub.call('lcg kernel --non-rt -I %d -O %d -F %g' % (ai,ao,sampling_frequency), shell=True)
-    sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g' % (ai,ao,stim_file,reps,interval,sampling_frequency), shell=True)
+        sub.call('lcg kernel -I %d -O %d -F %g --rt %s' % (ai,ao,sampling_frequency,realtime), shell=True)
+    sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g --rt %s' % (ai,ao,stim_file,reps,interval,sampling_frequency,realtime), shell=True)
 
 if __name__ == '__main__':
     main()
