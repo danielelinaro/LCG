@@ -1,24 +1,30 @@
 Source: lcg
+Maintainer: Daniele Linaro <danielelinaro@gmail.com>
 Section: misc
 Priority: optional
-Maintainer: Daniele Linaro <danielelinaro@gmail.com>
 Build-Depends: debhelper,
                dh-autoreconf,
+               bash-completion,
+               libhdf5-dev (>= 1.8),
+               libboost-dev (>= 1.46),
+               libboost-thread-dev (>= 1.46),
+               libcomedi-dev,
                python-all-dev,
-               python,
-               bash-completion
+               python
 Standards-Version: 3.9.3
 Homepage: http://danielelinaro.github.io/dynclamp
 XS-Python-Version: >= 2.6
 
 Package: lcg
 Architecture: any
+Section: misc
+Priority: optional
 Depends: ${shlibs:Depends},
          ${misc:Depends},
          ${python:Depends},
-         libhdf5-dev (>= 1.8),
-         libboost-dev,
-         libboost-thread-dev,
+         libhdf5 (>= 1.8),
+         libboost-thread (>= 1.46),
+         libcomedi0,
          python-numpy,
          python-scipy,
          python-matplotlib,
