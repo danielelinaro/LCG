@@ -2,8 +2,8 @@ Source: lcg
 Section: misc
 Priority: optional
 Maintainer: Daniele Linaro <danielelinaro@gmail.com>
-Build-Depends: debhelper (>= 9),
-               dh-autoreconf (>= 7),
+Build-Depends: debhelper,
+               dh-autoreconf,
                python-all-dev,
                python,
                bash-completion
