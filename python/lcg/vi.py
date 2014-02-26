@@ -11,9 +11,10 @@ def usage():
     print('\nwhere options are:\n')
     print('     -a    stimulation amplitudes (default -300,50,50 pA).')
     print('     -d    stimulation duration (default 3 s).')
-    print('     -I    input channel (default %s)' % os.environ['AI_CHANNEL'])
-    print('     -O    output channel (default %s)' % os.environ['AO_CHANNEL'])
-    print('     -F    sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
+    print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('     -O    output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('     -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('   --rt    use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
     print('\nAdditional options:')
     print(' --without-preamble    do not include stability preamble.')
     print(' --no-shuffle          do not shuffle trials.')
@@ -21,7 +22,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:I:O:F:', ['help','without-preamble','no-shuffle','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:I:O:F:', ['help','rt=','without-preamble','no-shuffle','no-kernel'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()

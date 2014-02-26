@@ -34,3 +34,4 @@ libtool
 ltmain.sh
 stamp-h1
 aclocal.m4
+lcg-env.sh
