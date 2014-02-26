@@ -1,0 +1,60 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: LCG
+Upstream-Contact: Daniele Linaro <danielelinaro@gmail.com>
+Source: https://github.com/danielelinaro/dynclamp
+
+Files: *
+Copyright: 2012-2014, Daniele Linaro <danielelinaro@gmail.com>
+           2012-2014, Joao Couto <jpcouto@gmail.com>
+License: GPL-3+
+
+Files: stimgen/*
+Copyright: 2001-2014, Michele Giugliano <mgiugliano@gmail.com>
+           2012-2014, Daniele Linaro <danielelinaro@gmail.com>
+           2012-2014, Joao Couto <jpcouto@gmail.com>
+License: GPL-3+
+
+Files: common/sha1.*
+Copyright: Alan Smithee
+           Andrew McDonald <andrew@mcdonald.org.uk>
+           Jean-Francois Dive <jef@linuxbe.org>
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2014, Daniele Linaro <danielelinaro@gmail.com>
+License: public-domain
+
+License: GPL-3+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+   .
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   .
+   You should have received a copy of the GNU General Public License
+   along with this package; if not, see <http://www.gnu.org/licenses>.
+   .
+   On Debian systems, the complete text of the GNU General Public License
+   version 3 can be found in `/usr/share/common-licenses/GPL-3'.
+
+License: GPL-2+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   .
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   .
+   You should have received a copy of the GNU General Public License
+   along with this package; if not, see <http://www.gnu.org/licenses>.
+   .
+   On Debian systems, the complete text of the GNU General Public License
+   version 2 can be found in `/usr/share/common-licenses/GPL-2'.
+
