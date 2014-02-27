@@ -32,6 +32,7 @@ const char *lcg_commands[] = {
         "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
         "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
         "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",
+        "   zap           Inject a chirp of current to compute the subthreshold response to varying frequencies",
         "   zero          Output zero to all channels of the DAQ board",
         NULL
 };
