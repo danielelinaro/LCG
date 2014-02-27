@@ -2,14 +2,16 @@ Source: lcg
 Section: misc
 Priority: optional
 Maintainer: Daniele Linaro <danielelinaro@gmail.com>
-Build-Depends: debhelper,
+Build-Depends: cdbs,
+               debhelper,
                dh-autoreconf,
-               python-all-dev,
+               bash-completion,
+               python-all-dev (>= 2.6.6-3),
                python,
-               bash-completion
+               pkg-config
 Standards-Version: 3.9.3
 Homepage: http://danielelinaro.github.io/dynclamp
-XS-Python-Version: >= 2.6
+X-Python-Version: >= 2.6
 
 Package: lcg
 Architecture: any

@@ -39,6 +39,7 @@ AC_CONFIG_FILES([Makefile
                 streams/Makefile
                 engine/Makefile
 		bin/Makefile
+                python/Makefile
                 lcg-env.sh])
 
 # required functions and types

@@ -1,7 +1,8 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@ --with autoreconf --with python2 --with bash-completion
+	dh $@ --with autoreconf --with bash-completion
 
 override_dh_shlibdeps:
 	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+

@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = stimgen common entities streams engine bin
+SUBDIRS = stimgen common entities streams engine bin python
 EXTRA_DIST = CHANGES LICENSE python
 dist_doc_DATA = README.md
 dist-hook:
