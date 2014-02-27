@@ -1,4 +1,4 @@
-LCG streams(1)
+LCG streams(7)
 ==============
 
 NAME

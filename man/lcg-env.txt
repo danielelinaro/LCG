@@ -1,4 +1,4 @@
-LCG environment(1)
+LCG environment(7)
 ==================
 
 NAME

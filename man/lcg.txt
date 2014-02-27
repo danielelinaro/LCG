@@ -3,7 +3,7 @@ lcg(1)
 
 NAME
 ----
-lcg - command line electrophysiology toolbox
+LCG - command line electrophysiology toolbox
 
 SYNOPSIS
 --------
@@ -41,6 +41,8 @@ High-level commands
 
 include::cmds-highlevel.txt[]
 
-Environment variables
----------------------
-LCG uses several environment variables, defined in the file lcg-env.sh.
+Environment
+-----------
+For its correct functioning, LCG relies on several environment variables, which are described
+in lcg-env(7).
+

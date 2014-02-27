@@ -1,13 +1,16 @@
 
 MAN1_TXT =
+MAN7_TXT =
+
 MAN1_TXT += lcg.txt
 MAN1_TXT += lcg-experiment.txt
 MAN1_TXT += lcg-annotate.txt
 MAN1_TXT += lcg-output.txt
 MAN1_TXT += lcg-zero.txt
-MAN1_TXT += entities.txt
-MAN1_TXT += streams.txt
-MAN1_TXT += lcg-env.txt
+
+MAN7_TXT += entities.txt
+MAN7_TXT += streams.txt
+MAN7_TXT += lcg-env.txt
 
 ASCIIDOC = asciidoc
 MANPAGE_XSL = manpage-normal.xsl
@@ -19,27 +22,36 @@ RM = rm -f
 XMLTO_EXTRA += -m manpage-base-url.xsl
 
 DOC_MAN1 = $(patsubst %.txt,%.1,$(MAN1_TXT))
+DOC_MAN7 = $(patsubst %.txt,%.7,$(MAN7_TXT))
 
 DESTDIR = @prefix@
 mandir  = $(DESTDIR)/share/man
 man1dir = $(mandir)/man1
+man7dir = $(mandir)/man7
 
 all: man
 
-man: man1
+man: man1 man7
 man1: $(DOC_MAN1)
+man1: $(DOC_MAN7)
 
 install: install-man
 
 install-man: man
 	$(INSTALL) -d -m 755 $(man1dir)
 	$(INSTALL) -m 644 $(DOC_MAN1) $(man1dir)
+	$(INSTALL) -d -m 755 $(man7dir)
+	$(INSTALL) -m 644 $(DOC_MAN7) $(man7dir)
 
 %.1: %.xml manpage-base-url.xsl
+	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
+
+%.7: %.xml manpage-base-url.xsl
 	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
 
 %.xml: %.txt 
 	$(ASCIIDOC) -b docbook -d manpage -alcg_version=1.0 -o $@ $< 
 
 clean:
-	$(RM) *.xml *.1
+	$(RM) *.xml *.1 *.7
+
