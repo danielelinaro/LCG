@@ -32,3 +32,9 @@ from config_writer import XMLConfigurationFile, writeIOConfigurationFile,writeCo
 import entities
 import streams
 
+### PROTOCOLS ###
+import ap
+import vi
+import tau
+import ramp
+import step

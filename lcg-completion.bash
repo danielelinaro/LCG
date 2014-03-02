@@ -6,7 +6,7 @@ _lcg()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    subcommands="annotate ap correlations cv experiment extracellular extract-kernels fclamp fi fopt help kernel ltpltd non-rt ou output pspopt pulse pulses pulses-with-level Rin ramp rate-steps rcwrite sinusoids spontaneous steps stimgen stimulus tau test-daq vcclamp vi zap zero"
+    subcommands="annotate ap correlations cv ecode experiment extracellular extract-kernels fclamp fi fopt help kernel ltpltd non-rt ou output pspopt pulse pulses pulses-with-level Rin ramp rate-steps rcwrite sinusoids spontaneous steps stimgen stimulus tau test-daq vcclamp vi zap zero"
     case "$prev" in
 	"lcg"|"help")
             COMPREPLY=( $(compgen -W "${subcommands}" -- $cur) )
@@ -16,6 +16,10 @@ _lcg()
 	    COMPREPLY=( $(compgen -W "current conductance" -- $cur) )
 	    return 0
 	    ;;
+        "ecode")
+            COMPREPLY=( $(compgen -W "--pulse-amplitude --ramp-amplitude" -- $cur) )
+            return 0
+            ;;
     esac
     case "${COMP_WORDS[COMP_CWORD-2]}" in
 	"experiment"|"non-rt")

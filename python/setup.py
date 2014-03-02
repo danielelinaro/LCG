@@ -27,6 +27,7 @@ setup(
             'lcg-ap = lcg.ap:main',
             'lcg-correlations = lcg.correlations:main',
             'lcg-cv = lcg.cv:main',
+            'lcg-ecode = lcg.ecode:main',
             'lcg-extracellular = lcg.extracellular_protocol:main',
             'lcg-extract-kernels = lcg.extract_kernels:main',
             'lcg-fclamp = lcg.fclamp:main',
