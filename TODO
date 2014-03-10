@@ -1,6 +1,6 @@
-
 === Urgent
 
+-) Add support for hardware calibrated Comedi boards.
 -) Finish fixing extracellular_protocol.py
 
 === Short term (and therefore relatively simple) ===
