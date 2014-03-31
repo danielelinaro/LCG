@@ -52,7 +52,8 @@ setup(
             'lcg-tau = lcg.tau:main',
             'lcg-vi = lcg.vi:main',
             'lcg-plot = lcg.plot_file:main',
-            'lcg-zap = lcg.zap:main'
+            'lcg-zap = lcg.zap:main',
+            'lcg-find-conversion-factors = lcg.find_conversion_factors:main'
             ]
         }
     )
