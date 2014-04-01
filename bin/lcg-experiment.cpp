@@ -139,7 +139,7 @@ void parse_args(int argc, char *argv[], options *opts)
 
 int parse_configuration_file(const std::string& filename,
                              std::vector<Entity*>& entities, std::vector<Stream*>& streams,
-                             double *tend, double *dt)
+                             double *tend, double *dt, std::string& outfilename)
 {
         ptree pt;
         uint id;
@@ -167,6 +167,13 @@ int parse_configuration_file(const std::string& filename,
                         } catch(...) {
                                 Logger(Info, "dt = %g sec.\n", *dt);
                         }
+                }
+
+                /*** output file name (makes sense only for streams) ***/
+                try {
+                        outfilename = pt.get<std::string>("lcg.simulation.outfile");
+                } catch(...) {
+                        outfilename = "";
                 }
 
                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
@@ -567,10 +574,11 @@ int main(int argc, char *argv[])
 
         int success;
         double tend, dt;
+        std::string outfilename;
         std::vector<Entity*> entities;
         std::vector<Stream*> streams;
 
-        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt) != 0) {
+        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt, outfilename) != 0) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
@@ -586,7 +594,7 @@ int main(int argc, char *argv[])
                 if (!entities.empty())
                         success = Simulate(&entities,tend);
                 else
-                        success = Simulate(&streams,tend);
+                        success = Simulate(&streams,tend,outfilename);
                 if (success!=0 || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)

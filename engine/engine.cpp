@@ -519,7 +519,7 @@ int Simulate(std::vector<Entity*> *entities, double tend)
         return retval;
 }
 
-int Simulate(std::vector<Stream*>* streams, double tend)
+int Simulate(std::vector<Stream*>* streams, double tend, const std::string& outfilename)
 {
         int i, err;
         size_t len, ndims, *dims;
@@ -549,7 +549,7 @@ int Simulate(std::vector<Stream*>* streams, double tend)
                 streams->at(i)->terminate();
                 if (!err) {
                         if (!rec)
-                                rec = new ChunkedH5Recorder;
+                                rec = new ChunkedH5Recorder(true, outfilename.c_str());
                         double_dict pars;
                         const double *data = streams->at(i)->data(&len);
                         rec->addRecord(streams->at(i)->id(), streams->at(i)->name().c_str(),
