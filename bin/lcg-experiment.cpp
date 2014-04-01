@@ -300,7 +300,7 @@ int parse_configuration_file(const std::string& filename,
         return 0;
 }
 
-int cp(const char *to, const char *from)
+int cp(const char *to, const char *from, bool use_relative_paths = false)
 {
         int fd_to, fd_from;
         char buf[4096];
@@ -318,6 +318,23 @@ int cp(const char *to, const char *from)
         while (nread = read(fd_from, buf, sizeof buf), nread > 0) {
                 char *out_ptr = buf;
                 ssize_t nwritten;
+
+                if (use_relative_paths) {
+                        int start;
+                        for (int i=0; i<nread-strlen(".stim"); i++) {
+                                if (buf[i] == '>')
+                                        start = i;
+                                if (!strncmp(buf+i,".stim",5)) {
+                                        bool del = false;
+                                        for (int j=i; j>start; j--) {
+                                                if (buf[j] == '/')
+                                                        del = true;
+                                                if (del)
+                                                        buf[j] = ' ';
+                                        }
+                                }
+                        }
+                }
         
                 do {
                         nwritten = write(fd_to, out_ptr, nread);
@@ -407,7 +424,7 @@ int store(int argc, char *argv[])
         closedir(dirp);
         
         int flag, i;
-        char directory[128], path[128] = {0}, config_file[128] = {0};
+        char directory[128], path[128] = {0}, config_file[128] = {0}, *orig_config_file;
 
         sprintf(directory, "%s/%s", LCG_DIR, latest_h5_file);
         directory[strlen(directory)-3] = 0;
@@ -452,18 +469,12 @@ int store(int argc, char *argv[])
         }
         fprintf(fid, "#!/bin/bash\n");
         for (i=0; i<argc; i++) {
-                fprintf(fid, "%s ", argv[i]);
                 if (strncmp(argv[i], "-c", 2) == 0) { // switch for the configuration file: the next argument is the name of the XML configuration file
-                        sprintf(config_file, "%s/%s", directory, basename(argv[i+1]));
-                        if (cp(config_file, argv[i+1]) == 0) {
-                                Logger(Debug, "Copied file [%s] to directory [%s].\n",
-                                                argv[i+1], directory);
-                        }
-                        else {
-                                Logger(Important, "Unable to copy configuration file [%s] to directory [%s].\n",
-                                                argv[i+1], directory);
-                                return -1;
-                        }
+                        orig_config_file = argv[++i];
+                        fprintf(fid, "-c %s ", basename(orig_config_file));
+                }
+                else {
+                        fprintf(fid, "%s ", argv[i]);
                 }
         }
         fprintf(fid, "-r 0\n"); // turn enable replay off, so that a .lcg directory is not created when replaying the experiment
@@ -473,7 +484,7 @@ int store(int argc, char *argv[])
 
         // copy the stim files to the directory 
         try {
-                read_xml(config_file, pt);
+                read_xml(orig_config_file, pt);
                 const char *children[2] = {"lcg.entities","lcg.streams"};
                 const char *parameter_names[2] = {"parameters.filename","parameters.stimfile"};
                 for (int i=0; i<2; i++) {
@@ -495,7 +506,19 @@ int store(int argc, char *argv[])
                         } catch (...) {}
                 }
         } catch (...) {
-                Logger(Critical, "Unable to read the configuration file [%s].\n", config_file);
+                Logger(Critical, "Unable to read the configuration file [%s].\n", orig_config_file);
+        }
+
+        // copy the configuration file to the destination directory
+        sprintf(config_file, "%s/%s", directory, basename(orig_config_file));
+        if (cp(config_file, orig_config_file, true) == 0) {
+                Logger(Debug, "Copied file [%s] to directory [%s].\n",
+                                orig_config_file, directory);
+        }
+        else {
+                Logger(Important, "Unable to copy configuration file [%s] to directory [%s].\n",
+                                orig_config_file, directory);
+                return -1;
         }
 
         // compute the hash for the H5 file and for all files in the directory

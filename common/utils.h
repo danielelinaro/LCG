@@ -25,6 +25,10 @@
 
 #include <vector>
 #include <utility>
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
 #include "types.h"
 #include "common.h"
 
@@ -102,6 +106,10 @@ void TerminateTrial();
 void StartCommentsReaderThread();
 void StopCommentsReaderThread();
 const std::vector< std::pair<std::string,time_t> >* GetComments();
+
+std::string &LeftTrim(std::string &s);
+std::string &RightTrim(std::string &s);
+std::string &Trim(std::string &s);
 
 } // namespace lcg
 

@@ -1,7 +1,6 @@
 === Urgent
 
 -) Fix problem with output reset.
--) Fix bug in Store in lcg-experiment.cpp
 -) Add support for hardware calibrated Comedi boards.
 -) Finish fixing extracellular_protocol.py
 
