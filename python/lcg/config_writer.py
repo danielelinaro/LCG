@@ -183,11 +183,11 @@ def completeWithDefaultValues(opt):
                 opt['resetOutput'] = True
     return opt
 
-def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True):
+def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True, recorder_filename=''):
     config = lcg.XMLConfigurationFile(sampling_rate,duration)
     ID = 0
     if realtime:
-        config.add_entity(lcg.entities.H5Recorder(id=ID, connections=()))
+        config.add_entity(lcg.entities.H5Recorder(id=ID, filename = recorder_filename, connections=()))
         ID += 1
     for chan in channels:
         try:
