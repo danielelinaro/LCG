@@ -58,12 +58,18 @@ class UniformRandom {
 private:
 	ullong u,v,w; 
 public:
-	UniformRandom(ullong seed) : v(4101842887655102017LL), w(1) { 
+	UniformRandom(ullong seed) { 
+                setSeed(seed);
+	}
+
+        inline void setSeed(ullong seed) {
+                v = 4101842887655102017LL;
+                w = 1;
 		u = seed ^ v; int64(); 
 		v = u; int64(); 
 		w = v; int64(); 
-	} 
-	
+        }
+
 	inline ullong int64() { 
 		u = u * 2862933555777941757LL + 7046029254386353087LL; 
 		v ^= v >> 17;

@@ -107,7 +107,6 @@ def run_ramp(directory, opts):
         command = command[:-1]
     os.chdir(directory)
     sys.argv = command.split(' ')
-    print sys.argv
     lcg.ramp.main()
     os.chdir(base_dir)
 
