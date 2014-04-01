@@ -402,6 +402,12 @@ bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value)
         return true;
 }
 
+std::string MakeFilename(const char *extension) {
+        char filename[FILENAME_MAXLEN];
+        MakeFilename(filename, extension);
+        return std::string(filename);
+}
+
 void MakeFilename(char *filename, const char *extension)
 {
         time_t rawTime;

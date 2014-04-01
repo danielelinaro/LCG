@@ -617,7 +617,7 @@ int main(int argc, char *argv[])
                 if (!entities.empty())
                         success = Simulate(&entities,tend);
                 else
-                        success = Simulate(&streams,tend,outfilename);
+                        success = Simulate(&streams,tend,outfilename.size() ? outfilename : MakeFilename(".h5"));
                 if (success!=0 || KILL_PROGRAM())
                         goto endMain;
                 if (opts.enableReplay)

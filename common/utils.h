@@ -24,6 +24,7 @@
 #define UTILS_H
 
 #include <vector>
+#include <string>
 #include <utility>
 #include <algorithm> 
 #include <functional> 
@@ -71,6 +72,7 @@ bool CheckAndExtractUnsignedLong(string_dict& dict, const char *key, unsigned lo
 bool CheckAndExtractUnsignedLongLong(string_dict& dict, const char *key, unsigned long long *value);
 bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value);
 void MakeFilename(char *filename, const char *extension);
+std::string MakeFilename(const char *extension);
 
 /**
  * So far converts only Hz to seconds and vice versa.
