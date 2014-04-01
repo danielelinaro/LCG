@@ -52,8 +52,12 @@ const std::vector< std::pair<std::string,time_t> >* GetComments()
 void* CommentsReader(void *)
 {
         char c;
+        int old;
         time_t now;
         std::string msg;
+        // this is superfluous: PTHREAD_CANCEL_ENABLE is the default for new threads
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old); 
+        pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &old);
         comments.clear();
         Logger(Debug, "CommentsReader started.\n");
         while (!TERMINATE_TRIAL()) {
@@ -105,13 +109,11 @@ void StopCommentsReaderThread()
         while (readingComment)
                 pthread_cond_wait(&commentsCV, &commentsMutex);
         pthread_mutex_unlock(&commentsMutex);
-        if (pthread_cancel(commentsThread) == 0) {
-                commentsThreadRunning = false;
-                Logger(Debug, "Comments reader thread stopped.\n");
-        }
-        else {
-                Logger(Critical, "No such thread.\n");
-        }
+        if (pthread_cancel(commentsThread) == 0)
+                Logger(Debug, "Comments reader thread cancelled.\n");
+        else
+                Logger(Debug, "Unable to cancel comments reader thread.\n");
+        commentsThreadRunning = false;
         pthread_mutex_destroy(&commentsMutex);
         pthread_cond_destroy(&commentsCV);
 }
