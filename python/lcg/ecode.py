@@ -8,7 +8,7 @@ import numpy as np
 import lcg
 import aec
 
-protocols = ['ap','vi','ramp','tau','steps']
+protocols = ['ap','vi','ramp','tau','steps','fi']
 
 global_opts = {'-I': os.environ['AI_CHANNEL'],
                '-O': os.environ['AO_CHANNEL'],
@@ -27,6 +27,7 @@ def usage():
     print('   3) ramp to extract the rheobase')
     print('   4) time constant')
     print('   5) DC steps of current')
+    print('   6) f-I curve with a PID controller')
     print('')
     print('Usage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('')
@@ -35,15 +36,19 @@ def usage():
     print('        -h, --help    Display this help message and exit.')
     print(' --pulse-amplitude    Amplitude of pulse for the AP protocol (in pA).')
     print('  --ramp-amplitude    Maximum injected current for the ramp protocol (in pA).')
+    print('        --max-rate    Maximum firing rate (default 30 Hz).')
     print('                -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('                -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('                -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
     print('              --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
+    print(' --without <proto>    Do not run protocol <proto>.')
 
 def parse_argv():
     try:
         opts,args = getopt.getopt(sys.argv[1:], 'hI:O:F:',
-                                  ['help','pulse-amplitude=','ramp-amplitude=','rt='])
+                                  ['help','pulse-amplitude=',
+                                   'ramp-amplitude=','max-rate=',
+                                   'rt=','without='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -51,6 +56,7 @@ def parse_argv():
 
     pulse_amplitude = None    # [pA]
     ramp_amplitude = None     # [pA]
+    max_firing_rate = 30      # [Hz]
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -62,6 +68,14 @@ def parse_argv():
             pulse_amplitude = float(a)
         elif o == '--ramp-amplitude':
             ramp_amplitude = float(a)
+        elif o == '--max-rate':
+            max_firing_rate = float(a)
+        elif o == '--without':
+            try:
+                protocols.remove(a.lower())
+            except:
+                print('Unknown protocol: %s.' % a)
+                sys.exit(1)
 
     if pulse_amplitude is None:
         print('You must specify the pulse amplitude (--pulse-amplitude switch).')
@@ -71,10 +85,14 @@ def parse_argv():
         print('You must specify the ramp amplitude (--ramp-amplitude switch).')
         sys.exit(1)
 
-    return (pulse_amplitude,ramp_amplitude)
+    if max_firing_rate <= 0:
+        print('The maximum firing rate must be positive.')
+        sys.exit(1)
 
-def run_ap(directory, opts):
-    command = 'lcg-ap '
+    return (pulse_amplitude,ramp_amplitude,max_firing_rate)
+
+def run_command(directory, module, opts):
+    command = 'lcg-foo '
     for k,v in global_opts.iteritems():
         command += '%s %s ' % (k,v)
     for k,v in opts.iteritems():
@@ -83,57 +101,9 @@ def run_ap(directory, opts):
         command = command[:-1]
     os.chdir(directory)
     sys.argv = command.split(' ')
-    lcg.ap.main()
+    module.main()
     os.chdir(base_dir)
-
-def run_vi(directory):
-    command = 'lcg-vi '
-    for k,v in global_opts.iteritems():
-        command += '%s %s ' % (k,v)
-    while command[-1] == ' ':
-        command = command[:-1]
-    os.chdir(directory)
-    sys.argv = command.split(' ')
-    lcg.vi.main()
-    os.chdir(base_dir)
-
-def run_ramp(directory, opts):
-    command = 'lcg-ramp '
-    for k,v in global_opts.iteritems():
-        command += '%s %s ' % (k,v)
-    for k,v in opts.iteritems():
-        command += '%s %s ' % (k,v)
-    while command[-1] == ' ':
-        command = command[:-1]
-    os.chdir(directory)
-    sys.argv = command.split(' ')
-    lcg.ramp.main()
-    os.chdir(base_dir)
-
-def run_tau(directory):
-    command = 'lcg-tau '
-    for k,v in global_opts.iteritems():
-        command += '%s %s ' % (k,v)
-    while command[-1] == ' ':
-        command = command[:-1]
-    os.chdir(directory)
-    sys.argv = command.split(' ')
-    lcg.tau.main()
-    os.chdir(base_dir)
-
-def run_steps(directory, opts):
-    command = 'lcg-steps '
-    for k,v in global_opts.iteritems():
-        command += '%s %s ' % (k,v)
-    for k,v in opts.iteritems():
-        command += '%s %s ' % (k,v)
-    while command[-1] == ' ':
-        command = command[:-1]
-    os.chdir(directory)
-    sys.argv = command.split(' ')
-    lcg.step.main()
-    os.chdir(base_dir)
-
+    
 def list_h5_files(directory='.', ignore_kernels=True):
     if directory[-1] == '/':
         directory = directory[:-1]
@@ -175,44 +145,48 @@ def analyse_ramp(directory):
         rheobase[i] = I[idx[0]]
     return (np.mean(rheobase),np.std(rheobase))
 
-def create_directories():
-    directories = {}
-    for dir in protocols:
-        if not os.path.isdir(dir):
+def create_directory(base):
+    if not os.path.isdir(base):
+        try:
+            os.mkdir(base)
+        except:
+            print('Unable to create directory [%s].' % base)
+            return None
+    index = 1
+    while True:
+        subdir = '%s/%02d' % (base,index)
+        if not os.path.isdir(subdir):
             try:
-                os.mkdir(dir)
+                os.mkdir(subdir)
             except:
-                print('Unable to create directory [%s].' % prot)
+                print('Unable to create directory [%s].' % subdir)
                 return None
-        index = 1
-        while True:
-            subdir = '%s/%02d' % (dir,index)
-            if not os.path.isdir(subdir):
-                try:
-                    os.mkdir(subdir)
-                except:
-                    print('Unable to create directory [%s].' % subdir)
-                    return None
-                os.chdir(subdir)
-                directories[dir] = os.path.abspath(os.curdir)
-                break
-            index += 1
-        os.chdir(base_dir)
-    return directories
+            os.chdir(subdir)
+            path = os.path.abspath(os.curdir)
+            break
+        index += 1
+    os.chdir(base_dir)
+    return path
 
 def main():
-    pulse_amplitude,ramp_amplitude = parse_argv()
-    dirs = create_directories()
-    if dirs is None:
-        sys.exit(1)
-    run_ap(dirs['ap'], {'-a': pulse_amplitude})
-    run_vi(dirs['vi'])
-    run_ramp(dirs['ramp'], {'-A': ramp_amplitude})
-    rheobase = analyse_ramp(dirs['ramp'])[0]
-    rheobase = 10*round(rheobase/10)
-    run_tau(dirs['tau'])
-    run_steps(dirs['steps'], {'-n': 2, '-d': 2, '-i': 10,
-                              '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50)})
+    pulse_amplitude,ramp_amplitude,max_firing_rate = parse_argv()
+    for proto in protocols:
+        d = create_directory(proto)
+        if proto == 'ap':
+            run_command(d, lcg.ap, {'-a': pulse_amplitude})
+        elif proto == 'vi':
+            run_command(d, lcg.vi)
+        elif proto == 'ramp':
+            run_command(d, lcg.ramp, {'-A': ramp_amplitude})
+            rheobase = analyse_ramp(dirs['ramp'])[0]
+            rheobase = 10*round(rheobase/10)
+        elif proto == 'tau':
+            run_command(d, lcg.tau)
+        elif proto == 'steps':
+            run_command(d, lcg.step, {'-n': 2, '-d': 2, '-i': 10,
+                                       '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50)})
+        elif proto == 'fi':
+            run_command(d, lcg.fi, {'-M': max_firing_rate, '-a': rheobase+50})
 
 if __name__ == '__main__':
     main()
