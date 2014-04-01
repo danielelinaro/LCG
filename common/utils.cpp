@@ -124,13 +124,15 @@ void StopCommentsReaderThread()
 
 bool programRun = true; 
 bool trialRun = false; 
+bool killSignal = false;
 pthread_mutex_t programRunMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t trialRunMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void TerminationHandler(int signum)
 {
         if (signum == SIGINT || signum == SIGHUP) {
-                Logger(Critical, "Terminating the program.\n");
+                Logger(Critical, "\nTerminating the program.\n");
+                killSignal = true;
                 KillProgram();
         }
 }

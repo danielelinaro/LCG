@@ -129,7 +129,8 @@ lcg::Stream* OutputChannelFactory(string_dict& args)
         }
 
         if (! lcg::CheckAndExtractBool(args, "resetOutput", &resetOutput)) {
-                resetOutput = true;
+                resetOutput = (getenv("LCG_RESET_OUTPUT") == NULL ? false :
+                        (strcmp(getenv("LCG_RESET_OUTPUT"),"yes") ? false : true));
         }
 
         return new lcg::OutputChannel(device.c_str(), subdevice, PLUS_MINUS_TEN, reference,

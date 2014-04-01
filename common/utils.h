@@ -92,8 +92,10 @@ extern double runTime;
 ////// SIGNAL HANDLING CODE - START /////
 extern bool programRun;
 extern bool trialRun;
+extern bool killSignal;
 #define KILL_PROGRAM() !programRun
 #define TERMINATE_TRIAL() !trialRun
+#define ABNORMAL_TERMINATION() killSignal
 bool SetupSignalCatching();
 ////// SIGNAL HANDLING CODE - END /////
 
