@@ -1,0 +1,189 @@
+% Inspired in a file by Winston Chang 2012
+
+\documentclass[10pt,landscape]{article}
+\usepackage{multicol}
+\usepackage{calc}
+\usepackage{ifthen}
+\usepackage[landscape]{geometry}
+
+% This sets page margins to .5 inch if using letter paper, and to 1cm
+% if using A4 paper. (This probably isn't strictly necessary.)
+% If using another size paper, use default 1cm margins.
+\ifthenelse{\lengthtest { \paperwidth = 11in}}
+	{ \geometry{top=.5in,left=.5in,right=.5in,bottom=.5in} }
+	{\ifthenelse{ \lengthtest{ \paperwidth = 297mm}}
+		{\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+		{\geometry{top=1cm,left=1cm,right=1cm,bottom=1cm} }
+	}
+
+% Turn off header and footer
+\pagestyle{empty}
+ 
+
+% Redefine section commands to use less space
+\makeatletter
+\renewcommand{\section}{\@startsection{section}{1}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%x
+                                {\normalfont\large\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{0mm}%
+                                {-1explus -.5ex minus -.2ex}%
+                                {0.5ex plus .2ex}%
+                                {\normalfont\normalsize\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{0mm}%
+                                {-1ex plus -.5ex minus -.2ex}%
+                                {1ex plus .2ex}%
+                                {\normalfont\small\bfseries}}
+\makeatother
+
+% Define BibTeX command
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+
+% -----------------------------------------------------------------------
+
+\begin{document}
+
+\raggedright
+\footnotesize
+
+\begin{center}
+     \Large{\textbf{LCG Quick Reference}} \\
+\end{center}
+
+\section{Waveforms}
+Waveforms use the STIM notation which consists of rows of 12 numbers in a text file.
+
+DC, constant value, waveform\\
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 1 & Amplitude & -- & -- & -- & -- & -- & -- & -- & -- & EXPON]
+\end{tabular}
+
+Ornstein-Uhlenbeck stochastic process realization\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 2 & Mean  & Standard deviation & Time constant & - & - & FIXSEED & MYSEED & - & - & EXPON]
+\end{tabular}
+
+Sinusoidal waveform\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 3 & Amplitude & Frequency (Hz) & Phase (rad) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+
+Square wave, with zero mean\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 4 & Absolute maximum & Frequency (Hz) & Duty-cycle (percent of the period) & - & - & - & - & - & - & EXPON]
+\end{tabular}
+
+
+Saw tooth wave, with zero mean\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 5 & Absolute maximum & Frequency (Hz) & Duty-cycle (percent of the period) & - & - & - & - & - & - & EXPON]
+\end{tabular}
+
+
+Sine waveform with frequency sweep\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 6 & Amplitude & Starting frequency (Hz) & Ending frequency (Hz) & - & - & - & - & - & - & EXPON]
+\end{tabular}
+
+
+Ramp waveform, increasing or decreasing slope\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 7 & Final amplitude & - & - & - & - & - & - & - & - & EXPON]
+\end{tabular}
+
+
+Poisson / regular unipolar square pulses\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 8 & Amplitude & Frequency (Hz) & Pulse width (ms) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+
+Poisson / regular unipolar exponentially decaying pulses\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 9 & Amplitude & Frequency (Hz) & Pulse width (ms) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+
+Poisson / regular bipolar square pulses (zero mean)\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 10 & Amplitude & Frequency (Hz) & Pulse width (ms) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+
+Uniformly distributed stochastic process realisation\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 11 & Mean & Standard deviation & - & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+
+Double exponential decay (Alpha waveform)\\
+
+\begin{tabular}{rrrrrrrrrrrr}
+[T & 12 & Amplitude & Rise time constant (ms) & Decay time constant (ms) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
+\end{tabular}
+
+\section{Protocols}
+\begin{multicols}{3}
+% multicol parameters
+\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+\subsubsection{Action potential protocol}
+{\tt lcg-ap -a <amplitude>} \\
+Delivers a short pulse of high amplitude that can be used to characterize for instance the shape of an action potential.\\
+\begin{tabular}{cc}
+\hline\hline
+Switch & Parameter \\
+\hline
+-a & Amplitude\\
+-f & Frequency\\
+\end{tabular}
+
+\subsubsection{V-I curve protocol}
+\subsubsection{Time constant protocol}
+\subsubsection{Current ramp protocol}
+\subsubsection{White noise protocol}
+\subsubsection{Filtered noise protocol}
+\subsubsection{Input resistance}
+\subsubsection{DC steps protocol}
+\subsubsection{f-I curve protocol} 
+\subsubsection{Frequency clamp protocol}
+\subsubsection{Spontaneous activity protocol}
+\subsubsection{Train of pulses protocol}
+\subsubsection{Utility programs}
+\end{multicols}
+
+\subsection{Entities}
+Table with all entities name, description, parameters, input, output
+\subsection{Streams}
+Table with all streams name, description, parameters, input, output
+
+
+\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+http://danielelinaro.github.io/dynclamp/
+Daniele Linaro, Jo\~ao Couto and Michele Giugliano
+\end{document}
