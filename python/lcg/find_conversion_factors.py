@@ -227,6 +227,7 @@ Make sure the following values are correct:
             fd.truncate()
             [fd.write(c) for c in contents]
             stdout.flush(); stdout.write("Written to {0}.\n".format(lcg_env))
-            [os.unlink(f) for f in [filename,config_file,h5_file]
-if __name__ in ['__main__']:
+            [os.unlink(f) for f in [filename,config_file,h5_file]]
+
+if __name__ == '__main__':
     main()

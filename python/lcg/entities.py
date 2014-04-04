@@ -13,21 +13,21 @@ class Entity (XMLEntry):
         super(Entity,self).__init__('Entity',name,id,connections)
 
 class H5Recorder (Entity):
-    def __init__(self, id, connections, compress=True, filename=''):
+    def __init__(self, id, connections, compress=True, filename=None):
         super(H5Recorder,self).__init__('H5Recorder', id, connections)
         if compress:
             self.add_parameter('compress', compress)
-        if len(filename) > 0:
+        if not filename is None:
             self.add_parameter('filename', filename)
 
 class TriggeredH5Recorder (Entity):
-    def __init__(self, id, connections, before, after, compress=True, filename=''):
+    def __init__(self, id, connections, before, after, compress=True, filename=None):
         super(TriggeredH5Recorder,self).__init__('TriggeredH5Recorder', id, connections)
         self.add_parameter('before', before)
         self.add_parameter('after', after)
         if compress:
             self.add_parameter('compress', compress)
-        if len(filename) > 0:
+        if not filename is None:
             self.add_parameter('filename', filename)
 
 class ASCIIRecorder (Entity):
