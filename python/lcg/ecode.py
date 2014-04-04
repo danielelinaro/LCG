@@ -41,7 +41,7 @@ def usage():
     print('                -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('                -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
     print('              --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
-    print(' --without <proto>    Do not run protocol <proto>.')
+    print(' --without <proto>    Do not run protocol <proto>. Valid protocol names are (' + ', '.join(protocols) + ').')
 
 def parse_argv():
     try:
@@ -75,6 +75,7 @@ def parse_argv():
                 protocols.remove(a.lower())
             except:
                 print('Unknown protocol: %s.' % a)
+                print('Protocol must be one of (' + ', '.join(protocols) + ').')
                 sys.exit(1)
 
     if pulse_amplitude is None:
