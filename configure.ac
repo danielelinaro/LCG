@@ -63,10 +63,6 @@ LIB_TAG=$LIB_CURRENT.$LIB_REVISION.$LIB_AGE
 AC_SUBST([LIB_VER])
 AC_SUBST([LIB_TAG])
 
-# conditional building
-AC_ARG_WITH([non-rt],[AS_HELP_STRING([--with-non-rt],[Build the lcg-non-rt executable])],
-       	    [with_non_rt=yes],[echo "Not building lcg-non-rt."])
-
 with_analog_io=no
 with_comedi=no
 with_analogy=no
@@ -115,7 +111,6 @@ if test `expr $host_os : 'linux'` -eq 5 ; then
    fi
 fi
 
-AM_CONDITIONAL([NONRT],[test "$with_non_rt" = "yes"])
 AM_CONDITIONAL([ANALOG_IO],[test "$with_analog_io" = "yes"])
 AM_CONDITIONAL([COMEDI],[test "$with_comedi" = "yes"])
 AM_CONDITIONAL([ANALOGY],[test "$with_analogy" = "yes"])

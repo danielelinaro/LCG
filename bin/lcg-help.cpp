@@ -16,6 +16,7 @@ const char lcg_usage_string[] =
 const char *lcg_commands[] = {
         "   annotate      Add comments to an existing H5 file",
         "   ap            Inject a brief depolarizing pulse of current to elicit a single action potential",
+        "   ecode         Perform a series of protocols to characterize the electrophysiological properties of a cell",
         "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
         "   fclamp        Find the current necessary to make a neuron spike at a given frequency",
         "   fi            Compute an f-I curve using a PID controller",

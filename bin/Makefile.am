@@ -15,10 +15,6 @@ lcg_vcclamp_SOURCES = lcg-vcclamp.cpp
 lcg_test_daq_SOURCES = lcg-test-daq.cpp
 lcg_output_SOURCES = lcg-output.cpp
 lcg_zero_SOURCES = lcg-zero.cpp
-if NONRT
-bin_PROGRAMS += lcg-non-rt
-lcg_non_rt_SOURCES = lcg-non-rt.cpp 
-endif
 if ANALOGY
 noinst_PROGRAMS = analogy_test
 analogy_test_SOURCES = analogy_test.cpp
