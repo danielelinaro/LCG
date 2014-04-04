@@ -6,6 +6,8 @@
 \usepackage{ifthen}
 \usepackage[landscape]{geometry}
 
+
+
 % This sets page margins to .5 inch if using letter paper, and to 1cm
 % if using A4 paper. (This probably isn't strictly necessary.)
 % If using another size paper, use default 1cm margins.
@@ -58,6 +60,96 @@
 \begin{center}
      \Large{\textbf{LCG Quick Reference}} \\
 \end{center}
+
+\section{Protocols}
+\begin{multicols}{2}
+% multicol parameters
+\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+\subsubsection{Action potential protocol}
+{\tt lcg-ap -a <amplitude>} \\
+Injects a single (brief) pulse of current. Its purpose is to elicit a single spike to extract its salient electrophysiological properties. The duration of the pulse should be short enough in order not to interfere with the actual shape of the action potential. \\
+
+\begin{tabular}{ll}
+\hline\hline
+\multicolumn{1}{c}{\textbf{Switch}} & \multicolumn{1}{c}{\textbf{Usage}}\\ 
+\hline
+{\bf-a} & Amplitude of the stimulation (in pA)\\
+-d & Duration of the stimulation (default 1 ms)\\
+-n & Number of repetitions (default 20)\\
+-i & Interval between repetitions (default 1 sec)\\
+-F & Sampling frequency\\
+-I & Input channel\\
+-O & Output channel\\
+--rt & Use real-time system (yes or no)\\
+\end{tabular}
+
+\subsubsection{V-I curve protocol}
+{\tt lcg-vi -a -200,50,50 -d 1 --without-preamble} \\
+Presents the cell with hyperpolarizing pulses between the specified values. The purpuse is to characterize the cells passive properties by measuring the Voltage-Current relation. 
+
+\begin{tabular}{ll}
+\hline\hline
+\multicolumn{1}{c}{\textbf{Switch}} & \multicolumn{1}{c}{\textbf{Usage}}\\ 
+\hline
+-a & stimulation amplitudes (default -300,50,50 pA)\\
+-d & stimulation duration (default 3 s)\\
+-I & input channel\\
+-O & output channel\\
+-F & sampling frequency\\
+--rt & use real-time system (yes or no, default yes)\\
+--without-preamble & do not include stability preamble (see manual)\\
+--no-shuffle & do not shuffle trials\\
+--no-kernel & do not compute the electrode kernel (AEC)\\
+\end{tabular}
+
+\subsubsection{Time constant protocol}
+Delivers hyperpolarizing pulses of current and can be used to compute the time constant of a cell.
+
+\begin{tabular}{ll}
+\hline\hline
+\multicolumn{1}{c}{\textbf{Switch}} & \multicolumn{1}{c}{\textbf{Usage}}\\ 
+\hline
+-a & Amplitude of the stimulation (default -300 pA)\\
+-d & Duration of the stimulation (default 10 ms)\\
+-n & Number of reperitions (Default 30)\\
+-I & input channel\\
+-O & output channel\\
+-F & sampling frequency\\
+--rt & use real-time system (yes or no, default yes)\\
+--no-kernel & do not compute the electrode kernel (AEC)\\
+\end{tabular}
+
+\subsubsection{Current ramp protocol}
+
+\subsubsection{White noise protocol}
+
+\subsubsection{Filtered noise protocol}
+
+\subsubsection{Input resistance}
+
+\subsubsection{DC steps protocol}
+
+\subsubsection{f-I curve protocol} 
+
+\subsubsection{Frequency clamp protocol}
+
+\subsubsection{Spontaneous activity protocol}
+
+\subsubsection{Train of pulses protocol}
+
+\subsubsection{Utility programs}
+
+\end{multicols}
+
+\subsection{Entities}
+Table with all entities name, description, parameters, input, output
+\subsection{Streams}
+Table with all streams name, description, parameters, input, output
 
 \section{Waveforms}
 Waveforms use the STIM notation which consists of rows of 12 numbers in a text file.
@@ -141,45 +233,6 @@ Double exponential decay (Alpha waveform)\\
 \begin{tabular}{rrrrrrrrrrrr}
 [T & 12 & Amplitude & Rise time constant (ms) & Decay time constant (ms) & - & - & FIXSEED (0/1) & SEED & - & - & EXPON]
 \end{tabular}
-
-\section{Protocols}
-\begin{multicols}{3}
-% multicol parameters
-\setlength{\columnseprule}{0.25pt}
-\setlength{\premulticols}{1pt}
-\setlength{\postmulticols}{1pt}
-\setlength{\multicolsep}{1pt}
-\setlength{\columnsep}{2pt}
-
-\subsubsection{Action potential protocol}
-{\tt lcg-ap -a <amplitude>} \\
-Delivers a short pulse of high amplitude that can be used to characterize for instance the shape of an action potential.\\
-\begin{tabular}{cc}
-\hline\hline
-Switch & Parameter \\
-\hline
--a & Amplitude\\
--f & Frequency\\
-\end{tabular}
-
-\subsubsection{V-I curve protocol}
-\subsubsection{Time constant protocol}
-\subsubsection{Current ramp protocol}
-\subsubsection{White noise protocol}
-\subsubsection{Filtered noise protocol}
-\subsubsection{Input resistance}
-\subsubsection{DC steps protocol}
-\subsubsection{f-I curve protocol} 
-\subsubsection{Frequency clamp protocol}
-\subsubsection{Spontaneous activity protocol}
-\subsubsection{Train of pulses protocol}
-\subsubsection{Utility programs}
-\end{multicols}
-
-\subsection{Entities}
-Table with all entities name, description, parameters, input, output
-\subsection{Streams}
-Table with all streams name, description, parameters, input, output
 
 
 \rule{0.3\linewidth}{0.25pt}
