@@ -36,11 +36,13 @@ void Stimulus::freeMemory()
 bool Stimulus::setStimulusFile(const char *filename)
 {
         struct stat buf;
-        if (strlen(filename)==0 || stat(filename,&buf)!=0) {
-                Logger(Critical, "%s: no such file.\n", filename);
+        std::string str(filename);
+        const char *fname = Trim(str).c_str();
+        if (strlen(fname)==0 || stat(fname,&buf)!=0) {
+                Logger(Critical, "%s: no such file.\n", fname);
                 return false;
         }
-        strncpy(m_filename, filename, FILENAME_MAXLEN);
+        strncpy(m_filename, fname, FILENAME_MAXLEN);
         if (!parseStimulusFile()) {
                 Logger(Critical, "Error while parsing the stimulus file.");
                 return false;

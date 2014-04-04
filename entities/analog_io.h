@@ -62,7 +62,7 @@ public:
                      uint writeChannel, double outputConversionFactor,
                      uint aref = GRSE,
                      const std::string& units = "pA",
-                     bool resetOutput = true,
+                     bool resetOutput = false,
                      uint id = GetId());
         ~AnalogOutput();
         virtual bool initialise();
