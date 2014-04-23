@@ -117,14 +117,21 @@ void* RTSimulation(void *arg)
         Logger(Debug, "Starting the main loop.\n");
 
         start = rt_timer_read();
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+		rt_task_wait_period();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities->at(i)->readAndStoreInputs();
-                IncreaseGlobalTime();
-                for (i=0; i<nEntities; i++)
+				for (i=0; i<nEntities; i++)
                         entities->at(i)->step();
                 rt_task_wait_period();
+                IncreaseGlobalTime();
         }
         stop = rt_timer_read();
 
@@ -198,6 +205,13 @@ void RTSimulationTask(void *cookie)
                 return;
         }
         start = rt_timer_read();
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+		rt_task_wait_period();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -377,6 +391,24 @@ void* RTSimulation(void *arg)
 
         Logger(Important, "Expected duration: %g seconds.\n", tend);
 
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+	        now.tv_sec += period.tv_sec;
+	        now.tv_nsec += period.tv_nsec;
+	        tsnorm(&now);
+
+                // Wait for next period
+		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &now, NULL);
+                if (flag != 0) {
+                        Logger(Critical, "Error in clock_nanosleep.\n");
+					return 0;
+				}
+
+                // Increase the time of the simulation and step all entities forward
+                IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
                 // Process the events and have all entities read their inputs
@@ -448,6 +480,12 @@ void* NonRTSimulation(void *arg)
                         pthread_exit((void *) retval);
                 }
         }
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)

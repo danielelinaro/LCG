@@ -8,8 +8,8 @@ import getopt
 import lcg
 import subprocess as sub
 import numpy as np
-#import matplotlib.pylab as plt
-import ipdb
+import matplotlib.pylab as plt
+from ipdb import set_trace
 
 description='''
 Finds the correct conversion factors for a particular board.
@@ -70,12 +70,13 @@ def main():
     h5_file = 'conv_factors.h5'
     expected_voltage_deflection = 10 #mV
     CCin_value = expected_voltage_deflection/opts['model_cell']
-    CCout_value = 5
-    VCout_value = 0.1
+    VCin_value = expected_voltage_deflection
+    CCout_value = 6
+    VCout_value = 6
     duration = 0.5
 
     ## TODO: make that it saves always to this file always when using streams!!
-
+    board_range = 10
     samplingRate=20000
     sub.call('lcg-zero')
     ############################# Current Clamp ##################################
@@ -111,23 +112,28 @@ for your data acquisition card. This has to be done only once for each user
                      'factor':1.0,
                      'units':'pA',
                      'stimfile':filename})
-    sys.argv = ['lcg-stimgen','-o',filename,
-                'dc', '-d',str(duration/2.0),'--','0',
-                'dc', '-d',str(duration),'--',str(CCout_value),
-                'dc', '-d',str(duration/2.0),'--','0']
-    lcg.stimgen.main()
-    lcg.writeIOConfigurationFile(config_file,samplingRate,
-                                 duration*2.0,channels,
-                                 True,recorder_filename=h5_file)
-
-    sub.call('lcg-experiment -c {0} -V 4'.format(config_file),shell=True)
-
-    rV,time,info = read_analog_input(h5_file)
-    V_pre = rV[(time < duration/4.0)]
-    V_post = rV[(time > duration) & (time<(info['tend']-duration/1.5))]
+    V_post = board_range
+    while (np.mean(V_post)>board_range-1):
+        CCout_value = CCout_value/2.0
+        sys.argv = ['lcg-stimgen','-o',filename,
+                    'dc', '-d',str(duration/2.0),'--','0',
+                    'dc', '-d',str(duration),'--',str(CCout_value),
+                    'dc', '-d',str(duration/2.0),'--','0']
+        lcg.stimgen.main()
+        lcg.writeIOConfigurationFile(config_file,samplingRate,
+                                     duration*2.0,channels,
+                                     True,output_filename=h5_file)
     
-    CCin = 1./np.round(np.mean(V_pre)/expected_voltage_deflection,2)
-    CCout = np.round((np.mean(V_post*CCin)-np.mean(V_pre*CCin))/((CCout_value*1e3)*opts['model_cell']),4)    
+        sub.call('lcg-experiment -c {0} -V 4'.format(config_file),shell=True)   
+        rV,time,info = read_analog_input(h5_file)
+        idx_pre = np.where(time < duration/4.0)[0]
+        idx_post = np.where((time > duration) & (time<(info['tend']-duration/1.5)))[0]
+        V_pre = rV[idx_pre]
+        V_post = rV[idx_post]
+        
+    CCin = 1./np.round(np.mean(V_pre)/expected_voltage_deflection,4)
+    deltaV = (np.mean(V_post)-np.mean(V_pre))*CCin
+    CCout = np.round(CCout_value/(1000.0*(deltaV/opts['model_cell'])),6)
     ############################# Voltage Clamp ###############################
     sub.call('lcg-zero')
 
@@ -152,23 +158,28 @@ for your data acquisition card. This has to be done only once for each user
                      'factor':1.0,
                      'units':'mV',
                      'stimfile':filename})
-    sys.argv = ['lcg-stimgen','-o',filename,
-                'dc', '-d',str(duration/2.0),'--','0',
-                'dc', '-d',str(duration),'--',str(VCout_value),
-                'dc', '-d',str(duration/2.0),'--','0']
-    lcg.stimgen.main()
-    lcg.writeIOConfigurationFile(config_file,samplingRate,
-                                 duration*2.0,channels,
-                                 True,recorder_filename=h5_file)
+    I_post = board_range
+    while (np.mean(I_post)>board_range-1):
+        VCout_value = VCout_value/2
+        sys.argv = ['lcg-stimgen','-o',filename,
+                    'dc', '-d',str(duration/2.0),'--','0',
+                    'dc', '-d',str(duration),'--',str(VCout_value),
+                    'dc', '-d',str(duration/2.0),'--','0']
+        lcg.stimgen.main()
+        lcg.writeIOConfigurationFile(config_file,samplingRate,
+                                     duration*2.0,channels,
+                                     True,output_filename=h5_file)
 
-    sub.call('lcg-experiment -c {0} -V 4'.format(config_file),shell=True)
+        sub.call('lcg-experiment -c {0} -V 4'.format(config_file),shell=True)
 
-    rI,time,info = read_analog_input(h5_file)
-    I_pre = rI[(time < duration/4.0)]
-    I_post = rI[(time > duration) & (time<(info['tend']-duration/1.5))]
-    VCin = np.round((np.mean(I_pre)*expected_voltage_deflection)/opts['model_cell'],1)*1e3
-    VCout =np.round(opts['model_cell']/(np.mean(I_post*VCin)-np.mean(I_pre*VCin)),3) 
-
+        rI,time,info = read_analog_input(h5_file)
+        I_pre = rI[(time < duration/4.0)]
+        I_post = rI[(time > duration) & (time<(info['tend']-duration/1.5))]
+    
+    VCin =1000.0*np.round((VCin_value/opts['model_cell'])/np.mean(I_pre),4)
+    deltaI = VCin*(np.mean(I_post)-np.mean(I_pre))
+    VCout =np.round(VCout_value/deltaI*opts['model_cell'],6) 
+    set_trace()
     factors = ['AI_CONVERSION_FACTOR_CC={0}'.format(CCin),
                'AO_CONVERSION_FACTOR_CC={0}'.format(CCout),
                'AI_CONVERSION_FACTOR_VC={0}'.format(VCin),
@@ -210,7 +221,7 @@ Make sure the following values are correct:
                             contents[ii+jj+1] = factors[jj]+'\n'
                 elif amplifier.strip() not in ['']:
                     if '"HEKA-EPC10")' in line:
-                        contents.insert(ii,'\t"{0}")\n'.format(amplifier))
+                        contents.insert(ii+1,'\t"{0}")\n'.format(amplifier))
                         for jj,a in enumerate(factors):
                             contents.insert(ii+jj+1,'\t\t'+a+'\n')
                         contents.insert(ii+jj+2,'\t\t;;\n')

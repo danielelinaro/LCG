@@ -126,6 +126,12 @@ public:
          */
         virtual void step() = 0;
 
+        /*!
+         * This method is called at the first step of the experiment/simulation.
+         * Derived classes should implement here the code for the evolution of the entity.
+         */
+        virtual void firstStep();
+
         /*! Returns the output value of this entity. */
         virtual double output() = 0;
 

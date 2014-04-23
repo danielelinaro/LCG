@@ -80,6 +80,7 @@ public:
         H5Recorder(bool compress = true, const char *filename = NULL, uint id = GetId());
         ~H5Recorder();
         virtual void step();
+        virtual void firstStep();
         virtual void terminate();
 
 public:
