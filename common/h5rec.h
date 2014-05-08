@@ -99,6 +99,7 @@ protected:
 
         virtual bool writeStringAttribute(hid_t objId, const char *attrName, const char *attrValue);
         virtual bool writeScalarAttribute(hid_t objId, const char *attrName, double attrValue);
+        virtual bool writeScalarAttribute(hid_t objId, const char *attrName, long attrValue);
         virtual bool writeArrayAttribute(hid_t objId, const char *attrName,
                                          const double *data, const hsize_t *dims, int ndims);
         virtual bool writeData(const char *datasetName, int rank, const hsize_t *dims,

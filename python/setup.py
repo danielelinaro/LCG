@@ -53,7 +53,8 @@ setup(
             'lcg-vi = lcg.vi:main',
             'lcg-plot = lcg.plot_file:main',
             'lcg-zap = lcg.zap:main',
-            'lcg-find-conversion-factors = lcg.find_conversion_factors:main'
+            'lcg-find-conversion-factors = lcg.find_conversion_factors:main',
+            'lcg-seal-test = lcg.seal_test_gui:main',
             ]
         }
     )

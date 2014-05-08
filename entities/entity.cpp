@@ -106,6 +106,10 @@ void Entity::addPre(Entity *entity)
         m_inputs.push_back(0);
         //m_inputs.reserve(m_inputs.size()+1);
 }
+void Entity::firstStep()
+{
+		step();
+}
 
 void Entity::addPost(Entity *entity)
 {

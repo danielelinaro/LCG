@@ -1,5 +1,5 @@
 #include <sstream>
-#include <time.h>       // for adding timestamp to H5 files
+#include <sys/time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "common.h"
 #if defined(HAVE_LIBRT)
@@ -85,7 +85,13 @@ bool BaseH5Recorder::initialise()
         m_dataspaces.clear();
         m_datasets.clear();
 
-        if (!openFile())
+		/* REMOVE: Check time difference between init and firstStep */
+		/*
+		struct timespec ts ;
+		clock_gettime(CLOCK_REALTIME, &ts);
+		Logger(Important,"%30.30lf\n",((double)ts.tv_sec * 1000000000.0 + (double)ts.tv_nsec)/1000000000.0);
+        */
+		if (!openFile())
                 return false;
         Logger(Debug, "Successfully opened file [%s].\n", m_filename);
 
@@ -325,6 +331,17 @@ void H5Recorder::terminate()
         stopWriterThread();
         BaseH5Recorder::terminate();
         m_runCount++;
+}
+
+void H5Recorder::firstStep()
+{
+	
+    struct timespec ts ;
+    clock_gettime(CLOCK_REALTIME, &ts);
+//Logger(Important,"%ld %ld\n\n",ts.tv_sec,ts.tv_nsec);
+    writeScalarAttribute(m_infoGroup,"startTimeSec", (long) ts.tv_sec);
+    writeScalarAttribute(m_infoGroup,"startTimeNsec", ts.tv_nsec);
+    step();
 }
 
 void H5Recorder::step()
