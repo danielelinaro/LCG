@@ -73,6 +73,8 @@ with_xenomai=no
 
 if test `expr $host_os : 'linux'` -eq 5 ; then
    
+   AC_CHECK_LIB([rt], [clock_gettime], [], [AC_MSG_ERROR([RT library missing.])])
+
    ### real time ###
    AC_CHECK_LIB([xenomai], [pthread_create], [], [echo "Xenomai not found."])
    if test "$ac_cv_lib_xenomai_pthread_create" = "yes" ; then
