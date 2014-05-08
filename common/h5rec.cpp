@@ -38,7 +38,7 @@ H5RecorderCore::H5RecorderCore(bool compress, hsize_t chunkSize, uint numberOfCh
           m_chunkSize(chunkSize), m_numberOfChunks(numberOfChunks),
           m_groups(), m_dataspaces(), m_datasets()
 {
-        if (filename == NULL) {
+        if (filename == NULL || !strlen(filename)) {
                 m_makeFilename = true;
         }
         else {

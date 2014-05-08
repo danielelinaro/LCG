@@ -1,3 +1,4 @@
+#include <string.h>
 #include "analog_io.h"
 #include "utils.h"
 
@@ -192,7 +193,8 @@ lcg::Entity* AnalogOutputFactory(string_dict& args)
         }
 
         if (! lcg::CheckAndExtractBool(args, "resetOutput", &resetOutput)) {
-                resetOutput = true;
+                resetOutput = (getenv("LCG_RESET_OUTPUT") == NULL ? false :
+                        (strcmp(getenv("LCG_RESET_OUTPUT"),"yes") ? false : true));
         }
 
         return new lcg::AnalogOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
@@ -257,7 +259,7 @@ AnalogOutput::~AnalogOutput()
 
 void AnalogOutput::terminate()
 {
-        if (m_resetOutput)
+        if (m_resetOutput || ABNORMAL_TERMINATION())
                 m_output.write(0.0);
 }
 

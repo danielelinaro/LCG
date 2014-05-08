@@ -1,22 +1,15 @@
-
 === Urgent
 
+-) Add support for hardware calibrated Comedi boards.
 -) Finish fixing extracellular_protocol.py
 
 === Short term (and therefore relatively simple) ===
 
--) the H5 filename should be the timestamp of the beginning of the experiment, also when using streams.
 -) where is LOGFILE used and does it still make sense to use it?
--) channels are not being recorded in the order they are specified in non-rt config file.
 -) fix usage of m_numberOfChunks, m_chunkSize and m_bufferSize in the H5 recorders code.
 -) control output trimming in comedi_io.cpp.
 -) finish to add the ionic currents for LTS neurons.
 -) add warning in the documentation that IzhikevichNeuron emits spikes in the spike peak or change it to include a spike threshold.
-
-=== Long term (and therefore possibly complicated) ===
-
--) Distinguish between entities and recorders (remember an OUconductance connected to both a neuron and a recorder) ?
--) OpenGL visualizer for recorded data.
 
 Random thoughts:
 Modify the random library to have one base class for UniformRandom and two subclasses for software and hardware implementationstruct. Moreover, there shouldn't be two distinct classes for SW and HW normal and poisson random numbers, but rather a single class which uses either a SW or a HW uniform random number generator.

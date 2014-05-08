@@ -26,6 +26,7 @@ def usage():
     print(' -l, --duration        duration of the recording (only if -s or -d are not specified)')
     print(' -n, --repetitions     number of repetitions (default 1)')
     print(' -i, --interval        interval between repetitions (default 0 s)')
+    print(' -o, --output-file     name of the file where data will be saved.')
     print(' -F, --sampling-rate   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print(' -D, --device          input device (default %s)' % os.environ['COMEDI_DEVICE'])
     print(' -S, --subdevice       input subdevice (default %s)' % os.environ['AI_SUBDEVICE'])
@@ -41,7 +42,7 @@ def usage():
     print('                       --vclamp is used) for all channels)')
     print(' -V, --vclamp          use default conversion factor and units for voltage clamp')
     print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
-    print(' -o, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
+    print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
@@ -60,12 +61,12 @@ def get_stimulus_duration(stimfile):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:H:',
                                   ['help','stimulus=','directory=','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance=','rt='])
+                                   'vclamp','offset=','conductance=','rt=','output-file='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -89,6 +90,7 @@ def main():
     outputGains = []
     outputUnits = []
     reversalPotentials = []
+    outputFilename = None
 
     suffix = 'CC'
 
@@ -177,9 +179,11 @@ def main():
                 reversalPotentials.append(E)
         elif o in ('-V','--vclamp'):
             suffix = 'VC'
-        elif o in ('-o','--offset'):
+        elif o in ('-H','--offset'):
             for offset in a.split(','):
                 offsets.append(float(offset))
+        elif o in ('-o','--output-file'):
+            outputFilename = a
         elif o == '--rt':
             realtime = a.lower() == 'yes'
 
@@ -298,7 +302,7 @@ def main():
                     if suffix == 'VC':
                         channels[-1]['resetOutput'] = False
             if len(reversalPotentials) == 0:
-                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime)
+                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
             else:
                 lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
             sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
@@ -328,7 +332,7 @@ def main():
                 if suffix == 'VC':
                     channels[-1]['resetOutput'] = False
                 if len(reversalPotentials) == 0:
-                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime)
+                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
                 else:
                     lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))

@@ -14,6 +14,10 @@ lcg::Entity* PoissonFactory(string_dict& args)
                 lcg::Logger(lcg::Critical, "Unable to build a Poisson generator.\n");
                 return NULL;
         }
+        if (rate == 0.) {
+                lcg::Logger(lcg::Critical, "The rate of spike emission cannot be equal to 0.\n");
+                return NULL;
+        }
         return new lcg::generators::Poisson(rate, seed, id);
 }
 
@@ -27,11 +31,26 @@ Poisson::Poisson(double rate, ullong seed, uint id)
         : Generator(id), m_random(seed)
 {
         POISSON_RATE = rate;
+        POISSON_SEED = (double) seed;
+        if (POISSON_RATE == 0.) {
+                Logger(Critical, "The rate of spike emission cannot be equal to 0.\n");
+                throw "Invalid rate.";
+        }
+        else if (POISSON_RATE < 0.) {
+                m_deterministic = true;
+                m_period = -1. / POISSON_RATE;
+        }
+        else {
+                m_deterministic = false;
+                m_period = 1. / POISSON_RATE;
+        }
         setName("PoissonGenerator");
 }
 
 bool Poisson::initialise()
 {
+        m_tNextSpike = 0.;
+        m_random.setSeed((ullong) POISSON_SEED);
         calculateTimeNextSpike();
         return true;
 }
@@ -56,7 +75,10 @@ void Poisson::step()
 
 void Poisson::calculateTimeNextSpike()
 {
-        m_tNextSpike += (- log(m_random.doub()) / POISSON_RATE);
+        if (m_deterministic)
+                m_tNextSpike += m_period;
+        else 
+                m_tNextSpike += (- log(m_random.doub()) * m_period);
         Logger(Debug, "%e\n", m_tNextSpike);
 }
 

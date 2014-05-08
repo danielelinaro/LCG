@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-        char cmd[64], *ptr;
+        char cmd[4096], *ptr;
         if (argc > 1) {
                 ptr = cmd;
                 if (argv[1][0] == '-')

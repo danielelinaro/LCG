@@ -29,6 +29,7 @@
 #include "generator.h"
 
 #define POISSON_RATE m_parameters["rate"]
+#define POISSON_SEED m_parameters["seed"]
 
 namespace lcg {
 
@@ -48,6 +49,8 @@ private:
 private:
         UniformRandom m_random;
         double m_tNextSpike;
+        bool m_deterministic;
+        double m_period;
 };
 
 } // namespace generators

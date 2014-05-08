@@ -52,8 +52,12 @@ const std::vector< std::pair<std::string,time_t> >* GetComments()
 void* CommentsReader(void *)
 {
         char c;
+        int old;
         time_t now;
         std::string msg;
+        // this is superfluous: PTHREAD_CANCEL_ENABLE is the default for new threads
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old); 
+        pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &old);
         comments.clear();
         Logger(Debug, "CommentsReader started.\n");
         while (!TERMINATE_TRIAL()) {
@@ -105,13 +109,11 @@ void StopCommentsReaderThread()
         while (readingComment)
                 pthread_cond_wait(&commentsCV, &commentsMutex);
         pthread_mutex_unlock(&commentsMutex);
-        if (pthread_cancel(commentsThread) == 0) {
-                commentsThreadRunning = false;
-                Logger(Debug, "Comments reader thread stopped.\n");
-        }
-        else {
-                Logger(Critical, "No such thread.\n");
-        }
+        if (pthread_cancel(commentsThread) == 0)
+                Logger(Debug, "Comments reader thread cancelled.\n");
+        else
+                Logger(Debug, "Unable to cancel comments reader thread.\n");
+        commentsThreadRunning = false;
         pthread_mutex_destroy(&commentsMutex);
         pthread_cond_destroy(&commentsCV);
 }
@@ -122,13 +124,15 @@ void StopCommentsReaderThread()
 
 bool programRun = true; 
 bool trialRun = false; 
+bool killSignal = false;
 pthread_mutex_t programRunMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t trialRunMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void TerminationHandler(int signum)
 {
         if (signum == SIGINT || signum == SIGHUP) {
-                Logger(Critical, "Terminating the program.\n");
+                Logger(Critical, "\nTerminating the program.\n");
+                killSignal = true;
                 KillProgram();
         }
 }
@@ -398,6 +402,12 @@ bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value)
         return true;
 }
 
+std::string MakeFilename(const char *extension) {
+        char filename[FILENAME_MAXLEN];
+        MakeFilename(filename, extension);
+        return std::string(filename);
+}
+
 void MakeFilename(char *filename, const char *extension)
 {
         time_t rawTime;
@@ -443,5 +453,18 @@ bool ConvertUnits(double x, double *y, const char *unitsIn, const char *unitsOut
 
         return false;
 }
+
+std::string &LeftTrim(std::string &s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+        return s;
+}
+std::string &RightTrim(std::string &s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+}
+std::string &Trim(std::string &s) {
+        return LeftTrim(RightTrim(s));
+}
+
 } // namespace lcg
 
