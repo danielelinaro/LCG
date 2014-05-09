@@ -105,7 +105,7 @@ public:
         OutputChannel(const char *device, uint subdevice, uint range, uint reference,
                 uint channel, double conversionFactor, double samplingRate,
                 const char *units, const char *stimfile, double offset = 0.,
-                bool resetOutput = true, uint id = GetId());
+                bool resetOutput = false, uint id = GetId());
         virtual void terminate();
         const char* stimulusFile() const;
         bool setStimulusFile(const char *filename);

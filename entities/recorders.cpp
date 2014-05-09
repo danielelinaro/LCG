@@ -1,10 +1,35 @@
 #include <sstream>
-#include <time.h>       // for adding timestamp to H5 files
+#include <time.h>
+#include <sys/time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "common.h"
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
 #include "engine.h"
 #endif
+
+/*
+ * Taken from <https://gist.github.com/jbenet/1087739>.
+ * START
+ */
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+ 
+void current_utc_time(struct timespec *ts) {
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+        clock_serv_t cclock;
+        mach_timespec_t mts;
+        host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+        clock_get_time(cclock, &mts);
+        mach_port_deallocate(mach_task_self(), cclock);
+        ts->tv_sec = mts.tv_sec;
+        ts->tv_nsec = mts.tv_nsec;
+#else
+        clock_gettime(CLOCK_REALTIME, ts);
+#endif
+}
+/* END */
 
 lcg::Entity* H5RecorderFactory(string_dict& args)
 {       
@@ -105,7 +130,7 @@ void BaseH5Recorder::terminate()
 		closeFile();
 }
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
 void BaseH5Recorder::reducePriority() const
 {
         int priority;
@@ -128,7 +153,7 @@ void BaseH5Recorder::reducePriority() const
                         "the writing thread will run at the same priority of the parent thread.\n");
         }
 }
-#endif
+#endif // REALTIME_ENGINE
 
 void BaseH5Recorder::addPre(Entity *entity)
 {
@@ -327,6 +352,15 @@ void H5Recorder::terminate()
         m_runCount++;
 }
 
+void H5Recorder::firstStep()
+{
+        struct timespec ts;
+        current_utc_time(&ts);
+        writeScalarAttribute(m_infoGroup, "startTimeSec", (long) ts.tv_sec);
+        writeScalarAttribute(m_infoGroup, "startTimeNsec", ts.tv_nsec);
+        step();
+}
+
 void H5Recorder::step()
 {
         if (m_numberOfInputs == 0)
@@ -373,7 +407,7 @@ void* H5Recorder::buffersWriter(void *arg)
                 goto endBuffersWriter;
         }
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
         //reducePriority();
 #endif
 
@@ -606,7 +640,7 @@ void* TriggeredH5Recorder::buffersWriter(void *arg)
         Logger(Debug, "TriggeredH5Recorder::buffersWriter: will save buffer #%d starting from pos %d.\n",
                         bufferToSave, bufferPosition);
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
         //reducePriority();
 #endif
 

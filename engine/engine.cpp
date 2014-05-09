@@ -24,10 +24,6 @@
 #include <native/timer.h>
 #endif // HAVE_LIBANALOGY
 
-#ifdef HAVE_LIBRT
-#include <errno.h>
-#endif // HAVE_LIBRT
-
 namespace lcg {
 
 struct simulation_data {
@@ -117,14 +113,21 @@ void* RTSimulation(void *arg)
         Logger(Debug, "Starting the main loop.\n");
 
         start = rt_timer_read();
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+		rt_task_wait_period();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
                         entities->at(i)->readAndStoreInputs();
-                IncreaseGlobalTime();
-                for (i=0; i<nEntities; i++)
+				for (i=0; i<nEntities; i++)
                         entities->at(i)->step();
                 rt_task_wait_period();
+                IncreaseGlobalTime();
         }
         stop = rt_timer_read();
 
@@ -198,6 +201,13 @@ void RTSimulationTask(void *cookie)
                 return;
         }
         start = rt_timer_read();
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+		rt_task_wait_period();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -270,7 +280,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         *retval = true;
 }
 
-#elif defined(HAVE_LIBRT)
+#elif defined(REALTIME_ENGINE)
 
 static inline void tsnorm(struct timespec *ts)
 {
@@ -303,7 +313,8 @@ static bool CheckPrivileges()
         param.sched_priority = 1;
         if (sched_setscheduler(0, SCHEDULER, &param) == -1) {
                 Logger(Critical, "Unable to change scheduling policy! %s.\n", strerror(errno));
-                Logger(Critical, "Either run as root or join realtime group.\n");
+                Logger(Critical, "If the kernel has real-time capabilities, Either run as root or join realtime group.\n");
+                Logger(Critical, "Otherwise, ask your system administrator to recompile LCG with ./configure --disable-realtime.\n");
                 return false;
         }
 
@@ -377,6 +388,24 @@ void* RTSimulation(void *arg)
 
         Logger(Important, "Expected duration: %g seconds.\n", tend);
 
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+	        now.tv_sec += period.tv_sec;
+	        now.tv_nsec += period.tv_nsec;
+	        tsnorm(&now);
+
+                // Wait for next period
+		flag = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &now, NULL);
+                if (flag != 0) {
+                        Logger(Critical, "Error in clock_nanosleep.\n");
+					return 0;
+				}
+
+                // Increase the time of the simulation and step all entities forward
+                IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 
                 // Process the events and have all entities read their inputs
@@ -448,6 +477,12 @@ void* NonRTSimulation(void *arg)
                         pthread_exit((void *) retval);
                 }
         }
+		// First step can be different from subsequent.	
+		for (i=0; i<nEntities; i++)
+                entities->at(i)->readAndStoreInputs();
+		for (i=0; i<nEntities; i++)
+			    entities->at(i)->firstStep();
+        IncreaseGlobalTime();
         while (!TERMINATE_TRIAL() && GetGlobalTime() <= tend) {
                 ProcessEvents();
                 for (i=0; i<nEntities; i++)
@@ -470,7 +505,7 @@ void* NonRTSimulation(void *arg)
  
 int Simulate(std::vector<Entity*> *entities, double tend)
 {
-#ifdef HAVE_LIBRT
+#ifdef REALTIME_ENGINE
         if (!CheckPrivileges()) {
                 return -1;
         }
@@ -519,7 +554,7 @@ int Simulate(std::vector<Entity*> *entities, double tend)
         return retval;
 }
 
-int Simulate(std::vector<Stream*>* streams, double tend)
+int Simulate(std::vector<Stream*>* streams, double tend, const std::string& outfilename)
 {
         int i, err;
         size_t len, ndims, *dims;
@@ -549,7 +584,7 @@ int Simulate(std::vector<Stream*>* streams, double tend)
                 streams->at(i)->terminate();
                 if (!err) {
                         if (!rec)
-                                rec = new ChunkedH5Recorder;
+                                rec = new ChunkedH5Recorder(true, outfilename.c_str());
                         double_dict pars;
                         const double *data = streams->at(i)->data(&len);
                         rec->addRecord(streams->at(i)->id(), streams->at(i)->name().c_str(),

@@ -76,7 +76,7 @@ class XMLConfigurationFile (object):
     Class for creating configuration files.
     This class is a part of lcg.
     """
-    def __init__(self, sampling_rate, trial_duration):
+    def __init__(self, sampling_rate, trial_duration, output_filename):
         '''
         Initializes an XMLConfigurationFile.
         '''
@@ -84,7 +84,7 @@ class XMLConfigurationFile (object):
         self._xml_entities = None
         self._xml_streams = None
         self._xml_simulation = etree.SubElement(self._xml_root,'simulation')
-        self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration})
+        self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
         self._entities = []
         self._streams = []
 
@@ -93,8 +93,9 @@ class XMLConfigurationFile (object):
         Appends an XML Element to an etree.Element
         '''
         for a,o in parlist.iteritems():
-            tmp = etree.SubElement(group, a)
-            tmp.text = str(o)
+            if not o is None:
+                tmp = etree.SubElement(group, a)
+                tmp.text = str(o)
 
     def _add_parameters(self,group,parlist):
         '''
@@ -183,11 +184,11 @@ def completeWithDefaultValues(opt):
                 opt['resetOutput'] = True
     return opt
 
-def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True):
-    config = lcg.XMLConfigurationFile(sampling_rate,duration)
+def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True, output_filename=None):
+    config = lcg.XMLConfigurationFile(sampling_rate,duration,output_filename)
     ID = 0
     if realtime:
-        config.add_entity(lcg.entities.H5Recorder(id=ID, connections=()))
+        config.add_entity(lcg.entities.H5Recorder(id=ID, filename=output_filename, connections=()))
         ID += 1
     for chan in channels:
         try:

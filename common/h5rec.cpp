@@ -38,7 +38,7 @@ H5RecorderCore::H5RecorderCore(bool compress, hsize_t chunkSize, uint numberOfCh
           m_chunkSize(chunkSize), m_numberOfChunks(numberOfChunks),
           m_groups(), m_dataspaces(), m_datasets()
 {
-        if (filename == NULL) {
+        if (filename == NULL || !strlen(filename)) {
                 m_makeFilename = true;
         }
         else {
@@ -130,7 +130,7 @@ bool H5RecorderCore::initialiseFile()
                 return false;
         }
         Logger(Debug, "Successfully created Info group.\n");
-        writeScalarAttribute(m_infoGroup, "version", H5_FILE_VERSION);
+        writeScalarAttribute(m_infoGroup, "version", (long) H5_FILE_VERSION);
 
         hid_t grp;
         if (!createGroup(ENTITIES_GROUP, &grp)) {
@@ -354,6 +354,38 @@ bool H5RecorderCore::writeStringAttribute(hid_t dataset,
 
         return retval;
 }
+
+bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const char *attrName, long attrValue)
+{
+        Logger(Debug, "H5RecorderCore::writeScalarAttribute(%d, %s, %g)\n", dataset, attrName, attrValue);
+        hid_t aid, attr;
+        herr_t status;
+
+        aid = H5Screate(H5S_SCALAR);
+        if (aid < 0) {
+                Logger(Critical, "Unable to create scalar.\n");
+                return false;
+        }
+
+        attr = H5Acreate2(dataset, attrName, H5T_NATIVE_LONG, aid, H5P_DEFAULT, H5P_DEFAULT);
+        if (attr < 0) {
+                H5Sclose(aid);
+                Logger(Critical, "Unable to create scalar attribute.\n");
+                return false;
+        }
+
+        status = H5Awrite(attr, H5T_NATIVE_LONG, &attrValue);
+
+        H5Aclose(attr);
+        H5Sclose(aid);
+
+        if (status < 0) {
+                Logger(Critical, "Unable to write attribute.\n");
+                return false;
+        }
+
+        return true;
+}  
 
 bool H5RecorderCore::writeScalarAttribute(hid_t dataset, const char *attrName, double attrValue)
 {

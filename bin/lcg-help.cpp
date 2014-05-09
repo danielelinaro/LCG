@@ -16,6 +16,7 @@ const char lcg_usage_string[] =
 const char *lcg_commands[] = {
         "   annotate      Add comments to an existing H5 file",
         "   ap            Inject a brief depolarizing pulse of current to elicit a single action potential",
+        "   ecode         Perform a series of protocols to characterize the electrophysiological properties of a cell",
         "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
         "   fclamp        Find the current necessary to make a neuron spike at a given frequency",
         "   fi            Compute an f-I curve using a PID controller",
@@ -32,6 +33,7 @@ const char *lcg_commands[] = {
         "   tau           Inject a brief hyperpolarizing pulse of current to measure the membrane time constant of the neuron",
         "   vcclamp       Perform a voltage or current clamp experiment using a stimulus file",
         "   vi            Inject hyperpolarizing and depolarizing DC steps of current to compute a V-I curve",
+        "   zap           Inject a chirp of current to compute the subthreshold response to varying frequencies",
         "   zero          Output zero to all channels of the DAQ board",
         NULL
 };

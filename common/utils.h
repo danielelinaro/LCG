@@ -24,7 +24,12 @@
 #define UTILS_H
 
 #include <vector>
+#include <string>
 #include <utility>
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
 #include "types.h"
 #include "common.h"
 
@@ -67,6 +72,7 @@ bool CheckAndExtractUnsignedLong(string_dict& dict, const char *key, unsigned lo
 bool CheckAndExtractUnsignedLongLong(string_dict& dict, const char *key, unsigned long long *value);
 bool CheckAndExtractBool(string_dict& dict, const char *key, bool *value);
 void MakeFilename(char *filename, const char *extension);
+std::string MakeFilename(const char *extension);
 
 /**
  * So far converts only Hz to seconds and vice versa.
@@ -88,8 +94,10 @@ extern double runTime;
 ////// SIGNAL HANDLING CODE - START /////
 extern bool programRun;
 extern bool trialRun;
+extern bool killSignal;
 #define KILL_PROGRAM() !programRun
 #define TERMINATE_TRIAL() !trialRun
+#define ABNORMAL_TERMINATION() killSignal
 bool SetupSignalCatching();
 ////// SIGNAL HANDLING CODE - END /////
 
@@ -102,6 +110,10 @@ void TerminateTrial();
 void StartCommentsReaderThread();
 void StopCommentsReaderThread();
 const std::vector< std::pair<std::string,time_t> >* GetComments();
+
+std::string &LeftTrim(std::string &s);
+std::string &RightTrim(std::string &s);
+std::string &Trim(std::string &s);
 
 } // namespace lcg
 

@@ -459,8 +459,11 @@ def loadH5TraceV2(filename):
                 entities[-1][attrName.lower()] = node._v_attrs[attrName]
             except:
                 entities[-1][attrName.lower()] = getattr(node._v_attrs, attrName)
-    info = {'dt': fid.root.Info._v_attrs.dt,
-            'tend': fid.root.Info._v_attrs.tend,
-            'version': fid.root.Info._v_attrs.version}
+    info = {}
+    for a in fid.root.Info._v_attrs._g_listAttr(fid.root.Info):
+        info[a] = getattr(fid.root.Info._v_attrs,a)
+    #info = {'dt': fid.root.Info._v_attrs.dt,
+    #        'tend': fid.root.Info._v_attrs.tend,
+    #        'version': fid.root.Info._v_attrs.version}
     fid.close()
     return entities,info
