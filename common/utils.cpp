@@ -191,7 +191,9 @@ double SetGlobalDt(double dt)
         assert(dt > 0.0);
         globalDt = dt;
 
-#ifdef HAVE_LIBLXRT
+#ifdef REALTIME_ENGINE
+
+#if defined(HAVE_LIBLXRT)
         Logger(Debug, "Starting RT timer.\n");
         RTIME period = start_rt_timer(sec2count(dt));
         realtimeDt = count2sec(period);
@@ -200,13 +202,9 @@ double SetGlobalDt(double dt)
         Logger(Debug, "Stopping RT timer.\n");
         stop_rt_timer();
 #endif // NO_STOP_RT_TIMER
-#endif // HAVE_LIBLXRT
-
-#ifdef HAVE_LIBANALOGY
+#elif defined(HAVE_LIBANALOGY)
         Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
-#endif // HAVE_LIBANALOGY
-
-#ifdef HAVE_LIBRT
+#else
         struct timespec ts;
         clock_getres(CLOCK_REALTIME, &ts);
         if (ts.tv_nsec != 1) {
@@ -214,7 +212,8 @@ double SetGlobalDt(double dt)
                 globalDt = cycles * ts.tv_nsec / NSEC_PER_SEC;
         }
         Logger(Debug, "The real time period is %g ms (f = %g Hz).\n", globalDt*1e3, 1./globalDt);
-#endif // HAVE_LIBRT
+#endif
+#endif // REALTIME_ENGINE
 
         assert(globalDt > 0.0);
         return globalDt;

@@ -24,10 +24,6 @@
 #include <native/timer.h>
 #endif // HAVE_LIBANALOGY
 
-#ifdef HAVE_LIBRT
-#include <errno.h>
-#endif // HAVE_LIBRT
-
 namespace lcg {
 
 struct simulation_data {
@@ -284,7 +280,7 @@ void RTSimulation(const std::vector<Entity*>& entities, double tend, bool *retva
         *retval = true;
 }
 
-#elif defined(HAVE_LIBRT)
+#elif defined(REALTIME_ENGINE)
 
 static inline void tsnorm(struct timespec *ts)
 {
@@ -317,7 +313,8 @@ static bool CheckPrivileges()
         param.sched_priority = 1;
         if (sched_setscheduler(0, SCHEDULER, &param) == -1) {
                 Logger(Critical, "Unable to change scheduling policy! %s.\n", strerror(errno));
-                Logger(Critical, "Either run as root or join realtime group.\n");
+                Logger(Critical, "If the kernel has real-time capabilities, Either run as root or join realtime group.\n");
+                Logger(Critical, "Otherwise, ask your system administrator to recompile LCG with ./configure --disable-realtime.\n");
                 return false;
         }
 
@@ -508,7 +505,7 @@ void* NonRTSimulation(void *arg)
  
 int Simulate(std::vector<Entity*> *entities, double tend)
 {
-#ifdef HAVE_LIBRT
+#ifdef REALTIME_ENGINE
         if (!CheckPrivileges()) {
                 return -1;
         }

@@ -72,10 +72,10 @@ extern double realtimeDt;
 #define SetGlobalTimeOffset() (globalTimeOffset = ((double) rt_timer_ticks2ns(rt_timer_read())) / NSEC_PER_SEC)
 #endif // HAVE_LIBANALOGY
 
-#ifdef HAVE_LIBRT
+#ifdef REALTIME_ENGINE
 #define SCHEDULER SCHED_RR
 #define SetGlobalTimeOffset(now) (globalTimeOffset = now.tv_sec + ((double) now.tv_nsec / NSEC_PER_SEC))
-#endif // HAVE_LIBRT
+#endif // REALTIME_ENGINE
 
 } // namespace lcg
 

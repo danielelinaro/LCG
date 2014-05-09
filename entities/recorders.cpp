@@ -3,7 +3,7 @@
 #include <sys/time.h>       // for adding timestamp to H5 files
 #include "recorders.h"
 #include "common.h"
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
 #include "engine.h"
 #endif
 
@@ -110,13 +110,7 @@ bool BaseH5Recorder::initialise()
         m_dataspaces.clear();
         m_datasets.clear();
 
-		/* REMOVE: Check time difference between init and firstStep */
-		/*
-		struct timespec ts ;
-		clock_gettime(CLOCK_REALTIME, &ts);
-		Logger(Important,"%30.30lf\n",((double)ts.tv_sec * 1000000000.0 + (double)ts.tv_nsec)/1000000000.0);
-        */
-		if (!openFile())
+        if (!openFile())
                 return false;
         Logger(Debug, "Successfully opened file [%s].\n", m_filename);
 
@@ -136,7 +130,7 @@ void BaseH5Recorder::terminate()
 		closeFile();
 }
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
 void BaseH5Recorder::reducePriority() const
 {
         int priority;
@@ -159,7 +153,7 @@ void BaseH5Recorder::reducePriority() const
                         "the writing thread will run at the same priority of the parent thread.\n");
         }
 }
-#endif
+#endif // REALTIME_ENGINE
 
 void BaseH5Recorder::addPre(Entity *entity)
 {
@@ -413,7 +407,7 @@ void* H5Recorder::buffersWriter(void *arg)
                 goto endBuffersWriter;
         }
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
         //reducePriority();
 #endif
 
@@ -646,7 +640,7 @@ void* TriggeredH5Recorder::buffersWriter(void *arg)
         Logger(Debug, "TriggeredH5Recorder::buffersWriter: will save buffer #%d starting from pos %d.\n",
                         bufferToSave, bufferPosition);
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
         //reducePriority();
 #endif
 

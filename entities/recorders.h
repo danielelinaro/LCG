@@ -65,10 +65,10 @@ protected:
         virtual bool allocateForEntity(Entity *entity, int dataRank,
                                        const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims);
 
-#if defined(HAVE_LIBRT)
+#ifdef REALTIME_ENGINE
         // sets the priority of the calling thread to max_priority - 1
         virtual void reducePriority() const;
-#endif
+#endif // REALTIME_ENGINE
 
 protected:
         // number of inputs
