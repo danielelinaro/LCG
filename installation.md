@@ -102,14 +102,13 @@ The following procedure should have you up and running:
 LCG requires the following libraries:
 
 1. [**BOOST**](http://www.boost.org/).  
-   This library is used for several things, among which
-   are multithreading, argument parsing, XML parsing and a few others. The website provides extensive
+   This library is used for parsing XML configuration files. The website provides extensive
    documentation on how to install the library, but generally it is sufficient to type (for example
    with version 1.53.0):
 
         $ wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
         $ tar --bzip2 -xvf boost_1_53_0.tar.bz2
-        $ cd boost_1_53_0.tar.bz2
+        $ cd boost_1_53_0
         $ ./bootstrap.sh --prefix=/usr/local
         # ./b2 install
 
