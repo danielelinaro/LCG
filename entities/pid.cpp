@@ -69,7 +69,6 @@ void PID::handleEvent(const Event *event)
                 m_errpPrev = errp;
                 m_output = PID_BASELINE + PID_GP*errp + PID_GI*m_erri + PID_GD*errd;
 
-                Logger(Info, "PID(%d): %9.3f %9.4f\n", id(), m_inputs[0],m_inputs[1]);                
                 Logger(Info, "PID(%d): %9.3f %9.4f %9.4f %9.4f %10.5f\n", id(), GetGlobalTime(), errp, m_erri, errd, m_output);                
             }
             break;

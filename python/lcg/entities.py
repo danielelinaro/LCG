@@ -115,7 +115,7 @@ class RealNeuron (Entity):
     def __init__(self, id, connections, spikeThreshold, V0, deviceFile, inputSubdevice,
                  outputSubdevice, readChannel, writeChannel, inputConversionFactor,
                  outputConversionFactor, inputRange, reference, kernelFile = '',
-                 holdLastValue = False, adaptiveThreshold = False):
+                 holdLastValue = False, holdLastValueFilename=None, adaptiveThreshold = False):
         super(RealNeuron,self).__init__('RealNeuron', id, connections)
         self.add_parameter('spikeThreshold', spikeThreshold)
         self.add_parameter('V0', V0)
@@ -132,6 +132,8 @@ class RealNeuron (Entity):
             self.add_parameter('kernelFile', kernelFile)
         if holdLastValue:
             self.add_parameter('holdLastValue', 'true')
+        if holdLastValue and not holdLastValueFilename is None:
+            self.add_parameter('holdLastValueFilename', holdLastValueFilename)
         if adaptiveThreshold:
             self.add_parameter('adaptiveThreshold', 'true')
 
