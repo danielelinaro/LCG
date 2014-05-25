@@ -76,7 +76,7 @@ class XMLConfigurationFile (object):
     Class for creating configuration files.
     This class is a part of lcg.
     """
-    def __init__(self, sampling_rate, trial_duration, output_filename):
+    def __init__(self, sampling_rate, trial_duration, output_filename=None):
         '''
         Initializes an XMLConfigurationFile.
         '''
@@ -84,7 +84,10 @@ class XMLConfigurationFile (object):
         self._xml_entities = None
         self._xml_streams = None
         self._xml_simulation = etree.SubElement(self._xml_root,'simulation')
-        self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
+        if not output_filename is None:
+            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
+        else:
+            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration})
         self._entities = []
         self._streams = []
 

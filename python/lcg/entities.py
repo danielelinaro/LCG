@@ -255,9 +255,13 @@ class ProbabilityEstimator (Entity):
         self.add_parameter('initialProbability', initial_probability)
 
 class PeriodicTrigger (Entity):
-    def __init__(self, id, connections, frequency):
+    def __init__(self, id, connections, frequency, delay=0, tend=None):
         super(PeriodicTrigger,self).__init__('PeriodicTrigger', id, connections)
         self.add_parameter('frequency', frequency)
+        if delay > 0: 
+            self.add_parameter('delay', delay)
+        if not tend is None:
+            self.add_parameter('tend', tend)
 
 class Synapse (Entity):
     def __init__(self, name, id, connections, E):
