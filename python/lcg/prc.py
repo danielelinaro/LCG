@@ -68,10 +68,10 @@ lcg-prc noise -n 2 -t 60 -A 200  --model --no-kernel
 
 '''.format(os.path.basename(sys.argv[0]), os.environ['SAMPLING_RATE'])
 
+env = lambda x:os.environ[x]
 
 def parse_prc_options(mode,opts):
     print opts
-    env = lambda x:os.environ[x]
     defaults = {'ai':env('AI_CHANNEL'),
                 'ao':env('AI_CHANNEL'),
                 'holding':0.0,
@@ -96,18 +96,18 @@ def parse_prc_options(mode,opts):
                              'ntrials':150,
                              'step_pdelay':1})
 
-        elif 'fclamp' in mode: 
+        if 'fclamp' in mode: 
             defaults.update({'gi':0.001,
                              'gp':0.1,
                              'gd':0,
                              'Ftau':0.1,
-                             'pert_freq':6,
                              'trial_dur':48,
                              'target_freq':30,
                              'ntrials':10,
                              'intreps':0})
-        else:
-            defaults.update({'sobol_offset':0})
+        if 'sobol' in mode :
+            defaults.update({'sobol_offset':0,
+                             'pert_freq':6})
     else:
         defaults.update({'ou_amp':0,
                          'ou_std':50,
@@ -244,7 +244,7 @@ def build_fclamp_sobol_config(opts, config, lastValueFilename):
     config.add_entity(FrequencyEstimator(5,(0,3,6),
                                          tau = opts['Ftau'],
                                          initial_frequency= opts['target_freq']))
-    config.add_entity(SobolDelay(6,connections=(7)))
+    config.add_entity(SobolDelay(6,connections=(7),start_sample=0))
     config.add_entity(VariableDelayConnection(7,connections=[2]))
     config.add_entity(EventCounter(8,connections=[7],
                                    max_count=2,auto_reset=False))
@@ -385,7 +385,7 @@ one of the following: {1}'''.format(mode,
     if opts['model']:
         insert_model(config,opts['holding'],lastValueFilename)
     else:
-        insertRealNeuron(config, opts, connections, lastValueFilename)
+        insertRealNeuron(config, opts, [0], lastValueFilename)
 # Perturbation waveform
     if not mode == 'noise':
         config.add_entity(Waveform(id=2,
@@ -415,15 +415,20 @@ one of the following: {1}'''.format(mode,
         run = lambda x: sub.call(x, shell=True)
 
     # Initialization
-    if opts['kernel']:
+    if opts['kernel'] and opts['model'] is None:
         run_kernel(opts)
     run(hold_cell(opts,lastValueFilename))
-    if not opts['dryrun']:
+    if not opts['dryrun'] and not opts['holding'] == 0:
         print('Sleeping {0}...'.format(hold_time))
         time.sleep(hold_time)
     print('Going to run {0} trials'.format(opts['ntrials']))
     
     for ii in range(opts['ntrials']):
+        if 'sobol' in mode:
+            startSample = int(ii*opts['trial_dur'])
+            # This should be the SobolDelay entity; parameter StartSample
+            # Otherwise things are going to go wrong.
+            config._entities[6][2][0].text = str(startSample) 
         config.write(configName)
         run(trial_cmd)
         time.sleep(opts['intreps'])
