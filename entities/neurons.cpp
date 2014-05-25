@@ -9,6 +9,8 @@ lcg::Entity* LIFNeuronFactory(string_dict& args)
 {
         uint id;
         double C, tau, tarp, Er, E0, Vth, Iext;
+	bool holdLastValue;
+        std::string filename;
 
         id = lcg::GetIdFromDictionary(args);
 
@@ -22,8 +24,14 @@ lcg::Entity* LIFNeuronFactory(string_dict& args)
                 lcg::Logger(lcg::Critical, "Unable to build a LIF neuron.\n");
                 return NULL;
         }
-
-        return new lcg::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
+	
+        if (! lcg::CheckAndExtractBool(args, "holdLastValue", &holdLastValue)) 
+                holdLastValue = false;
+	else {
+        	if (!lcg::CheckAndExtractValue(args, "holdLastValueFilename", filename))
+                	filename = LOGFILE;
+	}
+        return new lcg::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, holdLastValue,filename, id);
 }
 
 lcg::Entity* IzhikevichNeuronFactory(string_dict& args)
@@ -203,8 +211,8 @@ void Neuron::emitSpike() const
 
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
                      double Er, double E0, double Vth, double Iext,
-                     uint id)
-        : Neuron(E0, id)
+		     bool holdLastValue, const std::string& holdLastValueFilename, uint id)
+        : Neuron(E0, id), m_holdLastValue(holdLastValue), m_holdLastValueFilename(holdLastValueFilename)
 {
         double dt = GetGlobalDt();
         LIF_C = C;
@@ -216,8 +224,14 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         LIF_IEXT = Iext;
         LIF_LAMBDA = -1.0 / LIF_TAU;
         LIF_RL = LIF_TAU / LIF_C;
+	
         setName("LIFNeuron");
         setUnits("mV");
+}
+
+LIFNeuron::~LIFNeuron()
+{
+        terminate();
 }
 
 bool LIFNeuron::initialise()
@@ -225,6 +239,25 @@ bool LIFNeuron::initialise()
         if (! Neuron::initialise())
                 return false;
         m_tPrevSpike = -1000.0;
+
+        lcg::Logger(lcg::Critical, "Using logfile for the last value [%s].\n", m_holdLastValueFilename.c_str());
+        struct stat buf;
+        if (m_holdLastValue && stat(m_holdLastValueFilename.c_str(),&buf) != -1) {
+                FILE *fid = fopen(LOGFILE, "r");
+                if (fid == NULL) {
+                        Logger(Important, "Unable to open [%s].\n", m_holdLastValueFilename.c_str());
+                        m_Iinj = 0;
+                }
+                else {
+                        fscanf(fid, "%le", &m_Iinj);
+                        Logger(Critical, "Successfully read holding value (%lf pA) from [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
+                        fclose(fid);
+                }
+        }
+        else {
+                m_Iinj = 0.0;
+        }
+
         return true;
 }
 
@@ -236,11 +269,13 @@ void LIFNeuron::evolve()
                 VM = LIF_ER;
         }
         else {
-                double Iinj = LIF_IEXT, Vinf;
+                m_Iinj = LIF_IEXT;
+		double Vinf;
                 int nInputs = m_inputs.size();
                 for (int i=0; i<nInputs; i++)
-                        Iinj += m_inputs[i];
-                Vinf = LIF_RL*Iinj + LIF_E0;
+                        m_Iinj += m_inputs[i];
+		
+                Vinf = LIF_RL*m_Iinj + LIF_E0;
                 VM = Vinf - (Vinf - VM) * exp(LIF_LAMBDA * GetGlobalDt());
         }
         if(VM > LIF_VTH) {
@@ -254,6 +289,24 @@ void LIFNeuron::evolve()
                 m_tPrevSpike = t;
                 emitSpike();
         }
+}
+
+void LIFNeuron::terminate()
+{
+        Neuron::terminate();
+        Logger(Critical, "Holding value (%lf pA).\n", m_Iinj);
+        if (!m_holdLastValue)
+                m_Iinj = 0;
+	else {
+		// Remove the neuron's intrinsic baseline current
+		m_Iinj -= LIF_IEXT;
+        	FILE *fid = fopen(m_holdLastValueFilename.c_str(), "w");
+        	if (fid != NULL) {
+                	fprintf(fid, "%le", m_Iinj);
+                	fclose(fid);
+                	Logger(Debug, "Written holding value (%lf pA) to [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
+        	}
+	}
 }
 
 IzhikevichNeuron::IzhikevichNeuron(double a, double b, double c,

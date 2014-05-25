@@ -113,8 +113,8 @@ class XMLConfigurationFile (object):
             if connection is None:
                 connection = etree.SubElement(entity, 'connections')
             if not connection.text is None:
-                previous_conn = [str(ii) for ii in connection.text.split(',')]
-                connections = np.unique(np.array([previous_conn, connections])).flatten()
+                previous_conn = [int(ii) for ii in connection.text.split(',')]
+                connections = np.unique(np.hstack([previous_conn, connections]).flatten())
             connection.text = ",".join(map(str,connections))
 
     def add_entity(self,entity):
@@ -138,6 +138,10 @@ class XMLConfigurationFile (object):
         self._add_elements(self._streams[-1], {'name': stream.name, 'id': stream.id})
         self._add_parameters(self._streams[-1], stream.parameters)
         self._add_connections(self._streams[-1], stream.connections)
+    
+    def set_tend(self, tend):
+        tmp = self._xml_simulation[1]
+        tmp.text = str(tend)
         
     def write(self,filename):
         '''

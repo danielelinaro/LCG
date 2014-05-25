@@ -76,7 +76,8 @@ class NMDAConductanceStimulus (Entity):
         self.add_parameter('K2', K2)
 
 class LIFNeuron (Entity):
-    def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext):
+    def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext,
+                 holdLastValue, holdLastValueFilename):
         super(LIFNeuron,self).__init__('LIFNeuron', id, connections)
         self.add_parameter('C', C)
         self.add_parameter('tau', tau)
@@ -85,6 +86,9 @@ class LIFNeuron (Entity):
         self.add_parameter('E0', E0)
         self.add_parameter('Vth', Vth)
         self.add_parameter('Iext', Iext)
+        self.add_parameter('holdLastValue', holdLastValue)
+        self.add_parameter('holdLastValueFilename', holdLastValueFilename)
+        
 
 class IzhikevicNeuron (Entity):
     def __init__(self, id, connections, a, b, c, d, Vspk, Iext):
@@ -194,6 +198,14 @@ class Delay (Entity):
     def __init__(self, id, connections, n_samples=1):
         super(Delay,self).__init__('Delay', id, connections)
         self.add_parameter('nSamples', n_samples)
+
+class SobolDelay (Entity):
+    def __init__(self, id, connections, start_sample=0,
+                 minimum=0, maximum = -1):
+        super(SobolDelay,self).__init__('SobolDelay', id, connections)
+        self.add_parameter('startSample', start_sample)
+        self.add_parameter('min', minimum)
+        self.add_parameter('max', maximum)
 
 class EventCounter (Entity):
     def __init__(self, id, connections, max_count, auto_reset=True,

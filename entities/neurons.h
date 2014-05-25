@@ -104,14 +104,20 @@ public:
          */
         LIFNeuron(double C, double tau, double tarp,
                   double Er, double E0, double Vth, double Iext,
-                  uint id = GetId());
+	          bool holdLastValue=false, const std::string& filename = LOGFILE,
+       		  uint id = GetId());
+       	~LIFNeuron(); 
         virtual bool initialise();
+        virtual void terminate();
 
 protected:
         virtual void evolve();
 
 private:
         double m_tPrevSpike;
+        double m_Iinj;
+        bool m_holdLastValue;
+        std::string m_holdLastValueFilename;
 };
 
 class IzhikevichNeuron : public Neuron {
