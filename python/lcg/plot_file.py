@@ -20,13 +20,14 @@ description='''
 Uses MatplotLib to plot a trace from an h5 file.
 TODO: description of switches...
 Usage: 
+lcg-plot -f all
 lcg-plot -f <filename> -k <kernel.dat>
 lcg-plot -f <filename> -t <entity to trigger on> --tpre 10 -- tpost 20
 '''
 usage='{0}\n'.format(description)
 
 default_options={'filename':[],
-                 'downsample':4,
+                 'downsample':1,
                  'kernel':[],
                  'stack':True,
                  'trigger_entity':None,
@@ -45,13 +46,13 @@ cc = np.array([[230,  20,  36],
                [96,  96,  96],
                [234,  66,  78],
                [196, 186,  87],
-               [74, 136, 256],
+               [74, 136, 255],
                [247, 150,  73],
                [140,  79, 155],
                [140,  79, 155],
                [193,  90,  71],
                [204, 103, 165],
-               [165, 165, 165]])/255.0;
+               [165, 165, 165]]*30)/255.0;
 
 def parse_options():
     opt = default_options.copy()
@@ -66,6 +67,15 @@ def parse_options():
             sys.exit(1)
         if o in ['-f']:
             opt['filename'] = [b for b in a.split(',')]
+            if 'all' in opt['filename']:
+                filenames = glob.glob('./*.h5')
+                kernel_files = []
+                for f in glob.glob('./*_kernel.dat'):
+                    kernel_files.append(f[:-11])
+                opt['filename'] = []
+                for f in filenames:
+                    if not os.path.splitext(f)[0] in kernel_files:
+                        opt['filename'].append(f)
         if o in ['-k']:
             opt['kernel'] = [b for b in a.split(',')]
         if o in ['-d']:

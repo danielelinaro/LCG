@@ -451,9 +451,9 @@ def main():
                                 {'type':'output', 'channel':opts['ao'][0], 'stimfile':current_file},
                                 {'type':'output', 'channel':opts['ao'][1], 'stimfile':modulation_file}]
                     lcg.writeIOConfigurationFile(config_file,opts['sampling_rate'],opts['duration']+3.61,channels)
-                    sub.call(lcg.common.prog_name + ' -V 3 -c ' + config_file, shell=True)
+                    sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
                 else:
-                    sub.call('lcg vcclamp -V 3 -f ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
+                    sub.call('lcg stimulus -s ' + current_file + ' -F '+ str(opts['sampling_rate']), shell=True)
 
             if cnt != tot:
                 sub.call(['sleep', str(opts['interval'])])
