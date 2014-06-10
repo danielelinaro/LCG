@@ -104,14 +104,20 @@ public:
          */
         LIFNeuron(double C, double tau, double tarp,
                   double Er, double E0, double Vth, double Iext,
-                  uint id = GetId());
+	          bool holdLastValue=false, const std::string& holdLastValueFilename = LOGFILE,
+       		  uint id = GetId());
+       	~LIFNeuron(); 
         virtual bool initialise();
+        virtual void terminate();
 
 protected:
         virtual void evolve();
 
 private:
         double m_tPrevSpike;
+        double m_Iinj;
+        bool m_holdLastValue;
+        std::string m_holdLastValueFilename;
 };
 
 class IzhikevichNeuron : public Neuron {
@@ -182,7 +188,8 @@ public:
                    uint readChannel, uint writeChannel,
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange, uint reference, const char *kernelFile = NULL,
-                   bool holdLastValue = false, bool adaptiveThreshold = false, uint id = GetId());
+                   bool holdLastValue = false,  const std::string& holdLastValueFilename = LOGFILE, 
+		   bool adaptiveThreshold = false, uint id = GetId());
 
         RealNeuron(double spikeThreshold, double V0,
                    const char *deviceFile,
@@ -191,6 +198,7 @@ public:
                    double inputConversionFactor, double outputConversionFactor,
                    uint inputRange, uint reference, 
                    const double *AECKernel, size_t kernelSize, bool holdLastValue = false,
+	 	   const std::string& holdLastValueFilename = LOGFILE,
                    bool adaptiveThreshold = false, uint id = GetId());
 
         ~RealNeuron();
@@ -209,6 +217,7 @@ private:
         ComediAnalogInputSoftCal  m_input;
         ComediAnalogOutputSoftCal m_output;
         bool m_holdLastValue;
+        std::string m_holdLastValueFilename;
         // injected current
         double m_Iinj;
 

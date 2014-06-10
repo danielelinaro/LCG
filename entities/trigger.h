@@ -25,6 +25,7 @@
 
 #include "entity.h"
 #include "utils.h"
+#include "math.h"
 
 namespace lcg {
 
@@ -40,7 +41,7 @@ protected:
 
 class PeriodicTrigger : public Trigger {
 public:
-        PeriodicTrigger(double frequency, uint id = GetId());
+        PeriodicTrigger(double frequency, double tdelay, double tend, uint id = GetId());
 
         void setFrequency(double frequency);
         double period() const;
@@ -51,6 +52,8 @@ public:
 private:
         double m_period;
         double m_tNextTrigger;
+        double m_tDelay;
+        double m_tEnd;
 };
 
 } // namespace lcg

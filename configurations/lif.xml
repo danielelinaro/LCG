@@ -21,6 +21,8 @@
 	<E0>-70</E0>
 	<Vth>-50</Vth>
 	<Iext>220</Iext>
+	<holdLastValue>true</holdLastValue>
+	<holdLastValueFilename>LIFlastValue.current</holdLastValueFilename>
       </parameters>
       <connections>0</connections>
     </entity>

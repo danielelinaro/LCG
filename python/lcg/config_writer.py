@@ -76,7 +76,7 @@ class XMLConfigurationFile (object):
     Class for creating configuration files.
     This class is a part of lcg.
     """
-    def __init__(self, sampling_rate, trial_duration, output_filename):
+    def __init__(self, sampling_rate, trial_duration, output_filename=None):
         '''
         Initializes an XMLConfigurationFile.
         '''
@@ -84,7 +84,10 @@ class XMLConfigurationFile (object):
         self._xml_entities = None
         self._xml_streams = None
         self._xml_simulation = etree.SubElement(self._xml_root,'simulation')
-        self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
+        if not output_filename is None:
+            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
+        else:
+            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration})
         self._entities = []
         self._streams = []
 
@@ -113,8 +116,8 @@ class XMLConfigurationFile (object):
             if connection is None:
                 connection = etree.SubElement(entity, 'connections')
             if not connection.text is None:
-                previous_conn = [str(ii) for ii in connection.text.split(',')]
-                connections = np.unique(np.array([previous_conn, connections])).flatten()
+                previous_conn = [int(ii) for ii in connection.text.split(',')]
+                connections = np.unique(np.hstack([previous_conn, connections]).flatten())
             connection.text = ",".join(map(str,connections))
 
     def add_entity(self,entity):
@@ -138,6 +141,10 @@ class XMLConfigurationFile (object):
         self._add_elements(self._streams[-1], {'name': stream.name, 'id': stream.id})
         self._add_parameters(self._streams[-1], stream.parameters)
         self._add_connections(self._streams[-1], stream.connections)
+    
+    def set_tend(self, tend):
+        tmp = self._xml_simulation[1]
+        tmp.text = str(tend)
         
     def write(self,filename):
         '''

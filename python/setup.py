@@ -21,7 +21,6 @@ setup(
         'console_scripts': [
             'disynaptic_microcircuit = lcg.disynaptic_microcircuit:main',
             'izhikevich_network = lcg.izhikevich_network:main',
-            'prc_protocol = lcg.prc_protocol:main',
             'reliability_disynaptic = lcg.reliability_disynaptic:main',
 
             'lcg-ap = lcg.ap:main',
@@ -54,6 +53,7 @@ setup(
             'lcg-plot = lcg.plot_file:main',
             'lcg-zap = lcg.zap:main',
             'lcg-find-conversion-factors = lcg.find_conversion_factors:main',
+            'lcg-prc = lcg.prc:main',
             'lcg-seal-test = lcg.seal_test_gui:main',
             ]
         }

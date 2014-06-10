@@ -88,7 +88,7 @@ class Window(QtGui.QDialog):
                     'dc', '-d',str(duration/4.0),'--','0',
                     'dc', '-d',str(duration),'--',str(amplitude),
                     'dc', '-d',str(duration/2.0),'--','0']
-        lcg.stimgen.main()
+        lcg.stimgen.main)
         lcg.writeIOConfigurationFile(self.cfg_file,sampling_rate,
                                      duration*(7/4.0),channels,
                                      realtime=True,output_filename=self.filename)
@@ -204,8 +204,7 @@ class Window(QtGui.QDialog):
 
         self.canvas.draw()
 
-if __name__ == "__main__":
-
+def main():
     app = QtGui.QApplication(sys.argv)
     widget = Window()#QtGui.QWidget()
     widget.resize(600,500)
@@ -213,3 +212,7 @@ if __name__ == "__main__":
     widget.show()
 
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

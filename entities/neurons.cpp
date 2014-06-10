@@ -9,6 +9,8 @@ lcg::Entity* LIFNeuronFactory(string_dict& args)
 {
         uint id;
         double C, tau, tarp, Er, E0, Vth, Iext;
+	bool holdLastValue;
+        std::string filename;
 
         id = lcg::GetIdFromDictionary(args);
 
@@ -22,8 +24,14 @@ lcg::Entity* LIFNeuronFactory(string_dict& args)
                 lcg::Logger(lcg::Critical, "Unable to build a LIF neuron.\n");
                 return NULL;
         }
-
-        return new lcg::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, id);
+	
+        if (! lcg::CheckAndExtractBool(args, "holdLastValue", &holdLastValue)) 
+                holdLastValue = false;
+	else {
+        	if (!lcg::CheckAndExtractValue(args, "holdLastValueFilename", filename))
+                	filename = LOGFILE;
+	}
+        return new lcg::neurons::LIFNeuron(C, tau, tarp, Er, E0, Vth, Iext, holdLastValue,filename, id);
 }
 
 lcg::Entity* IzhikevichNeuronFactory(string_dict& args)
@@ -76,8 +84,9 @@ lcg::Entity* RealNeuronFactory(string_dict& args)
         std::string kernelFile, deviceFile, inputRangeStr, referenceStr;
         double inputConversionFactor, outputConversionFactor, spikeThreshold, V0;
         bool holdLastValue, adaptiveThreshold;
-
-        id = lcg::GetIdFromDictionary(args);
+        std::string filename;
+        
+	id = lcg::GetIdFromDictionary(args);
 
         if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
              ! lcg::CheckAndExtractUnsignedInteger(args, "inputSubdevice", &inputSubdevice) ||
@@ -144,8 +153,12 @@ lcg::Entity* RealNeuronFactory(string_dict& args)
                 }
         }
 
-        if (! lcg::CheckAndExtractBool(args, "holdLastValue", &holdLastValue))
+        if (! lcg::CheckAndExtractBool(args, "holdLastValue", &holdLastValue)) 
                 holdLastValue = false;
+	else {
+        	if (!lcg::CheckAndExtractValue(args, "holdLastValueFilename", filename))
+                	filename = LOGFILE;
+	}
 
         if (! lcg::CheckAndExtractBool(args, "adaptiveThreshold", &adaptiveThreshold))
                 adaptiveThreshold = false;
@@ -156,7 +169,7 @@ lcg::Entity* RealNeuronFactory(string_dict& args)
                                                  inputConversionFactor, outputConversionFactor,
                                                  inputRange, reference,
                                                  (kernelFile.compare("") == 0 ? NULL : kernelFile.c_str()),
-                                                 holdLastValue, adaptiveThreshold, id);
+                                                 holdLastValue,filename, adaptiveThreshold, id);
 }
 
 #endif
@@ -203,8 +216,8 @@ void Neuron::emitSpike() const
 
 LIFNeuron::LIFNeuron(double C, double tau, double tarp,
                      double Er, double E0, double Vth, double Iext,
-                     uint id)
-        : Neuron(E0, id)
+		     bool holdLastValue, const std::string& holdLastValueFilename, uint id)
+        : Neuron(E0, id), m_holdLastValue(holdLastValue), m_holdLastValueFilename(holdLastValueFilename)
 {
         double dt = GetGlobalDt();
         LIF_C = C;
@@ -216,8 +229,14 @@ LIFNeuron::LIFNeuron(double C, double tau, double tarp,
         LIF_IEXT = Iext;
         LIF_LAMBDA = -1.0 / LIF_TAU;
         LIF_RL = LIF_TAU / LIF_C;
+	
         setName("LIFNeuron");
         setUnits("mV");
+}
+
+LIFNeuron::~LIFNeuron()
+{
+        terminate();
 }
 
 bool LIFNeuron::initialise()
@@ -225,6 +244,24 @@ bool LIFNeuron::initialise()
         if (! Neuron::initialise())
                 return false;
         m_tPrevSpike = -1000.0;
+
+        struct stat buf;
+        if (m_holdLastValue && stat(m_holdLastValueFilename.c_str(),&buf) != -1) {
+                FILE *fid = fopen(m_holdLastValueFilename.c_str(), "r");
+                if (fid == NULL) {
+                        Logger(Important, "Unable to open [%s].\n", m_holdLastValueFilename.c_str());
+                        m_Iinj = 0;
+                }
+                else {
+                        fscanf(fid, "%le", &m_Iinj);
+                        Logger(Info, "Successfully read holding value (%lf pA) from [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
+                        fclose(fid);
+                }
+        }
+        else {
+                m_Iinj = 0.0;
+        }
+
         return true;
 }
 
@@ -236,11 +273,13 @@ void LIFNeuron::evolve()
                 VM = LIF_ER;
         }
         else {
-                double Iinj = LIF_IEXT, Vinf;
+                m_Iinj = LIF_IEXT;
+		double Vinf;
                 int nInputs = m_inputs.size();
                 for (int i=0; i<nInputs; i++)
-                        Iinj += m_inputs[i];
-                Vinf = LIF_RL*Iinj + LIF_E0;
+                        m_Iinj += m_inputs[i];
+		
+                Vinf = LIF_RL*m_Iinj + LIF_E0;
                 VM = Vinf - (Vinf - VM) * exp(LIF_LAMBDA * GetGlobalDt());
         }
         if(VM > LIF_VTH) {
@@ -254,6 +293,23 @@ void LIFNeuron::evolve()
                 m_tPrevSpike = t;
                 emitSpike();
         }
+}
+
+void LIFNeuron::terminate()
+{
+        Neuron::terminate();
+        if (!m_holdLastValue)
+                m_Iinj = 0;
+	else {
+		// Remove the neuron's intrinsic baseline current
+		m_Iinj -= LIF_IEXT;
+        	FILE *fid = fopen(m_holdLastValueFilename.c_str(), "w");
+        	if (fid != NULL) {
+                	fprintf(fid, "%le", m_Iinj);
+                	fclose(fid);
+                	Logger(Debug, "Written holding value (%lf pA) to [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
+        	}
+	}
 }
 
 IzhikevichNeuron::IzhikevichNeuron(double a, double b, double c,
@@ -367,11 +423,13 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        uint readChannel, uint writeChannel,
                        double inputConversionFactor, double outputConversionFactor,
                        uint inputRange, uint reference, const char *kernelFile,
-                       bool holdLastValue, bool adaptiveThreshold, uint id)
+                       bool holdLastValue, const std::string& holdLastValueFilename,
+		       bool adaptiveThreshold, uint id)
         : Neuron(V0, id), m_aec(kernelFile),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
+          m_holdLastValue(holdLastValue),m_holdLastValueFilename(holdLastValueFilename),
+	  m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         RN_SPIKE_THRESH = spikeThreshold;
@@ -386,11 +444,13 @@ RealNeuron::RealNeuron(double spikeThreshold, double V0,
                        double inputConversionFactor, double outputConversionFactor,
                        uint inputRange, uint reference,
                        const double *AECKernel, size_t kernelSize,
-                       bool holdLastValue, bool adaptiveThreshold, uint id)
+                       bool holdLastValue, const std::string& holdLastValueFilename,
+		       bool adaptiveThreshold, uint id)
         : Neuron(V0, id), m_aec(AECKernel, kernelSize),
           m_input(deviceFile, inputSubdevice, readChannel, inputConversionFactor, inputRange, reference),
           m_output(deviceFile, outputSubdevice, writeChannel, outputConversionFactor, reference),
-          m_holdLastValue(holdLastValue), m_adaptiveThreshold(adaptiveThreshold)
+          m_holdLastValue(holdLastValue),m_holdLastValueFilename(holdLastValueFilename),
+	  m_adaptiveThreshold(adaptiveThreshold)
 {
         m_state.push_back(V0);        // m_state[1] -> previous membrane voltage (for spike detection)
         RN_SPIKE_THRESH = spikeThreshold;
@@ -412,15 +472,15 @@ bool RealNeuron::initialise()
 
         struct stat buf;
 
-        if (m_holdLastValue && stat(LOGFILE,&buf) != -1) {
-                FILE *fid = fopen(LOGFILE, "r");
+        if (m_holdLastValue && stat(m_holdLastValueFilename.c_str(),&buf) != -1) {
+                FILE *fid = fopen(m_holdLastValueFilename.c_str(), "r");
                 if (fid == NULL) {
-                        Logger(Important, "Unable to open [%s].\n", LOGFILE);
+                        Logger(Important, "Unable to open [%s].\n", m_holdLastValueFilename.c_str());
                         m_Iinj = 0;
                 }
                 else {
                         fscanf(fid, "%le", &m_Iinj);
-                        Logger(Important, "Successfully read holding value (%lf pA) from [%s].\n", m_Iinj, LOGFILE);
+                        Logger(Important, "Successfully read holding value (%lf pA) from [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
                         fclose(fid);
                 }
         }
@@ -458,11 +518,11 @@ void RealNeuron::terminate()
         Neuron::terminate();
         if (!m_holdLastValue)
                 m_output.write(m_Iinj = 0);
-        FILE *fid = fopen(LOGFILE, "w");
+        FILE *fid = fopen(m_holdLastValueFilename.c_str(), "w");
         if (fid != NULL) {
                 fprintf(fid, "%le", m_Iinj);
                 fclose(fid);
-                Logger(Debug, "Written holding value (%lf pA) to [%s].\n", m_Iinj, LOGFILE);
+                Logger(Debug, "Written holding value (%lf pA) to [%s].\n", m_Iinj, m_holdLastValueFilename.c_str());
         }
 }
 
