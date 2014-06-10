@@ -129,7 +129,7 @@ class ComediAnalogOutputSoftCal : public ComediAnalogIOSoftCal {
 public:
         ComediAnalogOutputSoftCal(const char *deviceFile, uint outputSubdevice,
                                   uint writeChannel, double outputConversionFactor,
-                                  uint aref = GRSE, bool resetOutput = false);
+                                  uint aref = GRSE, bool resetOutput = true);
         ~ComediAnalogOutputSoftCal();
         bool initialise();
         double outputConversionFactor() const;

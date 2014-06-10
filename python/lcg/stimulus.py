@@ -44,7 +44,7 @@ def usage():
     print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
     print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
-    print('                       default yes for current clamp and no for voltage clamp experiments)')
+    print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
@@ -280,7 +280,7 @@ def main():
     # default value of resetOutput, for voltage and current clamp stimulations
     if resetOutput is None:
         if suffix == 'CC':
-            resetOutput = True
+            resetOutput = os.environ['LCG_RESET_OUTPUT'].lower() == 'yes'
         else:
             resetOutput = False
 
@@ -311,8 +311,6 @@ def main():
                 for j in range(len(outputChannels)):
                     channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
                                      'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j], 'resetOutput': resetOutput})
-                    #if suffix == 'VC':
-                    #    channels[-1]['resetOutput'] = False
             if len(reversalPotentials) == 0:
                 lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
             else:
@@ -327,10 +325,9 @@ def main():
                 sys.stdout.write(' ')
             sys.stdout.write('] ')
             sys.stdout.flush()
-            #sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+            sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
             if cnt < total:
-                pass
-                #sub.call('sleep ' + str(interval), shell=True)
+                sub.call('sleep ' + str(interval), shell=True)
             else:
                 sys.stdout.write('\n')
             cnt += 1
@@ -342,8 +339,6 @@ def main():
                              'units':inputUnits[j]} for j in range(len(inputChannels))]
                 channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
                                  'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0], 'resetOutput': resetOutput})
-                #if suffix == 'VC':
-                #    channels[-1]['resetOutput'] = False
                 if len(reversalPotentials) == 0:
                     lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
                 else:
@@ -358,10 +353,9 @@ def main():
                     sys.stdout.write(' ')
                 sys.stdout.write('] ')
                 sys.stdout.flush()
-                #sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+                sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
                 if cnt < total:
-                    pass
-                    #sub.call('sleep ' + str(interval), shell=True)
+                    sub.call('sleep ' + str(interval), shell=True)
                 else:
                     sys.stdout.write('\n')
                 cnt += 1
