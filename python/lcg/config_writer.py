@@ -206,7 +206,7 @@ def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, rea
                 config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
                                                            outputSubdevice=chan['subdevice'], writeChannel=chan['channel'],
                                                            outputConversionFactor=chan['factor'],
-                                                           aref=chan['reference'], units=chan['units'], resetOutput=True))
+                                                           aref=chan['reference'], units=chan['units'], resetOutput=chan['resetOutput']))
                 config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID), filename=chan['stimfile'], units=chan['units']))
                 ID += 1
         else:
@@ -280,7 +280,7 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
         if ii > len(reversal):
             chan = output_channels[ii]
             config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
-                                                        aref=chan['reference'], units=chan['units'], resetOutput=True))
+                                                        aref=chan['reference'], units=chan['units'], resetOutput=chan['resetOutput']))
             ID += 1
     config.write(config_file)
     return True
