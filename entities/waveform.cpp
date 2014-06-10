@@ -111,11 +111,11 @@ double Waveform::output()
         if (m_position < m_stimulus->length())
                 return m_stimulus->at(m_position);
         if (m_position == m_stimulus->length() && !m_eventSent) {
+				Logger(Debug, "Waveform: emitting event at t = %lf seconds.\n", GetGlobalTime());
                 emitEvent(new TriggerEvent(this));
-		Logger(Debug, "Waveform: emitting event at t = %lf seconds.\n", GetGlobalTime());
-		m_eventSent = true;
-	}
-        return 0.0;
+				m_eventSent = true;
+		}
+        return m_stimulus->at(m_stimulus->length()-1);
 }
 
 void Waveform::handleEvent(const Event *event)
