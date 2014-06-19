@@ -60,9 +60,9 @@ class Window(QtGui.QDialog):
         self.timer = QtCore.QTimer()
         self.plot_timer = QtCore.QTimer()
         QtCore.QObject.connect(self.timer,QtCore.SIGNAL('timeout()'),self.run_pulse)
-        QtCore.QObject.connect(self.timer,QtCore.SIGNAL('timeout()'),self.plot)
+        QtCore.QObject.connect(self.plot_timer,QtCore.SIGNAL('timeout()'),self.plot)
         self.timer.start(20)
-        self.plot_timer.start(30)                       
+        self.plot_timer.start(150)                       
         
     def init_lcg(self,inchan=0,outchan=0,duration=15,
                  amplitude=10,sampling_rate=float(os.environ['SAMPLING_RATE'])):
@@ -76,19 +76,24 @@ class Window(QtGui.QDialog):
         self.sampling_rate = sampling_rate
         channels = [{'type':'input',
                      'channel':inchan,
-                     'factor':float(os.environ['AO_CONVERSION_FACTOR_VC']),
-                     'units':os.environ['AO_UNITS_VC']}]
+                     'factor':float(os.environ['AI_CONVERSION_FACTOR_VC']),
+                     'units':os.environ['AI_UNITS_VC']}]
         
         channels.append({'type':'output',
                          'channel':outchan,
                          'factor':float(os.environ['AO_CONVERSION_FACTOR_VC']),
                          'units':os.environ['AO_UNITS_VC'],
                          'stimfile':self.stim_file})
+        print('Conversion factors are {0}{2} and {1}{3}.'.format(
+                channels[0]['factor'],
+                channels[1]['factor'],
+                channels[0]['units'],
+                channels[1]['units']))
         sys.argv = ['lcg-stimgen','-o',self.stim_file,
                     'dc', '-d',str(duration/4.0),'--','0',
                     'dc', '-d',str(duration),'--',str(amplitude),
                     'dc', '-d',str(duration/2.0),'--','0']
-        lcg.stimgen.main)
+        lcg.stimgen.main()
         lcg.writeIOConfigurationFile(self.cfg_file,sampling_rate,
                                      duration*(7/4.0),channels,
                                      realtime=True,output_filename=self.filename)
@@ -103,6 +108,7 @@ class Window(QtGui.QDialog):
         self.resistance = []
         self.resistance_time = []
         self.count = 0
+        self.ax[0].set_ylim(self.Iaxis_limits)
         sys.stdout.write('Starting...')
         sys.stdout.flush()
 
@@ -130,12 +136,18 @@ class Window(QtGui.QDialog):
             ax.get_xaxis().tick_bottom()
             ax.get_yaxis().tick_left()
         self.raw_data_plot = []
+        self.postI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
+        self.preI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
+
         for ii in range(30):
             tmp, = self.ax[0].plot([],[],color = 'k',lw=0.5)
             self.raw_data_plot.append(tmp)
         self.mean_I_plot, = self.ax[0].plot([],[],c='r',lw=1)
         self.resistance_plot, = self.ax[1].plot([],[],color = 'r',lw=1)
-
+        self.autoscale = False
+        if not self.autoscale:
+            self.Iaxis_limits = [-1500,1500]
+            self.ax[0].set_ylim(self.Iaxis_limits)
         self.fig.show()
 
     def run_pulse(self):
@@ -166,20 +178,22 @@ class Window(QtGui.QDialog):
 
         if len(self.I) > 10:
             self.meanI = np.mean(allI[:,-8:],axis=1)
-            Vpre = np.mean(self.V[idxpre])
-            Vpost = np.mean(self.V[idxpost])
-            Ipre = np.mean(self.meanI[idxpre])
-            Ipost = np.mean(self.meanI[idxpost])
+            self.Vpre = np.mean(self.V[idxpre])
+            self.Vpost = np.mean(self.V[idxpost])
+            self.Ipre = np.mean(self.meanI[idxpre])
+            self.Ipost = np.mean(self.meanI[idxpost])
         else:
             self.meanI = self.I[-1]
-            Vpre = np.mean(self.V[idxpre])
-            Vpost = np.mean(self.V[idxpost])
-            Ipre = np.mean(self.I[-1][idxpre])
-            Ipost = np.mean(self.I[-1][idxpost])
+            self.Vpre = np.mean(self.V[idxpre])
+            self.Vpost = np.mean(self.V[idxpost])
+            self.Ipre = np.mean(self.I[-1][idxpre])
+            self.Ipost = np.mean(self.I[-1][idxpost])
         
         self.resistance_time.append(info['startTimeSec'])
-        self.resistance.append(1e-3*((Vpost-Vpre)/(Ipost-Ipre)))
-        sys.stdout.write('\rResistance is: {0:.0f}MOhm.'.format(self.resistance[-1]))
+#        print([(Vpost-Vpre)*1e-3/((Ipost-Ipre)*1e-6)])
+        self.resistance.append(1e3*((self.Vpost-
+                                     self.Vpre)/(self.Ipost-
+                                                 self.Ipre)))
 
 
         return
@@ -189,9 +203,18 @@ class Window(QtGui.QDialog):
             if not len(self.raw_data_plot[ii].get_xdata()):
                 self.raw_data_plot[ii].set_xdata(self.time)
             self.raw_data_plot[ii].set_ydata(self.I[ii])
+            if len(self.resistance)>10:
+                sys.stdout.write('\rResistance is: {0:.0f}MOhm.'.format(np.mean(self.resistance[-10:])))
+
             if ii > 10:
                 break
         if len(self.I) > 1:
+            self.postI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
+            self.postI_line.set_ydata(self.Ipost*np.array([1,1]))
+
+            self.preI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
+            self.preI_line.set_ydata(self.Ipre*np.array([1,1]))
+
             self.mean_I_plot.set_xdata(self.time)
             self.mean_I_plot.set_ydata(self.meanI)
             self.resistance_plot.set_xdata(np.array(self.resistance_time - self.resistance_time[0])/60.0)
@@ -200,7 +223,8 @@ class Window(QtGui.QDialog):
             self.ax[1].set_xlim([-1,0]+np.max(self.resistance_plot.get_xdata())+0.1)
             self.ax[1].set_ylim([0,np.max(np.array(self.resistance[-30:]))+10])
             self.ax[0].set_xlim([self.time[0],self.time[-1]])
-            self.ax[0].set_ylim(self.Iaxis_limits)
+            if self.autoscale:
+                self.ax[0].set_ylim(self.Iaxis_limits)
 
         self.canvas.draw()
 
