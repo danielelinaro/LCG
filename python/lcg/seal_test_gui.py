@@ -5,6 +5,7 @@ import os
 import lcg
 import numpy as np
 import subprocess as sub
+import getopt
 from PyQt4 import QtGui,QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
@@ -45,9 +46,36 @@ def smooth(x,beta):
 
 exp2 = lambda p,x: p[0]*(np.exp(-x/p[1])) + p[2]*(np.exp(-x/p[3])) + p[4]
 errfunc = lambda p, x, y: exp2(p, x) - y
- 
+env = lambda x:os.environ[x]
+
 class Window(QtGui.QDialog):
-    def __init__(self,parent = None):
+    def parse_options(self,opts):
+        defaults = {'ai':env('AI_CHANNEL'),
+                    'ao':env('AO_CHANNEL'),
+                    'amp':10,
+                    'duration':15,
+                    'mode':'VC',
+                    'kernel':False}
+        options = defaults.copy()
+        for o,a in opts:
+            if o == '-I':
+                options['ai'] = int(a)
+            elif o == '-O':
+                options['ao'] = int(a)
+            elif o == '-d':
+                options['duration'] = float(a)
+            elif o == '-a':
+                options['amp'] = float(a)
+            elif o == '--kernel':
+                options['kernel'] = True
+            elif o == '--CC':
+                options['mode'] = 'CC'
+        return options
+
+    def __init__(self,parent = None,opts=[]):
+        self.opts = self.parse_options(opts)
+        print self.opts
+        print opts
         QtGui.QDialog.__init__(self,parent)
         self.fig = plt.figure()
         
@@ -55,14 +83,22 @@ class Window(QtGui.QDialog):
         self.b_reset.clicked.connect(self.reset)
         self.b_zoom = QtGui.QPushButton('Auto Zoom')
         self.b_zoom.clicked.connect(self.autoZoom)
+        self.b_fit = QtGui.QPushButton('Fit decay')
+        self.b_fit.clicked.connect(self.tryFit)
 
-        self.layout = QtGui.QVBoxLayout()
+        self.layout = QtGui.QFormLayout()
 
         self.init_canvas()
-        self.layout.addWidget(self.b_reset)
-        self.layout.addWidget(self.b_zoom)
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.b_reset)
+        layout.addWidget(self.b_zoom)
+        layout.addWidget(self.b_fit)
+
+
+        self.layout.addRow(layout)
+
         self.setLayout(self.layout)
-        self.init_lcg(0,0)
+        self.init_lcg()
         # Init timers
         self.timer = QtCore.QTimer()
         self.plot_timer = QtCore.QTimer()
@@ -71,26 +107,26 @@ class Window(QtGui.QDialog):
         self.timer.start(20)
         self.plot_timer.start(150)                       
         
-    def init_lcg(self,inchan=0,outchan=0,duration=15,
-                 amplitude=10,sampling_rate=float(os.environ['SAMPLING_RATE'])):
+    def init_lcg(self):
+        
         os.chdir('/tmp')
         self.filename = '/tmp/seal_test.h5'
         self.cfg_file = '/tmp/seal_test.xml'
-        self.duration = duration
-        duration = duration*1e-3
+        self.duration = self.opts['duration']
+        duration = self.duration*1e-3
         self.stim_file = '/tmp/seal_test.stim'
-        self.amplitude = amplitude #mV
-        self.sampling_rate = sampling_rate
+        self.amplitude = self.opts['amp'] #mV
+        self.sampling_rate = env('SAMPLING_RATE')
 
         channels = [{'type':'input',
-                     'channel':inchan,
-                     'factor':float(os.environ['AI_CONVERSION_FACTOR_VC']),
-                     'units':os.environ['AI_UNITS_VC']}]
+                     'channel':self.opts['ai'],
+                     'factor':float(os.environ['AI_CONVERSION_FACTOR_'+self.opts['mode']]),
+                     'units':os.environ['AI_UNITS_'+self.opts['mode']]}]
         
         channels.append({'type':'output',
-                         'channel':outchan,
-                         'factor':float(os.environ['AO_CONVERSION_FACTOR_VC']),
-                         'units':os.environ['AO_UNITS_VC'],
+                         'channel':self.opts['ao'],
+                         'factor':float(os.environ['AO_CONVERSION_FACTOR_'+self.opts['mode']]),
+                         'units':os.environ['AO_UNITS_'+self.opts['mode']],
                          'stimfile':self.stim_file})
 
         print('Conversion factors are {0}{2} and {1}{3}.'.format(
@@ -101,24 +137,28 @@ class Window(QtGui.QDialog):
 
         sys.argv = ['lcg-stimgen','-o',self.stim_file,
                     'dc', '-d',str(duration/4.0),'--','0',
-                    'dc', '-d',str(duration),'--',str(amplitude),
+                    'dc', '-d',str(duration),'--',str(self.amplitude),
                     'dc', '-d',str(duration/2.0),'--','0']
         lcg.stimgen.main()
-        lcg.writeIOConfigurationFile(self.cfg_file,sampling_rate,
+        lcg.writeIOConfigurationFile(self.cfg_file,self.sampling_rate,
                                      duration*(7/4.0),channels,
                                      realtime=True,output_filename=self.filename)
             
         self.reset()
 
     def tryFit(self):
-        idxpre = np.where(self.time<self.duration/4.0)[0][-1]
-        idxpost = np.where((self.time<((self.duration*5)/4)))[0][-1]
         I = np.mean(np.vstack(self.I).T[:,-8:],axis=1)
+        idxpost = np.where((self.time<(self.duration)))[0][-1]
+        idxpre = np.argmax(I)
         #V = np.vstack(self.V).T[:,-8:],axis=1)
-        p0 = [10,0.4,0,0.02,0]
-        p2,success = optimize.leastsq(errfunc, p0[:], args=(self.time[idxpre:idxpost]-self.time[idxpre], I[idxpre:idxpost]))
+        p0 = [10,40,0,20,0]
+        p2,success = optimize.leastsq(errfunc, p0[:], args=(
+                1e3*(self.time[idxpre:idxpost]-self.time[idxpre]),
+                I[idxpre:idxpost]))
         self.fit_line.set_xdata(self.time[idxpre:idxpost])
-        self.fit_line.set_ydata(exp2(p2,self.time[idxpre:idxpost]))
+        self.fit_line.set_ydata(exp2(p2,1e3*(
+                    self.time[idxpre:idxpost]-self.time[idxpre])))
+        print('Fit time constants are: {0} and {1}ms.'.format(p2[1],p2[3]))
         
     def autoZoom(self):
         self.ax[0].set_ylim(self.Iaxis_limits)
@@ -133,6 +173,9 @@ class Window(QtGui.QDialog):
         self.resistance_time = []
         self.count = 0
         self.autoscale = True
+        self.fit_line.set_xdata([])
+        self.fit_line.set_ydata([])
+
         sys.stdout.write('Starting...')
         sys.stdout.flush()
 
@@ -147,8 +190,8 @@ class Window(QtGui.QDialog):
     def init_canvas(self):
         self.canvas = FigureCanvas(self.fig)
         self.toolbar = NavigationToolbar(self.canvas,self)
-        self.layout.addWidget(self.toolbar)
-        self.layout.addWidget(self.canvas)
+        self.layout.addRow(self.toolbar)
+        self.layout.addRow(self.canvas)
         # initialise axes and lines
         self.ax = []
         self.ax.append(self.fig.add_axes([0.15,0.4,0.84,0.58],axisbg='none',xlabel='time (ms)',ylabel='Current (pA)'))
@@ -162,7 +205,6 @@ class Window(QtGui.QDialog):
         self.raw_data_plot = []
         self.postI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
         self.preI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
-        self.fit_line, = self.ax[0].plot([],[],'--',c='g',lw=1)
         
         for ii in range(30):
             tmp, = self.ax[0].plot([],[],color = 'k',lw=0.5)
@@ -171,6 +213,8 @@ class Window(QtGui.QDialog):
         self.resistance_plot, = self.ax[1].plot([],[],color = 'r',lw=1)
         self.autoscale = True
         self.Iaxis_limits = [-1500,1500]
+        self.fit_line, = self.ax[0].plot([],[],'-',c='g',lw=1.5)
+
         self.fig.show()
 
     def run_pulse(self):
@@ -232,7 +276,6 @@ class Window(QtGui.QDialog):
         if len(self.I) > 1:
             self.postI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
             self.postI_line.set_ydata(self.Ipost*np.array([1,1]))
-
             self.preI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
             self.preI_line.set_ydata(self.Ipre*np.array([1,1]))
 
@@ -245,12 +288,19 @@ class Window(QtGui.QDialog):
             if self.autoscale:
                 self.autoZoom()
                 self.autoscale = False
-#            self.tryFit()
         self.canvas.draw()
 
 def main():
+    print sys.argv
+    try:
+        opts,args = getopt.getopt(sys.argv[1:], 'I:O:a:d:',['kernel','CC'])
+    except getopt.GetoptError, err:
+        print(err)
+        print(usage)
+        sys.exit(1)
+
     app = QtGui.QApplication(sys.argv)
-    widget = Window()#QtGui.QWidget()
+    widget = Window(opts=opts)#QtGui.QWidget()
     widget.resize(600,500)
     widget.setWindowTitle("LCG Seal Test")
     widget.show()
