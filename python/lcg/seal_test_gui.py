@@ -13,6 +13,7 @@ plt.rc('font',**{'size':10})
 plt.rc('axes',linewidth=0.8)
 plt.rc('ytick',direction='out')
 plt.rc('xtick',direction='out')
+from scipy import optimize
 
 description = '''
 Measures the pipete or membrane resistance in 
@@ -42,6 +43,9 @@ def smooth(x,beta):
     y = np.convolve(w/w.sum(),s,mode='valid')
     return y[5:len(y)-5]
 
+exp2 = lambda p,x: p[0]*(np.exp(-x/p[1])) + p[2]*(np.exp(-x/p[3])) + p[4]
+errfunc = lambda p, x, y: exp2(p, x) - y
+ 
 class Window(QtGui.QDialog):
     def __init__(self,parent = None):
         QtGui.QDialog.__init__(self,parent)
@@ -49,11 +53,14 @@ class Window(QtGui.QDialog):
         
         self.b_reset = QtGui.QPushButton('Reset')
         self.b_reset.clicked.connect(self.reset)
+        self.b_zoom = QtGui.QPushButton('Auto Zoom')
+        self.b_zoom.clicked.connect(self.autoZoom)
 
         self.layout = QtGui.QVBoxLayout()
 
         self.init_canvas()
         self.layout.addWidget(self.b_reset)
+        self.layout.addWidget(self.b_zoom)
         self.setLayout(self.layout)
         self.init_lcg(0,0)
         # Init timers
@@ -74,6 +81,7 @@ class Window(QtGui.QDialog):
         self.stim_file = '/tmp/seal_test.stim'
         self.amplitude = amplitude #mV
         self.sampling_rate = sampling_rate
+
         channels = [{'type':'input',
                      'channel':inchan,
                      'factor':float(os.environ['AI_CONVERSION_FACTOR_VC']),
@@ -84,11 +92,13 @@ class Window(QtGui.QDialog):
                          'factor':float(os.environ['AO_CONVERSION_FACTOR_VC']),
                          'units':os.environ['AO_UNITS_VC'],
                          'stimfile':self.stim_file})
+
         print('Conversion factors are {0}{2} and {1}{3}.'.format(
                 channels[0]['factor'],
                 channels[1]['factor'],
                 channels[0]['units'],
                 channels[1]['units']))
+
         sys.argv = ['lcg-stimgen','-o',self.stim_file,
                     'dc', '-d',str(duration/4.0),'--','0',
                     'dc', '-d',str(duration),'--',str(amplitude),
@@ -100,15 +110,29 @@ class Window(QtGui.QDialog):
             
         self.reset()
 
+    def tryFit(self):
+        idxpre = np.where(self.time<self.duration/4.0)[0][-1]
+        idxpost = np.where((self.time<((self.duration*5)/4)))[0][-1]
+        I = np.mean(np.vstack(self.I).T[:,-8:],axis=1)
+        #V = np.vstack(self.V).T[:,-8:],axis=1)
+        p0 = [10,0.4,0,0.02,0]
+        p2,success = optimize.leastsq(errfunc, p0[:], args=(self.time[idxpre:idxpost]-self.time[idxpre], I[idxpre:idxpost]))
+        self.fit_line.set_xdata(self.time[idxpre:idxpost])
+        self.fit_line.set_ydata(exp2(p2,self.time[idxpre:idxpost]))
+        
+    def autoZoom(self):
+        self.ax[0].set_ylim(self.Iaxis_limits)
+        self.ax[0].set_xlim([self.time[0],self.time[-1]])
+            
     def reset(self):
-        self.time = None
-        self.V = None
+        self.time = []
+        self.V = []
         self.I = []
         self.meanI = []
         self.resistance = []
         self.resistance_time = []
         self.count = 0
-        self.ax[0].set_ylim(self.Iaxis_limits)
+        self.autoscale = True
         sys.stdout.write('Starting...')
         sys.stdout.flush()
 
@@ -138,16 +162,15 @@ class Window(QtGui.QDialog):
         self.raw_data_plot = []
         self.postI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
         self.preI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
-
+        self.fit_line, = self.ax[0].plot([],[],'--',c='g',lw=1)
+        
         for ii in range(30):
             tmp, = self.ax[0].plot([],[],color = 'k',lw=0.5)
             self.raw_data_plot.append(tmp)
         self.mean_I_plot, = self.ax[0].plot([],[],c='r',lw=1)
         self.resistance_plot, = self.ax[1].plot([],[],color = 'r',lw=1)
-        self.autoscale = False
-        if not self.autoscale:
-            self.Iaxis_limits = [-1500,1500]
-            self.ax[0].set_ylim(self.Iaxis_limits)
+        self.autoscale = True
+        self.Iaxis_limits = [-1500,1500]
         self.fig.show()
 
     def run_pulse(self):
@@ -159,43 +182,41 @@ class Window(QtGui.QDialog):
             print('File {0} not found.\n',)
             return
         for e in ent:
-            if e['name'] in 'AnalogInput':
+            if e['units'] in 'pA':
                 self.I.append(e['data'])
                 break
-        if self.V is None:
-            for e in ent:
-                if e['name'] in 'Waveform':
-                    self.V = e['data']
-                    self.time = np.linspace(0,info['tend']*1.0e3,len(self.V))
-                    break
-        if len(self.I) > 30:
+        for e in ent:
+            if e['units'] in 'mV':
+                self.V.append(e['data'])
+                self.time = np.linspace(0,info['tend']*1.0e3,len(self.V[-1]))
+                break
+        if len(self.I) > 20:
             del(self.I[0])
+            del(self.V[0])
         self.count += 1
         allI = np.vstack(self.I).T
+        allV = np.vstack(self.V).T
         idxpre = np.where(self.time<(-0.1+duration/4))[0]
-        idxpost = np.where((self.time>(-1+(duration*5)/4)) & (self.time<(-0.1+(duration*5)/4)))[0]
+        idxpost = np.where((self.time>(-1+(duration*5)/4)) & 
+                           (self.time<(-0.1+(duration*5)/4)))[0]
         self.Iaxis_limits = [np.min(allI),np.max(allI)]
 
-        if len(self.I) > 10:
+        if len(self.I) > 11:
             self.meanI = np.mean(allI[:,-8:],axis=1)
-            self.Vpre = np.mean(self.V[idxpre])
-            self.Vpost = np.mean(self.V[idxpost])
-            self.Ipre = np.mean(self.meanI[idxpre])
-            self.Ipost = np.mean(self.meanI[idxpost])
+            self.meanV = np.mean(allV[:,-8:],axis=1)
         else:
             self.meanI = self.I[-1]
-            self.Vpre = np.mean(self.V[idxpre])
-            self.Vpost = np.mean(self.V[idxpost])
-            self.Ipre = np.mean(self.I[-1][idxpre])
-            self.Ipost = np.mean(self.I[-1][idxpost])
-        
+            self.meanV = self.V[-1]
+        self.Vpre = np.mean(self.meanV[idxpre])
+        self.Vpost = np.mean(self.meanV[idxpost])
+        self.Ipre = np.mean(self.meanI[idxpre])
+        self.Ipost = np.mean(self.meanI[idxpost])
         self.resistance_time.append(info['startTimeSec'])
-#        print([(Vpost-Vpre)*1e-3/((Ipost-Ipre)*1e-6)])
+#        print([(self.Vpost-self.Vpre),((self.Ipost-self.Ipre))])
         self.resistance.append(1e3*((self.Vpost-
                                      self.Vpre)/(self.Ipost-
                                                  self.Ipre)))
-
-
+        
         return
     def plot(self):
         sys.stdout.flush()
@@ -219,13 +240,12 @@ class Window(QtGui.QDialog):
             self.mean_I_plot.set_ydata(self.meanI)
             self.resistance_plot.set_xdata(np.array(self.resistance_time - self.resistance_time[0])/60.0)
             self.resistance_plot.set_ydata(np.array(self.resistance))
-            self.ax[0].set_xlim([self.time[0],self.time[-1]])
             self.ax[1].set_xlim([-1,0]+np.max(self.resistance_plot.get_xdata())+0.1)
             self.ax[1].set_ylim([0,np.max(np.array(self.resistance[-30:]))+10])
-            self.ax[0].set_xlim([self.time[0],self.time[-1]])
             if self.autoscale:
-                self.ax[0].set_ylim(self.Iaxis_limits)
-
+                self.autoZoom()
+                self.autoscale = False
+#            self.tryFit()
         self.canvas.draw()
 
 def main():
