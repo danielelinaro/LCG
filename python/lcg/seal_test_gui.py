@@ -10,6 +10,9 @@ from PyQt4 import QtGui,QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 import matplotlib.pyplot as plt
+import time
+from scipy.io import savemat
+
 plt.rc('font',**{'size':10})
 plt.rc('axes',linewidth=0.8)
 plt.rc('ytick',direction='out')
@@ -44,6 +47,7 @@ def smooth(x,beta):
     y = np.convolve(w/w.sum(),s,mode='valid')
     return y[5:len(y)-5]
 
+#exp1 = lambda p,x: p[0]*(np.exp(-x/p[1]))  + p[2]
 exp2 = lambda p,x: p[0]*(np.exp(-x/p[1])) + p[2]*(np.exp(-x/p[3])) + p[4]
 errfunc = lambda p, x, y: exp2(p, x) - y
 env = lambda x:os.environ[x]
@@ -54,6 +58,7 @@ class Window(QtGui.QDialog):
                     'ao':env('AO_CHANNEL'),
                     'amp':10,
                     'duration':15,
+                    'holding':0,
                     'mode':'VC',
                     'kernel':False}
         options = defaults.copy()
@@ -66,6 +71,8 @@ class Window(QtGui.QDialog):
                 options['duration'] = float(a)
             elif o == '-a':
                 options['amp'] = float(a)
+            elif o == '-H':
+                options['holding'] = float(a)                
             elif o == '--kernel':
                 options['kernel'] = True
             elif o == '--CC':
@@ -83,6 +90,8 @@ class Window(QtGui.QDialog):
         self.b_reset.clicked.connect(self.reset)
         self.b_zoom = QtGui.QPushButton('Auto Zoom')
         self.b_zoom.clicked.connect(self.autoZoom)
+        self.b_save = QtGui.QPushButton('Save')
+        self.b_save.clicked.connect(self.save)
         self.b_fit = QtGui.QPushButton('Fit decay')
         self.b_fit.clicked.connect(self.tryFit)
 
@@ -93,6 +102,7 @@ class Window(QtGui.QDialog):
         layout.addWidget(self.b_reset)
         layout.addWidget(self.b_zoom)
         layout.addWidget(self.b_fit)
+        layout.addWidget(self.b_save)
 
 
         self.layout.addRow(layout)
@@ -117,7 +127,7 @@ class Window(QtGui.QDialog):
         self.stim_file = '/tmp/seal_test.stim'
         self.amplitude = self.opts['amp'] #mV
         self.sampling_rate = env('SAMPLING_RATE')
-
+        holding = self.opts['holding']
         channels = [{'type':'input',
                      'channel':self.opts['ai'],
                      'factor':float(os.environ['AI_CONVERSION_FACTOR_'+self.opts['mode']]),
@@ -127,6 +137,7 @@ class Window(QtGui.QDialog):
                          'channel':self.opts['ao'],
                          'factor':float(os.environ['AO_CONVERSION_FACTOR_'+self.opts['mode']]),
                          'units':os.environ['AO_UNITS_'+self.opts['mode']],
+                         'resetOutput':False,
                          'stimfile':self.stim_file})
 
         print('Conversion factors are {0}{2} and {1}{3}.'.format(
@@ -134,11 +145,11 @@ class Window(QtGui.QDialog):
                 channels[1]['factor'],
                 channels[0]['units'],
                 channels[1]['units']))
-
+        
         sys.argv = ['lcg-stimgen','-o',self.stim_file,
-                    'dc', '-d',str(duration/4.0),'--','0',
-                    'dc', '-d',str(duration),'--',str(self.amplitude),
-                    'dc', '-d',str(duration/2.0),'--','0']
+                    'dc', '-d',str(duration/4.0),'--',str(holding),
+                    'dc', '-d',str(duration),'--',str(self.amplitude+holding),
+                    'dc', '-d',str(duration/2.0),'--',str(holding)]
         lcg.stimgen.main()
         lcg.writeIOConfigurationFile(self.cfg_file,self.sampling_rate,
                                      duration*(7/4.0),channels,
@@ -149,16 +160,21 @@ class Window(QtGui.QDialog):
     def tryFit(self):
         I = np.mean(np.vstack(self.I).T[:,-8:],axis=1)
         idxpost = np.where((self.time<(self.duration)))[0][-1]
-        idxpre = np.argmax(I)
+        if self.opts['amp']>0:
+            idxpre = np.argmax(I)
+        else:
+            idxpre = np.argmin(I)
         #V = np.vstack(self.V).T[:,-8:],axis=1)
-        p0 = [10,40,0,20,0]
+        p0 = [10,0.4,0,0.001,0]
         p2,success = optimize.leastsq(errfunc, p0[:], args=(
-                1e3*(self.time[idxpre:idxpost]-self.time[idxpre]),
+                (self.time[idxpre:idxpost]-self.time[idxpre]),
                 I[idxpre:idxpost]))
         self.fit_line.set_xdata(self.time[idxpre:idxpost])
-        self.fit_line.set_ydata(exp2(p2,1e3*(
-                    self.time[idxpre:idxpost]-self.time[idxpre])))
-        print('Fit time constants are: {0} and {1}ms.'.format(p2[1],p2[3]))
+        self.fit_line.set_ydata(exp2(p2,
+                    self.time[idxpre:idxpost]-self.time[idxpre]))
+        print('Fit time constants are: {0:.2f} and {1:.2f}ms.'.format(p2[1],p2[3]))
+        self.exp_param = p2
+#        print('Fit time constants are: {0}ms.'.format(p2[1]))
         
     def autoZoom(self):
         self.ax[0].set_ylim(self.Iaxis_limits)
@@ -216,7 +232,21 @@ class Window(QtGui.QDialog):
         self.fit_line, = self.ax[0].plot([],[],'-',c='g',lw=1.5)
 
         self.fig.show()
-
+    def save(self):
+        foldername = QtGui.QFileDialog.getExistingDirectory(self, 'Select a folder to save',
+                                                    env('HOME')+'/experiments')
+        fname = time.strftime('%Y%m%d%H%M%S')
+        filename = '{0}/seal_test_{1}.mat'.format(foldername,fname)
+        print('\n Saving to folder {0}\n'.format(filename))
+        self.tryFit()
+        savemat('{0}'.format(filename),
+                {'timeR':self.resistance_time,
+                 'R':self.resistance,
+                 'V':np.vstack(self.V).T,
+                 'I':np.vstack(self.I).T,
+                 'expParam':self.exp_param},
+                do_compression=True,
+                oned_as='row')
     def run_pulse(self):
         duration = self.duration
         sub.call('lcg-experiment -c {0} -V 4'.format(self.cfg_file),shell=True)
@@ -225,14 +255,25 @@ class Window(QtGui.QDialog):
         except:
             print('File {0} not found.\n',)
             return
+        Idone = False
+        Vdone = False
         for e in ent:
-            if e['units'] in 'pA':
-                self.I.append(e['data'])
+            if e['units'] in 'pA' and not Idone:
+                if not Idone:
+                    self.I.append(e['data'])
+                    Idone = True
+                else:
+                    self.I[-1] = self.I[-1] + e['data']
                 break
         for e in ent:
             if e['units'] in 'mV':
-                self.V.append(e['data'])
-                self.time = np.linspace(0,info['tend']*1.0e3,len(self.V[-1]))
+                if not Vdone:
+                    self.V.append(e['data'])
+                    self.time = np.linspace(0,info['tend']*1.0e3,
+                                            len(self.V[-1]))
+                    Vdone = True
+                else:
+                    self.V[-1] = self.V[-1] + e['data']
                 break
         if len(self.I) > 20:
             del(self.I[0])
@@ -269,7 +310,7 @@ class Window(QtGui.QDialog):
                 self.raw_data_plot[ii].set_xdata(self.time)
             self.raw_data_plot[ii].set_ydata(self.I[ii])
             if len(self.resistance)>10:
-                sys.stdout.write('\rResistance is: {0:.0f}MOhm.'.format(np.mean(self.resistance[-10:])))
+                sys.stdout.write('\rResistance is: {0:.1f}MOhm.'.format(np.mean(self.resistance[-10:])))
 
             if ii > 10:
                 break
@@ -293,7 +334,7 @@ class Window(QtGui.QDialog):
 def main():
     print sys.argv
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'I:O:a:d:',['kernel','CC'])
+        opts,args = getopt.getopt(sys.argv[1:], 'H:I:O:a:d:',['kernel','CC'])
     except getopt.GetoptError, err:
         print(err)
         print(usage)
