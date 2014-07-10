@@ -47,7 +47,7 @@ def smooth(x,beta):
     y = np.convolve(w/w.sum(),s,mode='valid')
     return y[5:len(y)-5]
 
-#exp1 = lambda p,x: p[0]*(np.exp(-x/p[1]))  + p[2]
+exp1 = lambda p,x: p[0]*(np.exp(-x/p[1]))  + p[2]
 exp2 = lambda p,x: p[0]*(np.exp(-x/p[1])) + p[2]*(np.exp(-x/p[3])) + p[4]
 errfunc = lambda p, x, y: exp2(p, x) - y
 env = lambda x:os.environ[x]
@@ -81,8 +81,6 @@ class Window(QtGui.QDialog):
 
     def __init__(self,parent = None,opts=[]):
         self.opts = self.parse_options(opts)
-        print self.opts
-        print opts
         QtGui.QDialog.__init__(self,parent)
         self.fig = plt.figure()
         
@@ -118,7 +116,7 @@ class Window(QtGui.QDialog):
         self.plot_timer.start(150)                       
         
     def init_lcg(self):
-        
+        self.cwd = os.getcwd()
         os.chdir('/tmp')
         self.filename = '/tmp/seal_test.h5'
         self.cfg_file = '/tmp/seal_test.xml'
@@ -153,7 +151,8 @@ class Window(QtGui.QDialog):
         lcg.stimgen.main()
         lcg.writeIOConfigurationFile(self.cfg_file,self.sampling_rate,
                                      duration*(7/4.0),channels,
-                                     realtime=True,output_filename=self.filename)
+                                     realtime=True,
+                                     output_filename=self.filename)
             
         self.reset()
 
@@ -169,12 +168,14 @@ class Window(QtGui.QDialog):
         p2,success = optimize.leastsq(errfunc, p0[:], args=(
                 (self.time[idxpre:idxpost]-self.time[idxpre]),
                 I[idxpre:idxpost]))
+        maxtau = np.max(np.array(p2)[[1,3]])
+        self.exp_param = p2
         self.fit_line.set_xdata(self.time[idxpre:idxpost])
         self.fit_line.set_ydata(exp2(p2,
                     self.time[idxpre:idxpost]-self.time[idxpre]))
-        print('Fit time constants are: {0:.2f} and {1:.2f}ms.'.format(p2[1],p2[3]))
-        self.exp_param = p2
+#        print('Fit time constants are: {0:.2f} and {1:.2f}ms.'.format(p2[1],p2[3]))
 #        print('Fit time constants are: {0}ms.'.format(p2[1]))
+        self.tautext.set_text('{0:.2f}ms'.format(maxtau))
         
     def autoZoom(self):
         self.ax[0].set_ylim(self.Iaxis_limits)
@@ -187,10 +188,13 @@ class Window(QtGui.QDialog):
         self.meanI = []
         self.resistance = []
         self.resistance_time = []
+        self.exp_param = None
         self.count = 0
         self.autoscale = True
         self.fit_line.set_xdata([])
         self.fit_line.set_ydata([])
+        self.fit_deduct.set_xdata([])
+        self.fit_deduct.set_ydata([])
 
         sys.stdout.write('Starting...')
         sys.stdout.flush()
@@ -222,31 +226,46 @@ class Window(QtGui.QDialog):
         self.postI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
         self.preI_line, = self.ax[0].plot([],[],'--',c='b',lw=1)
         
-        for ii in range(30):
+        for ii in range(21):
             tmp, = self.ax[0].plot([],[],color = 'k',lw=0.5)
             self.raw_data_plot.append(tmp)
+        self.fit_deduct, = self.ax[0].plot([],[],'-',c='c',lw=1.5)
         self.mean_I_plot, = self.ax[0].plot([],[],c='r',lw=1)
         self.resistance_plot, = self.ax[1].plot([],[],color = 'r',lw=1)
         self.autoscale = True
         self.Iaxis_limits = [-1500,1500]
         self.fit_line, = self.ax[0].plot([],[],'-',c='g',lw=1.5)
-
+        self.Rtext = self.ax[0].annotate(
+            "", xy=(0.99, 1), 
+            xycoords='axes fraction',
+            ha='right',va='top',color='r',fontsize=14)
+        self.tautext = self.ax[0].annotate(
+            "", xy=(0.99, 0.90), 
+            xycoords='axes fraction',
+            ha='right',va='top',color='g',fontsize=13)
         self.fig.show()
+
     def save(self):
-        foldername = QtGui.QFileDialog.getExistingDirectory(self, 'Select a folder to save',
-                                                    env('HOME')+'/experiments')
+        foldername = QtGui.QFileDialog.getExistingDirectory(
+            self,
+            'Select a folder to save',
+            self.cwd)
         fname = time.strftime('%Y%m%d%H%M%S')
-        filename = '{0}/seal_test_{1}.mat'.format(foldername,fname)
+        filename = '{0}/sealtest_{1}.mat'.format(foldername,fname)
         print('\n Saving to folder {0}\n'.format(filename))
         self.tryFit()
-        savemat('{0}'.format(filename),
-                {'timeR':self.resistance_time,
-                 'R':self.resistance,
-                 'V':np.vstack(self.V).T,
-                 'I':np.vstack(self.I).T,
-                 'expParam':self.exp_param},
-                do_compression=True,
-                oned_as='row')
+        try:
+            savemat('{0}'.format(filename),
+                    {'timeR':self.resistance_time,
+                     'R':self.resistance,
+                     'V':np.vstack(self.V).T,
+                     'I':np.vstack(self.I).T,
+                     'expParam':self.exp_param},
+                    do_compression=True,
+                    oned_as='row')
+        except:
+            print('\nFile save failed.\n')
+
     def run_pulse(self):
         duration = self.duration
         sub.call('lcg-experiment -c {0} -V 4'.format(self.cfg_file),shell=True)
@@ -310,11 +329,14 @@ class Window(QtGui.QDialog):
                 self.raw_data_plot[ii].set_xdata(self.time)
             self.raw_data_plot[ii].set_ydata(self.I[ii])
             if len(self.resistance)>10:
-                sys.stdout.write('\rResistance is: {0:.1f}MOhm.'.format(np.mean(self.resistance[-10:])))
+                self.Rtext.set_text('{0:.1f}MOhm'.format(
+                        np.mean(self.resistance[-10:])))
+                #sys.stdout.write('\rResistance is: {0:.1f}MOhm.'.format(
+                #        np.mean(self.resistance[-10:])))
 
             if ii > 10:
                 break
-        if len(self.I) > 1:
+        if len(self.I) > 9:
             self.postI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
             self.postI_line.set_ydata(self.Ipost*np.array([1,1]))
             self.preI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
@@ -329,10 +351,23 @@ class Window(QtGui.QDialog):
             if self.autoscale:
                 self.autoZoom()
                 self.autoscale = False
+            if not self.exp_param is None:
+                maxtau = np.max(np.array(self.exp_param)[[1,3]])
+                I = np.mean(np.vstack(self.I).T[:,-8:],axis=1)
+                idxpost = np.where((self.time<(self.duration)))[0][-1]
+                if self.opts['amp']>0:
+                    idxpre = np.argmax(I)
+                else:
+                    idxpre = np.argmin(I)
+                self.fit_deduct.set_xdata(self.time[idxpre:idxpost])
+                self.fit_deduct.set_ydata(
+                    exp1([-(self.Ipost-self.Ipre),
+                           maxtau,self.Ipre + (self.Ipost-self.Ipre)],
+                         self.time[idxpre:idxpost]-self.time[idxpre]))
+
         self.canvas.draw()
 
 def main():
-    print sys.argv
     try:
         opts,args = getopt.getopt(sys.argv[1:], 'H:I:O:a:d:',['kernel','CC'])
     except getopt.GetoptError, err:

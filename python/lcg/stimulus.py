@@ -46,6 +46,7 @@ def usage():
     print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
     print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
+    print('     --verbose         set the verbose level of lcg-experiment (default is 4 - silent)')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -68,7 +69,7 @@ def main():
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance=','rt=','output-file=','reset-output='])
+                                   'vclamp','offset=','conductance=','rt=','output-file=','reset-output=','verbose='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -94,7 +95,7 @@ def main():
     reversalPotentials = []
     outputFilename = None
     resetOutput = None
-
+    verbose = 4
     suffix = 'CC'
 
     offsets = []
@@ -191,6 +192,8 @@ def main():
             realtime = a.lower() == 'yes'
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
+        elif o in ('--verbose'):
+            verbose = int(a)
 
     if inputChannels is None and outputChannels is None:
         print('No input or output channels specified. I cowardly refuse to continue.')
@@ -315,17 +318,18 @@ def main():
                 lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
             else:
                 lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
-            sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
-            percent = float(cnt)/total
-            n_steps = int(round(percent*max_steps))
-            for i in range(n_steps-1):
-                sys.stdout.write('=')
-            sys.stdout.write('>')
-            for i in range(max_steps-n_steps):
-                sys.stdout.write(' ')
-            sys.stdout.write('] ')
-            sys.stdout.flush()
-            sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+            if verbose == 4:
+                sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
+                percent = float(cnt)/total
+                n_steps = int(round(percent*max_steps))
+                for i in range(n_steps-1):
+                    sys.stdout.write('=')
+                sys.stdout.write('>')
+                for i in range(max_steps-n_steps):
+                    sys.stdout.write(' ')
+                sys.stdout.write('] ')
+                sys.stdout.flush()
+            sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
             if cnt < total:
                 sub.call('sleep ' + str(interval), shell=True)
             else:
@@ -343,17 +347,18 @@ def main():
                     lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
                 else:
                     lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
-                sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
-                percent = float(cnt)/total
-                n_steps = int(round(percent*max_steps))
-                for i in range(n_steps-1):
-                    sys.stdout.write('=')
-                sys.stdout.write('>')
-                for i in range(max_steps-n_steps):
-                    sys.stdout.write(' ')
-                sys.stdout.write('] ')
-                sys.stdout.flush()
-                sub.call(lcg.common.prog_name + ' -V 4 -c ' + config_file, shell=True)
+                if verbose == 4:
+                    sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
+                    percent = float(cnt)/total
+                    n_steps = int(round(percent*max_steps))
+                    for i in range(n_steps-1):
+                        sys.stdout.write('=')
+                    sys.stdout.write('>')
+                    for i in range(max_steps-n_steps):
+                        sys.stdout.write(' ')
+                    sys.stdout.write('] ')
+                    sys.stdout.flush()
+                sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
                 if cnt < total:
                     sub.call('sleep ' + str(interval), shell=True)
                 else:

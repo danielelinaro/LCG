@@ -25,19 +25,21 @@ def usage():
     print(' -D, --device          input device (default %s).' % os.environ['COMEDI_DEVICE'])
     print(' -S, --subdevice       input subdevice (default %s).' % os.environ['AI_SUBDEVICE'])
     print(' -I, --input-channels  input channels (comma separated values, default %s)' % os.environ['AI_CHANNEL'])
-    print(' -G, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
+    print(' -g, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
     print('                       (or %s if --vclamp is used) for all channels).' % os.environ['AI_CONVERSION_FACTOR_VC'])
     print(' -U, --input-units     input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
     print('                       --vclamp is used) for all channels).')
     print(' -V, --vclamp          use default conversion factor and units for voltage clamp.')
+    print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
+    print('     --verbose         set the verbose level of lcg-experiment (default is 4 - silent)')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:n:i:F:D:S:I:G:U:V',
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:n:i:F:D:S:I:G:U:V:u:g:',
                                   ['help','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=','input-channels=','input-gains=',
-                                   'input-units=','vclamp'])
+                                   'input-units=','vclamp','rt=','verbose='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -56,6 +58,9 @@ def main():
     inputUnits = []
 
     suffix = 'CC'
+
+    realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
+    verbose = 4
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -91,14 +96,20 @@ def main():
         elif o in ('-I','--input-channels'):
             for chan in a.split(','):
                 inputChannels.append(int(chan))
-        elif o in ('-G','--input-gains'):
+        elif o in ('-G','--input-gains','-g'):
             for gain in a.split(','):
                 inputGains.append(float(gain))
-        elif o in ('-U','--input-units'):
+        elif o in ('-U','--input-units','-u'):
             for unit in a.split(','):
                 inputUnits.append(unit)
         elif o in ('-V','--vclamp'):
             suffix = 'VC'
+        elif o == '--rt':
+            realtime = a.lower() == 'yes'
+        elif o in ('-R','--reset-output'):
+            resetOutput = a.lower() == 'yes'
+        elif o in ('--verbose'):
+            verbose = int(a)
 
     if len(inputChannels) == 0:
         inputChannels = [int(os.environ['AI_CHANNEL'])]
@@ -119,10 +130,10 @@ def main():
 
     lcg.writeIOConfigurationFile(configFile,samplingRate,duration,
                                  [{'type':'input', 'channel':inputChannels[i], 'factor':inputGains[i], 'units':inputUnits[i]}
-                                  for i in range(len(inputChannels))])
+                                  for i in range(len(inputChannels))],realtime=realtime)
 
     for i in range(repetitions):
-        sub.call(lcg.common.prog_name + ' -c ' + configFile, shell=True)
+        sub.call(lcg.common.prog_name + ' -c ' + configFile + ' -V ' + str(verbose), shell=True)
         if i < repetitions-1:
             sub.call('sleep ' + str(interval), shell=True)
 
