@@ -5,6 +5,7 @@ import sys
 import getopt
 import subprocess as sub
 import lcg
+import time
 
 configFile = 'spontaneous.xml'
 
@@ -133,7 +134,19 @@ def main():
                                   for i in range(len(inputChannels))],realtime=realtime)
 
     for i in range(repetitions):
-        sub.call(lcg.common.prog_name + ' -c ' + configFile + ' -V ' + str(verbose), shell=True)
+        process = sub.Popen(lcg.common.prog_name + ' -c ' + 
+                            configFile + ' -V ' + str(verbose), shell=True)
+        starttime = time.time()
+        while process.poll() is None:
+            sys.stdout.write('Elapsed time: {0:.2f}s \r'.format(time.time() - starttime))
+            sys.stdout.flush()
+            time.sleep(0.3)
+        # Print errors and outputs
+        out, err = process.communicate()
+        if not out is None:
+            print out
+        if not err is None:
+            print err
         if i < repetitions-1:
             sub.call('sleep ' + str(interval), shell=True)
 
