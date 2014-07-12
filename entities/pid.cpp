@@ -48,7 +48,7 @@ bool PID::initialise()
         m_erri = 0.0;
         m_errpPrev = 0.0;
         m_state = true;
-        Logger(Info, "PID(%d): %s %s %s %s %s\n", id(), "Time","Perror", "Ierror", "Derror", "Output");                
+        Logger(Info, "PID(%d): %s %s %s %s %s\n", id(), "Time","FirstInput","SecondInput","Perror", "Ierror", "Derror", "Output");                
         return true;
 }
 
@@ -69,7 +69,7 @@ void PID::handleEvent(const Event *event)
                 m_errpPrev = errp;
                 m_output = PID_BASELINE + PID_GP*errp + PID_GI*m_erri + PID_GD*errd;
 
-                Logger(Info, "PID(%d): %9.3f %9.4f %9.4f %9.4f %10.5f\n", id(), GetGlobalTime(), errp, m_erri, errd, m_output);                
+                Logger(Info, "PID(%d): %9.3f %9.3f %9.3f %9.4f %9.4f %9.4f %10.5f\n", id(), GetGlobalTime(),m_inputs[0], m_inputs[1], errp, m_erri, errd, m_output);                
             }
             break;
         case TOGGLE:

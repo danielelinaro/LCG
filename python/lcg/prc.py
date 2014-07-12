@@ -71,7 +71,6 @@ lcg-prc noise -n 2 -t 60 -A 200  --model --no-kernel
 env = lambda x:os.environ[x]
 
 def parse_prc_options(mode,opts):
-    print opts
     defaults = {'ai':env('AI_CHANNEL'),
                 'ao':env('AI_CHANNEL'),
                 'holding':0.0,
@@ -151,7 +150,7 @@ def parse_prc_options(mode,opts):
         elif o == '-S':
             if mode == 'steps':
                 options['step_pdelay'] = float(a)
-            elif mode == 'sobol': 
+            elif 'sobol' in mode: 
                 options['sobol_offset'] = float(a)
             else:
                 options['ou_std'] = float(a)
@@ -177,7 +176,7 @@ def parse_prc_options(mode,opts):
             print('Unknown option...')
             print(usage)
             sys.exit(1)
-
+    print options
     return options
 
 modes = ['steps','fclamp','fclamp-sobol','noise']
@@ -244,15 +243,15 @@ def build_fclamp_sobol_config(opts, config, lastValueFilename):
     config.add_entity(FrequencyEstimator(5,(0,3,6),
                                          tau = opts['Ftau'],
                                          initial_frequency= opts['target_freq']))
-    config.add_entity(SobolDelay(6,connections=(7),start_sample=0))
+    config.add_entity(SobolDelay(6,connections=(7),start_sample=opts['sobol_offset']))
     config.add_entity(VariableDelayConnection(7,connections=[2]))
     config.add_entity(EventCounter(8,connections=[7],
-                                   max_count=2,auto_reset=False))
+                                   max_count=3,auto_reset=False))
     config.add_entity(EventCounter(9,connections=[3,5],
                                    max_count=2,event_to_send='TOGGLE',
                                    auto_reset=False))
     config.add_entity(EventCounter(10,connections=[3,5],
-                                   max_count=4,event_to_send='TOGGLE',
+                                   max_count=5,event_to_send='TOGGLE',
                                    auto_reset=False))
     config.add_entity(EventCounter(11,connections=[8,9,10,12],
                                    max_count=opts['pert_freq'],event_to_send='RESET',
@@ -396,7 +395,8 @@ one of the following: {1}'''.format(mode,
         sys.argv = ['lcg-stimgen','-o',waveformName,
                     opts['pert_waveform'],
                     '-d',str(opts['pert_dur']*1e-3),
-                    '--',str(opts['pert_amp'])]
+                    '--',str(opts['pert_amp']),
+                    'dc','-d','0.0001','0']
         lcg.stimgen.main()
     if mode == 'steps':
         build_steps_config(opts, config,lastValueFilename)
@@ -425,7 +425,7 @@ one of the following: {1}'''.format(mode,
     
     for ii in range(opts['ntrials']):
         if 'sobol' in mode:
-            startSample = int(ii*opts['trial_dur'])
+            startSample = opts['sobol_offset'] + int(ii*opts['trial_dur'])
             # This should be the SobolDelay entity; parameter StartSample
             # Otherwise things are going to go wrong.
             config._entities[6][2][0].text = str(startSample) 
