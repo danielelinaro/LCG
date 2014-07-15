@@ -116,8 +116,8 @@ class XMLConfigurationFile (object):
             if connection is None:
                 connection = etree.SubElement(entity, 'connections')
             if not connection.text is None:
-                previous_conn = [str(ii) for ii in connection.text.split(',')]
-                connections = np.unique(np.array([previous_conn, connections])).flatten()
+                previous_conn = [int(ii) for ii in connection.text.split(',')]
+                connections = np.unique(np.hstack([previous_conn, connections]).flatten())
             connection.text = ",".join(map(str,connections))
 
     def add_entity(self,entity):
@@ -141,6 +141,10 @@ class XMLConfigurationFile (object):
         self._add_elements(self._streams[-1], {'name': stream.name, 'id': stream.id})
         self._add_parameters(self._streams[-1], stream.parameters)
         self._add_connections(self._streams[-1], stream.connections)
+    
+    def set_tend(self, tend):
+        tmp = self._xml_simulation[1]
+        tmp.text = str(tend)
         
     def write(self,filename):
         '''
@@ -209,7 +213,7 @@ def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, rea
                 config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
                                                            outputSubdevice=chan['subdevice'], writeChannel=chan['channel'],
                                                            outputConversionFactor=chan['factor'],
-                                                           aref=chan['reference'], units=chan['units'], resetOutput=True))
+                                                           aref=chan['reference'], units=chan['units'], resetOutput=chan['resetOutput']))
                 config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID), filename=chan['stimfile'], units=chan['units']))
                 ID += 1
         else:
@@ -283,7 +287,7 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
         if ii > len(reversal):
             chan = output_channels[ii]
             config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
-                                                        aref=chan['reference'], units=chan['units'], resetOutput=True))
+                                                        aref=chan['reference'], units=chan['units'], resetOutput=chan['resetOutput']))
             ID += 1
     config.write(config_file)
     return True

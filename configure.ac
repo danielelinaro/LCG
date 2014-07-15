@@ -64,6 +64,8 @@ AC_SUBST([LIB_VER])
 AC_SUBST([LIB_TAG])
 
 AC_ARG_ENABLE([realtime], AS_HELP_STRING([--disable-realtime], [Disable real-time capabilities]))
+AC_ARG_WITH([output-reset],[AS_HELP_STRING([--with-output-reset],[Output 0 when the program terminates.])],
+                [with_output_reset=yes],[with_output_reset=no])
 
 with_analog_io=no
 with_comedi=no
@@ -113,5 +115,7 @@ AM_CONDITIONAL([RTAI],[test "$with_rtai" = "yes"])
 AM_CONDITIONAL([XENOMAI],[test "$with_xenomai" = "yes"])
 
 AC_SUBST(with_rt)
+AC_SUBST(with_output_reset)
+
 AC_OUTPUT
 

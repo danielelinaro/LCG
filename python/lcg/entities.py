@@ -76,7 +76,8 @@ class NMDAConductanceStimulus (Entity):
         self.add_parameter('K2', K2)
 
 class LIFNeuron (Entity):
-    def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext):
+    def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext,
+                 holdLastValue, holdLastValueFilename):
         super(LIFNeuron,self).__init__('LIFNeuron', id, connections)
         self.add_parameter('C', C)
         self.add_parameter('tau', tau)
@@ -85,6 +86,9 @@ class LIFNeuron (Entity):
         self.add_parameter('E0', E0)
         self.add_parameter('Vth', Vth)
         self.add_parameter('Iext', Iext)
+        self.add_parameter('holdLastValue', holdLastValue)
+        self.add_parameter('holdLastValueFilename', holdLastValueFilename)
+        
 
 class IzhikevicNeuron (Entity):
     def __init__(self, id, connections, a, b, c, d, Vspk, Iext):
@@ -111,7 +115,7 @@ class RealNeuron (Entity):
     def __init__(self, id, connections, spikeThreshold, V0, deviceFile, inputSubdevice,
                  outputSubdevice, readChannel, writeChannel, inputConversionFactor,
                  outputConversionFactor, inputRange, reference, kernelFile = '',
-                 holdLastValue = False, adaptiveThreshold = False):
+                 holdLastValue = False, holdLastValueFilename=None, adaptiveThreshold = False):
         super(RealNeuron,self).__init__('RealNeuron', id, connections)
         self.add_parameter('spikeThreshold', spikeThreshold)
         self.add_parameter('V0', V0)
@@ -128,6 +132,8 @@ class RealNeuron (Entity):
             self.add_parameter('kernelFile', kernelFile)
         if holdLastValue:
             self.add_parameter('holdLastValue', 'true')
+        if holdLastValue and not holdLastValueFilename is None:
+            self.add_parameter('holdLastValueFilename', holdLastValueFilename)
         if adaptiveThreshold:
             self.add_parameter('adaptiveThreshold', 'true')
 
@@ -195,6 +201,14 @@ class Delay (Entity):
         super(Delay,self).__init__('Delay', id, connections)
         self.add_parameter('nSamples', n_samples)
 
+class SobolDelay (Entity):
+    def __init__(self, id, connections, start_sample=0,
+                 minimum=0, maximum = -1):
+        super(SobolDelay,self).__init__('SobolDelay', id, connections)
+        self.add_parameter('startSample', start_sample)
+        self.add_parameter('min', minimum)
+        self.add_parameter('max', maximum)
+
 class EventCounter (Entity):
     def __init__(self, id, connections, max_count, auto_reset=True,
                  event_to_count='SPIKE', event_to_send='TRIGGER'):
@@ -243,9 +257,13 @@ class ProbabilityEstimator (Entity):
         self.add_parameter('initialProbability', initial_probability)
 
 class PeriodicTrigger (Entity):
-    def __init__(self, id, connections, frequency):
+    def __init__(self, id, connections, frequency, delay=0, tend=None):
         super(PeriodicTrigger,self).__init__('PeriodicTrigger', id, connections)
         self.add_parameter('frequency', frequency)
+        if delay > 0: 
+            self.add_parameter('delay', delay)
+        if not tend is None:
+            self.add_parameter('tend', tend)
 
 class Synapse (Entity):
     def __init__(self, name, id, connections, E):

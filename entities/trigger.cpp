@@ -4,12 +4,23 @@ lcg::Entity* PeriodicTriggerFactory(string_dict& args)
 {
         uint id;
         double frequency;
+	double tdelay;
+	double tend;
+
         id = lcg::GetIdFromDictionary(args);
         if ( ! lcg::CheckAndExtractDouble(args, "frequency", &frequency)) {
                 lcg::Logger(lcg::Critical, "Unable to build a periodic trigger.\n");
                 return NULL;
         }
-        return new lcg::PeriodicTrigger(frequency, id);
+	
+        if ( ! lcg::CheckAndExtractDouble(args, "delay", &tdelay)) {
+		tdelay = 0;
+	}
+
+        if ( ! lcg::CheckAndExtractDouble(args, "tend", &tend)) {
+		tend = INFINITY;
+	}
+        return new lcg::PeriodicTrigger(frequency, tdelay, tend, id);
 }
 
 namespace lcg {
@@ -29,24 +40,25 @@ void Trigger::emitTrigger() const
         emitEvent(new TriggerEvent(this));
 }
 
-PeriodicTrigger::PeriodicTrigger(double frequency, uint id)
+PeriodicTrigger::PeriodicTrigger(double frequency, double tdelay, double tend, uint id)
         : Trigger(id)
 {
-        if (frequency <= 0)
-                throw "Frequency should be positive";
-        PT_FREQUENCY = frequency;
-        m_period = 1.0 / PT_FREQUENCY;
+        setFrequency(frequency);
+	m_tDelay = tdelay;
+	m_tEnd = tend;
 }
 
 bool PeriodicTrigger::initialise()
 {
-        m_tNextTrigger = m_period;
+        m_tNextTrigger = m_period + m_tDelay;
         return true;
 }
 
 void PeriodicTrigger::step()
 {
-        if (GetGlobalTime() >= m_tNextTrigger) {
+        if (GetGlobalTime() >= m_tNextTrigger 
+		&& GetGlobalTime() >= m_tDelay 
+		&& GetGlobalTime() <= m_tEnd) {
                 emitTrigger();
                 m_tNextTrigger += m_period;
         }
