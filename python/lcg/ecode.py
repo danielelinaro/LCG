@@ -12,8 +12,7 @@ protocols = ['ap','vi','ramp','tau','steps','fi']
 
 global_opts = {'-I': os.environ['AI_CHANNEL'],
                '-O': os.environ['AO_CHANNEL'],
-               '-F': os.environ['SAMPLING_RATE'],
-               '--rt': os.environ['LCG_REALTIME']}
+               '-F': os.environ['SAMPLING_RATE']}
 
 base_dir = os.path.abspath(os.curdir)
 
@@ -92,12 +91,13 @@ def parse_argv():
 
     return (pulse_amplitude,ramp_amplitude,max_firing_rate)
 
-def run_command(directory, module, opts):
+def run_command(directory, module, opts=None):
     command = 'lcg-foo '
     for k,v in global_opts.iteritems():
         command += '%s %s ' % (k,v)
-    for k,v in opts.iteritems():
-        command += '%s %s ' % (k,v)
+    if not opts is None:
+        for k,v in opts.iteritems():
+            command += '%s %s ' % (k,v)
     while command[-1] == ' ':
         command = command[:-1]
     os.chdir(directory)
@@ -174,20 +174,21 @@ def main():
     for proto in protocols:
         d = create_directory(proto)
         if proto == 'ap':
-            run_command(d, lcg.ap, {'-a': pulse_amplitude})
+            run_command(d, lcg.ap, {'-a': pulse_amplitude, '--rt': os.environ['LCG_REALTIME']})
         elif proto == 'vi':
-            run_command(d, lcg.vi)
+            run_command(d, lcg.vi, {'--rt': os.environ['LCG_REALTIME']})
         elif proto == 'ramp':
-            run_command(d, lcg.ramp, {'-A': ramp_amplitude})
-            rheobase = analyse_ramp(dirs['ramp'])[0]
-            rheobase = 10*round(rheobase/10)
+            run_command(d, lcg.ramp, {'-A': ramp_amplitude, '--rt': os.environ['LCG_REALTIME']})
+            rheobase = analyse_ramp(d)[0]
+            rheobase = 10.*round(rheobase/10.)
         elif proto == 'tau':
-            run_command(d, lcg.tau)
+            run_command(d, lcg.tau, {'--rt': os.environ['LCG_REALTIME']})
         elif proto == 'steps':
             run_command(d, lcg.step, {'-n': 2, '-d': 2, '-i': 10,
-                                       '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50)})
+                                      '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50),
+                                      '--rt': os.environ['LCG_REALTIME']})
         elif proto == 'fi':
-            run_command(d, lcg.fi, {'-M': max_firing_rate, '-a': rheobase+50})
+            run_command(d, lcg.fi_pid, {'-M': max_firing_rate, '-a': rheobase+50})
 
 if __name__ == '__main__':
     main()
