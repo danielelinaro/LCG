@@ -1,138 +1,108 @@
 /* -------------------------------- rando.c ------------------------------ */
 //
-// RANDOM NUMBER GENERATORS, FROM NUMERICAL RECIPES - GOOD QUALITY, 32bit-CPUs
-//
-// Antwerp, 10/07/2009 - Library originally implemented by M. Mattia & S. Fusi;
-// based on material available on Numerical Recipes, by Press et al., 1992 - Cambridge U.P.
-//
-// Used by M. Giugliano for the Mee_Duck *generate_trial* 2001-2009
+// Random number generators for 64bit CPUs, from Numerical Recipes 3.
+// 
+// Antwerp, 16/07/2014 - Daniele Linaro
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include "rando.h"
 
-long rand49_idum=-77531;
+static unsigned long long int64(struct uniform_random *ran) { 
+        unsigned long long x;
+        ran->u = ran->u * 2862933555777941757LL + 7046029254386353087LL; 
+	ran->v ^= ran->v >> 17;
+	ran->v ^= ran->v << 31;
+	ran->v ^= ran->v >> 8; 
+	ran->w = 4294957665U*(ran->w & 0xffffffff) + (ran->w >> 32); 
+	x = ran->u ^ (ran->u << 21); x ^= x >> 35; x ^= x << 4; 
+	return (x + ran->v) ^ ran->w;
+}
 
-#define MM 714025
-#define IA 1366
-#define IC 150889
+static unsigned int int32(struct uniform_random *ran) {
+        return (unsigned int) int64(ran);
+}
 
-//----------------------------------------------------------------
-float drand49()	{
-        static long iy,ir[98];
-        static int iff=0;
-        int j;
-
-    if (rand49_idum < 0 || iff == 0) {
-            iff=1;
-            if((rand49_idum=(IC-rand49_idum) % MM)<0)
-                             rand49_idum=(-rand49_idum);
-            for (j=1;j<=97;j++) {
-                    rand49_idum=(IA*(rand49_idum)+IC) % MM;
-                    ir[j]=(rand49_idum);
-            }
-            rand49_idum=(IA*(rand49_idum)+IC) % MM;
-            iy=(rand49_idum);
-        }
-        j=1 + 97.0*iy/MM;
-    if (j > 97 || j < 1) fprintf(stderr, "RAN2: This cannot happen.");
-        iy=ir[j];
-        rand49_idum=(IA*(rand49_idum)+IC) % MM;
-        ir[j]=(rand49_idum);
-        return (float) iy/MM;
-} // end drand49()
-//----------------------------------------------------------------
-
-
-//----------------------------------------------------------------
-float srand49(long seed) {
-   rand49_idum=(-seed);
-   return drand49();
-} // end srand49()
-//----------------------------------------------------------------
-
-
-//----------------------------------------------------------------
-long mysrand49(long seed) {
-  long temp;
-  temp = -rand49_idum;
-  rand49_idum = (-seed);
-  return temp;
-} // end mysrand49()
-//----------------------------------------------------------------
-
-//----------------------------------------------------------------
-long hw_rand(void) {
-        long seed;
+unsigned long long hw_rand(void) {
+        unsigned long long seed;
         int nbytes = 0, fd = open("/dev/urandom",O_RDONLY);
         if (fd == -1)
-                return time(NULL);
-        read(fd, (void *) &seed, sizeof(long));
+                return (unsigned long long) time(NULL);
+        read(fd, (void *) &seed, sizeof(unsigned long long));
         close(fd);
         return seed;
-} // end hw_rand()
-//----------------------------------------------------------------
+}
 
-//----------------------------------------------------------------
-float gauss()	{
-    static int iset=0;
-    static float gset;
-    float fac,r,v1,v2;
-	
-    if  (iset == 0) {
-        do {
-            v1=2.0*drand49()-1.0;
-            v2=2.0*drand49()-1.0;
-            r=v1*v1+v2*v2;
-        } while (r >= 1.0);
-        fac=sqrt(-2.0*log(r)/r);
-        gset=v1*fac;
-        iset=1;
-        return v2*fac;
-    } else {
-        iset=0;
-        return gset;
-    }
-} // end gauss()
-//----------------------------------------------------------------
+void uniform_random_set_seed(struct uniform_random *ran, unsigned long long seed) {
+        ran->seed = seed;
+        ran->v = 4101842887655102017LL;
+        ran->w = 1;
+        ran->u = ran->seed ^ ran->v; int64(ran); 
+        ran->v = ran->u; int64(ran); 
+        ran->w = ran->v; int64(ran); 
+}
 
-#undef MM
-#undef IA
-#undef IC
+struct uniform_random* uniform_random_create(unsigned long long seed) {
+        struct uniform_random *ran;
+        ran = (struct uniform_random *) malloc(sizeof(struct uniform_random));
+        uniform_random_set_seed(ran, seed);
+        return ran;
+}
 
+double uniform_random_value(struct uniform_random *ran) {
+	return 5.42101086242752217E-20 * int64(ran);
+}
 
-//----------------------------------------------------------------
-// Random bit (i.e. 0, 1) generator, with probability 0.5 and 0.5
-#define IB1 1
-#define IB2 2
-#define IB5 16
-#define IB18 131072
-#define MASK IB1+IB2+IB5
+struct normal_random* normal_random_create(double mu, double sig, unsigned long long seed) {
+        struct normal_random *ran;
+        ran = (struct normal_random *) malloc(sizeof(struct normal_random));
+        ran->mu = mu;
+        ran->sig = sig;
+        ran->storedval = 0.0;
+        ran->uniform = uniform_random_create(seed);
+        return ran;
+}
 
-static unsigned long iseed=31277;
+double normal_random_value(struct normal_random *ran) {
+	double v1,v2,rsq,fac; 
+	if (ran->storedval == 0.) {
+		do { 
+			v1 = 2.0*uniform_random_value(ran->uniform)-1.0;
+			v2 = 2.0*uniform_random_value(ran->uniform)-1.0; 
+			rsq=v1*v1+v2*v2;
+		} while (rsq >= 1.0 || rsq == 0.0); 
+		fac = sqrt(-2.0*log(rsq)/rsq);
+		ran->storedval = v1*fac; 
+		return ran->mu + ran->sig*v2*fac; 
+	} else {
+		fac = ran->storedval; 
+		ran->storedval = 0.; 
+		return ran->mu + ran->sig*fac; 
+	} 
+}
 
-int srand10(long seed)	{
-   iseed=seed;
-return 0;
-} // end srand10()
+struct uniform_random global_uniform_random;
+struct normal_random global_normal_random = {
+        .mu = 0.,
+        .sig = 1.,
+        .storedval = 0.,
+        .uniform = &global_uniform_random
+};
 
-int drand10()	{
-        if (iseed & IB18) {
-                iseed=((iseed ^ (MASK)) << 1) | IB1;
-                return 1;
-        } else {
-                iseed <<= 1;
-                return 0;
-        }
-} // end drand10()
+double srand49(unsigned long long seed) {
+        uniform_random_set_seed(&global_uniform_random, seed);
+        global_normal_random.storedval = 0.;
+}
 
-#undef MASK
-#undef IB18
-#undef IB5
-#undef IB2
-#undef IB1
-//----------------------------------------------------------------
+double drand49(void) {
+        return uniform_random_value(&global_uniform_random);
+}
+
+double gauss(void) {
+        return normal_random_value(&global_normal_random);
+}
 
