@@ -27,20 +27,27 @@
 extern "C" {
 #endif
 
-/* 
-   float drand49():      returns a uniformly distributed (pseudo)random (float) number between 0.0 and 1.0 
-   float gauss():        returns a Gauss-distributed (pseudo)random (float) number with zero mean and unitary variance 
-   float srand49(long):  inits the 'seed' and returns a.... between 0.0 and 1.0
-(from Numerical Recipes) 
-   long mysrand49(long): inits the 'seed' and returns the *previous* seed (custom made!)
-*/
-   
-long mysrand49(long seed);
-float srand49(long seed);
-float drand49(void);
-float gauss(void);
-int srand10(long seed);
-int drand10(void);
+double srand49(unsigned long long seed);
+double drand49(void);
+double gauss(void);
+unsigned long long hw_rand(void);
+
+struct uniform_random {
+        unsigned long long seed;
+        unsigned long long u, v, w;
+};
+
+struct normal_random {
+        double mu, sig, storedval;
+        struct uniform_random *uniform;
+};
+
+void uniform_random_set_seed(struct uniform_random *ran, unsigned long long seed);
+struct uniform_random* uniform_random_create(unsigned long long seed);
+double uniform_random_value(struct uniform_random *ran);
+
+struct normal_random* normal_random_create(double mu, double sig, unsigned long long seed);
+double normal_random_value(struct normal_random *ran);
 
 #ifdef __cplusplus
 }

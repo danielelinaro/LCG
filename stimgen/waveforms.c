@@ -31,65 +31,60 @@ return T;
 
 
 int simple_waveform(double *vector, double *output, uint *index, uint Ni, double srate, double dt, int verbose) {
-long oldseed;
 
-//printf("simple_waveform called with code = %d\n", (int) vector[CODE]);
+        //printf("simple_waveform called with code = %d\n", (int) vector[CODE]);
 
         if (vector[FIXSEED])
-                oldseed = mysrand49((long) vector[MYSEED]);
+                srand49((unsigned long long) vector[MYSEED]);
         else
-                oldseed = mysrand49(hw_rand());
+                srand49(hw_rand());
 
- switch ((uint) vector[CODE])   // Main decision stage to rule out the requested subwvform type (gauss, DC, etc..).
-    {
-    case DC_WAVE:                                         // DC Waveform has been selected
-      DC(vector[P1], output, index, Ni, vector[EXPON], srate, dt);   // ..then generate it by specifying only the amplitude (coded in P2).
-      break;
-    case ORNUHL_WAVE:                                                   // GAUSSIAN/ORUHL Waveform has been selected:
-      if (vector[P3] <= 0.)                                             // if the correlation time (P3) is 0 ms, use "GAUSS()" for a 
-       GAUSS(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
-      else                                                              // Otherwise, the user meant to ask for 
-      ORUHL(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // "ORUHL()" routine, so generate the realization.
-      break;
-    case SINE_WAVE:                                                               // SINUSOIDAL Waveform has been selected
-      SINE(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it by specifying the amplitude 
-      break;                                                                      //(P2), the frequency (P3) and the phase (P4).
-    case POISSON1_WAVE:                                                           // POISSON SHOT 1 Waveform has been selected
-      POISSON_SHOT1(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it (either deterministic 
-      break;                                                                               // or stochastically) - depends on the sign of (P2).
-    case POISSON2_WAVE:                                                                    // POISSON SHOT 2 Waveform has been selected
-      POISSON_SHOT2(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it (either deterministic 
-      break;                                                                               // or stochastically) - depends on the sign of (P2).
-    case BIPOLAR_WAVE:                                                                               // BIPLOAR SHOTS Waveform has been selected
-      BIPOLAR_SHOT(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it (either deterministic 
-      break;                                                                               // or stochastically) (..sign of P2).
-    case RAMP_WAVE:                                             // RAMP Waveform has been selected
-      RAMP(vector[P1], output, index, Ni, vector[EXPON], srate, dt);       // ..then generate it by specifying the 'arrival' amplitude (P1).
-      break;
-    case SQUARE_WAVE:                                                                // SQUARE Waveform has been selected
-      SQUARE(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
-      break;                    
-    case SAW_WAVE:                                                                // SAW Waveform has been selected
-      SAW(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
-      break;                    
-    case SWEEP_WAVE:                                                                // SWEEP Waveform has been selected
-      SWEEP(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
-      break;
-	case UNIF_NOISE:	
-	   UNIFNOISE(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
-	   break;
-	case ALPHA_FUN:	
-       ALPHA(vector[P1], vector[P2],vector[P3], output, index, Ni, vector[EXPON], srate, dt); // double exponential alpha function process.
-	   break;
-    default:
-      error("Invalid waveform code!", verbose);
-      return -1;                   
-} // end switch()
+        switch ((uint) vector[CODE]) { // Main decision stage to rule out the requested subwvform type (gauss, DC, etc..).
+                case DC_WAVE:                                         // DC Waveform has been selected
+                        DC(vector[P1], output, index, Ni, vector[EXPON], srate, dt);   // ..then generate it by specifying only the amplitude (coded in P2).
+                        break;
+                case ORNUHL_WAVE:                                                   // GAUSSIAN/ORUHL Waveform has been selected:
+                        if (vector[P3] <= 0.)                                             // if the correlation time (P3) is 0 ms, use "GAUSS()" for a 
+                                GAUSS(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
+                        else                                                              // Otherwise, the user meant to ask for 
+                                ORUHL(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // "ORUHL()" routine, so generate the realization.
+                        break;
+                case SINE_WAVE:                                                               // SINUSOIDAL Waveform has been selected
+                        SINE(vector[P1], vector[P2], vector[P3], vector[P4], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it by specifying the amplitude 
+                        break;                                                                      //(P2), the frequency (P3) and the phase (P4).
+                case POISSON1_WAVE:                                                           // POISSON SHOT 1 Waveform has been selected
+                        POISSON_SHOT1(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it (either deterministic 
+                        break;                                                                               // or stochastically) - depends on the sign of (P2).
+                case POISSON2_WAVE:                                                                    // POISSON SHOT 2 Waveform has been selected
+                        POISSON_SHOT2(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt); // ..then generate it (either deterministic 
+                        break;                                                                               // or stochastically) - depends on the sign of (P2).
+                case BIPOLAR_WAVE:                                                                               // BIPLOAR SHOTS Waveform has been selected
+                        BIPOLAR_SHOT(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it (either deterministic 
+                        break;                                                                               // or stochastically) (..sign of P2).
+                case RAMP_WAVE:                                             // RAMP Waveform has been selected
+                        RAMP(vector[P1], output, index, Ni, vector[EXPON], srate, dt);       // ..then generate it by specifying the 'arrival' amplitude (P1).
+                        break;
+                case SQUARE_WAVE:                                                                // SQUARE Waveform has been selected
+                        SQUARE(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
+                        break;                    
+                case SAW_WAVE:                                                                // SAW Waveform has been selected
+                        SAW(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
+                        break;                    
+                case SWEEP_WAVE:                                                                // SWEEP Waveform has been selected
+                        SWEEP(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
+                        break;
+                case UNIF_NOISE:	
+                        UNIFNOISE(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
+                        break;
+                case ALPHA_FUN:	
+                        ALPHA(vector[P1], vector[P2],vector[P3], output, index, Ni, vector[EXPON], srate, dt); // double exponential alpha function process.
+                        break;
+                default:
+                        error("Invalid waveform code!", verbose);
+                        return -1;                   
+        } // end switch()
 
-
-if (vector[FIXSEED]) mysrand49(oldseed);
-
-return 0;
+        return 0;
 } // end simple_waveform()
 
 
