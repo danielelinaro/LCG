@@ -46,7 +46,7 @@ def writePulsesStimFile(f, dur, amp, N=10, delay=1, pulsesInBurst=1, withRecover
         stimulus.append([0.5,1,0,0,0,0,0,0,5061983,0,0,1])
         stimulus.append([dur,1,amp,0,0,0,0,0,5061983,0,0,1])
     stimulus.append([delay,1,0,0,0,0,0,0,5061983,0,0,1])
-    dur = writeStimFile(filename, stimulus, False)
+    dur = lcg.writeStimFile(filename, stimulus, None)
     return dur
 
 def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim','ginh.stim']):
@@ -61,7 +61,7 @@ def writeGStimFiles(Gexc, Ginh, duration, before, after, outfiles = ['gexc.stim'
     if 'seed' in Ginh:
         G[1][1][8] = Ginh['seed']
     for i,filename in enumerate(outfiles):
-        writeStimFile(filename,G[i],False)
+        lcg.writeStimFile(filename,G[i],None)
 
 def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile):
     config = lcg.XMLConfigurationFile(sampling_rate, duration+3.61)
@@ -92,7 +92,7 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile)
                    [duration,2,1,1,1,0,0,1,0,0,0,1],
                    [1,1,0,0,0,0,0,0,0,0,0,1]]
 
-    writeStimFile('current.stim',current,False)
+    lcg.writeStimFile('current.stim',current,None)
 
     conductance[1][2] = Gexc['m']
     conductance[1][3] = Gexc['s']
@@ -101,7 +101,7 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile)
         conductance[1][8] = Gexc['seed']
     else:
         conductance[1][8] = np.random.poisson(10000)
-    writeStimFile('gexc.stim',conductance,False)
+    lcg.writeStimFile('gexc.stim',conductance,None)
 
     conductance[1][2] = Ginh['m']
     conductance[1][3] = Ginh['s']
@@ -110,7 +110,7 @@ def writeIPlusBgGConfig(I, Gexc, Ginh, ai, ao, duration, sampling_rate, outfile)
         conductance[1][8] = Ginh['seed']
     else:
         conductance[1][8] = np.random.poisson(10000)
-    writeStimFile('ginh.stim',conductance,False)
+    lcg.writeStimFile('ginh.stim',conductance,None)
 
 def writeSpontaneousConfig(I, G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=10, sampling_rate=20000, outfile='spontaneous.xml'):
     writeIPlusBgGConfig(I, {'m': G0_exc, 's': sigma_exc, 'tau': 5},
@@ -146,7 +146,7 @@ def writeSinusoidsConfig(bg_current, modulating_current, G0_exc, sigma_exc, G0_i
     os.remove('current.stim')
     shutil.move('gexc.stim','gexc_template.stim')
     shutil.move('ginh.stim','ginh_template.stim')
-    writeStimFile('current_template.stim',current,True)
+    lcg.writeStimFile('current_template.stim',current,True)
 
 def writeGainModulationConfig(G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, duration=5, outfile='gain_modulation.xml', infile=''):
     writeIPlusBgGConfig(0, {'m': G0_exc, 's': sigma_exc, 'tau': 5},
@@ -160,7 +160,7 @@ def writeGainModulationConfig(G0_exc, sigma_exc, G0_inh, sigma_inh, ai=0, ao=0, 
                [4,1,0,0,0,0,0,0,3532765,0,0,1],
                [duration,1,'I',0,0,0,0,0,3532765,0,0,1],
                [1,1,0,0,0,0,0,0,3532765,0,0,1]]
-    writeStimFile('template.stim',current,False)
+    lcg.writeStimFile('template.stim',current,None)
 
 def writefIStim(Imin,Imax,Istep,noisy=False):
     A = [[0.5,1,0,0,0,0,0,0,3532765,0,0,1],
@@ -174,7 +174,7 @@ def writefIStim(Imin,Imax,Istep,noisy=False):
         A[4,0] = 4
     for k,i in np.arange(Imin,Imax+Istep,Istep):
         A[5,2] = i
-        writeStimFile('fi_%02d.stim' % (k+1), A)
+        lcg.writeStimFile('fi_%02d.stim' % (k+1), A, None)
 
 def writeNoisyBackgroundConfig(filename='ou.xml', Rm=0, Vm=-57.6, R_exc=7000, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
     ratio = computeRatesRatio(Vm, Rin=Rm, tau_exc=tau_exc, tau_inh=tau_inh, E_exc=E_exc, E_inh=E_inh)
