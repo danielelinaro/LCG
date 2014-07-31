@@ -84,10 +84,10 @@ class XMLConfigurationFile (object):
         self._xml_entities = None
         self._xml_streams = None
         self._xml_simulation = etree.SubElement(self._xml_root,'simulation')
-        if not output_filename is None:
-            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
-        else:
+        if output_filename is None:
             self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration})
+        else:
+            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
         self._entities = []
         self._streams = []
 
