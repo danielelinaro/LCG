@@ -37,7 +37,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:n:i:F:D:S:I:G:U:V:u:g:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hd:n:i:F:D:S:I:G:U:Vu:g:',
                                   ['help','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=','input-channels=','input-gains=',
                                    'input-units=','vclamp','rt=','verbose='])
