@@ -3,6 +3,8 @@ import os
 import numpy as np
 import tables as tbl
 import lcg
+import subprocess as sub
+import sys
 
 ########## Functions that write configuration files ##########
 
@@ -362,6 +364,27 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
     else:
         return Ke*1e3   
 
+########## Support functions #########
+
+def runCommandWithTerminalTimer(command, timerString = 'Elapsed time: {0:.2f}s \r', refreshPeriod = 0.3):
+    process = sub.Popen(command, shell=True)
+    starttime = time.time()
+    while process.poll() is None:
+        sys.stdout.write(timerString.format(time.time() - starttime))
+        sys.stdout.flush()
+        time.sleep(refreshPeriod)
+    # Print errors and outputs
+    out, err = process.communicate()
+    sys.stdout.write(' '*len(timerString) + '\r')
+    sys.stdout.flush()
+    if not out is None:
+        sys.stdout.write(out)
+        sys.stdout.flush()
+    if not err is None:
+        sys.stderr.write(err)
+        sys.stderr.flush()
+    
+    
 ########## Data analysis functions ##########
 
 def findSpikes(t, V, thresh=0):
