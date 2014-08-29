@@ -14,6 +14,8 @@ import time
 from scipy.io import savemat
 import socket
 from time import sleep
+import atexit
+
 
 plt.rc('font',**{'size':10})
 plt.rc('axes',linewidth=0.8)
@@ -38,6 +40,7 @@ when using this.
         -d: Duration of the pulses (5ms)
         -i: Inter-pulse interval (ms)
         --CC: Current clamp mode.
+        --reset: runs lcg-zero before quitting
         --kernel Computes the kernel for AEC
         --remote-blind-patch clamp (server:port,axes)
         --patch-opts [hunt depth, max depth, step size, hunt step size]
@@ -69,6 +72,7 @@ class Window(QtGui.QDialog):
                     'holding':0,
                     'mode':'VC',
                     'kernel':False,
+                    'reset':False,
                     'remoteManipulator':None,
                     'patchOptions':[300., 1000., 10., 2.]}
         options = defaults.copy()
@@ -85,6 +89,8 @@ class Window(QtGui.QDialog):
                 options['holding'] = float(a)                
             elif o == '--kernel':
                 options['kernel'] = True
+            elif o == '--reset':
+                options['reset'] = True
             elif o == '--CC':
                 print('CC mode!')
                 options['mode'] = 'CC'
@@ -188,7 +194,12 @@ class Window(QtGui.QDialog):
                                      duration*(7/4.0),channels,
                                      realtime=True,
                                      output_filename=self.filename)
-            
+        atexit.register(self.on_exit)
+
+    def on_exit(self):
+        if self.opts['reset']:
+            sub.call('lcg-zero')
+
     def keyPressEvent(self, event):
         step = 10
         holdStr = '{0} mV'
@@ -607,6 +618,7 @@ def main():
                                   ['kernel',
                                    'CC',
                                    'remote-blind-patch=',
+                                   'reset',
                                    'patch-opts='])
     except getopt.GetoptError, err:
         print(err)
@@ -618,7 +630,6 @@ def main():
     widget.resize(750,500)
     widget.setWindowTitle("LCG Seal Test")
     widget.show()
-
     sys.exit(app.exec_())
 
 
