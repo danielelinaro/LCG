@@ -184,6 +184,7 @@ def main():
                     ax[j].plot(time,np.mean(d,1),color=cc[k,:])
         else:
             print('File {0} not found!'.format(f))
+            sys.exit(1)
     # Aesthetics related
     [t.set_color('black') for t in ax[-1].xaxis.get_ticklines()]
     [t.set_color('black') for t in ax[-1].xaxis.get_ticklabels()]

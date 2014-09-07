@@ -7,6 +7,7 @@ import numpy as np
 import os
 import subprocess as sub
 import sys
+import time
 
 config_file = 'stimulus.xml'
 max_steps = 50
@@ -47,6 +48,7 @@ def usage():
     print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('     --verbose         set the verbose level of lcg-experiment (default is 4 - silent)')
+    print(' --prio                set the priority of this tread, -20 is maximum, default is zero.')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -69,7 +71,8 @@ def main():
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance=','rt=','output-file=','reset-output=','verbose='])
+                                   'vclamp','offset=','conductance=','rt=','output-file=','reset-output=','verbose=',
+                                   'prio='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -96,6 +99,7 @@ def main():
     outputFilename = None
     resetOutput = None
     verbose = 4
+    niceness = 0
     suffix = 'CC'
 
     offsets = []
@@ -192,8 +196,12 @@ def main():
             realtime = a.lower() == 'yes'
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
-        elif o in ('--verbose'):
+        elif o == '--verbose':
             verbose = int(a)
+        elif o == '--prio':
+            niceness = int(a)
+    # set higher priority for this process 
+    os.nice(niceness)
 
     if inputChannels is None and outputChannels is None:
         print('No input or output channels specified. I cowardly refuse to continue.')
@@ -292,32 +300,60 @@ def main():
     else:
         total = repetitions * len(stimfiles)
     cnt = 1
+    if len(reversalPotentials) == 0:
+        writeConfigurationFile = lambda cfile,dur,chan:lcg.writeIOConfigurationFile(
+            cfile,
+            samplingRate,
+            dur,
+            chan,
+            realtime,
+            outputFilename)
+    else:
+        writeConfigurationFile = lambda cfile,dur,chan:lcg.writeConductanceStimulusConfigurationFile(
+            cfile,
+            samplingRate,
+            dur,
+            chan,
+            reversalPotentials)
+    all_channels = []
+    all_durations = []
+    if outputChannels is None or len(stimfiles) == len(outputChannels):
+        tmpchannels = []
+        # input channels
+        if not inputChannels is None:
+            tmpchannels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
+                            'units':inputUnits[j]} for j in range(len(inputChannels))]
+        if not outputChannels is None:
+            # there are as many stimulus files as output channels
+            duration = get_stimulus_duration(stimfiles[0])
+            differentDurations = False
+            for f in stimfiles:
+                d = get_stimulus_duration(f)
+                if d != duration:
+                    differentDurations = True
+                    if d > duration:
+                        duration = d
+            if i == 0 and differentDurations:
+                print('Warning: not all stimulus files have the same duration. Will use the longest, %g sec.' % duration)
+            for j in range(len(outputChannels)):
+                tmpchannels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
+                                    'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j], 'resetOutput': resetOutput})
+        all_channels.append(tmpchannels)
+        all_durations.append(duration)
+    else:
+        # there is one output channel and many stimulus files
+        for f in stimfiles:
+            all_durations.append(np.sum(np.loadtxt(f)[:,0]))
+            tmpchannels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
+                            'units':inputUnits[j]} for j in range(len(inputChannels))]
+            tmpchannels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
+                                'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0], 'resetOutput': resetOutput})
+            all_channels.append(tmpchannels)
+    # Main loop
     for i in range(repetitions):
-        if outputChannels is None or len(stimfiles) == len(outputChannels):
-            channels = []
-            # input channels
-            if not inputChannels is None:
-                channels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
-                             'units':inputUnits[j]} for j in range(len(inputChannels))]
-            if not outputChannels is None:
-                # there are as many stimulus files as output channels
-                duration = get_stimulus_duration(stimfiles[0])
-                differentDurations = False
-                for f in stimfiles:
-                    d = get_stimulus_duration(f)
-                    if d != duration:
-                        differentDurations = True
-                        if d > duration:
-                            duration = d
-                if i == 0 and differentDurations:
-                    print('Warning: not all stimulus files have the same duration. Will use the longest, %g sec.' % duration)
-                for j in range(len(outputChannels)):
-                    channels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
-                                     'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j], 'resetOutput': resetOutput})
-            if len(reversalPotentials) == 0:
-                lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
-            else:
-                lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
+        trialStart = time.time()
+        for duration,channels in zip(all_durations,all_channels):
+            writeConfigurationFile(config_file,duration,channels)        
             if verbose == 4:
                 sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
                 percent = float(cnt)/total
@@ -329,41 +365,14 @@ def main():
                     sys.stdout.write(' ')
                 sys.stdout.write('] ')
                 sys.stdout.flush()
-            sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
-            if cnt < total:
-                sub.call('sleep ' + str(interval), shell=True)
-            else:
-                sys.stdout.write('\n')
+            sub.call('nice -n '+str(niceness) +' '+lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
+#            sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
+            sleepTime = (interval + duration - (time.time() - trialStart))
+            print(sleepTime)
+            if cnt < total and sleepTime > 0 :
+                time.sleep(sleepTime)
             cnt += 1
-        else:
-            # there is one output channel and many stimulus files
-            for f in stimfiles:
-                duration = np.sum(np.loadtxt(f)[:,0])
-                channels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
-                             'units':inputUnits[j]} for j in range(len(inputChannels))]
-                channels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
-                                 'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0], 'resetOutput': resetOutput})
-                if len(reversalPotentials) == 0:
-                    lcg.writeIOConfigurationFile(config_file,samplingRate,duration,channels,realtime,outputFilename)
-                else:
-                    lcg.writeConductanceStimulusConfigurationFile(config_file,samplingRate,duration,channels,reversalPotentials)
-                if verbose == 4:
-                    sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
-                    percent = float(cnt)/total
-                    n_steps = int(round(percent*max_steps))
-                    for i in range(n_steps-1):
-                        sys.stdout.write('=')
-                    sys.stdout.write('>')
-                    for i in range(max_steps-n_steps):
-                        sys.stdout.write(' ')
-                    sys.stdout.write('] ')
-                    sys.stdout.flush()
-                sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
-                if cnt < total:
-                    sub.call('sleep ' + str(interval), shell=True)
-                else:
-                    sys.stdout.write('\n')
-                cnt += 1
+    sys.stdout.write('\n')
 
 if __name__ == '__main__':
     main()
