@@ -367,23 +367,48 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
 
 ########## Support functions #########
 
-def runCommandWithTerminalTimer(command, timerString = 'Elapsed time: {0:.2f}s \r', refreshPeriod = 0.3):
+def runCommand(command, mode = None, *args):
     process = sub.Popen(command, shell=True)
-    starttime = time.time()
-    while process.poll() is None:
-        sys.stdout.write(timerString.format(time.time() - starttime))
-        sys.stdout.flush()
-        time.sleep(refreshPeriod)
+    if mode == 'timer':
+        printTerminalTimer(process,*args)
+    elif mode == 'percent_bar':
+        printTerminalPercentageBar(process,*args)
     # Print errors and outputs
     out, err = process.communicate()
-    sys.stdout.write(' '*len(timerString) + '\r')
-    sys.stdout.flush()
     if not out is None:
         sys.stdout.write(out)
         sys.stdout.flush()
     if not err is None:
         sys.stderr.write(err)
         sys.stderr.flush()
+    
+def printTerminalTimer(process, timerString = '\rElapsed time: {0:.2f}s ',
+                       refreshPeriod = 0.0005):
+    '''Note: timerString must have space to format the time in seconds.'''
+    startTime = time.time()
+    while process.poll() is None:
+        sys.stdout.write(timerString.format(time.time() - startTime))
+        sys.stdout.flush()
+        time.sleep(refreshPeriod)
+    sys.stdout.write('\r'+' '*len(timerString) + '')
+    sys.stdout.flush()
+
+def printTerminalPercentageBar(process, count, total, 
+                               percentString = '\rTrial %02d/%02d ',
+                               max_steps = 50):
+    ''' Note: percentString must have space to format 2 integers '''
+    sys.stdout.write(percentString % (count,total) + ' [')
+    percent = float(count)/total
+    n_steps = int(round(percent*max_steps))
+
+    for i in range(n_steps-1):
+        sys.stdout.write('=')
+    sys.stdout.write('>')
+    for i in range(max_steps-n_steps):
+        sys.stdout.write(' ')
+    sys.stdout.write('] ')
+    sys.stdout.flush()
+
     
     
 ########## Data analysis functions ##########

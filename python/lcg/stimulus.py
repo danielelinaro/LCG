@@ -8,9 +8,9 @@ import os
 import subprocess as sub
 import sys
 import time
+from lcg.utils import runCommand
 
 config_file = 'stimulus.xml'
-max_steps = 50
 
 def usage():
     print('This program applies the stimulation described by one or more stimulus files')
@@ -46,9 +46,10 @@ def usage():
     print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
     print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
+    print(' -p,--priority                set the priority of this thread, -20 is maximum, default is zero.')
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
-    print('     --verbose         set the verbose level of lcg-experiment (default is 4 - silent)')
-    print(' --prio                set the priority of this tread, -20 is maximum, default is zero.')
+    print('''     --verbose         set the verbose level of lcg-experiment (default is 4 - silent;
+also takes options to control the behavior of lcg-stimulus (timer,percent,silent))''')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -66,13 +67,15 @@ def get_stimulus_duration(stimfile):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:H:R:',
-                                  ['help','stimulus=','directory=','duration=','repetitions=','interval=','sampling-rate=',
+        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:H:R:p:',
+                                  ['help','stimulus=','directory=',
+                                   'duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance=','rt=','output-file=','reset-output=','verbose=',
-                                   'prio='])
+                                   'vclamp','offset=','conductance=','rt=','output-file=',
+                                   'reset-output=','verbose=',
+                                   'priority='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -105,6 +108,7 @@ def main():
     offsets = []
 
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
+    terminalPrintMode = 'timer'
 
     # parse arguments
     for o,a in opts:
@@ -197,8 +201,16 @@ def main():
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
         elif o == '--verbose':
-            verbose = int(a)
-        elif o == '--prio':
+            if a == 'timer':
+                terminalPrintMode = 'timer'
+            elif a == 'percent':
+                terminalPrintMode = 'percent'
+            elif a == 'quiet':
+                terminalPrintMode = 'quiet'                
+            else:
+                verbose = int(a)
+            
+        elif o in  ('-p','--priority'):
             niceness = int(a)
     # set higher priority for this process 
     os.nice(niceness)
@@ -349,26 +361,31 @@ def main():
             tmpchannels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
                                 'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0], 'resetOutput': resetOutput})
             all_channels.append(tmpchannels)
+
+    # Prepare run commands
+    cmd_str = ('nice -n '+str(niceness) + ' ' +
+               lcg.common.prog_name + ' -V ' + 
+               str(verbose)+' -c ' + config_file)
+    timerString = '\rTrial {0:d} of {1:d}; elapsed time : '
+    if (not verbose == 4) or (terminalPrintMode == 'quiet'):
+        runLCG = lambda string,count,total: runCommand(cmd_str,mode=None)
+    elif terminalPrintMode == 'timer':
+        runLCG = lambda string,count,total: runCommand(cmd_str,'timer', 
+        string + '{0:.2f}s \r')
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+    elif terminalPrintMode == 'percent':
+        runLCG = lambda string,count,total: runCommand(cmd_str,'percent_bar', 
+                                                       count,
+                                                       total,
+                                                       '\rTrial %02d/%02d ')        
     # Main loop
     for i in range(repetitions):
         trialStart = time.time()
         for duration,channels in zip(all_durations,all_channels):
             writeConfigurationFile(config_file,duration,channels)        
-            if verbose == 4:
-                sys.stdout.write('\rTrial %02d/%02d   [' % (cnt,total))
-                percent = float(cnt)/total
-                n_steps = int(round(percent*max_steps))
-                for i in range(n_steps-1):
-                    sys.stdout.write('=')
-                sys.stdout.write('>')
-                for i in range(max_steps-n_steps):
-                    sys.stdout.write(' ')
-                sys.stdout.write('] ')
-                sys.stdout.flush()
-            sub.call('nice -n '+str(niceness) +' '+lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
-#            sub.call(lcg.common.prog_name + ' -V '+str(verbose)+' -c ' + config_file, shell=True)
+            runLCG(timerString.format(cnt,total),cnt,total)
             sleepTime = (interval + duration - (time.time() - trialStart))
-            print(sleepTime)
             if cnt < total and sleepTime > 0 :
                 time.sleep(sleepTime)
             cnt += 1
