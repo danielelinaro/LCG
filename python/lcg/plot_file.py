@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import os
 import sys
 import getopt
@@ -22,6 +21,7 @@ TODO: description of switches...
 Usage: 
 lcg-plot -f all
 lcg-plot -f <filename> -k <kernel.dat>
+lcg-plot -f last,2 # Plots the last 2 files
 lcg-plot -f <filename> -t <entity to trigger on> --tpre 10 -- tpost 20
 '''
 usage='{0}\n'.format(description)
@@ -67,13 +67,28 @@ def parse_options():
             sys.exit(1)
         if o in ['-f']:
             opt['filename'] = [b for b in a.split(',')]
+            filenames = np.sort(glob.glob('./*.h5'))
+            kernel_files = []
+            for f in glob.glob('./*_kernel.dat'):
+                kernel_files.append(f[:-11])
             if 'all' in opt['filename']:
-                filenames = glob.glob('./*.h5')
-                kernel_files = []
-                for f in glob.glob('./*_kernel.dat'):
-                    kernel_files.append(f[:-11])
                 opt['filename'] = []
                 for f in filenames:
+                    if not os.path.splitext(f)[0] in kernel_files:
+                        opt['filename'].append(f)
+            elif 'last' in opt['filename']:
+                if len(opt['filename']) == 1:
+                    last=1
+                elif len(opt['filename']) == 2:
+                    last = int(opt['filename'][1])
+                else:
+                    print('Option last takes only 1 input (number of files to plot).')
+                    sys.exit(1)
+                opt['filename'] = []
+                if len(filenames) < last:
+                    print('Not enough files.')
+                    sys.exit(1)
+                for f in filenames[-last:]:
                     if not os.path.splitext(f)[0] in kernel_files:
                         opt['filename'].append(f)
         if o in ['-k']:
