@@ -6,7 +6,7 @@ import getopt
 import subprocess as sub
 import lcg
 import time
-from lcg.utils import runCommandWithTerminalTimer
+from lcg.utils import runCommand
 
 configFile = 'spontaneous.xml'
 
@@ -133,16 +133,17 @@ def main():
     lcg.writeIOConfigurationFile(configFile,samplingRate,duration,
                                  [{'type':'input', 'channel':inputChannels[i], 'factor':inputGains[i], 'units':inputUnits[i]}
                                   for i in range(len(inputChannels))],realtime=realtime)
-
+    sys.stdout.write('\n')
+    sys.stdout.flush()
     for i in range(repetitions):
-        runCommandWithTerminalTimer(lcg.common.prog_name + ' -c ' + 
-                                    configFile + ' -V ' + str(verbose),
-                                    'Elapsed time (trial ' + str(i+1) + ' of ' + str(repetitions) + ' ): {0:.2f}s \r')
+        runCommand(lcg.common.prog_name + ' -c ' + 
+                   configFile + ' -V ' + str(verbose),'timer',
+                   '\rElapsed time (trial ' + str(i+1) + ' of ' + str(repetitions) + ' ): {0:.2f}s ')
         if i < repetitions-1:
             sub.call('sleep ' + str(interval), shell=True)
         
-        sys.stdout.write('Trial ' + str(i+1) + ' of ' + str(repetitions) + '.\r')
-        sys.stdout.flush()
+    sys.stdout.write('\rRan ' + str(i+1) + ' repetitions (%d times %.3f s).' % (i+1,duration))
+    sys.stdout.flush()
     sys.stdout.write('\n')
 
 if __name__ == '__main__':

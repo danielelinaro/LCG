@@ -171,6 +171,7 @@ def main():
                     Vidx = np.where(names=='AnalogInput')[0]
                 if len(Vidx) == 0:
                     Vidx = np.where(names=='InputChannel')[0]
+                print opts['kernel']
                 for i,kfile in enumerate(opts['kernel']):
                     Ke = np.loadtxt(kfile)
                     if i >= len(Vidx) or i >= len(Iidx):
