@@ -20,8 +20,8 @@ def usage():
     print('Usage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
     print('              -h    display this help message and exit.')
-    print('              -d    duration of the stimulation (default 10 sec).')
-    print('              -s    standard deviation of the white noise (default 250 pA).')
+    print('              -d    duration of the stimulation (default %s sec).'% os.environ['KERNEL_DUR'])
+    print('              -s    standard deviation of the white noise (default %s pA).'% os.environ['KERNEL_STD'])
     print('              -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('              -O    output channel (default %s).' % os.environ['AO_CHANNEL'])
     print('              -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
@@ -50,8 +50,13 @@ def main():
     output_factor = float(os.environ['AO_CONVERSION_FACTOR_CC'])
     input_units = os.environ['AI_UNITS_CC']
     output_units = os.environ['AO_UNITS_CC']
-    duration = 10          # [s]
-    amplitude = 250        # [pA]
+    try:
+        duration = int(os.environ['KERNEL_DUR']) #10          # [s]
+        amplitude = int(os.environ['KERNEL_STD']) #250        # [pA]
+    except:
+        print('No KERNEL_DUR or KERNEL_STD variables defined.')
+        duration = 10          # [s]
+        amplitude = 250        # [pA]
     sampling_rate = float(os.environ['SAMPLING_RATE'])  # [Hz]
     holding_current = 0    # [pA]
     append = False
@@ -102,18 +107,19 @@ def main():
         suffix = '-' + str(ai) + '-' + str(ao)
     else:
         suffix = ''
-
     stim = [[duration,11,0,amplitude,0,0,0,1,int(rnd.uniform(high=10000)),0,0,1],
             [1,1,0,0,0,0,0,0,0,0,0,1]]
     lcg.writeStimFile(stim_file,stim,True)
     channels = [{'type':'input', 'channel':ai, 'factor':input_factor, 'units':input_units},
                 {'type':'output', 'channel':ao, 'factor':output_factor, 'units':output_units, 'stimfile':stim_file}]
     lcg.writeIOConfigurationFile(config_file,sampling_rate,duration+3.61,channels,realtime)
+    oldfiles = glob.glob('*.h5')    
     sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
     files = glob.glob('*.h5')
-    files.sort()
-    data_file = files[-1]
-    lcg.computeElectrodeKernel(data_file)
+    for ff in files:
+        if ff not in oldfiles:
+            data_file = ff
+    lcg.computeElectrodeKernel(os.path.abspath(data_file))
     try:
         os.remove('kernel' + suffix + '.dat')
     except:

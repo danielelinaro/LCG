@@ -295,7 +295,8 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
             stimtimes = np.cumsum(ntt['metadata'][:,0])
             pulse = np.nonzero(ntt['metadata'][:,0] == 0.01)[0][0]
             if len(interval) != 2:
-                idx = np.nonzero(ntt['metadata'][:,0] > 5)[0][0]
+                # Find the gaussian noise
+                idx = np.where(ntt['metadata'][:,1] == 11)[0][0]
                 interval = stimtimes[idx-1:idx+1]
         elif (ntt['name'] == 'AnalogInput' or ntt['name'] == 'InputChannel') and ntt['units'] == 'mV':
             V = ntt['data']

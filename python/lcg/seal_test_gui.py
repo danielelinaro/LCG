@@ -219,9 +219,10 @@ class Window(QtGui.QDialog):
         # Pause 
         self.b_kernel.setEnabled(False)
         self.b_running.setChecked(False)
-        sleep(1)
-        sub.call('cd {2} ; pwd ; xterm -hold -e "lcg-kernel -d 1 -I {0} -O {1}"'.format(
-                self.opts['ai'],self.opts['ao'],'/tmp'),shell=True)
+        sleep(0.5)
+        xterm = 'xterm -fg white -bc -bg black -e '
+        sub.call('cd {3} ; pwd ; {0} "lcg-kernel -d 1 -I {1} -O {2}"'.format(
+                xterm, self.opts['ai'],self.opts['ao'],'/tmp'),shell=True)
         self.AEC = np.loadtxt('kernel.dat')
         self.b_kernel.setEnabled(True)
         self.b_running.setChecked(True)
