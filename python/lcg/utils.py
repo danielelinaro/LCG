@@ -391,6 +391,7 @@ def printTerminalTimer(process, timerString = '\rElapsed time: {0:.2f}s ',
         sys.stdout.flush()
         time.sleep(refreshPeriod)
     sys.stdout.write('\r'+' '*len(timerString) + '')
+    sys.stdout.write(timerString.format(time.time()-startTime))
     sys.stdout.flush()
 
 def printTerminalPercentageBar(process, count, total, 

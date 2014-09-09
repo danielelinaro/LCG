@@ -3,7 +3,9 @@ from lxml import etree
 import lcg
 import numpy as np
 
-__all__ = ['XMLEntry','XMLConfigurationFile','completeWithDefaultValues','writeIOConfigurationFile','writeConductanceStimulusConfigurationFile']
+__all__ = ['XMLEntry','XMLConfigurationFile',
+           'completeWithDefaultValues','writeIOConfigurationFile',
+           'writeConductanceStimulusConfigurationFile']
 
 class XMLEntry (object):
     def __init__(self, entry, name, id, connections):
@@ -191,11 +193,17 @@ def completeWithDefaultValues(opt):
                 opt['resetOutput'] = True
     return opt
 
-def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, realtime=True, output_filename=None):
-    config = lcg.XMLConfigurationFile(sampling_rate,duration,output_filename)
+def writeIOConfigurationFile(config_file, sampling_rate, duration,
+                             channels, realtime=True, output_filename=None,
+                             model=None):
+    config = lcg.XMLConfigurationFile(sampling_rate,
+                                      duration,
+                                      output_filename)
     ID = 0
     if realtime:
-        config.add_entity(lcg.entities.H5Recorder(id=ID, filename=output_filename, connections=()))
+        config.add_entity(lcg.entities.H5Recorder(id=ID, 
+                                                  filename=output_filename,
+                                                  connections=()))
         ID += 1
     for chan in channels:
         try:
@@ -203,39 +211,76 @@ def writeIOConfigurationFile(config_file, sampling_rate, duration, channels, rea
         except KeyError:
             print('Each channel must contain a "type" key.')
             return False
-        if realtime:
-            if chan['type'] == 'input':
-                config.add_entity(lcg.entities.AnalogInput(id=ID, connections=(0), deviceFile=chan['device'],
-                                                           inputSubdevice=chan['subdevice'], readChannel=chan['channel'],
-                                                           inputConversionFactor=chan['factor'], range=chan['range'],
-                                                           aref=chan['reference'], units=chan['units']))
+        if model is None:
+            if realtime:
+                if chan['type'] == 'input':
+                    config.add_entity(lcg.entities.AnalogInput(
+                            id=ID, connections=(0), 
+                            deviceFile=chan['device'],
+                            inputSubdevice=chan['subdevice'], 
+                            readChannel=chan['channel'],
+                            inputConversionFactor=chan['factor'],
+                            range=chan['range'],
+                            aref=chan['reference'],
+                            units=chan['units']))
+                else:
+                    config.add_entity(lcg.entities.AnalogOutput(
+                            id=ID, connections=(),
+                            deviceFile=chan['device'],
+                            outputSubdevice=chan['subdevice'], 
+                            writeChannel=chan['channel'],
+                            outputConversionFactor=chan['factor'],
+                            aref=chan['reference'], units=chan['units'], 
+                            resetOutput=chan['resetOutput']))
+                    config.add_entity(lcg.entities.Waveform(
+                            id=ID+1,
+                            connections=(0,ID), 
+                            filename=chan['stimfile'], 
+                            units=chan['units']))
+                    ID += 1
             else:
-                config.add_entity(lcg.entities.AnalogOutput(id=ID, connections=(), deviceFile=chan['device'],
-                                                           outputSubdevice=chan['subdevice'], writeChannel=chan['channel'],
-                                                           outputConversionFactor=chan['factor'],
-                                                           aref=chan['reference'], units=chan['units'], resetOutput=chan['resetOutput']))
-                config.add_entity(lcg.entities.Waveform(id=ID+1, connections=(0,ID), filename=chan['stimfile'], units=chan['units']))
-                ID += 1
-        else:
+                if chan['type'] == 'input':
+                    config.add_stream(lcg.streams.InputChannel(
+                            id=ID, connections=(), device=chan['device'],
+                            subdevice=chan['subdevice'], 
+                            channel=chan['channel'],
+                            conversionFactor=chan['factor'],
+                            range=chan['range'],
+                            reference=chan['reference'],
+                            units=chan['units'],
+                            samplingRate=sampling_rate))
+                else:
+                    config.add_stream(lcg.streams.OutputChannel(
+                            id=ID, connections=(), 
+                            device=chan['device'],
+                            subdevice=chan['subdevice'],
+                            channel=chan['channel'],
+                            conversionFactor=chan['factor'],
+                            reference=chan['reference'],
+                            units=chan['units'],
+                            stimulusFile=chan['stimfile'],
+                            samplingRate=sampling_rate,
+                            offset=chan['offset'], 
+                            resetOutput=chan['resetOutput']))
+        elif model == 'LIF':
             if chan['type'] == 'input':
-                config.add_stream(lcg.streams.InputChannel(id=ID, connections=(), device=chan['device'],
-                                                           subdevice=chan['subdevice'], channel=chan['channel'],
-                                                           conversionFactor=chan['factor'], range=chan['range'],
-                                                           reference=chan['reference'], units=chan['units'],
-                                                           samplingRate=sampling_rate))
-            else:
-                config.add_stream(lcg.streams.OutputChannel(id=ID, connections=(), device=chan['device'],
-                                                            subdevice=chan['subdevice'], channel=chan['channel'],
-                                                            conversionFactor=chan['factor'],
-                                                            reference=chan['reference'], units=chan['units'],
-                                                            stimulusFile=chan['stimfile'], samplingRate=sampling_rate,
-                                                            offset=chan['offset'], resetOutput=chan['resetOutput']))
+                config.add_entity(lcg.entities.LIFNeuron(
+                        ID, (0), C=0.08, tau=0.0075,
+                        tarp=0.0014, Er=-65.2,
+                        E0=-70, Vth=-50, Iext=0,
+                        holdLastValue=False))
+            elif chan['type'] == 'output':
+                config.add_entity(lcg.entities.Waveform(
+                        id=ID, connections=(0,ID-1), 
+                        filename=chan['stimfile'], 
+                        units=chan['units']))        
         ID += 1
     config.write(config_file)
     return True
 
-def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, duration, channels, reversal):
-    config = lcg.XMLConfigurationFile(sampling_rate,duration)
+def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, duration, 
+                                              channels, reversal,model=None):
+    config = lcg.XMLConfigurationFile(sampling_rate, duration)
     ID = 0
     realtime = True # Conductance stimulus requires a realtime engine for the moment.
     if realtime:

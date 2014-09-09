@@ -29,11 +29,16 @@ def usage():
     print(' --with-preamble   include stability preamble.')
     print('    --no-shuffle   do not shuffle trials.')
     print('     --no-kernel   do not compute the electrode kernel.')
+    print('     --model   use a model.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hd:a:t:n:i:I:O:F:H:', ['help','with-preamble','no-shuffle','no-kernel','rt='])
+        opts,args = getopt.getopt(sys.argv[1:],
+                                  'hd:a:t:n:i:I:O:F:H:',
+                                  ['help','with-preamble',
+                                   'no-shuffle','no-kernel',
+                                   'model','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -52,7 +57,7 @@ def main():
     tail = 1           # [s]
     stim_ampl = []     # [pA]
     realtime = os.environ['LCG_REALTIME']
-
+    model = ''
     for o,a in opts:
         if o in ['-h','--help']:
             usage()
@@ -81,6 +86,10 @@ def main():
         elif o == '--no-shuffle':
             shuffle = False
         elif o == '--no-kernel':
+            kernel = False
+        elif o == '--model':
+            model = '--model'
+            realtime = 'yes'
             kernel = False
         elif o == '--rt':
             realtime = a
@@ -127,11 +136,16 @@ def main():
     for i,amp in enumerate(amplitudes):
         stimulus[row][2] = amp
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
-	
+
     if kernel:
         sub.call('lcg kernel -I %d -O %d -F %g -H %g --rt %s' % (ai,ao,samplf,holding,realtime), shell=True)
     
-    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s' % (stimuli_directory,interval,ai,ao,nreps,samplf,realtime), shell=True)
+    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s --verbose timer' % 
+             (stimuli_directory,
+              interval,ai,ao,
+              nreps,samplf,
+              realtime,
+              model), shell=True)
 
 if __name__ == '__main__':
     main()

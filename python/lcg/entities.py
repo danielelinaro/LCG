@@ -77,7 +77,7 @@ class NMDAConductanceStimulus (Entity):
 
 class LIFNeuron (Entity):
     def __init__(self, id, connections, C, tau, tarp, Er, E0, Vth, Iext,
-                 holdLastValue, holdLastValueFilename):
+                 holdLastValue=False, holdLastValueFilename='/tmp/LIF.lastValue'):
         super(LIFNeuron,self).__init__('LIFNeuron', id, connections)
         self.add_parameter('C', C)
         self.add_parameter('tau', tau)

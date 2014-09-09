@@ -50,6 +50,8 @@ def usage():
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('''     --verbose         set the verbose level of lcg-experiment (default is 4 - silent;
 also takes options to control the behavior of lcg-stimulus (timer,percent,silent))''')
+    print('     --model           use a LIF neuron instead of real experiment')
+    print('     --dry-run         do not run, simply generate the commands')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -74,7 +76,7 @@ def main():
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
                                    'vclamp','offset=','conductance=','rt=','output-file=',
-                                   'reset-output=','verbose=',
+                                   'reset-output=','verbose=','dry-run','model',
                                    'priority='])
     except getopt.GetoptError, err:
         print(str(err))
@@ -109,6 +111,9 @@ def main():
 
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
     terminalPrintMode = 'timer'
+
+    model = None
+    dry_run = False
 
     # parse arguments
     for o,a in opts:
@@ -209,7 +214,12 @@ def main():
                 terminalPrintMode = 'quiet'                
             else:
                 verbose = int(a)
-            
+        elif o == '--model':
+            model = 'LIF'                
+            realtime = 'yes'
+            print(' LIf simulation mode.')
+        elif o == '--dry-run':
+            dry_run = True
         elif o in  ('-p','--priority'):
             niceness = int(a)
     # set higher priority for this process 
@@ -238,7 +248,6 @@ def main():
         if len(inputChannels) != len(inputGains) or len(inputChannels) != len(inputUnits):
             print('The number of input channels, input gains and input units must be the same.')
             sys.exit(1)
-
     if not outputChannels is None:
         if len(outputChannels) == 0:
             outputChannels = [int(os.environ['AO_CHANNEL'])]
@@ -319,14 +328,16 @@ def main():
             dur,
             chan,
             realtime,
-            outputFilename)
+            outputFilename,
+            model)
     else:
         writeConfigurationFile = lambda cfile,dur,chan:lcg.writeConductanceStimulusConfigurationFile(
             cfile,
             samplingRate,
             dur,
             chan,
-            reversalPotentials)
+            reversalPotentials,
+            model)
     all_channels = []
     all_durations = []
     if outputChannels is None or len(stimfiles) == len(outputChannels):
@@ -366,24 +377,26 @@ def main():
     cmd_str = ('nice -n '+str(niceness) + ' ' +
                lcg.common.prog_name + ' -V ' + 
                str(verbose)+' -c ' + config_file)
+
+    if dry_run:
+        cmdstr = 'echo "' + cmd_str + '"'
     timerString = '\rTrial {0:d} of {1:d}; elapsed time : '
     if (not verbose == 4) or (terminalPrintMode == 'quiet'):
         runLCG = lambda string,count,total: runCommand(cmd_str,mode=None)
     elif terminalPrintMode == 'timer':
         runLCG = lambda string,count,total: runCommand(cmd_str,'timer', 
         string + '{0:.2f}s \r')
-        sys.stdout.write('\n')
-        sys.stdout.flush()
     elif terminalPrintMode == 'percent':
         runLCG = lambda string,count,total: runCommand(cmd_str,'percent_bar', 
                                                        count,
                                                        total,
                                                        '\rTrial %02d/%02d ')        
+    sys.stdout.flush()
     # Main loop
     for i in range(repetitions):
-        trialStart = time.time()
         for duration,channels in zip(all_durations,all_channels):
-            writeConfigurationFile(config_file,duration,channels)        
+            trialStart = time.time()
+            writeConfigurationFile(config_file, duration, channels)        
             runLCG(timerString.format(cnt,total),cnt,total)
             sleepTime = (interval + duration - (time.time() - trialStart))
             if cnt < total and sleepTime > 0 :
