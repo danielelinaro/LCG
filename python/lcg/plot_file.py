@@ -14,7 +14,6 @@ matplotlib.rc('axes',edgecolor='k',labelcolor='k')
 matplotlib.rc('ytick',color='k')
 matplotlib.rc('xtick',color='k')
 
-
 description='''
 Uses MatplotLib to plot a trace from an h5 file.
 TODO: description of switches...
@@ -149,43 +148,87 @@ def plot_triggered_entities(ax,channel,time,ent,threshold=50,opts=None,color=[.5
             ax[i].set_ylabel(e['units'])
             all_data.append(data)
     return all_data
+
+def compensateWithKernelOffline(ent,kernelFiles=[]):
+    #TODO: Add check for compensation online!!!
+#    names = np.array([e['name'] for e in ent])
+    units = np.array([e['units'] for e in ent])
+    findEntityByName = lambda entityName:np.where(
+        names==entityName)[0]
+    findEntityByUnit = lambda entityUnit:np.where(
+        units==entityUnit)[0]
+    if len(kernelFiles) > 0:
+        # Active Electrode Compensation offline
+        Iidx = findEntityByUnit('pA')
+        Vidx = findEntityByUnit('mV')
+        for ii,kfile in enumerate(kernelFiles):
+            Ke = np.loadtxt(kfile)
+            if ii >= len(Vidx):
+                print(
+                    '''Specified too many kernel files,
+ contact developers please.''')
+                break
+            if len(Vidx) == 1: 
+#Then there is only one channel, sum the currents
+                I = np.sum([ent[ii]['data'] for ii in Iidx], axis=0)
+            else:
+                I = Iidx[ii]['data']
+            V = ent[Vidx[ii]]['data']
+            ent[Vidx[ii]]['data'] = aec.compensate(V, I, Ke*1e-9)
     
+def plotAllEntitiesFromFile(fig, filename, kernelFiles = [],
+                            filesCounter=[], ax = [],
+                            downsampleFactor = 1):
+    # TODO: Cleanup function (filesCounter and return values)
+    ent, info = lcg.loadH5Trace(filename)
+#    print('Loaded file %s'%filename)
+    time = np.linspace(0,info['tend'],len(ent[0]['data']))
+    compensateWithKernelOffline(ent,kernelFiles)
+    if (not len(ax) == len(ent)) and len(ax):
+        print('Trying to plot different experiments, cleaning up...')
+        ax = []
+        fig.clf()
+        filesCounter = []
+    if len(ax) == 0:
+        ax.append(fig.add_subplot(len(ent),1,1, axisbg='w'))
+        for i in range(1,len(ent)):
+            ax.append(fig.add_subplot(len(ent),1,i+1, 
+                                      sharex=ax[0], 
+                                      axisbg='w'))
+        [t.set_color('black') for t in ax[-1].xaxis.get_ticklines()]
+        [t.set_color('black') for t in ax[-1].xaxis.get_ticklabels()]
+        ax[-1].set_xlabel('Time (s)')
+        for a in ax:
+            a.grid(True,color=[0.7,0.7,0.7])
+            a.set_axisbelow(True)
+            a.spines['top'].set_visible(False)
+            a.spines['right'].set_visible(False)
+            a.yaxis.set_ticks_position('left')
+            a.xaxis.set_ticks_position('bottom')
+        for a in ax[:-1]:
+            plt.setp(a.get_xticklabels(), visible=False)
+    plot_entities(ax, time, ent, 0 , None, downsampleFactor,
+                  color=cc[len(filesCounter),:])
+    # Aesthetics related
+    ax[0].set_xlim([time[0],time[-1]])
+    filesCounter.append(filename)
+    return ax,filesCounter
 def main():
     opts = parse_options()
 
     fig = plt.figure(facecolor='white')
     ax = []
-    for k,f in enumerate(opts['filename']):
-        if os.path.exists(f):
-            data = []
-            ent,info = lcg.loadH5Trace(f)
-            time = np.linspace(0,info['tend'],len(ent[0]['data']))
-            if len(opts['kernel']) > 0:
-                # Active Electrode Compensation offline
-                names = np.array([e['name'] for e in ent])
-                Iidx = np.where(names=='Waveform')[0]
-                if len(Iidx) == 0:
-                    Iidx = np.where(names=='AnalogOutput')[0]
-                Vidx = np.where(names=='RealNeuron')[0]
-                if len(Vidx) == 0:
-                    Vidx = np.where(names=='AnalogInput')[0]
-                if len(Vidx) == 0:
-                    Vidx = np.where(names=='InputChannel')[0]
-                print opts['kernel']
-                for i,kfile in enumerate(opts['kernel']):
-                    Ke = np.loadtxt(kfile)
-                    if i >= len(Vidx) or i >= len(Iidx):
-                        print("Specified too many kernel files")
-                        break
-                    ent[Vidx[i]]['data'] = aec.compensate(ent[Vidx[i]]['data'],
-                                                          ent[Iidx[i]]['data'],
-                                                          Ke*1e-9)
-            if len(ax) == 0:
-                ax.append(fig.add_subplot(len(ent),1,1, axisbg='w'))
-                for i in range(1,len(ent)):
-                    ax.append(fig.add_subplot(len(ent),1,i+1, sharex=ax[0], axisbg='w'))
-            if opts['trigger_entity'] is None:
-                plot_entities(ax,time,ent,0,None,opts['downsample'],color=cc[k,:])
+    counter = []
+    for filename in enumerate(opts['filename']):
+        if os.path.isfile(filename):
+            ax,counter = plotAllEntitiesFromFile(fig, filename, 
+                                                 kernelFiles = opts['kernel'],
+                                                 filesCounter=counter, ax = ax,
+                                                 downsampleFactor = opts['downsample'])
+    plt.show()
+
+
+'''        if opts['trigger_entity'] is None:
             else:
                 ccc = None
                 if not opts['average']:
@@ -198,29 +241,10 @@ def main():
                 for j,d in enumerate(data):
                     time = np.linspace(-opts['trigger_pre'],opts['trigger_post'],np.shape(d)[0])
                     ax[j].plot(time,np.mean(d,1),color=cc[k,:])
-        else:
-            print('File {0} not found!'.format(f))
-            sys.exit(1)
-    # Aesthetics related
-    [t.set_color('black') for t in ax[-1].xaxis.get_ticklines()]
-    [t.set_color('black') for t in ax[-1].xaxis.get_ticklabels()]
-    if opts['trigger_entity'] is None:
-        ax[-1].set_xlabel('Time (s)')
     else:
         ax[-1].set_xlabel('Time from trigger (ms)')
         ax[0].set_xlim([time[0],time[-1]])
-    ax[0].set_xlim([time[0],time[-1]])
-    for a in ax:
-        a.grid(True,color=[0.7,0.7,0.7])
-        a.set_axisbelow(True)
-        a.spines['top'].set_visible(False)
-        a.spines['right'].set_visible(False)
-        a.yaxis.set_ticks_position('left')
-        a.xaxis.set_ticks_position('bottom')
-    for a in ax[:-1]:
-        plt.setp(a.get_xticklabels(), visible=False)
-
-    plt.show()
+'''
 
 if __name__ in ['__main__']:
     main()

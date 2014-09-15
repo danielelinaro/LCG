@@ -55,6 +55,8 @@ setup(
             'lcg-find-conversion-factors = lcg.find_conversion_factors:main',
             'lcg-prc = lcg.prc:main',
             'lcg-seal-test = lcg.seal_test_gui:main',
+            'lcg-create-experiment-folder = lcg.create_folder:main',
+            'lcg-experiment-launcher = lcg.exp_launcher:main',
             ]
         }
     )

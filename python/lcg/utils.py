@@ -5,6 +5,7 @@ import tables as tbl
 import lcg
 import subprocess as sub
 import sys
+from datetime import date
 
 ########## Functions that write configuration files ##########
 
@@ -216,6 +217,71 @@ def makeOutputFilename(prefix='', extension='.out'):
         suffix = '_%d' % k
     return filename + suffix + extension
 
+
+
+def makeIncrementingFolders(folderName = '', folderPattern = 'YYYYMMDD[A]01',dryRun=False):
+    ''' Create a directory (incremented following a pattern).
+    Note there is no check that folderName corresponds to the folderPattern.
+    Pattern supports the YYYY MM and DD keywords. Specify the incrementing part of 
+the string by placing it between square brackets.
+    '''
+    if len(folderName):
+        tmpfolder = folderName
+    else:
+        # Are there dates in the pattern?
+        today = date.today()
+        tmpfolder = folderPattern.replace(
+            'YYYY', '{:04d}'.format(today.year))
+        tmpfolder = tmpfolder.replace(
+            'MM', '{:02d}'.format(today.month))
+        tmpfolder = tmpfolder.replace(
+            'DD', '{:02d}'.format(today.day))
+        tmpfolder = tmpfolder.replace('[','')
+        tmpfolder = tmpfolder.replace(']','')
+    # Are there increments? Increments are specified between 
+        # square brackets. Only one increment is allowed.
+    if folderPattern.count('[') > 0:
+        if folderPattern.count('[') > 1:
+            print('''Only one increment [] is allowed in the experiment 
+name pattern: {0}'''.format(folder))
+        else:
+            idx1 = folderPattern.index('[')
+            idx2 = folderPattern.index(']')
+    while os.path.isdir(tmpfolder):
+        tmp = incrementLetterOrInteger(tmpfolder[idx1:idx2-1])
+        tmpfolder = list(tmpfolder)
+        tmpfolder[idx1:idx2-1] = tmp
+        tmpfolder = ''.join(tmpfolder)
+    if not dryRun: 
+        os.makedirs(os.path.abspath(tmpfolder))
+    return tmpfolder
+
+
+def incrementLetterOrInteger(string):
+    try:
+        # Try first to increment number
+        number = int(string) + 1
+        returnstr = '{0:0'+str(len(string))+'d}'
+        if number < len(string)*10:
+            string = returnstr.format(number)
+        else:
+            string = None
+    except ValueError:
+        # Then it must be a letter...
+        for ii in reversed(range(len(string))):
+            returnstr = chr(ord(string[ii])+1)
+            if returnstr < chr(ord('Z')+1):
+                tmp = list(string)
+                tmp[ii] = returnstr
+                string = ''.join(tmp)
+                break
+            elif ii == 0:
+                print('Can not increment letter (< Z). Try adding another (AAA) for instance.')
+                string = None
+    return string
+            
+            
+
 def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
     """
     Parameters:
@@ -366,7 +432,6 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
         return Ke*1e3   
 
 ########## Support functions #########
-
 def runCommand(command, mode = None, *args):
     process = sub.Popen(command, shell=True)
     if mode == 'timer':
@@ -381,6 +446,7 @@ def runCommand(command, mode = None, *args):
     if not err is None:
         sys.stderr.write(err)
         sys.stderr.flush()
+    return process
     
 def printTerminalTimer(process, timerString = '\rElapsed time: {0:.2f}s ',
                        refreshPeriod = 0.0005):
@@ -393,6 +459,7 @@ def printTerminalTimer(process, timerString = '\rElapsed time: {0:.2f}s ',
     sys.stdout.write('\r'+' '*len(timerString) + '')
     sys.stdout.write(timerString.format(time.time()-startTime))
     sys.stdout.flush()
+    return process
 
 def printTerminalPercentageBar(process, count, total, 
                                percentString = '\rTrial %02d/%02d ',
@@ -409,9 +476,8 @@ def printTerminalPercentageBar(process, count, total,
         sys.stdout.write(' ')
     sys.stdout.write('] ')
     sys.stdout.flush()
+    return process
 
-    
-    
 ########## Data analysis functions ##########
 
 def findSpikes(t, V, thresh=0):
@@ -512,8 +578,5 @@ def loadH5TraceV2(filename):
     info = {}
     for a in fid.root.Info._v_attrs._g_listAttr(fid.root.Info):
         info[a] = getattr(fid.root.Info._v_attrs,a)
-    #info = {'dt': fid.root.Info._v_attrs.dt,
-    #        'tend': fid.root.Info._v_attrs.tend,
-    #        'version': fid.root.Info._v_attrs.version}
     fid.close()
     return entities,info
