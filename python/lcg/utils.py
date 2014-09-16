@@ -230,9 +230,8 @@ the string by placing it between square brackets.
     else:
         # Are there dates in the pattern?
         today = date.today()
-        print today
-        print folderPattern
-        if 'YYYY' in folderPattern:
+        tmpfolder = folderPattern
+        if 'YYYY' in tmpfolder:
             tmpfolder = folderPattern.replace(
                 'YYYY', '{0:04d}'.format(today.year))
         if 'MM' in tmpfolder:
