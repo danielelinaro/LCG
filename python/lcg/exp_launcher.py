@@ -1,12 +1,9 @@
 #! /usr/bin/env python
-from PyQt4 import QtGui
-from PyQt4.QtCore import Qt
-import PyQt4.QtCore as QtCore
+from PyQt4 import QtGui,QtCore
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
-import matplotlib
-matplotlib.use('Qt4Agg')
-matplotlib.rcParams['backend.qt4']='PyQt4'
-from ipdb import set_trace
+#from ipdb import set_trace
 import sys
 import os
 import subprocess as sub
@@ -18,6 +15,7 @@ import multiprocessing as mp
 from time import gmtime, strftime
 import atexit
 from glob import glob
+from functools import partial
 
 import lcg
 from lcg.plot_file import plotAllEntitiesFromFile
@@ -46,9 +44,6 @@ defaultProtocol = [
      'foldername': 'steps'},
     ]
 protocolKeys = ['name','command','parameters','defaults','foldername']
-
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 def createDefaultConfig(cfg,appendDefaultParameters=False,cfgfile = None):
     if cfg is None:
@@ -144,6 +139,24 @@ def updateSubfolders(protocols):
         subfolders = ''
     return subfolders
 
+def which(program):
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+
 externalProcess = None
 externalProcessLabel = None
 runStatus = 'Idle'
@@ -163,6 +176,10 @@ class RunButton(QtGui.QPushButton):
         QtCore.QObject.connect(self.timer,
                                QtCore.SIGNAL('timeout()'),
                                self.handleTimer)
+        self.app = 'xterm'
+        if which(self.app) is None:
+            print('Install xterm (sudo apt-get install xterm).')
+            sys.exit(1)
         self.folder = folder
     def runCommand(self):
         global externalProcess
@@ -197,13 +214,15 @@ class RunButton(QtGui.QPushButton):
         par = []
         for p in self.par:
             par.append(p.text())
-        if len(par):
-            command = 'xterm -e "{0}"'.format(
-                self.command.format(*par))
-        else:
-            command = 'xterm -e "{0}"'.format(
-                self.command)
 
+        if len(par):
+            command = '{0} -e "{1}"'.format(self.app,
+                                            self.command.format(*par))
+        else:
+            command = '{0} -e "{1}"'.format(self.app,
+                                            self.command)
+
+        print command
         externalProcess = sub.Popen(command, shell=True)
         externalProcessLabel.setStyleSheet(
             'QLabel {color:red; font-weight:bold; font-size:16}')
@@ -353,7 +372,6 @@ class LCG_COMMANDER(QtGui.QDialog):
             param[k] = str(p.text())
         log_keys = self.config.options(logsection)
         if hasattr(self,'expLogWidgets'):
-            print(self.expLogWidgets) 
             for k,p in zip(log_keys,
                            self.expLogWidgets):
                 param[k.replace(' ','_')] = str(p.text())
@@ -366,6 +384,7 @@ class LCG_COMMANDER(QtGui.QDialog):
 
     def setExperimentFolder(self):
         foldername = self.foldername
+        os.chdir(self.parentFolder)
         global experimentFolder
         if not foldername is None:
             experimentFolder = os.path.abspath(foldername)
@@ -481,9 +500,11 @@ class LCG_COMMANDER(QtGui.QDialog):
         self.plotCounter = []
         self.plotCanvas.draw()
 
-    @QtCore.pyqtSlot("QItemSelection, QItemSelection")
-    def handleFileSelection(self,selected, deselected):
-        # The plot handler
+    @QtCore.pyqtSlot("QModelIndex")
+#    @QtCore.pyqtSlot("QItemSelection, QItemSelection")
+    def handleFileSelection(self, selected):
+        # The plot handler.
+        # This function has been canibalized so that it can work under python 2.6
         filename = os.path.abspath(str(self.fileModel.filePath(selected)))
         if (os.path.isfile(filename) and ('h5' in filename) and
             (not filename in self.plotCounter)):

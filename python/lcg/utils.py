@@ -230,14 +230,23 @@ the string by placing it between square brackets.
     else:
         # Are there dates in the pattern?
         today = date.today()
-        tmpfolder = folderPattern.replace(
-            'YYYY', '{:04d}'.format(today.year))
-        tmpfolder = tmpfolder.replace(
-            'MM', '{:02d}'.format(today.month))
-        tmpfolder = tmpfolder.replace(
-            'DD', '{:02d}'.format(today.day))
-        tmpfolder = tmpfolder.replace('[','')
-        tmpfolder = tmpfolder.replace(']','')
+        print today
+        print folderPattern
+        if 'YYYY' in folderPattern:
+            tmpfolder = folderPattern.replace(
+                'YYYY', '{0:04d}'.format(today.year))
+        if 'MM' in tmpfolder:
+            tmpfolder = tmpfolder.replace(
+                'MM', '{0:02d}'.format(today.month))
+        if 'DD' in tmpfolder:
+            tmpfolder = tmpfolder.replace(
+                'DD', '{0:02d}'.format(today.day))
+        if '[' in tmpfolder:
+            tmpfolder = tmpfolder.replace('[','')
+            tmpfolder = tmpfolder.replace(']','')
+        else:
+            print('Increments must be denoted by square brackets.')
+            print(' There must be one increment in the pattern.')
     # Are there increments? Increments are specified between 
         # square brackets. Only one increment is allowed.
     if folderPattern.count('[') > 0:
