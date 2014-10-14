@@ -80,17 +80,6 @@ ComediAnalogIO::~ComediAnalogIO()
         }
 }
 
-/*
- * double analog_read(...);
- * double digital_read(...);
- * double (*read)(...);
- *
- * if (...)
- *	read = analog_read;
- * else
- *	read = digital_read;
- *
- */
 bool ComediAnalogIO::openDevice()
 {
         Logger(Debug, "ComediAnalogIO::openDevice()\n");
