@@ -170,12 +170,12 @@ def compensateWithKernelOffline(ent,kernelFiles=[]):
                 break
             if len(Vidx) == 1: 
 #Then there is only one channel, sum the currents
-                I = np.sum([ent[ii]['data'] for ii in Iidx], axis=0)
+                I = np.sum([ent[jj]['data'] for jj in Iidx], axis=0)
             else:
-                I = Iidx[ii]['data']
+                I = Iidx[Iidx[ii]]['data']
             V = ent[Vidx[ii]]['data']
             ent[Vidx[ii]]['data'] = aec.compensate(V, I, Ke*1e-9)
-    
+
 def plotAllEntitiesFromFile(fig, filename, kernelFiles = [],
                             filesCounter=[], ax = [],
                             downsampleFactor = 1):
@@ -219,7 +219,7 @@ def main():
     fig = plt.figure(facecolor='white')
     ax = []
     counter = []
-    for filename in enumerate(opts['filename']):
+    for filename in opts['filename']:
         if os.path.isfile(filename):
             ax,counter = plotAllEntitiesFromFile(fig, filename, 
                                                  kernelFiles = opts['kernel'],
