@@ -254,7 +254,6 @@ public:
 private:
         const std::vector<Entity*>& m_entities;
         double m_tend;
-	int m_trigger_entity;
 };
 
 void RTSimulationTask(void *cookie)
@@ -417,6 +416,7 @@ void* RTSimulation(void *arg)
 {
         simulation_data *data = static_cast<simulation_data*>(arg);
         std::vector<Entity*> *entities = data->m_entities;
+	struct trigger_data trigger = data->m_trigger; 
         double tend = data->m_tend;
 	int priority, flag, i;
         size_t nEntities = entities->size();
