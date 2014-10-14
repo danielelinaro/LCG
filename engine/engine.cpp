@@ -38,32 +38,81 @@ struct simulation_data {
 	int m_trigger_entity;
 };
 
-bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel,uint type)  
+#define DIGITAL_TRIGGER 0
+#define ANALOG_TRIGGER 1
+
+bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel, double threshold = 2.0, uint type = ANALOG_TRIGGER, uint range = 0, uint aref = AREF_GROUND)  
 {
         comedi_t *device;
-        uint range = 0;
-        uint aref = AREF_GROUND;
         lsampl_t sample;
         lsampl_t maxData;
         comedi_range *dataRange;
-	
 	device = comedi_open(deviceFile);
+	double value = 0.0;
+
         if(device == NULL) {
                 comedi_perror(deviceFile);
                 return false;
         }
-        maxData = comedi_get_maxdata(device, subdevice, channel);
-        dataRange = comedi_get_range(device, subdevice, channel, range);
-        
-	double value = 0.0;
-	while (value < 1.0) {
-		comedi_data_read(device, subdevice, channel, range, aref, &sample);
-		value = comedi_to_phys(sample, dataRange, maxData);
-		if (TERMINATE_TRIAL())
-			break;
-	}
+	if (type == ANALOG_TRIGGER) {
+		// TODO:Add checks that subdevice is the correct one!
+		// Setup analog input device
+		maxData = comedi_get_maxdata(device, subdevice, channel);
+		dataRange = comedi_get_range(device, subdevice, channel, range);
+		if ((comedi_get_subdevice_flags(device,subdevice) & SDF_SOFT_CALIBRATED) == SDF_SOFT_CALIBRATED) { 
+			char *calibrationFile;
+			comedi_calibration_t *calibration;
+			comedi_polynomial_t converter;
+			calibrationFile = comedi_get_default_calibration_path(device);
+		        if (calibrationFile == NULL) {
+				Logger(Critical, "comedi_get_default_calibration_path: %s.\n",
+						comedi_strerror(comedi_errno()));
+				return false;
+				}
+			calibration = comedi_parse_calibration_file(calibrationFile);
+			if (calibration == NULL) {
+				Logger(Critical, "comedi_parse_calibration_file: %s.\n",
+						comedi_strerror(comedi_errno()));
+				return false;
+			}
 
-	Logger(Important,"Triggered by:%lf.\n",value);
+			int flag = comedi_get_softcal_converter(subdevice, channel, range,
+				COMEDI_TO_PHYSICAL, calibration, &converter);
+			Logger(Important,"Waiting for softcal analog trigger.\n");
+			while (value < threshold) {
+				comedi_data_read(device, subdevice, channel, range, aref, &sample);
+				value = comedi_to_physical(sample, &converter);
+				if (TERMINATE_TRIAL())
+					break;
+			}
+
+			comedi_cleanup_calibration(calibration);
+			delete calibrationFile;
+		} else {
+			Logger(Important,"Waiting for analog trigger.\n");
+			while (value < threshold) {
+				comedi_data_read(device, subdevice, channel, range, aref, &sample);
+				value = comedi_to_phys(sample, dataRange, maxData);
+				if (TERMINATE_TRIAL())
+					break;
+			}
+		}
+	} else if (type == DIGITAL_TRIGGER) {
+		Logger(Important,"Waiting for digital trigger.\n");
+		if(!(comedi_dio_config(device,subdevice,channel,COMEDI_INPUT))==0)
+			Logger(Critical, "comedi_dio_error: %s.\n",
+				comedi_strerror(comedi_errno()));
+//		if(!(comedi_set_routing(device,subdevice,channel, NI_PFI_OUTPUT_PFI_DO))==0)
+//			Logger(Critical, "comedi_dio_error: %s.\n",
+//				comedi_strerror(comedi_errno()));
+		uint bit = 0;
+		while (bit < 1 ) {
+			comedi_dio_read(device,subdevice,channel,&bit);
+			if (TERMINATE_TRIAL())
+				break;
+		}
+		Logger(Important,"Triggered by:%%d.\n",bit);
+	}
         if (device != NULL)
                 return comedi_close(device) == 0;
 
@@ -416,7 +465,9 @@ void* RTSimulation(void *arg)
 	period.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
 
 	// Wait for trigger
-	WaitOnTrigger("/dev/comedi0", 0, 0, 0);  
+	WaitOnTrigger("/dev/comedi0", 0, 0, 1,1);
+	//FOR DIGITAL TRIGGER ON CTR0 USE SUBDEVICE 7 CHANNEL 8
+	//WaitOnTrigger("/dev/comedi0", 7, 8, 1,0);  
         
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
