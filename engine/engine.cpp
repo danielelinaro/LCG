@@ -255,6 +255,7 @@ public:
 private:
         const std::vector<Entity*>& m_entities;
         double m_tend;
+	int m_trigger_entity;
 };
 
 void RTSimulationTask(void *cookie)

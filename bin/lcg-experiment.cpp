@@ -176,6 +176,15 @@ int parse_configuration_file(const std::string& filename,
                         outfilename = "";
                 }
 
+                /*** id of an entity used as trigger (only when using entities)***/ 
+                try {
+                        *trigger_entity = pt.get<int>("lcg.simulation.trigger_entity");
+                        Logger(Important, "trigger_entity = %d.\n", *trigger_entity);
+                } catch(std::exception e) {
+			
+			Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
+			*trigger_entity = -1;
+                }
                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
                 SetRunTime(*tend);
 		
@@ -618,6 +627,7 @@ int main(int argc, char *argv[])
         int success;
         double tend, dt;
         std::string outfilename;
+	
 	struct trigger_data trigger;
         std::vector<Entity*> entities;
         std::vector<Stream*> streams;
