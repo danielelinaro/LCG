@@ -30,36 +30,35 @@
 
 namespace lcg {
 
+
 struct simulation_data {
-        simulation_data(std::vector<Entity*>* entities, double tend, int trigger_entity)
-                : m_entities(entities), m_tend(tend), m_trigger_entity(trigger_entity) {}
+        simulation_data(std::vector<Entity*>* entities, double tend, struct trigger_data trigger)
+                : m_entities(entities), m_tend(tend), m_trigger(trigger) {}
         std::vector<Entity*> *m_entities;
         double m_tend;
-	int m_trigger_entity;
+	struct trigger_data m_trigger;
 };
 
-#define DIGITAL_TRIGGER 0
-#define ANALOG_TRIGGER 1
 
-bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel, double threshold = 2.0, uint type = ANALOG_TRIGGER, uint range = 0, uint aref = AREF_GROUND)  
+
+bool WaitOnTrigger(struct trigger_data t)
 {
         comedi_t *device;
         lsampl_t sample;
         lsampl_t maxData;
         comedi_range *dataRange;
-	device = comedi_open(deviceFile);
-	double value = 0.0;
-
+	device = comedi_open(t.device);
         if(device == NULL) {
-                comedi_perror(deviceFile);
+                comedi_perror(t.device);
                 return false;
         }
-	if (type == ANALOG_TRIGGER) {
-		// TODO:Add checks that subdevice is the correct one!
-		// Setup analog input device
-		maxData = comedi_get_maxdata(device, subdevice, channel);
-		dataRange = comedi_get_range(device, subdevice, channel, range);
-		if ((comedi_get_subdevice_flags(device,subdevice) & SDF_SOFT_CALIBRATED) == SDF_SOFT_CALIBRATED) { 
+	
+	if (comedi_get_subdevice_type(device,t.subdevice) == COMEDI_SUBD_AI) {
+		// ANALOG INPUT
+		double value = 0.0;
+		maxData = comedi_get_maxdata(device, t.subdevice, t.channel);
+		dataRange = comedi_get_range(device, t.subdevice, t.channel, t.range);
+		if ((comedi_get_subdevice_flags(device,t.subdevice) & SDF_SOFT_CALIBRATED) == SDF_SOFT_CALIBRATED) { 
 			char *calibrationFile;
 			comedi_calibration_t *calibration;
 			comedi_polynomial_t converter;
@@ -76,11 +75,11 @@ bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel, double 
 				return false;
 			}
 
-			int flag = comedi_get_softcal_converter(subdevice, channel, range,
+			int flag = comedi_get_softcal_converter(t.subdevice, t.channel, t.range,
 				COMEDI_TO_PHYSICAL, calibration, &converter);
-			Logger(Important,"Waiting for softcal analog trigger.\n");
-			while (value < threshold) {
-				comedi_data_read(device, subdevice, channel, range, aref, &sample);
+			Logger(Important,"Waiting for softcal analog trigger from channel %d.\n",t.channel);
+			while (value < t.threshold) {
+				comedi_data_read(device, t.subdevice, t.channel, t.range, t.aref, &sample);
 				value = comedi_to_physical(sample, &converter);
 				if (TERMINATE_TRIAL())
 					break;
@@ -89,34 +88,31 @@ bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel, double 
 			comedi_cleanup_calibration(calibration);
 			delete calibrationFile;
 		} else {
-			Logger(Important,"Waiting for analog trigger.\n");
-			while (value < threshold) {
-				comedi_data_read(device, subdevice, channel, range, aref, &sample);
+			Logger(Important,"Waiting for analog trigger from channel %d.\n",t.channel);
+			while (value < t.threshold) {
+				comedi_data_read(device, t.subdevice, t.channel, t.range, t.aref, &sample);
 				value = comedi_to_phys(sample, dataRange, maxData);
 				if (TERMINATE_TRIAL())
 					break;
 			}
 		}
-	} else if (type == DIGITAL_TRIGGER) {
-		Logger(Important,"Waiting for digital trigger.\n");
-		if(!(comedi_dio_config(device,subdevice,channel,COMEDI_INPUT))==0)
+	} else if (comedi_get_subdevice_type(device,t.subdevice) == COMEDI_SUBD_DIO) {
+		// DIGITAL INPUT
+		Logger(Important,"Waiting for digital trigger on line %d.\n",t.channel);
+		if(!(comedi_dio_config(device,t.subdevice,t.channel,COMEDI_INPUT))==0)
 			Logger(Critical, "comedi_dio_error: %s.\n",
 				comedi_strerror(comedi_errno()));
-//		if(!(comedi_set_routing(device,subdevice,channel, NI_PFI_OUTPUT_PFI_DO))==0)
-//			Logger(Critical, "comedi_dio_error: %s.\n",
-//				comedi_strerror(comedi_errno()));
 		uint bit = 0;
 		while (bit < 1 ) {
-			comedi_dio_read(device,subdevice,channel,&bit);
+			comedi_dio_read(device,t.subdevice,t.channel,&bit);
 			if (TERMINATE_TRIAL())
 				break;
 		}
-		Logger(Important,"Triggered by:%%d.\n",bit);
+	} else {
+		Logger(Important,"SubDevice not supported for triggering.\n");
 	}
         if (device != NULL)
                 return comedi_close(device) == 0;
-
-	
         return true;
 }
 
@@ -259,7 +255,6 @@ public:
 private:
         const std::vector<Entity*>& m_entities;
         double m_tend;
-	int m_trigger_entity;
 };
 
 void RTSimulationTask(void *cookie)
@@ -422,8 +417,8 @@ void* RTSimulation(void *arg)
 {
         simulation_data *data = static_cast<simulation_data*>(arg);
         std::vector<Entity*> *entities = data->m_entities;
+	struct trigger_data trigger = data->m_trigger; 
         double tend = data->m_tend;
-	int trigger_entity = data->m_trigger_entity;
 	int priority, flag, i;
         size_t nEntities = entities->size();
         struct timespec now, period;
@@ -465,10 +460,11 @@ void* RTSimulation(void *arg)
 	period.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
 
 	// Wait for trigger
-	WaitOnTrigger("/dev/comedi0", 0, 0, 1,1);
+	//WaitOnTrigger("/dev/comedi0", 0, 0, 1,1);
 	//FOR DIGITAL TRIGGER ON CTR0 USE SUBDEVICE 7 CHANNEL 8
-	//WaitOnTrigger("/dev/comedi0", 7, 8, 1,0);  
-        
+	if (trigger.use) {
+		WaitOnTrigger(trigger);  
+	}
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag < 0) {
@@ -597,7 +593,7 @@ void* NonRTSimulation(void *arg)
 
 #endif // HAVE_LIBLXRT
  
-int Simulate(std::vector<Entity*> *entities, double tend, int trigger_entity)
+int Simulate(std::vector<Entity*> *entities, double tend, struct trigger_data trigger)
 {
 #ifdef REALTIME_ENGINE
         if (!CheckPrivileges()) {
@@ -607,7 +603,7 @@ int Simulate(std::vector<Entity*> *entities, double tend, int trigger_entity)
 
         int *success, retval;
         pthread_t simulationThread;
-        simulation_data data(entities, tend, trigger_entity);
+        simulation_data data(entities, tend, trigger);
 
         SetTrialRun(true);
 	ResetGlobalTime();
