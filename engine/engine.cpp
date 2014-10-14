@@ -40,7 +40,6 @@ struct simulation_data {
 };
 
 
-
 bool WaitForTrigger(const trigger_data* t)
 {
         comedi_t *device;
