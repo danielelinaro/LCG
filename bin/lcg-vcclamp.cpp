@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
 		for (i=0; i<opts.nBatches; i++) {
 			for (k=0; k<opts.nTrials; k++, cnt++) {
                                 Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                success = Simulate(&entities, opts.tend);
+                                success = Simulate(&entities, opts.tend,-1);
                                 if (success!=0 || KILL_PROGRAM())
                                         goto endMain;
                                 if (k != opts.nTrials-1)
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
                                 stimulus->setStimulusFile(opts.stimulusFiles[j].c_str());
 				for (k=0; k<opts.nTrials; k++, cnt++) {
                                         Logger(Important, "Trial: %d of %d.\n", cnt, total);
-                                        success = Simulate(&entities, stimulus->duration());
+                                        success = Simulate(&entities, stimulus->duration(),-1);
                                         if (success!=0 || KILL_PROGRAM())
                                                 goto endMain;
                                         if (k != opts.nTrials-1)

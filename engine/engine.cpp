@@ -10,6 +10,7 @@
 #include "common.h"
 #include "h5rec.h"
 
+
 #ifdef HAVE_LIBLXRT
 #include <rtai_lxrt.h>
 #include <rtai_shm.h>
@@ -24,14 +25,51 @@
 #include <native/timer.h>
 #endif // HAVE_LIBANALOGY
 
+
+#include <comedilib.h>
+
 namespace lcg {
 
 struct simulation_data {
-        simulation_data(std::vector<Entity*>* entities, double tend)
-                : m_entities(entities), m_tend(tend) {}
+        simulation_data(std::vector<Entity*>* entities, double tend, int trigger_entity)
+                : m_entities(entities), m_tend(tend), m_trigger_entity(trigger_entity) {}
         std::vector<Entity*> *m_entities;
         double m_tend;
+	int m_trigger_entity;
 };
+
+bool WaitOnTrigger(const char *deviceFile, uint subdevice, uint channel,uint type)  
+{
+        comedi_t *device;
+        uint range = 0;
+        uint aref = AREF_GROUND;
+        lsampl_t sample;
+        lsampl_t maxData;
+        comedi_range *dataRange;
+	
+	device = comedi_open(deviceFile);
+        if(device == NULL) {
+                comedi_perror(deviceFile);
+                return false;
+        }
+        maxData = comedi_get_maxdata(device, subdevice, channel);
+        dataRange = comedi_get_range(device, subdevice, channel, range);
+        
+	double value = 0.0;
+	while (value < 1.0) {
+		comedi_data_read(device, subdevice, channel, range, aref, &sample);
+		value = comedi_to_phys(sample, dataRange, maxData);
+		if (TERMINATE_TRIAL())
+			break;
+	}
+
+	Logger(Important,"Triggered by:%lf.\n",value);
+        if (device != NULL)
+                return comedi_close(device) == 0;
+
+	
+        return true;
+}
 
 #ifdef REALTIME_ENGINE
 double globalTimeOffset = 0.0;
@@ -172,6 +210,7 @@ public:
 private:
         const std::vector<Entity*>& m_entities;
         double m_tend;
+	int m_trigger_entity;
 };
 
 void RTSimulationTask(void *cookie)
@@ -335,7 +374,8 @@ void* RTSimulation(void *arg)
         simulation_data *data = static_cast<simulation_data*>(arg);
         std::vector<Entity*> *entities = data->m_entities;
         double tend = data->m_tend;
-        int priority, flag, i;
+	int trigger_entity = data->m_trigger_entity;
+	int priority, flag, i;
         size_t nEntities = entities->size();
         struct timespec now, period;
         struct sched_param schedp;
@@ -375,6 +415,9 @@ void* RTSimulation(void *arg)
 	period.tv_sec = 0;
 	period.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
 
+	// Wait for trigger
+	WaitOnTrigger("/dev/comedi0", 0, 0, 0);  
+        
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
         if (flag < 0) {
@@ -383,11 +426,11 @@ void* RTSimulation(void *arg)
                 pthread_exit((void *) retval);
         }
 
-        // Set the time offset, i.e. the absolute time of the beginning of the simulation
+	// Set the time offset, i.e. the absolute time of the beginning of the simulation
         SetGlobalTimeOffset(now);
 
         Logger(Important, "Expected duration: %g seconds.\n", tend);
-
+	
 		// First step can be different from subsequent.	
 		for (i=0; i<nEntities; i++)
                 entities->at(i)->readAndStoreInputs();
@@ -503,7 +546,7 @@ void* NonRTSimulation(void *arg)
 
 #endif // HAVE_LIBLXRT
  
-int Simulate(std::vector<Entity*> *entities, double tend)
+int Simulate(std::vector<Entity*> *entities, double tend, int trigger_entity)
 {
 #ifdef REALTIME_ENGINE
         if (!CheckPrivileges()) {
@@ -513,7 +556,7 @@ int Simulate(std::vector<Entity*> *entities, double tend)
 
         int *success, retval;
         pthread_t simulationThread;
-        simulation_data data(entities, tend);
+        simulation_data data(entities, tend, trigger_entity);
 
         SetTrialRun(true);
 	ResetGlobalTime();
