@@ -49,7 +49,22 @@ namespace lcg {
 class Entity;
 class Stream;
 
-int Simulate(std::vector<Entity*> *entities, double tend, int trigger_entity);
+struct trigger_data {
+        trigger_data(const char *device = "/dev/comedi0", uint subdevice = 0, 
+			uint channel = 0, double threshold = 2.5, uint range = 0, uint aref = 0x00)  
+                : use(false), device(device), subdevice(subdevice),
+		channel(channel), threshold(threshold),
+		range(range), aref(aref) {}
+        bool use;
+	const char *device;
+	uint subdevice;
+	uint channel;
+	double threshold;
+	uint range;
+	uint aref;
+};
+
+int Simulate(std::vector<Entity*> *entities, double tend, struct trigger_data trigger);
 int Simulate(std::vector<Stream*> *streams, double tend, const std::string& outfilename);
 
 #ifdef REALTIME_ENGINE
