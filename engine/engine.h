@@ -49,7 +49,7 @@ namespace lcg {
 class Entity;
 class Stream;
 
-int Simulate(std::vector<Entity*> *entities, double tend);
+int Simulate(std::vector<Entity*> *entities, double tend, int trigger_entity);
 int Simulate(std::vector<Stream*> *streams, double tend, const std::string& outfilename);
 
 #ifdef REALTIME_ENGINE
