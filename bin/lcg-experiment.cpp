@@ -139,7 +139,7 @@ void parse_args(int argc, char *argv[], options *opts)
 
 int parse_configuration_file(const std::string& filename,
                              std::vector<Entity*>& entities, std::vector<Stream*>& streams,
-                             double *tend, double *dt, std::string& outfilename, int *trigger_entity)
+                             double *tend, double *dt, std::string& outfilename, struct trigger_data *trigger)
 {
         ptree pt;
         uint id;
@@ -176,18 +176,29 @@ int parse_configuration_file(const std::string& filename,
                         outfilename = "";
                 }
 
-                /*** id of an entity used as trigger (only when using entities)***/ 
-                try {
-                        *trigger_entity = pt.get<int>("lcg.simulation.trigger_entity");
-                        Logger(Important, "trigger_entity = %d.\n", *trigger_entity);
-                } catch(std::exception e) {
-			
-			Logger(Critical, "Error while parsing configuration file: %s.\n", e.what());
-			*trigger_entity = -1;
-                }
                 SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
                 SetRunTime(*tend);
-
+		
+		/*** trigger subdevice and channel***/
+		trigger->use = false;	
+                try {
+                        trigger->device = pt.get<std::string>("lcg.simulation.trigger.device").c_str();
+			trigger->use = true;
+                } catch(...) {
+                        trigger->device = "/dev/comedi0";
+                }
+                try {
+                        trigger->subdevice = pt.get<uint>("lcg.simulation.trigger.subdevice");
+			trigger->use = true;
+                } catch(...) {
+                        trigger->subdevice = 0;
+                }
+                try {
+                        trigger->channel = pt.get<uint>("lcg.simulation.trigger.channel");
+			trigger->use = true;
+                } catch(...) {
+                        trigger->channel = 0;
+                }
                 /*** entities ***/
                 const char *children[2] = {"lcg.entities","lcg.streams"};
                 for (int i=0; i<2; i++) {
@@ -607,11 +618,11 @@ int main(int argc, char *argv[])
         int success;
         double tend, dt;
         std::string outfilename;
-	int trigger_entity;
+	struct trigger_data trigger;
         std::vector<Entity*> entities;
         std::vector<Stream*> streams;
 
-        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt, outfilename, &trigger_entity) != 0) {
+        if (parse_configuration_file(opts.configFile, entities, streams, &tend, &dt, outfilename, &trigger) != 0) {
                 Logger(Critical, "Error while parsing configuration file. Aborting.\n");
                 exit(1);
         }
@@ -625,7 +636,7 @@ int main(int argc, char *argv[])
                 Logger(Info, "Trial: %d of %d.\n", i+1, opts.nTrials);
                 ResetGlobalTime();
                 if (!entities.empty())
-                        success = Simulate(&entities,tend,trigger_entity);
+                        success = Simulate(&entities,tend,trigger);
                 else
                         success = Simulate(&streams,tend,outfilename.size() ? outfilename : MakeFilename("h5"));
                 if (success!=0 || KILL_PROGRAM())
