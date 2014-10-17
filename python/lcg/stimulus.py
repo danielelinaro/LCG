@@ -110,7 +110,7 @@ def main():
     offsets = []
 
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
-    terminalPrintMode = 'timer'
+    terminalPrintMode = 'progress'
 
     model = None
     dry_run = False
@@ -206,6 +206,8 @@ def main():
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
         elif o == '--verbose':
+            if a == 'progress':
+                terminalPrintMode = 'progress'
             if a == 'timer':
                 terminalPrintMode = 'timer'
             elif a == 'percent':
@@ -377,27 +379,29 @@ def main():
     cmd_str = ('nice -n '+str(niceness) + ' ' +
                lcg.common.prog_name + ' -V ' + 
                str(verbose)+' -c ' + config_file)
-
+    timerString = '\rTrial {0:d} of {1:d}'
     if dry_run:
         cmdstr = 'echo "' + cmd_str + '"'
-    timerString = '\rTrial {0:d} of {1:d}; elapsed time : '
-    if (not verbose == 4) or (terminalPrintMode == 'quiet'):
-        runLCG = lambda string,count,total: runCommand(cmd_str,mode=None)
+    if (verbose != 4) or (terminalPrintMode == 'quiet'):
+        runLCG = lambda string,count,total,dur: runCommand(cmd_str,mode=None)
+    elif terminalPrintMode == 'progress':
+        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'progress',duration, 
+                                                           string +' ')
     elif terminalPrintMode == 'timer':
-        runLCG = lambda string,count,total: runCommand(cmd_str,'timer', 
-        string + '{0:.2f}s \r')
-    elif terminalPrintMode == 'percent':
-        runLCG = lambda string,count,total: runCommand(cmd_str,'percent_bar', 
-                                                       count,
-                                                       total,
-                                                       '\rTrial %02d/%02d ')        
+        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'timer',duration, 
+                                                           string + '; elapsed time: {0:.2f}s ')
+    elif terminalPrintMode == 'trial_bar':
+        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'trial_bar', 
+                                                           count,
+                                                           total,
+                                                           string + ' ')        
     sys.stdout.flush()
     # Main loop
     for i in range(repetitions):
         for duration,channels in zip(all_durations,all_channels):
             trialStart = time.time()
             writeConfigurationFile(config_file, duration, channels)        
-            runLCG(timerString.format(cnt,total),cnt,total)
+            runLCG(timerString.format(cnt, total), cnt, total, duration)
             sleepTime = (interval + duration - (time.time() - trialStart))
             if cnt < total and sleepTime > 0 :
                 time.sleep(sleepTime)

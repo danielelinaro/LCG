@@ -137,12 +137,12 @@ def main():
     sys.stdout.flush()
     for i in range(repetitions):
         runCommand(lcg.common.prog_name + ' -c ' + 
-                   configFile + ' -V ' + str(verbose),'timer',
+                   configFile + ' -V ' + str(verbose),'timer',duration,
                    '\rElapsed time (trial ' + str(i+1) + ' of ' + str(repetitions) + ' ): {0:.2f}s ')
         if i < repetitions-1:
             sub.call('sleep ' + str(interval), shell=True)
         
-    sys.stdout.write('\rRan ' + str(i+1) + ' repetitions (%d times %.3f s).' % (i+1,duration))
+    sys.stdout.write('\rRan ' + str(i+1) + ' repetitions (%d time(s) %.2f s).' % (i+1,duration))
     sys.stdout.flush()
     sys.stdout.write('\n')
 

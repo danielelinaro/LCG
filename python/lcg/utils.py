@@ -442,10 +442,12 @@ def computeElectrodeKernel(filename, Kdur=5e-3, interval=[], saveFile=True, full
 ########## Support functions #########
 def runCommand(command, mode = None, *args):
     process = sub.Popen(command, shell=True)
+    if mode == 'progress':
+        printProgressBar(process, *args)
     if mode == 'timer':
-        printTerminalTimer(process,*args)
+        printTerminalTimer(process, *args)
     elif mode == 'percent_bar':
-        printTerminalPercentageBar(process,*args)
+        printTerminalPercentageBar(process, *args)
     # Print errors and outputs
     out, err = process.communicate()
     if not out is None:
@@ -456,17 +458,38 @@ def runCommand(command, mode = None, *args):
         sys.stderr.flush()
     return process
     
-def printTerminalTimer(process, timerString = '\rElapsed time: {0:.2f}s ',
+def printTerminalTimer(process, duration, timerString = '\rElapsed time: {0:.2f}s ',
                        refreshPeriod = 0.0005):
     '''Note: timerString must have space to format the time in seconds.'''
-    startTime = time.time()
-    while process.poll() is None:
-        sys.stdout.write(timerString.format(time.time() - startTime))
-        sys.stdout.flush()
-        time.sleep(refreshPeriod)
+    times = np.arange(0,duration-refreshPeriod,refreshPeriod)
+    for tt in times:
+        if process.poll() is None:
+            sys.stdout.write(timerString.format(tt))
+            sys.stdout.flush()
+            time.sleep(refreshPeriod)
     sys.stdout.write('\r'+' '*len(timerString) + '')
-    sys.stdout.write(timerString.format(time.time()-startTime))
+    sys.stdout.write(timerString.format(duration))
     sys.stdout.flush()
+    return process
+
+def printProgressBar(process, duration, string = '\r', nBins = 30):
+    bins  = np.linspace(0,duration,nBins)
+    if np.diff(bins[:2]) <0.01:
+        nBins = 3
+        bins  = np.linspace(0,duration,nBins)
+    refreshTime = bins[1]-bins[0]
+
+    for cnt in range(1,nBins ):
+        if process.poll() is None:
+            sys.stdout.write(string + '[' +
+                             '='*(cnt-1) + '>' +
+                             ' '*(nBins - cnt) + ']' + 10*' ')
+            sys.stdout.flush()
+            time.sleep(refreshTime)
+
+    sys.stdout.write(string + '[' + '='*nBins + ']'+10*' ')
+    sys.stdout.flush()
+
     return process
 
 def printTerminalPercentageBar(process, count, total, 
