@@ -416,7 +416,6 @@ void* RTSimulation(void *arg)
 {
         simulation_data *data = static_cast<simulation_data*>(arg);
         std::vector<Entity*> *entities = data->m_entities;
-	struct trigger_data trigger = data->m_trigger; 
         double tend = data->m_tend;
 	int priority, flag, i;
         size_t nEntities = entities->size();
