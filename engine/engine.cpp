@@ -36,29 +36,29 @@ struct simulation_data {
                 : m_entities(entities), m_tend(tend), m_trigger(trigger) {}
         std::vector<Entity*> *m_entities;
         double m_tend;
-	struct trigger_data m_trigger;
+	trigger_data m_trigger;
 };
 
 
 
-bool WaitOnTrigger(struct trigger_data t)
+bool WaitForTrigger(const trigger_data* t)
 {
         comedi_t *device;
         lsampl_t sample;
         lsampl_t maxData;
         comedi_range *dataRange;
-	device = comedi_open(t.device);
+	device = comedi_open(t->device);
         if(device == NULL) {
-                comedi_perror(t.device);
+                comedi_perror(t->device);
                 return false;
         }
 	
-	if (comedi_get_subdevice_type(device,t.subdevice) == COMEDI_SUBD_AI) {
+	if (comedi_get_subdevice_type(device,t->subdevice) == COMEDI_SUBD_AI) {
 		// ANALOG INPUT
 		double value = 0.0;
-		maxData = comedi_get_maxdata(device, t.subdevice, t.channel);
-		dataRange = comedi_get_range(device, t.subdevice, t.channel, t.range);
-		if ((comedi_get_subdevice_flags(device,t.subdevice) & SDF_SOFT_CALIBRATED) == SDF_SOFT_CALIBRATED) { 
+		maxData = comedi_get_maxdata(device, t->subdevice, t->channel);
+		dataRange = comedi_get_range(device, t->subdevice, t->channel, t->range);
+		if ((comedi_get_subdevice_flags(device,t->subdevice) & SDF_SOFT_CALIBRATED) == SDF_SOFT_CALIBRATED) { 
 			char *calibrationFile;
 			comedi_calibration_t *calibration;
 			comedi_polynomial_t converter;
@@ -75,11 +75,11 @@ bool WaitOnTrigger(struct trigger_data t)
 				return false;
 			}
 
-			int flag = comedi_get_softcal_converter(t.subdevice, t.channel, t.range,
+			int flag = comedi_get_softcal_converter(t->subdevice, t->channel, t->range,
 				COMEDI_TO_PHYSICAL, calibration, &converter);
-			Logger(Important,"Waiting for softcal analog trigger from channel %d.\n",t.channel);
-			while (value < t.threshold) {
-				comedi_data_read(device, t.subdevice, t.channel, t.range, t.aref, &sample);
+			Logger(Important,"Waiting for softcal analog trigger from channel %d.\n",t->channel);
+			while (value < t->threshold) {
+				comedi_data_read(device, t->subdevice, t->channel, t->range, t->aref, &sample);
 				value = comedi_to_physical(sample, &converter);
 				if (TERMINATE_TRIAL())
 					break;
@@ -88,23 +88,23 @@ bool WaitOnTrigger(struct trigger_data t)
 			comedi_cleanup_calibration(calibration);
 			delete calibrationFile;
 		} else {
-			Logger(Important,"Waiting for analog trigger from channel %d.\n",t.channel);
-			while (value < t.threshold) {
-				comedi_data_read(device, t.subdevice, t.channel, t.range, t.aref, &sample);
+			Logger(Important,"Waiting for analog trigger from channel %d.\n",t->channel);
+			while (value < t->threshold) {
+				comedi_data_read(device, t->subdevice, t->channel, t->range, t->aref, &sample);
 				value = comedi_to_phys(sample, dataRange, maxData);
 				if (TERMINATE_TRIAL())
 					break;
 			}
 		}
-	} else if (comedi_get_subdevice_type(device,t.subdevice) == COMEDI_SUBD_DIO) {
+	} else if (comedi_get_subdevice_type(device,t->subdevice) == COMEDI_SUBD_DIO) {
 		// DIGITAL INPUT
-		Logger(Important,"Waiting for digital trigger on line %d.\n",t.channel);
-		if(!(comedi_dio_config(device,t.subdevice,t.channel,COMEDI_INPUT))==0)
+		Logger(Important,"Waiting for digital trigger on line %d.\n",t->channel);
+		if(!(comedi_dio_config(device,t->subdevice,t->channel,COMEDI_INPUT))==0)
 			Logger(Critical, "comedi_dio_error: %s.\n",
 				comedi_strerror(comedi_errno()));
 		uint bit = 0;
 		while (bit < 1 ) {
-			comedi_dio_read(device,t.subdevice,t.channel,&bit);
+			comedi_dio_read(device,t->subdevice,t->channel,&bit);
 			if (TERMINATE_TRIAL())
 				break;
 		}
@@ -417,7 +417,6 @@ void* RTSimulation(void *arg)
 {
         simulation_data *data = static_cast<simulation_data*>(arg);
         std::vector<Entity*> *entities = data->m_entities;
-	struct trigger_data trigger = data->m_trigger; 
         double tend = data->m_tend;
 	int priority, flag, i;
         size_t nEntities = entities->size();
@@ -460,10 +459,9 @@ void* RTSimulation(void *arg)
 	period.tv_nsec = GetGlobalDt() * NSEC_PER_SEC;
 
 	// Wait for trigger
-	//WaitOnTrigger("/dev/comedi0", 0, 0, 1,1);
 	//FOR DIGITAL TRIGGER ON CTR0 USE SUBDEVICE 7 CHANNEL 8
-	if (trigger.use) {
-		WaitOnTrigger(trigger);  
+	if (data->m_trigger.use) {
+		WaitForTrigger(&data->m_trigger);  
 	}
 	// Get current time
 	flag = clock_gettime(CLOCK_REALTIME, &now);
