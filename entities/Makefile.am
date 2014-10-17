@@ -8,7 +8,7 @@ AM_CPPFLAGS += -DREALTIME_ENGINE
 endif
 if ANALOG_IO
 AM_CPPFLAGS += -DANALOG_IO
-liblcg_entities_la_SOURCES += analog_io.cpp
-include_HEADERS += analog_io.h
+liblcg_entities_la_SOURCES += analog_io.cpp digital_io.cpp
+include_HEADERS += analog_io.h digital_io.h
 endif
 

@@ -220,6 +220,7 @@ AnalogInput::AnalogInput(const char *deviceFile, uint inputSubdevice,
 
 bool AnalogInput::initialise()
 {
+
         if (! m_input.initialise())
                 return false;
         m_data = m_input.read();
