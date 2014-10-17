@@ -179,6 +179,58 @@ private:
         bool m_resetOutput;
 };
 
+
+/**
+ * \brief Class for digital input/output from a DIO.
+ */
+class ComediDigitalIO {
+public:
+        ComediDigitalIO(const char *deviceFile, uint subdevice,
+                       uint *channels, uint nChannels);
+        virtual ~ComediDigitalIO();
+
+        virtual bool addChannel(uint channel);
+        bool isChannelPresent(uint channel);
+
+        const char* deviceFile() const;
+        uint subdevice() const;
+        const uint* channels() const;
+        uint nChannels() const;
+
+protected:
+        bool openDevice();
+        bool closeDevice();
+
+protected:
+        char m_deviceFile[30];
+        comedi_t *m_device;
+        uint m_subdevice;
+        uint *m_channels;
+        uint m_nChannels;
+};
+
+
+/**
+ * \brief Class for digital output to a single channel.
+ */
+class ComediDigitalOutput : public ComediDigitalIO {
+public:
+        ComediDigitalOutput(const char *deviceFile, uint outputSubdevice,
+	                    uint writeChannel);
+        ~ComediDigitalOutput();
+        bool initialise();
+        void write(double data); // keeping the format of Analog IOs
+};
+
+class ComediDigitalInput : public ComediDigitalIO {
+public:
+        ComediDigitalInput(const char *deviceFile, uint outputSubdevice,
+	                    uint readChannel);
+        ~ComediDigitalInput();
+        bool initialise();
+        double read(); 
+};
+
 } // namespace lcg
 
 #endif // HAVE_LIBCOMEDI

@@ -405,6 +405,191 @@ void ComediAnalogOutputHardCal::write(double data)
         comedi_data_write(m_device, m_subdevice, m_channels[0], m_range, m_aref, sample);
 }
 
+//~~~
+
+ComediDigitalIO::ComediDigitalIO(const char *deviceFile, uint subdevice,
+                               uint *channels, uint nChannels)
+        : m_device(NULL), m_subdevice(subdevice), m_channels(NULL), m_nChannels(0)
+{
+        Logger(Debug, "ComediDigitalIO::ComediDigitalIO()\n");
+
+        strncpy(m_deviceFile, deviceFile, 30);
+
+        // open the device
+        if (!openDevice())
+                throw "Unable to open communication with the DAQ board.";
+
+        // copy the channels to read
+        if (nChannels > 0 && channels != NULL) {
+                m_nChannels = nChannels;
+                m_channels = new uint[m_nChannels];
+                for (uint i=0; i<m_nChannels; i++)
+                        m_channels[i] = channels[i];
+        }
+}
+
+ComediDigitalIO::~ComediDigitalIO()
+{
+        Logger(Debug, "ComediDigitalIO::~ComediDigitalIO()\n");
+        closeDevice();
+        if (m_nChannels > 0) {
+                delete m_channels;
+        }
+}
+
+bool ComediDigitalIO::openDevice()
+{
+        Logger(Debug, "ComediDigitalIO::openDevice()\n");
+        m_device = comedi_open(m_deviceFile);
+        if(m_device == NULL) {
+                comedi_perror(m_deviceFile);
+                return false;
+        }
+	if (comedi_get_subdevice_type(m_device, m_subdevice) != COMEDI_SUBD_DIO) {
+		Logger(Critical, "ComediDigitalIO::openDevice() - Subdevice is not DIO.\n");
+		if (!closeDevice())
+			Logger(Critical, "ComediDigitalIO::openDevice() - Failed to close device.\n");
+		return false;
+	}
+        return true;
+}
+
+bool ComediDigitalIO::closeDevice()
+{
+        if (m_device != NULL)
+                return comedi_close(m_device) == 0;
+        return true;
+}
+        
+bool ComediDigitalIO::isChannelPresent(uint channel)
+{
+        for (uint i=0; i<m_nChannels; i++) {
+                if (m_channels[i] == channel) {
+                        Logger(Important, "Channel #%d already open.\n", channel);
+                        return true;
+                }
+        }
+        return false;
+}
+
+bool ComediDigitalIO::addChannel(uint channel)
+{
+        Logger(Debug, "ComediDigitalIO::addChannel(uint)\n");
+        uint i;
+
+        if (isChannelPresent(channel))
+                return false;
+
+        if (m_nChannels == 0) {
+                m_nChannels = 1;
+                m_channels = new uint[m_nChannels];
+                m_channels[0] = channel;
+        }
+        else {
+                uint *channels = new uint[m_nChannels];
+                memcpy(channels, m_channels, m_nChannels*sizeof(uint));
+                delete m_channels;
+                m_nChannels++;
+                m_channels = new uint[m_nChannels];
+                memcpy(m_channels, channels, (m_nChannels-1)*sizeof(uint));
+                m_channels[m_nChannels-1] = channel;
+                delete channels;
+        }
+        Logger(Debug, "Channel list: [");
+        for (int i=0; i<m_nChannels-1; i++)
+                Logger(Debug, "%d,", m_channels[i]);
+        Logger(Debug, "%d].\n", m_channels[m_nChannels-1]);
+
+        return true;
+}
+
+const char* ComediDigitalIO::deviceFile() const
+{
+        return m_deviceFile;
+}
+
+uint ComediDigitalIO::subdevice() const
+{
+        return m_subdevice;
+}
+
+const uint* ComediDigitalIO::channels() const
+{
+        return m_channels;
+}
+
+uint ComediDigitalIO::nChannels() const
+{
+        return m_nChannels;
+}
+
+//~~~
+
+ComediDigitalOutput::ComediDigitalOutput(const char *deviceFile, uint outputSubdevice,
+					uint writeChannel)
+        : ComediDigitalIO(deviceFile, outputSubdevice, &writeChannel, 1)
+{
+        initialise();
+}
+
+ComediDigitalOutput::~ComediDigitalOutput()
+{
+}
+
+bool ComediDigitalOutput::initialise()
+{
+	// set as output
+	
+	if(!(comedi_dio_config(m_device, m_subdevice, m_channels[0],COMEDI_OUTPUT))==0) {
+		Logger(Critical, "ComediDigitalOutput::initialise() - Config error: %s.\n",comedi_strerror(comedi_errno()));
+		return false;
+	}
+	if(!(comedi_set_routing(m_device, m_subdevice, m_channels[0], NI_PFI_OUTPUT_PFI_DO))==0) {
+		Logger(Critical, "ComediDigitalOutput::initialise() - Routing error: %s.\n",comedi_strerror(comedi_errno()));
+		return false;
+	}
+	return true;	
+
+}
+
+void ComediDigitalOutput::write(double data)
+{
+	// Add the following lines if you need to change between input and output during the same simulation
+	//comedi_dio_config(m_device, m_subdevice, m_channels[0],COMEDI_OUTPUT);
+	//comedi_set_routing(m_device, m_subdevice, m_channels[0], NI_PFI_OUTPUT_PFI_DO);
+	comedi_dio_write(m_device,m_subdevice,m_channels[0], (unsigned int) (data != 0));
+}
+
+
+ComediDigitalInput::ComediDigitalInput(const char *deviceFile, uint inputSubdevice,
+					uint readChannel)
+        : ComediDigitalIO(deviceFile, inputSubdevice, &readChannel, 1)
+{
+        initialise();
+}
+
+ComediDigitalInput::~ComediDigitalInput()
+{
+}
+
+bool ComediDigitalInput::initialise()
+{
+	// set as input channel
+	if(!(comedi_dio_config(m_device,m_subdevice,m_channels[0],COMEDI_INPUT))==0)
+		Logger(Critical, "ComediDigitalInput::initialise() - Config error: %s.\n",comedi_strerror(comedi_errno()));
+	return true;	
+
+}
+
+double ComediDigitalInput::read()
+{
+	uint readBit;
+	// Add the following line if you need to change between input and output during the same simulation
+	//comedi_dio_config(m_device, m_subdevice, m_channels[0],COMEDI_INPUT);
+	comedi_dio_read(m_device,m_subdevice,m_channels[0], &readBit);
+	return (double) readBit;
+}
+
 } // namespace lcg
 
 #endif // HAVE_LIBCOMEDI
