@@ -77,11 +77,11 @@ def parse_argv():
                 print('Protocol must be one of (' + ', '.join(protocols) + ').')
                 sys.exit(1)
 
-    if pulse_amplitude is None:
+    if pulse_amplitude is None and 'ap' in protocols:
         print('You must specify the pulse amplitude (--pulse-amplitude switch).')
         sys.exit(1)
 
-    if ramp_amplitude is None:
+    if ramp_amplitude is None and 'ramp' in protocols:
         print('You must specify the ramp amplitude (--ramp-amplitude switch).')
         sys.exit(1)
 

@@ -34,7 +34,7 @@ stim_files = {'current': 'current.stim',
 config_file = 'correlations.xml'
 colors = ColorFactory()
 switches = 'hc:n:i:d:I:O:k:R:f:F:v:b:a:m:s:t:K:'
-long_switches = ['help','with-nmda']
+long_switches = ['help','with-nmda','exc']
 
 def usage():
     print('\nUsage: %s <mode> [--option <value>]' % os.path.basename(sys.argv[0]))
@@ -61,6 +61,7 @@ def usage():
     print('     ' + colors.green('-v') + '   Values of voltage at which the background activity should be balanced (comma-separated values).')
     print('     ' + colors.green('-f') + '   Firing frequency of the inhibitory background population (default 3000 Hz).')
     print('     ' + colors.green('-R') + '   Input resistance of the cell (in MOhm).')
+    print('  ' + colors.green('--exc') + '   Correlate only excitation.')
     print('\nAdditionally, if the ' + colors.blue('--with-nmda') + ' option is set, the following options are accepted:\n')
     print('     ' + colors.blue('-m') + '   Mean of the NMDA conductance (default 0 nS).')
     print('     ' + colors.blue('-s') + '   Standard deviation of the NMDA conductance (default twice the AMPA conductance).')
@@ -178,6 +179,7 @@ def parseConductanceModeArgs():
                'input_resistance': None,
                'R_exc': 7000, # [Hz]
                'R_inh': 3000, # [Hz]
+               'only_ampa_corr': False,  # tells whether only the AMPA component is correlated
                'with_nmda': False,
                'nmda_mean': 1, 'nmda_std': 1,   ### dummy values, to remove
                'nmda_tau': 100, 'nmda_K': [0.2,0.02]}
@@ -202,6 +204,8 @@ def parseConductanceModeArgs():
         elif o == '-K':
             for i,k in enumerate(a.split(',')):
                 options['nmda_K'][i] = float(k)
+        elif o == '--exc':
+            options['only_ampa_corr'] = True
 
     if not options['input_resistance']:
         print('You must specify the input resistance of the cell (-R switch).')
@@ -262,14 +266,21 @@ def writeConfigFile(options):
     config.add_entity(lcg.entities.ConductanceStimulus(id=5, connections=(1), E=-80.))
     config.add_entity(lcg.entities.Waveform(id=6, connections=(0,7), filename=stim_files['gampa_common'], units='nS'))
     config.add_entity(lcg.entities.ConductanceStimulus(id=7, connections=(1), E=0.))
-    config.add_entity(lcg.entities.Waveform(id=8, connections=(0,9), filename=stim_files['ggaba_common'], units='nS'))
-    config.add_entity(lcg.entities.ConductanceStimulus(id=9, connections=(1), E=-80.))
+    ID = 8
+    if not options['only_ampa_corr']:
+        config.add_entity(lcg.entities.Waveform(id=ID, connections=(0,ID+1), filename=stim_files['ggaba_common'], units='nS'))
+        ID += 1
+        config.add_entity(lcg.entities.ConductanceStimulus(id=ID, connections=(1), E=-80.))
+        ID += 1
     if options['with_nmda']:
-        config.add_entity(lcg.entities.Waveform(id=10, connections=(0,11), filename=stim_files['gnmda'], units='nS'))
-        config.add_entity(lcg.entities.NMDAConductanceStimulus(id=11, connections=(1),
+        config.add_entity(lcg.entities.Waveform(id=ID, connections=(0,ID+1), filename=stim_files['gnmda'], units='nS'))
+        ID += 1
+        config.add_entity(lcg.entities.NMDAConductanceStimulus(id=ID, connections=(1),
                                                                E=0., K1=options['nmda_K'][0], K2=options['nmda_K'][1]))
-        config.add_entity(lcg.entities.Waveform(id=12, connections=(0,13), filename=stim_files['gnmda_common'], units='nS'))
-        config.add_entity(lcg.entities.NMDAConductanceStimulus(id=13, connections=(1),
+        ID += 1
+        config.add_entity(lcg.entities.Waveform(id=ID, connections=(0,ID+1), filename=stim_files['gnmda_common'], units='nS'))
+        ID += 1
+        config.add_entity(lcg.entities.NMDAConductanceStimulus(id=ID, connections=(1),
                                                                E=0., K1=options['nmda_K'][0], K2=options['nmda_K'][1]))
     config.write(config_file)
 
@@ -347,6 +358,13 @@ def main():
                     ratio,R_exc=ratio*(1-c)*opts['R_inh'],Rin=opts['input_resistance'])
                 gampa['mc'],ggaba['mc'],gampa['sc'],ggaba['sc'] = lcg.computeSynapticBackgroundCoefficients(
                     ratio,R_exc=ratio*c*opts['R_inh'],Rin=opts['input_resistance'])
+                Gm_ampa,Gm_gaba,Gs_ampa,Gs_gaba = lcg.computeSynapticBackgroundCoefficients(
+                    ratio,R_exc=ratio*opts['R_inh'],Rin=opts['input_resistance'])
+                if opts['only_ampa_corr']:
+                    ggaba['m'] = ggaba['m'] + ggaba['mc']
+                    ggaba['s'] = np.sqrt(ggaba['s']**2 + ggaba['sc']**2)
+                    ggaba['mc'] = 0
+                    ggaba['sc'] = 0
                 for k in range(opts['reps']):
                     stim[1][2] = gampa['m']
                     stim[1][3] = gampa['s']
@@ -363,11 +381,12 @@ def main():
                     stim[1][4] = 5
                     stim[1][8] = ampa_seeds[k]
                     lcg.writeStimFile(stim_files['gampa_common'], stim, False)
-                    stim[1][2] = ggaba['mc']
-                    stim[1][3] = ggaba['sc']
-                    stim[1][4] = 10
-                    stim[1][8] = gaba_seeds[k]
-                    lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
+                    if not opts['only_ampa_corr']:
+                        stim[1][2] = ggaba['mc']
+                        stim[1][3] = ggaba['sc']
+                        stim[1][4] = 10
+                        stim[1][8] = gaba_seeds[k]
+                        lcg.writeStimFile(stim_files['ggaba_common'], stim, False)
                     if opts['with_nmda']:
                         stim[1][2] = gnmda['m']
                         stim[1][3] = gnmda['s']
