@@ -483,11 +483,11 @@ def printProgressBar(process, duration, string = '\r', nBins = 30):
         if process.poll() is None:
             sys.stdout.write(string + '[' +
                              '='*(cnt-1) + '>' +
-                             ' '*(nBins - cnt) + ']' + 10*' ')
+                             ' '*(nBins - cnt) + '] ')
             sys.stdout.flush()
             time.sleep(refreshTime)
 
-    sys.stdout.write(string + '[' + '='*nBins + ']'+10*' ')
+    sys.stdout.write(string + '[' + '='*(nBins-1) + '>] ')
     sys.stdout.flush()
 
     return process
