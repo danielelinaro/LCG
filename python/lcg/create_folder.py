@@ -28,7 +28,7 @@ def createDefaultParameters(cfg,only_exp=False):
     cfg.set(expsection,'foldername','')
     cfg.set(expsection,'pattern',defaultPattern)
     cfg.set(expsection,'subfolders',defaultSubfolders)
-    if not only_exp and (not logsection in cfg.sections()):
+    if (not only_exp) and (not logsection in cfg.sections()):
         cfg.add_section(logsection)
         cfg.set(logsection,'Experimenter','user')
         cfg.set(logsection,'Project','LCG')
@@ -59,16 +59,16 @@ def appendGeneralArguments(parser,
         help='sub-directories to be created (separated by comma); default: {0}'.format(subfolders),
         default=subfolders)
     parser.add_argument(
-        "--no-info",dest='info',action='store_false',
-        help='do not append info file',
-        default=True)
+        "--info",dest='info',action='store_true',
+        help='append info file',
+        default=False)
     parser.add_argument(
         "--dry-run",dest='dryrun',action='store_true',
         help='do not create folder, just show the name',
         default=False)
 
 def createFoldersAndInfoFile(cfg, options,
-                             info = True, dryrun=False):
+                             info = False, dryrun=False):
     ''' Creates folders from a configuration file (ConfigParser object) and the options.
     The configuration file is used to get the order of the paremeters.'''
     
@@ -110,22 +110,21 @@ def main():
     opts,unknown = parser.parse_known_args()
 
     cfg = ConfigParser.ConfigParser()
-    if os.path.isfile(opts.config_file):
-        cfg.read(opts.config_file)
-    else:
-        if not os.path.isfile(defaultConfig):
-            cfgfile = open(defaultConfig,'w')
-            createDefaultParameters(cfg) # Create default
-            cfg.write(cfgfile)
-            cfgfile.close()
+    if not os.path.isfile(opts.config_file) and not os.path.isfile(defaultConfig):
+        cfgfile = open(defaultConfig,'w')
+        createDefaultParameters(cfg, False) # Create default
+        cfg.write(cfgfile)
+        cfgfile.close()
         print('''Could not find config file. 
-Creating a new one in {0}, please adjust the parameters
-and run it again.'''
-              .format(defaultConfig))
+Creating a new one in {0}, please adjust the parameters.'''
+              .format(defaultConfig))   
+    elif not os.path.isfile(opts.config_file):
+        print('Config file {0} not found.'.format(ops.config_file))
         sys.exit(1)
+    cfg.read(opts.config_file)
     if not (expsection in cfg.sections()):
         cfgfile = open(opts.config_file,'w')
-        createDefaultParameters(cfg, True) # Create exp log section
+        createDefaultParameters(cfg, not opts.info) # Create exp section
         cfg.write(cfgfile)
         cfgfile.close()
         print('Did not find {0} section, appending to file.'.format(expsection))
