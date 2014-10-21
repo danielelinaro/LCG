@@ -3,23 +3,31 @@ This chapter will help you undestanding some basic concepts related to \progname
 
 \section{Requirements}
 \paragraph{}
-You need to have \progname\ installed on your system. If you are not certain whether this has been done type \texttt{which \progname} in a terminal window. In case the program has not been installed, follow the installation notes (section \ref{chap:installation}).
+In order to get started you need only to boot your computer into the live DVD/USB (available at \url{http://www.tnb.ua.ac.be/LCGliveCD.iso}). Instructions on setting up live USB medium are available in section \ref{note:liveUSB}.
+Although all experiments can be performed from the live medium, for production environments, it is better to have a dedicated installation of LCG. We provide debian kernel packages with  the PREEMPT\_RT kernel patch for simple installation in Debian like systems. Additional notes on the installation can be found in section \ref{chap:installation}).
+
+\paragraph{}If you are using a system that someone else installed you can check wether \progname is installed  by typing  \texttt{which \progname} in a terminal window; if the result is blank, the program has not been installed and you should either use the live DVD or install it yourself. 
 
 \paragraph{}
-We assumes that you are familiarised with the Linux distribution that you are using (you need to be able of opening a terminal window at this point). Check the webpage of your linux distribution (e.g. \href{http://www.debian.org}{Debian}; \href{http://www.ubuntu.com}{Canonical Ubuntu}; \href{http://www.fedoraproject.org}{Fedora})or the \href{http://www.linux.org/tutorial}{linux.org} tutorials for help on getting started and the Advanced Bash-Scripting guide from \href{http://www.tldp.org}{The Linux Documentation Project}.
+We assume that can open a terminal window in the Linux distribution that you are using and will slowly introduce some concepts from there however this does not intend to be a tutorial on using Linux. 
+Check the webpage of your linux distribution (e.g. \href{http://www.debian.org}{Debian}; \href{http://www.ubuntu.com}{Canonical Ubuntu}; \href{http://www.fedoraproject.org}{Fedora}) or the \href{http://www.linux.org/tutorial}{linux.org} tutorials for help on getting started with Linux. Additionally, the \emph{Advanced Bash-Scripting guide} from \href{http://www.tldp.org}{The Linux Documentation Project} is a great reference for how to use a UNIX terminal efficiently.
 
 \paragraph{}
 Some MATLAB and Python code will be used to demonstrate the basic loading of data. Knowledge of these languages can be beneficial.
 Before getting started using \texttt{\progname} you may want to take a look at Appendix \ref{appendix:matlabReference} for a short Matlab introduction and Appendix \ref{appendix:unixReference} for some notes on UNIX basic commands.
 
-\section{What is \progname?}
+\section{Introduction - What is \progname?}
 
 \paragraph{}
-\textbf{\progname} is the name of a UNIX program that interfaces with \texttt{lib\progname}\  - a C++ library that interfaces with a realtime kernel can be used to conduct electrophysiological experiments using simple stimulation protocols but also to highly complex paradigms such as hybrid networks interfaces and/or dynamic clamp. If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation.
+In short \textbf{\progname} is the name of a UNIX program that interfaces with \texttt{lib\progname}\  - a C++ library that can be used to conduct electrophysiological experiments using simple stimulation protocols but also highly complex paradigms such as hybrid networks interfaces and/or dynamic clamp. 
 
-\paragraph{}
-The most important concepts can be understood by using a computational model of a Neuron. A Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}) is integrated into \progname. The initial part of this guide does not require a realtime kernel installation (see \ref{install:nokernel} for details on how to install \progname\ without a realtime kernel).
-We will illustrate some basic concepts of data analysis of intracellular data using Matlab. This should allow a user that is not familiar with \matlab\ to understand the basics of the programming language,a although it does not intend to be a full fletched tutorial, for that use \cite{wallisch2011} or the resources at \href{http://www.mathworks.com}{The Mathworks} website. We will also try to highlight some basic UNIX commands to handle file operations but you can also use a graphical user interface to do this. 
+% If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation and the source code in \href{https://github.com/danielelinaro/dynclamp}{GitHub}.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The following is commented out
+\iffalse
 
 \section{Configuration files}
 \paragraph{}
@@ -85,6 +93,36 @@ Note that if you do have a system without \texttt{gnome} like Mac OS the command
 The \texttt{-c} option stands for \textbf{configuration file} can be used to tell \progname\ that we are going to pass a configuration file as an argument.
 
 \paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded. In the next section you will see how you can record the data.
+\fi
+% END OF COMMENT OUT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{First steps in Command Line Electrophysiology}
+\paragraph{}
+The most important concepts of related to \progname can be understood by using a computational model of a neuron. Some single compartiment models are integrated in \progname; in this chapter we will a Linear Integrate and Fire model (for an introduction see: \cite{Koch:1989}). The initial part of this guide does not require a realtime kernel nor a data acquisiton board.
+We will illustrate some basic concepts of data analysis of intracellular data using Python and Octave/Matlab. This should allow a user that is not familiar with Python nor \matlab\ to understand the basics and provide building blocks for more complete analysis. Please note that this does not intend to be a full fletched tutorial, of data analysis nor an introduction to computer programming. 
+
+\paragraph{}A good reference for getting started with \matlab is \cite{wallisch2011} or the resources at \href{http://www.mathworks.com}{The Mathworks} website for Matlab; for Python we suggest the \href{https://scipy-lectures.github.io/}{Scipy lecture notes}. We will also try to highlight some basic UNIX commands to handle file operations  and suggest ways to structure and organize your experiments.
+
+\subsection{Creating an experiment folder}
+\progname does not require a particular folder structure to be used, i.e. when you run a command the recording will be executed in that very same directory. However it is very beneficial to use  a consistent folder structure. You can use \texttt{\progname create\_experiment\_folder} for that:
+
+\begin{lstlisting}[numbers=none,language=bash]
+lcg-create-experiment-folder -p YYYYMMDD_test_[001] -s LIFsteps,steps 
+\end{lstlisting}
+
+Note that  \texttt{\progname create\_experiment\_folder} can do more than creating a folders such as add information files with details from the experiment, you can the read more about it further in the manual.
+
+\section{Interfacing with an amplifier}
+
+\paragraph{}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/daq2amplifier}
+    \caption{Correspondency between Digital Data Acquisition board and the patch clamp amplifier.}
+    \label{fig:daq2amplifier}
+\end{figure}
+
+
 
 \section{Your first recording}
 \paragraph{}
