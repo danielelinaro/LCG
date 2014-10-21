@@ -136,7 +136,7 @@ Creating a new one in {0}, please adjust the parameters.'''
                            folderName = opts.foldername, 
                            pattern=opts.pattern, 
                            subfolders = opts.subfolders)
-
+    
     if opts.info and (logsection in cfg.sections()):
         for o in cfg.options(logsection):
             if cfg.get(logsection,o).lower() == 'user':
@@ -149,7 +149,9 @@ Creating a new one in {0}, please adjust the parameters.'''
         
     opts = parser.parse_args()
     options = vars(opts)
-    foldername = createFoldersAndInfoFile(cfg, options, dryrun=opts.dryrun)
+    foldername = createFoldersAndInfoFile(cfg, options, 
+                                          info= opts.info,
+                                          dryrun=opts.dryrun)
     print('{0}'.format(os.path.abspath(foldername)))
     sys.exit(0)
 
