@@ -73,6 +73,7 @@ protected:
 protected:
         // number of inputs
         uint m_numberOfInputs;
+        uint m_numberOfDatasets;
 };
 
 class H5Recorder : public BaseH5Recorder {
@@ -82,7 +83,7 @@ public:
         virtual void step();
         virtual void firstStep();
         virtual void terminate();
-
+        void handleEvent(const Event *event);
 public:
         /*!
          * The number of buffers used for storing the input data: they need to be at least 2,
