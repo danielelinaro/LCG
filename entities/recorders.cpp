@@ -242,7 +242,7 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
 H5Recorder::~H5Recorder()
 {
 		closeFile();
-        for (int i=0; i<m_numberOfInputs; i++) {
+        for (int i=0; i<m_numberOfDatasets; i++) {
                 for(int j=0; j<H5Recorder::numberOfBuffers; j++)
                         delete m_data[i][j];
                 delete m_data[i];
@@ -273,10 +273,13 @@ bool H5Recorder::finaliseInit()
         m_bufferInUse = H5Recorder::numberOfBuffers-1;
         m_bufferPosition = 0;
         m_datasetSize = 0;
-        
+	m_numberOfDatasets = 0;        
         for (int i=0; i<m_pre.size(); i++) {
-                if (!allocateForEntity(m_pre[i], H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
-                        return false;
+		if ( strcmp(m_pre[i]->name().c_str(),"Poisson") < 1 ) {
+                	if (!allocateForEntity(m_pre[i], H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
+                        	return false;
+		m_numberOfDatasets += 1;
+		}
         }
 
         err = pthread_mutex_init(&m_mutex, NULL);
@@ -377,9 +380,13 @@ void H5Recorder::step()
                 m_bufferLengths[m_bufferInUse] = 0;
                 Logger(Debug, "H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
-
-        for (int i=0; i<m_numberOfInputs; i++)
-                m_data[i][m_bufferInUse][m_bufferPosition] = m_inputs[i];
+	int ent_idx = 0;
+        for (int i=0; i<m_numberOfInputs; i++) {
+		if ( strcmp(m_pre[i]->name().c_str(),"Poisson") < 1 ) {
+               		m_data[ent_idx][m_bufferInUse][m_bufferPosition] = m_inputs[i];
+			ent_idx += 1;
+		}
+	}
         m_bufferLengths[m_bufferInUse]++;
         m_bufferPosition = (m_bufferPosition+1) % bufferSize();
 
@@ -397,6 +404,23 @@ void H5Recorder::step()
                 Logger(Debug, "H5Recorder::step() >> Unlocked the mutex.\n");
         }
 }
+
+void H5Recorder::handleEvent(const Event *event) {
+	
+    switch(event->type())
+    {
+        case SPIKE:
+		Logger(Info, "H5Recorder(%d): Spike event at %9.5lf.\n", id(), GetGlobalTime()); 
+            break;
+        case TRIGGER:
+		Logger(Info, "H5Recorder(%d): Trigger event at %9.5f.\n", id(), GetGlobalTime()); 
+            break;
+        case TOGGLE:
+		Logger(Info, "H5Recorder(%d): Toggle event at %9.5f.\n", id(), GetGlobalTime()); 
+            break;
+    }
+}
+
 
 void* H5Recorder::buffersWriter(void *arg)
 {
@@ -435,7 +459,7 @@ void* H5Recorder::buffersWriter(void *arg)
                         Logger(Debug, "Offset = %d.\n", offset);
                         Logger(Debug, "Time = %g sec.\n", self->m_datasetSize*GetGlobalDt());
 
-                        for (int i=0; i<self->m_numberOfInputs; i++) {
+                        for (int i=0; i<self->m_numberOfDatasets; i++) {
 
                                 // extend the dataset
                                 status = H5Dset_extent(self->m_datasets[i], &self->m_datasetSize);
