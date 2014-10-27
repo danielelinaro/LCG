@@ -466,7 +466,6 @@ void H5Recorder::step()
 
 void H5Recorder::handleEvent(const Event *event) {
 	
-		setHasEvents();
         if (m_eventsBufferPosition == 0) {
                 pthread_mutex_lock(&m_mutex);
                 while (m_eventsDataQueue.size() == H5Recorder::numberOfBuffers) {
