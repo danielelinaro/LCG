@@ -179,6 +179,12 @@ public:
          */
         virtual const double* metadata(size_t *dims, char *label) const;
 
+        /*!
+         * Check if output is to be saved.
+         * \return true if output is to be saved, false otherwise.
+         */
+		virtual bool hasOutput() const;
+
 protected:
         /*!
          * Adds an entity to the list of objects that provide inputs to this entity.
@@ -198,6 +204,10 @@ protected:
         /*! Sets the units of measure of the output of this entity. */
         void setUnits(const std::string &units);
 
+        /*!
+         * Change the relevance of the output.
+         */
+		 virtual void setHasOutput(bool outputRelevance);
 private:
         /*! Checks whether this entity is connected to the entity passed as a parameter of the method. */
         bool isPost(const Entity *entity) const;
@@ -218,12 +228,15 @@ protected:
         /*! The vector of entities this entity is connected to. */
         std::vector<Entity*> m_post;
 
+		/*! Whether or not to the output means something (Event based entities have m_saveOutput=false). */
+		bool m_hasOutput;
 private:
         /*! The name of this entity. */
         std::string m_name;
 
         /*! The units of measure of the output of this entity. */
         std::string m_units;
+        
 };
 
 /*!

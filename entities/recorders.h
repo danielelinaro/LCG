@@ -65,6 +65,8 @@ protected:
         virtual bool allocateForEntity(Entity *entity, int dataRank,
                                        const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims);
 
+        virtual bool allocateEventsDatasets(int dataRank,
+                                       const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims);
 #ifdef REALTIME_ENGINE
         // sets the priority of the calling thread to max_priority - 1
         virtual void reducePriority() const;
@@ -74,6 +76,7 @@ protected:
         // number of inputs
         uint m_numberOfInputs;
         uint m_numberOfDatasets;
+        uint m_numberOfEventsDatasets;
 };
 
 class H5Recorder : public BaseH5Recorder {
@@ -105,17 +108,27 @@ private:
 private:
         // the data
         std::vector<double**> m_data;
+        // the events data
+        std::vector<int32_t**> m_eventsData;
         // the queue of the indices of the buffers to save
         std::deque<uint> m_dataQueue;
-
-        // position in the buffer
+        // the queue of the indices of the buffers to save
+        std::deque<uint> m_eventsDataQueue;
+        
+	// position in the buffer
         uint m_bufferPosition;
         // the length of each buffer
         hsize_t *m_bufferLengths;
-        // the thread that continuosly waits for data to save
-        pthread_t m_writerThread;
-        // the index of the buffer in which the main thread saves data
         uint m_bufferInUse;
+        // position in the events buffer
+        uint m_eventsBufferPosition;
+        // the length of each events buffer
+        hsize_t *m_eventsBufferLengths;
+        // the index of the events buffer in which the main thread saves data
+        uint m_eventsBufferInUse;
+        
+        // the thread that continuosly waits for data to save
+		pthread_t m_writerThread;
         // multithreading stuff for controlling access to the queue m_dataQueue;
         pthread_mutex_t m_mutex;
         pthread_cond_t m_cv;
@@ -123,6 +136,7 @@ private:
         uint m_runCount;
 
         hsize_t m_datasetSize;
+        hsize_t m_eventsDatasetSize;
 };
 
 class TriggeredH5Recorder : public BaseH5Recorder {

@@ -28,7 +28,7 @@
 namespace lcg {
 
 Entity::Entity(uint id)
-        : m_id(id), m_inputs(), m_pre(), m_post(), m_name("Entity"), m_units("N/A")
+        : m_id(id), m_inputs(), m_pre(), m_post(), m_name("Entity"), m_units("N/A"), m_hasOutput(true)
 {}
 
 Entity::~Entity()
@@ -142,6 +142,14 @@ bool Entity::hasMetadata(size_t *ndims) const
 const double* Entity::metadata(size_t *dims, char *label) const
 {
         return NULL;
+}
+
+bool Entity::hasOutput() const {
+	return m_hasOutput;
+}
+
+void Entity::setHasOutput(bool outputRelevance) {
+	m_hasOutput = outputRelevance;
 }
 
 const std::string& Entity::name() const
