@@ -9,7 +9,7 @@ const double  H5RecorderCore::fillValue     = 0.0;
 
 H5RecorderCore::H5RecorderCore(bool compress, hsize_t bufferSize, const char *filename)
         : m_fid(-1), m_bufferSize(bufferSize),
-          m_groups(), m_dataspaces(), m_datasets()
+          m_groups(), m_dataspaces(), m_datasets(), m_hasEvents(false)
 {
         if (filename == NULL) {
                 m_makeFilename = true;
@@ -173,6 +173,10 @@ void H5RecorderCore::closeFile()
                         H5Sclose(m_dataspaces[i]);
                 for (i=0; i<m_groups.size(); i++)
                         H5Gclose(m_groups[i]);
+				if (!m_hasEvents) {
+					H5Ldelete(m_fid,EVENTS_GROUP,H5P_DEFAULT);
+					Logger(Debug,"Deleting (empty) Events group.\n");
+				}
                 H5Fclose(m_fid);
                 m_fid = -1;
         }
@@ -199,6 +203,10 @@ void H5RecorderCore::writeComments()
                 delete c;
                 i++;
         }
+}
+
+void H5RecorderCore::setHasEvents() {
+	m_hasEvents = true;
 }
 
 bool H5RecorderCore::createGroup(const char *groupName, hid_t *grp)
