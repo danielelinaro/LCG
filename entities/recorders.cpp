@@ -648,7 +648,7 @@ void* H5Recorder::buffersWriter(void *arg)
                                 }
                                 else {
                                         Logger(All, "Written data.\n");
-										self->setHasEvents();
+					self->setHasEvents();
                                 }
                         }
                         H5Sclose(filespace);
