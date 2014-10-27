@@ -28,8 +28,9 @@ extern ThreadSafeQueue<Event*> eventsQueue;
 namespace generators {
 
 Poisson::Poisson(double rate, ullong seed, uint id)
-        : Generator(id), m_random(seed)
+        : Generator(id), m_random(seed) 
 {
+		setHasOutput(false);
         POISSON_RATE = rate;
         POISSON_SEED = (double) seed;
         if (POISSON_RATE == 0.) {
