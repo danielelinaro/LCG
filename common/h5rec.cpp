@@ -139,6 +139,11 @@ bool H5RecorderCore::initialiseFile()
         }
         Logger(Debug, "Successfully created Entities group.\n");
 
+        if (!createGroup(EVENTS_GROUP, &grp)) {
+                Logger(Critical, "Unable to create Events group.\n");
+                return false;
+        }
+        Logger(Debug, "Successfully created Events group.\n");
         return true;
 }
 
@@ -207,7 +212,7 @@ bool H5RecorderCore::createGroup(const char *groupName, hid_t *grp)
 
 bool H5RecorderCore::createUnlimitedDataset(const char *datasetName,
                                             int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
-                                            hid_t *dspace, hid_t *dset)
+                                            hid_t *dspace, hid_t *dset, hid_t dataTypeID)
 {
         herr_t status;
         
@@ -271,7 +276,7 @@ bool H5RecorderCore::createUnlimitedDataset(const char *datasetName,
 
         // create a new dataset within the file using cparms creation properties.
         *dset = H5Dcreate2(m_fid, datasetName,
-                           H5T_IEEE_F64LE, *dspace,
+                           dataTypeID, *dspace,
                            H5P_DEFAULT, cparms, H5P_DEFAULT);
         if (*dset < 0) {
                 Logger(Critical, "Unable to create dataset.\n");

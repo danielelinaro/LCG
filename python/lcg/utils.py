@@ -609,5 +609,14 @@ def loadH5TraceV2(filename):
     info = {}
     for a in fid.root.Info._v_attrs._g_listAttr(fid.root.Info):
         info[a] = getattr(fid.root.Info._v_attrs,a)
+    # Read events
+    try:
+        node = fid.root.Events
+        events = {'timestamp': node.Timestamp.read(),
+                  'sender': node.Sender.read(),
+                  'code': node.Code.read()}
+        info['events'] = events
+    except:
+        pass
     fid.close()
     return entities,info

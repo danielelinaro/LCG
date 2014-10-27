@@ -35,6 +35,7 @@
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
+#define EVENTS_GROUP   "/Events"
 #define INFO_GROUP       "/Info"
 #define COMMENTS_GROUP   "/Comments"
 #define DATA_DATASET     "Data"
@@ -95,7 +96,7 @@ protected:
         virtual bool createGroup(const char *groupName, hid_t *grp);
         virtual bool createUnlimitedDataset(const char *datasetName,
                                             int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
-                                            hid_t *dspace, hid_t *dset);
+                                            hid_t *dspace, hid_t *dset, hid_t dataTypeID = H5T_IEEE_F64LE);
 
         virtual bool writeStringAttribute(hid_t objId, const char *attrName, const char *attrValue);
         virtual bool writeScalarAttribute(hid_t objId, const char *attrName, double attrValue);
