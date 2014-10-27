@@ -76,6 +76,7 @@ public:
         hsize_t bufferSize() const;
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
+		
 
         const char* filename() const;
 
@@ -108,6 +109,8 @@ protected:
 
         virtual void writeComments();
 
+        // sets that events have been saved to file
+        virtual void setHasEvents();
 protected:
         std::deque<Comment*> m_comments;
 
@@ -120,6 +123,8 @@ protected:
         // tells whether the filename should be generated from the timestamp
         bool m_makeFilename;
         
+        // indicates that events have been saved to file
+		bool m_hasEvents;
         // H5 stuff
         hid_t m_infoGroup;
         hid_t m_commentsGroup;

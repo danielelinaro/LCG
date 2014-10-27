@@ -392,6 +392,11 @@ void H5Recorder::stopWriterThread()
                 m_bufferLengths[m_bufferInUse], m_bufferInUse);
         Logger(Debug, "H5Recorder::stopWriterThread() >> %d events left to save in buffer #%d.\n",
                 m_eventsBufferLengths[m_eventsBufferInUse], m_eventsBufferInUse);
+		/*Delete Events if size is zero*/
+		if (m_eventsDatasetSize == 0) {
+			
+		}
+			
         m_threadRun = false;
         Logger(Debug, "H5Recorder::stopWriterThread() >> before pthread_cond_broadcast.\n");
         pthread_cond_broadcast(&m_cv);
@@ -461,6 +466,7 @@ void H5Recorder::step()
 
 void H5Recorder::handleEvent(const Event *event) {
 	
+		setHasEvents();
         if (m_eventsBufferPosition == 0) {
                 pthread_mutex_lock(&m_mutex);
                 while (m_eventsDataQueue.size() == H5Recorder::numberOfBuffers) {
@@ -523,7 +529,6 @@ void* H5Recorder::buffersWriter(void *arg)
                 hsize_t offset;
 
                 if (self->m_bufferLengths[bufferToSave] > 0) {
-
                         offset = self->m_datasetSize;
                         self->m_datasetSize += self->m_bufferLengths[bufferToSave];
 
