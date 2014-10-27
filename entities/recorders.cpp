@@ -288,7 +288,7 @@ bool H5Recorder::finaliseInit()
 {
         Logger(Debug, "H5Recorder::finaliseInit()\n");
         int err;
-        hsize_t bufsz = bufferSize(), maxbufsz = H5S_UNLIMITED, chunksz = chunkSize();
+        hsize_t bufsz = bufferSize(), maxbufsz = H5S_UNLIMITED, chunksz = chunkSize(), evbufsz = 1;
 
         stopWriterThread();
         if (m_runCount) {
@@ -320,7 +320,7 @@ bool H5Recorder::finaliseInit()
 	#define NUMBER_OF_EVENTS_DATASETS 3        
         m_eventsBufferInUse = H5Recorder::numberOfBuffers-1;
         m_eventsBufferPosition = 0;
-        if (!allocateEventsDatasets(H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
+        if (!allocateEventsDatasets(H5Recorder::rank, &evbufsz, &maxbufsz, &chunksz))
         	return false;
         m_eventsDatasetSize = 0;
 	m_numberOfEventsDatasets = 0;
@@ -466,7 +466,6 @@ void H5Recorder::step()
 
 void H5Recorder::handleEvent(const Event *event) {
 	
-		setHasEvents();
         if (m_eventsBufferPosition == 0) {
                 pthread_mutex_lock(&m_mutex);
                 while (m_eventsDataQueue.size() == H5Recorder::numberOfBuffers) {
@@ -649,6 +648,7 @@ void* H5Recorder::buffersWriter(void *arg)
                                 }
                                 else {
                                         Logger(All, "Written data.\n");
+										self->setHasEvents();
                                 }
                         }
                         H5Sclose(filespace);
