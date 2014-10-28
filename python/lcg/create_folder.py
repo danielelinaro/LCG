@@ -130,6 +130,11 @@ Creating a new one in {0}, please adjust the parameters.'''
         print('Did not find {0} section, appending to file.'.format(expsection))
     log_getopt = []
     log_opts = {}
+    
+    opts.pattern = cfg.get(expsection,'pattern')
+    opts.subfolders = cfg.get(expsection,'subfolders')
+    opts.foldername = cfg.get(expsection,'foldername')
+
     parser = ArgumentParser(add_help=True,description=description)
     appendGeneralArguments(parser, 
                            configName = opts.config_file,
