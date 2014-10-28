@@ -35,6 +35,7 @@
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
+#define EVENTS_GROUP   "/Events"
 #define INFO_GROUP       "/Info"
 #define COMMENTS_GROUP   "/Comments"
 #define DATA_DATASET     "Data"
@@ -75,6 +76,7 @@ public:
         hsize_t bufferSize() const;
         hsize_t chunkSize() const;
         uint numberOfChunks() const;
+		
 
         const char* filename() const;
 
@@ -95,7 +97,7 @@ protected:
         virtual bool createGroup(const char *groupName, hid_t *grp);
         virtual bool createUnlimitedDataset(const char *datasetName,
                                             int rank, const hsize_t *dataDims, const hsize_t *maxDataDims, const hsize_t *chunkDims,
-                                            hid_t *dspace, hid_t *dset);
+                                            hid_t *dspace, hid_t *dset, hid_t dataTypeID = H5T_IEEE_F64LE);
 
         virtual bool writeStringAttribute(hid_t objId, const char *attrName, const char *attrValue);
         virtual bool writeScalarAttribute(hid_t objId, const char *attrName, double attrValue);
@@ -107,6 +109,8 @@ protected:
 
         virtual void writeComments();
 
+        // sets that events have been saved to file
+        virtual void setHasEvents();
 protected:
         std::deque<Comment*> m_comments;
 
@@ -119,6 +123,8 @@ protected:
         // tells whether the filename should be generated from the timestamp
         bool m_makeFilename;
         
+        // indicates that events have been saved to file
+		bool m_hasEvents;
         // H5 stuff
         hid_t m_infoGroup;
         hid_t m_commentsGroup;

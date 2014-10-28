@@ -115,6 +115,10 @@ def main():
     lcg.writeIOConfigurationFile(config_file,sampling_rate,duration+3.61,channels,realtime)
     oldfiles = glob.glob('*.h5')    
     sub.call(lcg.common.prog_name + ' -c ' + config_file, shell=True)
+    try:
+        os.system('beep')
+    except:
+        pass
     files = glob.glob('*.h5')
     for ff in files:
         if ff not in oldfiles:

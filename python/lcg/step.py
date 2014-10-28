@@ -140,7 +140,7 @@ def main():
     if kernel:
         sub.call('lcg kernel -I %d -O %d -F %g -H %g --rt %s' % (ai,ao,samplf,holding,realtime), shell=True)
     
-    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s --verbose timer' % 
+    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s' % 
              (stimuli_directory,
               interval,ai,ao,
               nreps,samplf,
