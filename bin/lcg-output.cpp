@@ -104,8 +104,8 @@ void parse_args(int argc, char *argv[], options *opts)
                                 exit(1);
                         }
                         break;
-                case 'v':
-                        opts->channel = atoi(getenv("AO_CHANNEL_VC"),);
+                case 'V':
+                        opts->channel = atoi(getenv("AO_CHANNEL_VC"));
                         vclamp = true;
                         break;
                 case 'c':
