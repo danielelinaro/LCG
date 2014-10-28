@@ -70,7 +70,7 @@ void parse_args(int argc, char *argv[], options *opts)
         struct stat buf;
         bool vclamp = false;
         opts->factor = -1.;
-        while ((ch = getopt_long(argc, argv, "hd:s:c:r:f:v", longopts, NULL)) != -1) {
+        while ((ch = getopt_long(argc, argv, "hd:s:c:r:f:V", longopts, NULL)) != -1) {
                 switch(ch) {
                 case 'h':
                         usage();
@@ -104,8 +104,8 @@ void parse_args(int argc, char *argv[], options *opts)
                                 exit(1);
                         }
                         break;
-                case 'v':
-                        opts->channel = atoi(getenv("AO_CHANNEL_VC"),);
+                case 'V':
+                        opts->channel = atoi(getenv("AO_CHANNEL_VC"));
                         vclamp = true;
                         break;
                 case 'c':

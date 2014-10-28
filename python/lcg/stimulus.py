@@ -31,12 +31,12 @@ def usage():
     print(' -F, --sampling-rate   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print(' -D, --device          input device (default %s)' % os.environ['COMEDI_DEVICE'])
     print(' -S, --subdevice       input subdevice (default %s)' % os.environ['AI_SUBDEVICE'])
-    print(' -I, --input-channels  input channels (default %s, but see note at the end for how to specify input channels)' % os.environ['AI_CHANNEL'])
+    print(' -I, --input-channels  input channels (default %s (%s in VC), but see note at the end for how to specify input channels)' % (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
     print(' -g, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
-    print('                       (or %s if --vclamp is used) for all channels)' % os.environ['AI_CONVERSION_FACTOR_VC'])
+    print('                       (or %s if --voltage-clamp is used) for all channels)' % os.environ['AI_CONVERSION_FACTOR_VC'])
     print(' -u, --input-units     input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
-    print(' -O, --output-channels output channel(s) (default %s, but see note at the end for how to specify output channels)' % os.environ['AO_CHANNEL'])
+    print(' -O, --output-channels output channel(s) (default %s (%s in VC), but see note at the end for how to specify output channels)' % (os.environ['AO_CHANNEL'],os.environ['AO_CHANNEL_VC']))
     print(' -G, --output-gains    output conversion factors (comma separated values, default %s' % os.environ['AO_CONVERSION_FACTOR_CC'])
     print('                       (or %s if --vclamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
@@ -76,7 +76,7 @@ def main():
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'vclamp','offset=','conductance=','rt=','output-file=',
+                                   'voltage-clamp','offset=','conductance=','rt=','output-file=',
                                    'reset-output=','verbose=','dry-run','model',
                                    'priority='])
     except getopt.GetoptError, err:
@@ -121,6 +121,8 @@ def main():
         if o in ('-h','--help'):
             usage()
             sys.exit(0)
+        elif o in ('-V','--voltage-clamp'):
+            suffix = 'VC'
         elif o in ('-s','--stimulus'):
             stimfiles = []
             for f in a.split(','):
@@ -195,8 +197,6 @@ def main():
         elif o in ('-E','--conductance'):
             for E in a.split(','):
                 reversalPotentials.append(E)
-        elif o in ('-V','--vclamp'):
-            suffix = 'VC'
         elif o in ('-H','--offset'):
             for offset in a.split(','):
                 offsets.append(float(offset))
@@ -243,7 +243,7 @@ def main():
     # check the correctness of the arguments
     if not inputChannels is None:
         if len(inputChannels) == 0:
-            inputChannels = [int(os.environ['AI_CHANNEL'])]
+            inputChannels = [int(os.environ['AI_CHANNEL_' + suffix])]
         if len(inputGains) == 0:
             inputGains = [float(os.environ['AI_CONVERSION_FACTOR_' + suffix]) for i in range(len(inputChannels))]
         if len(inputUnits) == 0:
@@ -253,7 +253,7 @@ def main():
             sys.exit(1)
     if not outputChannels is None:
         if len(outputChannels) == 0:
-            outputChannels = [int(os.environ['AO_CHANNEL'])]
+            outputChannels = [int(os.environ['AO_CHANNEL_' + suffix])]
         if len(outputGains) == 0:
             outputGains = [float(os.environ['AO_CONVERSION_FACTOR_' + suffix]) for i in range(len(outputChannels))]
         if len(outputUnits) == 0:
