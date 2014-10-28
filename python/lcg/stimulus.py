@@ -41,7 +41,7 @@ def usage():
     print('                       (or %s if --vclamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
-    print(' -V, --vclamp          use default conversion factor and units for voltage clamp')
+    print(' -V, --voltage-clamp   use default conversion factor and units for voltage clamp')
     print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
     print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
