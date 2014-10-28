@@ -26,12 +26,12 @@ def usage():
     print(' -F, --sampling-rate   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print(' -D, --device          input device (default %s).' % os.environ['COMEDI_DEVICE'])
     print(' -S, --subdevice       input subdevice (default %s).' % os.environ['AI_SUBDEVICE'])
-    print(' -I, --input-channels  input channels (comma separated values, default %s)' % os.environ['AI_CHANNEL'])
+    print(' -I, --input-channels  input channels (comma separated values, default %s (%s in VC))' % (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
     print(' -g, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
     print('                       (or %s if --vclamp is used) for all channels).' % os.environ['AI_CONVERSION_FACTOR_VC'])
     print(' -U, --input-units     input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
     print('                       --vclamp is used) for all channels).')
-    print(' -V, --vclamp          use default conversion factor and units for voltage clamp.')
+    print(' -V, --voltage-clamp          use default conversion factor and units for voltage clamp.')
     print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('     --verbose         set the verbose level of lcg-experiment (default is 4 - silent)')
     print('')
@@ -41,7 +41,7 @@ def main():
         opts,args = getopt.getopt(sys.argv[1:], 'hd:n:i:F:D:S:I:G:U:Vu:g:',
                                   ['help','duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=','input-channels=','input-gains=',
-                                   'input-units=','vclamp','rt=','verbose='])
+                                   'input-units=','voltage-clamp','rt=','verbose='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -104,7 +104,7 @@ def main():
         elif o in ('-U','--input-units','-u'):
             for unit in a.split(','):
                 inputUnits.append(unit)
-        elif o in ('-V','--vclamp'):
+        elif o in ('-V','--voltage-clamp'):
             suffix = 'VC'
         elif o == '--rt':
             realtime = a.lower() == 'yes'
@@ -114,7 +114,7 @@ def main():
             verbose = int(a)
 
     if len(inputChannels) == 0:
-        inputChannels = [int(os.environ['AI_CHANNEL'])]
+        inputChannels = [int(os.environ['AI_CHANNEL_' + suffix])]
 
     if len(inputGains) == 0:
         inputGains = [float(os.environ['AI_CONVERSION_FACTOR_' + suffix]) for i in range(len(inputChannels))]
