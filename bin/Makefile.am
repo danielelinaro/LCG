@@ -10,8 +10,7 @@ AM_CPPFLAGS += -DREALTIME_ENGINE
 endif
 if ANALOG_IO
 AM_CPPFLAGS += -DANALOG_IO
-bin_PROGRAMS += lcg-vcclamp lcg-test-daq lcg-output lcg-zero
-lcg_vcclamp_SOURCES = lcg-vcclamp.cpp
+bin_PROGRAMS += lcg-test-daq lcg-output lcg-zero
 lcg_test_daq_SOURCES = lcg-test-daq.cpp
 lcg_output_SOURCES = lcg-output.cpp
 lcg_zero_SOURCES = lcg-zero.cpp
