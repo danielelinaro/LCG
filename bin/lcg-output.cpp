@@ -22,7 +22,7 @@ struct options {
         options() {
                 strncpy(device, getenv("COMEDI_DEVICE"), FILENAME_MAXLEN);
                 subdevice = atoi(getenv("AO_SUBDEVICE"));
-                channel = atoi(getenv("AO_CHANNEL"));
+                channel = atoi(getenv("AO_CHANNEL_CC"));
                 reference = strncmp(getenv("GROUND_REFERENCE"), "NRSE", 5) ? AREF_GROUND : AREF_COMMON;
                 value = 0.0;
                 factor = -1.;
@@ -41,7 +41,7 @@ static struct option longopts[] = {
         {"reference", required_argument, NULL, 'r'},
         {"value", required_argument, NULL, 'v'},
         {"factor", required_argument, NULL, 'f'},
-        {"voltage-clamp", no_argument, NULL, 'v'},
+        {"voltage-clamp", no_argument, NULL, 'V'},
         {NULL, 0, NULL, 0}
 };
 
@@ -52,15 +52,16 @@ const char lcg_output_usage_string[] =
         "   -h, --help           Print this help message and exit.\n"
         "   -d, --device         Path of the DAQ device (default %s).\n"
         "   -s, --subdevice      Subdevice number (default %s).\n"
-        "   -c, --channel        Channel number (default %s).\n"
+        "   -c, --channel        Channel number (default %s in current clamp, %s in voltage clamp).\n"
         "   -r, --reference      Ground reference (GRSE or NRSE, default %s).\n"
         "   -f, --factor         Conversion factor (default %s in current clamp mode, %s in voltage clamp mode).\n"
-        "   -v, --voltage-clamp  Use voltage clamp conversion factor.\n";
+        "   -V, --voltage-clamp  Use voltage clamp conversion factor.\n";
 
 void usage()
 {
-        printf(lcg_output_usage_string, getenv("COMEDI_DEVICE"), getenv("AO_SUBDEVICE"), getenv("AO_CHANNEL"),
-                getenv("GROUND_REFERENCE"), getenv("AO_CONVERSION_FACTOR_CC"), getenv("AO_CONVERSION_FACTOR_VC"));
+        printf(lcg_output_usage_string, getenv("COMEDI_DEVICE"), getenv("AO_SUBDEVICE"), getenv("AO_CHANNEL_CC"),
+			getenv("AO_CHANNEL_VC"), getenv("GROUND_REFERENCE"), getenv("AO_CONVERSION_FACTOR_CC"),
+			getenv("AO_CONVERSION_FACTOR_VC"));
 }
 
 void parse_args(int argc, char *argv[], options *opts)
@@ -76,9 +77,6 @@ void parse_args(int argc, char *argv[], options *opts)
                         exit(0);
                 case 's':
                         opts->subdevice = atoi(optarg);
-                        break;
-                case 'c':
-                        opts->channel = atoi(optarg);
                         break;
                 case 'r':
                         if (strncmp(optarg, "NRSE", 5) == 0) {
@@ -107,7 +105,11 @@ void parse_args(int argc, char *argv[], options *opts)
                         }
                         break;
                 case 'v':
+                        opts->channel = atoi(getenv("AO_CHANNEL_VC"),);
                         vclamp = true;
+                        break;
+                case 'c':
+                        opts->channel = atoi(optarg);
                         break;
                 default:
                         Logger(Critical, "Enter 'lcg help output' for help on how to use this program.\n");
