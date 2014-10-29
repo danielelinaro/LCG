@@ -25,9 +25,14 @@
 #include <native/timer.h>
 #endif // HAVE_LIBANALOGY
 
+<<<<<<< HEAD
 #ifdef HAVE_LIBCOMEDI
 #include <comedilib.h>
 #endif // HAVE_LIBCOMEDI
+=======
+
+#include <comedilib.h>
+>>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
 
 namespace lcg {
 
@@ -44,15 +49,24 @@ struct simulation_data {
 
 bool WaitForTrigger(const trigger_data* t)
 {
+<<<<<<< HEAD
 	#ifdef HAVE_LIBCOMEDI
 	comedi_t *device;
+=======
+        comedi_t *device;
+>>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
         lsampl_t sample;
         lsampl_t maxData;
         comedi_range *dataRange;
 	device = comedi_open(t->device);
         if(device == NULL) {
+<<<<<<< HEAD
 		comedi_perror(t->device);
 		return false;
+=======
+                comedi_perror(t->device);
+                return false;
+>>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
         }
 	
 	if (comedi_get_subdevice_type(device,t->subdevice) == COMEDI_SUBD_AI) {
@@ -115,9 +129,12 @@ bool WaitForTrigger(const trigger_data* t)
 	}
         if (device != NULL)
                 return comedi_close(device) == 0;
+<<<<<<< HEAD
 	#else		
 	Logger(Important,"Triggering only supported with comedi (contact developers if you need this feature).\n");
 	#endif // HAVE_LIBCOMEDI
+=======
+>>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
         return true;
 }
 
