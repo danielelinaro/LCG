@@ -48,7 +48,7 @@ bool WaitForTrigger(const trigger_data* t)
         lsampl_t sample;
         lsampl_t maxData;
         comedi_range *dataRange;
-	device = comedi_open(t->device);
+		device = comedi_open(t->device);
         if(device == NULL) {
 		comedi_perror(t->device);
 		return false;

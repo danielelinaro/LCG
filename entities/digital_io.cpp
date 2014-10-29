@@ -7,7 +7,6 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
         uint inputSubdevice, readChannel, id;
         std::string deviceFile, units, eventStr;
         lcg::EventType eventToSend;
-
 	id = lcg::GetIdFromDictionary(args);
 
         if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
@@ -31,8 +30,9 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
                     return NULL;
                 }
                 eventToSend = static_cast<lcg::EventType>(i);
-	else {
-		eventToSend = lcg::DIGITAL_RISE;
+		}
+		else {
+			eventToSend = lcg::DIGITAL_RISE;
         }
         return new lcg::DigitalInput(deviceFile.c_str(), inputSubdevice, readChannel,
 					units, eventToSend, id);
@@ -72,6 +72,7 @@ DigitalInput::DigitalInput(const char *deviceFile, uint inputSubdevice,
 {
         setName("DigitalInput");
         setUnits(units);
+		m_previous = 0;
 }
 
 bool DigitalInput::initialise()

@@ -39,13 +39,15 @@ public:
         DigitalInput(const char *deviceFile, uint inputSubdevice,
                     uint readChannel,
                     const std::string& units = "Boolean",
-                    uint id = GetId());
+                    EventType eventToSend = TRIGGER, uint id = GetId());
         virtual bool initialise();
         virtual void step();
         virtual void firstStep();
         virtual double output();
 private:
         double m_data;
+		double m_previous;
+        EventType m_eventToSend;
 #if defined(HAVE_LIBCOMEDI)
         ComediDigitalInput m_input;
 #endif
