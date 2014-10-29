@@ -56,7 +56,7 @@ public:
         DigitalOutput(const char *deviceFile, uint outputSubdevice,
                      uint writeChannel,
                      const std::string& units = "Boolean",
-                     uint id = GetId());
+                     EventType eventToSend = TRIGGER, uint id = GetId());
         ~DigitalOutput();
         virtual bool initialise();
         virtual void terminate();
@@ -65,6 +65,7 @@ public:
         virtual double output();
 private:
         double m_data;
+        EventType m_eventToSend;
 #if defined(HAVE_LIBCOMEDI)
         ComediDigitalOutput m_output;
 #endif

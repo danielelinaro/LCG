@@ -131,5 +131,8 @@ StopRunEvent::StopRunEvent(const Entity *sender)
 	TerminateTrial();
 }
 
+DigitalRiseEvent::DigitalRiseEvent(const Entity *sender)
+        : Event(DIGITAL_RISE, sender)
+{}
 } // namespace lcg
 

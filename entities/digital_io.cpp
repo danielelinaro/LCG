@@ -5,8 +5,9 @@
 lcg::Entity* DigitalInputFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, id;
-        std::string deviceFile,units;
-        
+        std::string deviceFile, units, eventStr;
+        lcg::EventType eventToSend;
+
 	id = lcg::GetIdFromDictionary(args);
 
         if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
@@ -21,8 +22,20 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
         if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "Boolean";
         }
+        if (lcg::CheckAndExtractValue(args, "eventToSend", eventStr)) {
+                int i=0;
+                while(i < NUMBER_OF_EVENT_TYPES && strcasecmp(eventStr.c_str(), lcg::eventTypeNames[i].c_str()))
+                    i++;
+                if (i == NUMBER_OF_EVENT_TYPES) {
+                    lcg::Logger(lcg::Critical, "DigitalInput(%d): Unknown event type [%s].\n", id, eventStr.c_str());
+                    return NULL;
+                }
+                eventToSend = static_cast<lcg::EventType>(i);
+	else {
+		eventToSend = lcg::DIGITAL_RISE;
+        }
         return new lcg::DigitalInput(deviceFile.c_str(), inputSubdevice, readChannel,
-					units, id);
+					units, eventToSend, id);
 }
 
 lcg::Entity* DigitalOutputFactory(string_dict& args)
@@ -49,13 +62,13 @@ lcg::Entity* DigitalOutputFactory(string_dict& args)
 namespace lcg {
 
 DigitalInput::DigitalInput(const char *deviceFile, uint inputSubdevice,
-                         uint readChannel,
-			 const std::string& units,
-                         uint id)
+                         uint readChannel, const std::string& units,
+                         EventType eventToSend, uint id)
         : Entity(id),
 #if defined(HAVE_LIBCOMEDI)
-          m_input(deviceFile, inputSubdevice, readChannel)
+	m_input(deviceFile, inputSubdevice, readChannel),
 #endif
+	m_eventToSend(eventToSend)
 {
         setName("DigitalInput");
         setUnits(units);
@@ -72,6 +85,33 @@ bool DigitalInput::initialise()
 void DigitalInput::step()
 {
         m_data = m_input.read();
+	//Rising crossing
+	if (m_data - m_previous > 0) {
+		switch (m_eventToSend) {
+			case DIGITAL_RISE:
+				emitEvent(new DigitalRiseEvent(this));
+				break;
+			case STOPRUN:
+				emitEvent(new StopRunEvent(this));
+				Logger(Important, "Simulation terminated by DigitalInput(%d).\n", id());
+				break;
+			case RESET:
+				emitEvent(new ResetEvent(this));
+				break;
+			case TOGGLE:
+				emitEvent(new ToggleEvent(this));
+				break;
+			case TRIGGER: 
+				emitEvent(new TriggerEvent(this));
+				break;
+			case SPIKE:
+				emitEvent(new SpikeEvent(this));
+				break;
+			default:
+				Logger(Important, "DigitalInput(%d): Can't send event.\n", id());
+				break;
+		}
+	}
 }
 
 void DigitalInput::firstStep()
