@@ -62,11 +62,15 @@ typedef enum {
         /*!
          * A stoprun event stops the experiment/simulation.
          */
-        STOPRUN
+        STOPRUN,
+        /*!
+         * A digital_rise event should be used to signal that a digital line crossed from 0 to 1.
+         */
+        DIGITAL_RISE
 } EventType;
 
-#define NUMBER_OF_EVENT_TYPES 5
-const std::string eventTypeNames[NUMBER_OF_EVENT_TYPES] = {"spike", "trigger", "reset", "toggle", "stoprun"};
+#define NUMBER_OF_EVENT_TYPES 6
+const std::string eventTypeNames[NUMBER_OF_EVENT_TYPES] = {"spike", "trigger", "reset", "toggle", "stoprun", "digital_rise"};
 
 /*!
  * \class Event
@@ -184,6 +188,17 @@ class StopRunEvent : public Event
 public:
         /*! Constructs a StopRunEvent with a given sender. */
         StopRunEvent(const Entity *sender);
+};
+
+/*!
+ * \class DigitalRiseEvent
+ * \brief A class that implements an event that should be used to signal a digital line crossing.
+ */
+class DigitalRiseEvent : public Event
+{
+public:
+        /*! Constructs a DigitalRiseEvent with a given sender. */
+        DigitalRiseEvent(const Entity *sender);
 };
 
 /*! Puts the event passed as an argument into the events queue. */
