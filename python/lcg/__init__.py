@@ -28,7 +28,8 @@ from utils import writePulsesStimFile, writeIPlusBgGConfig, writeGainModulationC
     computeRatesRatio, computeSynapticBackgroundCoefficients, computeElectrodeKernel, \
     findSpikes, loadH5Trace
 from stimgen import writeStimFile, createStimulusEntry
-from config_writer import XMLConfigurationFile, writeIOConfigurationFile,writeConductanceStimulusConfigurationFile
+from config_writer import XMLConfigurationFile, writeIOConfigurationFile, \
+    writeConductanceStimulusConfigurationFile, writeIOExternalTriggerConfigurationFile
 import entities
 import streams
 
