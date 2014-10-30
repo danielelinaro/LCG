@@ -27,8 +27,8 @@ interface with the amplifier during finding the coefficients.
 usage='{0}\n'.format(description)
 
 default_options={'output_filename':[],
-                 'CCchannels':[0,1],
-                 'VCchannels':[0,1],
+                 'CCchannels':[0,0],
+                 'VCchannels':[1,1],
                  'model_cell':10,
                  }
 def read_analog_input(filename):
@@ -131,9 +131,11 @@ for your data acquisition card. This has to be done only once for each user
         V_pre = rV[idx_pre]
         V_post = rV[idx_post]
         
-    CCin = 1./np.round(np.mean(V_pre)/expected_voltage_deflection,4)
-    deltaV = (np.mean(V_post)-np.mean(V_pre))*CCin
+    CCin = np.round(np.mean(V_pre)/expected_voltage_deflection,4)
+    deltaV = (np.mean(V_post)-np.mean(V_pre))/CCin
     CCout = np.round(CCout_value/(1000.0*(deltaV/opts['model_cell'])),6)
+    CCin = 1./CCin
+    print("CCin = %lf; CCout = %lf \n"%(CCin,CCout))
     ############################# Voltage Clamp ###############################
     sub.call('lcg-zero')
 
@@ -160,7 +162,7 @@ for your data acquisition card. This has to be done only once for each user
                      'stimfile':filename})
     I_post = board_range
     while (np.mean(I_post)>board_range-1):
-        VCout_value = VCout_value/2
+        VCout_value = VCout_value/2.0
         sys.argv = ['lcg-stimgen','-o',filename,
                     'dc', '-d',str(duration/2.0),'--','0',
                     'dc', '-d',str(duration),'--',str(VCout_value),
@@ -178,8 +180,8 @@ for your data acquisition card. This has to be done only once for each user
     
     VCin =1000.0*np.round((VCin_value/opts['model_cell'])/np.mean(I_pre),4)
     deltaI = VCin*(np.mean(I_post)-np.mean(I_pre))
-    VCout =np.round(VCout_value/deltaI*opts['model_cell'],6) 
-    set_trace()
+    expected_current_deflection = 1000.
+    VCout =np.round(((expected_current_deflection/opts['model_cell'])*VCout_value)/deltaI,6)
     factors = ['AI_CONVERSION_FACTOR_CC={0}'.format(CCin),
                'AO_CONVERSION_FACTOR_CC={0}'.format(CCout),
                'AI_CONVERSION_FACTOR_VC={0}'.format(VCin),
@@ -192,6 +194,7 @@ Make sure the following values are correct:
 
     stdout.write('Looking for lcg-env in .bashrc and .bash_profile\n');stdout.flush()
     lcg_env = None
+    sys.exit()
     with open('{0}/.bashrc'.format(os.environ['HOME'])) as fd:
         for line in fd.readlines():
             if 'lcg-env' in line and 'source' in line:
