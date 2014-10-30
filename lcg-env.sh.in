@@ -1,6 +1,7 @@
 COMEDI_DEVICE="/dev/comedi0"
 # Choose here the appropriate amplifier for your setup
 AMPLIFIER="HEKA-EPC10"
+#AMPLIFIER="NPI-ELC"
 #AMPLIFIER="AXON-700B"
 case $AMPLIFIER in
     "HEKA-EPC10")
@@ -15,6 +16,13 @@ case $AMPLIFIER in
         AI_CONVERSION_FACTOR_VC=400
         AO_CONVERSION_FACTOR_VC=0.05
 	;;
+	"NPI-ELC")
+        AI_CONVERSION_FACTOR_CC=100		# Potential Output Gain set to 100x
+        AO_CONVERSION_FACTOR_CC=0.001   # CC (not CC x10)
+        AI_CONVERSION_FACTOR_VC=1000	# Current Output Sensitivity 1x 
+        AO_CONVERSION_FACTOR_VC=0.01    # VC (not VC x10)
+	;;
+
     *)
         AI_CONVERSION_FACTOR_CC=100
         AO_CONVERSION_FACTOR_CC=0.001
@@ -68,3 +76,5 @@ export GROUND_REFERENCE
 export AMPLIFIER
 export LCG_REALTIME
 export LCG_RESET_OUTPUT
+export DIGITAL_SUBDEVICE
+export DIGITAL_CHANNEL
