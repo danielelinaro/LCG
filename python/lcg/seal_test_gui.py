@@ -65,8 +65,8 @@ env = lambda x:os.environ[x]
 
 class Window(QtGui.QDialog):
     def parse_options(self,opts):
-        defaults = {'ai':env('AI_CHANNEL'),
-                    'ao':env('AO_CHANNEL'),
+        defaults = {'ai':env('AI_CHANNEL_VC'),
+                    'ao':env('AO_CHANNEL_VC'),
                     'amp':10,
                     'duration':15,
                     'holding':0,
@@ -92,6 +92,11 @@ class Window(QtGui.QDialog):
             elif o == '--reset':
                 options['reset'] = True
             elif o == '--CC':
+                options['ai'] = int(env('AI_CHANNEL_CC'))
+                options['ao'] = int(env('AO_CHANNEL_CC'))
+                options['amp'] = -100.
+                options['duration'] = 40.
+
                 print('CC mode!')
                 options['mode'] = 'CC'
             elif o == '--remote-blind-patch':
