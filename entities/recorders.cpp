@@ -390,12 +390,8 @@ void H5Recorder::stopWriterThread()
                 m_eventsDataQueue.push_back(m_eventsBufferInUse);
         Logger(Debug, "H5Recorder::stopWriterThread() >> %d values left to save in buffer #%d.\n",
                 m_bufferLengths[m_bufferInUse], m_bufferInUse);
-        Logger(Debug, "H5Recorder::stopWriterThread() >> %d events left to save in buffer #%d.\n",
+        Logger(Critical, "H5Recorder::stopWriterThread() >> %d events left to save in buffer #%d.\n",
                 m_eventsBufferLengths[m_eventsBufferInUse], m_eventsBufferInUse);
-		/*Delete Events if size is zero*/
-		if (m_eventsDatasetSize == 0) {
-			
-		}
 			
         m_threadRun = false;
         Logger(Debug, "H5Recorder::stopWriterThread() >> before pthread_cond_broadcast.\n");
@@ -465,7 +461,7 @@ void H5Recorder::step()
 }
 
 void H5Recorder::handleEvent(const Event *event) {
-	
+
         if (m_eventsBufferPosition == 0) {
                 pthread_mutex_lock(&m_mutex);
                 while (m_eventsDataQueue.size() == H5Recorder::numberOfBuffers) {
@@ -497,8 +493,6 @@ void H5Recorder::handleEvent(const Event *event) {
         }
 }
 
-// VIRTUAL IN ENTITIES 
-// INTEGER DATASETS INSTEAD OF DOUBLE.
 void* H5Recorder::buffersWriter(void *arg)
 {
         Logger(Debug, "H5Recorder::buffersWriter() >> Started.\n");
@@ -584,7 +578,6 @@ void* H5Recorder::buffersWriter(void *arg)
                         H5Sclose(filespace);
                         Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                 }
-
                 if (self->m_eventsDataQueue.size() > 0) {
                 
                 	bufferToSave = self->m_dataQueue.front();

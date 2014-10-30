@@ -5,14 +5,9 @@
 lcg::Entity* DigitalInputFactory(string_dict& args)
 {
         uint inputSubdevice, readChannel, id;
-<<<<<<< HEAD
         std::string deviceFile, units, eventStr;
         lcg::EventType eventToSend;
-
-=======
-        std::string deviceFile,units;
         
->>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
 	id = lcg::GetIdFromDictionary(args);
 
         if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
@@ -27,7 +22,6 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
         if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "Boolean";
         }
-<<<<<<< HEAD
         if (lcg::CheckAndExtractValue(args, "eventToSend", eventStr)) {
                 int i=0;
                 while(i < NUMBER_OF_EVENT_TYPES && strcasecmp(eventStr.c_str(), lcg::eventTypeNames[i].c_str()))
@@ -37,15 +31,12 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
                     return NULL;
                 }
                 eventToSend = static_cast<lcg::EventType>(i);
-	else {
-		eventToSend = lcg::DIGITAL_RISE;
+		}
+		else {
+			eventToSend = lcg::DIGITAL_RISE;
         }
         return new lcg::DigitalInput(deviceFile.c_str(), inputSubdevice, readChannel,
 					units, eventToSend, id);
-=======
-        return new lcg::DigitalInput(deviceFile.c_str(), inputSubdevice, readChannel,
-					units, id);
->>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
 }
 
 lcg::Entity* DigitalOutputFactory(string_dict& args)
@@ -72,7 +63,6 @@ lcg::Entity* DigitalOutputFactory(string_dict& args)
 namespace lcg {
 
 DigitalInput::DigitalInput(const char *deviceFile, uint inputSubdevice,
-<<<<<<< HEAD
                          uint readChannel, const std::string& units,
                          EventType eventToSend, uint id)
         : Entity(id),
@@ -80,18 +70,10 @@ DigitalInput::DigitalInput(const char *deviceFile, uint inputSubdevice,
 	m_input(deviceFile, inputSubdevice, readChannel),
 #endif
 	m_eventToSend(eventToSend)
-=======
-                         uint readChannel,
-			 const std::string& units,
-                         uint id)
-        : Entity(id),
-#if defined(HAVE_LIBCOMEDI)
-          m_input(deviceFile, inputSubdevice, readChannel)
-#endif
->>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
 {
         setName("DigitalInput");
         setUnits(units);
+		m_previous = 0;
 }
 
 bool DigitalInput::initialise()
@@ -105,7 +87,6 @@ bool DigitalInput::initialise()
 void DigitalInput::step()
 {
         m_data = m_input.read();
-<<<<<<< HEAD
 	//Rising crossing
 	if (m_data - m_previous > 0) {
 		switch (m_eventToSend) {
@@ -133,8 +114,7 @@ void DigitalInput::step()
 				break;
 		}
 	}
-=======
->>>>>>> d524f003477a6ffd844fbe0a692beecfbff9cc4f
+	m_previous = m_data;
 }
 
 void DigitalInput::firstStep()
