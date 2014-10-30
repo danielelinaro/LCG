@@ -33,7 +33,7 @@ def usage():
     # Digital
     print('--trigger-subdevice    trigger subdevice (default %s)' % os.environ['DIGITAL_SUBDEVICE'])
     print('--trigger-channel      trigger channel (default %s)' % os.environ['DIGITAL_CHANNEL'])
-    print('--stop-trigger-channel trigger channel to stop recording (default none)')
+    print('--trigger-stop-channel trigger channel to stop recording (default none)')
     print('--digital-channels     digital channels to record (default %s)' % os.environ['DIGITAL_CHANNEL'])
     # Analog
     print(' -S, --subdevice       input subdevice (default %s)' % os.environ['AI_SUBDEVICE'])
@@ -48,12 +48,10 @@ def usage():
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
     print(' -V, --voltage-clamp   use default conversion factor and units for voltage clamp')
-    print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
     print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
     print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
     print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
     print(' -p, --priority        set the priority of this thread, -20 is maximum, default is zero')
-    print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('     --verbose         set the verbosity level of lcg-experiment (default is 4 - silent)')
     print('                       it is also possible to specify options to control the behavior of')
     print('                       lcg-stimulus using "timer", "percent" or "silent"')
@@ -81,14 +79,19 @@ def main():
                                    'duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
+                                   '--trigger-subdevice=','trigger-channel=','trigger-stop-channel=','digital-channels=',
                                    'output-channels=','output-gains=','output-units=',
-                                   'voltage-clamp','offset=','conductance=','rt=','output-file=',
-                                   'reset-output=','verbose=','dry-run','model',
+                                   'voltage-clamp','offset=','output-file=',
+                                   'reset-output=','verbose=','dry-run',
                                    'priority='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
         sys.exit(1)
+
+#    if not os.environ['LCG_REALTIME'] == 'yes':
+#        print('The variable "LCG_REALTIME" is set to "no", triggered mode not supported.')
+#        sys.exit(1)
 
     # default values
     stimfiles = None
@@ -112,21 +115,14 @@ def main():
     resetOutput = None
     verbose = 4
     niceness = 0
-    suffix = 'CC'
-    trigger_subdevice = os.environ['DIGITAL_SUBDEVICE']
+    suffix = 'CC' 
+    triggerSubdevice = os.environ['DIGITAL_SUBDEVICE']
     digitalSubdevice = os.environ['DIGITAL_SUBDEVICE']
     triggerChannel = None
-    digital
-    print('--trigger-subdevice    trigger subdevice (default %s)' % os.environ['DIGITAL_SUBDEVICE'])
-    print('--trigger-channel      trigger channel (default %s)' % os.environ['DIGITAL_CHANNEL'])
-    print('--stop-trigger-channel trigger channel to stop recording (default none)')
-    print('--digital-channels     digital channels to record (default %s)' % os.environ['DIGITAL_CHANNEL'])
-
-
-
-
+    triggerStopChannel = None
+    digitalChannels = []
     offsets = []
-
+    
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
     terminalPrintMode = 'progress'
 
@@ -173,12 +169,12 @@ def main():
             subdevice = a
         ############ DIGITAL/TRIGGER ############
         elif o in ('--trigger-subdevice'):
-            trigger_subdevice = a
-            digital_subdevice = a
+            triggerSubdevice = a
+            digitalSubdevice = a
         elif o in ('--trigger-channel'):
-            trigger_channel = int(a)
-        elif o in ('--stop-trigger-channel'):
-            stop_trigger_channel = int(a)
+            triggerChannel = int(a)
+        elif o in ('--trigger-stop-channel'):
+            triggerStopChannel = int(a)
         elif o in ('--digital-channels'):
             if a.lower() == 'none':
                 # no input channels
@@ -234,33 +230,20 @@ def main():
         elif o in ('-U','--output-units'):
             for unit in a.split(','):
                 outputUnits.append(unit)
-        elif o in ('-E','--conductance'):
-            for E in a.split(','):
-                reversalPotentials.append(E)
         elif o in ('-H','--offset'):
             for offset in a.split(','):
                 offsets.append(float(offset))
         elif o in ('-o','--output-file'):
             outputFilename = a
-        elif o == '--rt':
-            realtime = a.lower() == 'yes'
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
         elif o == '--verbose':
             if a == 'progress':
                 terminalPrintMode = 'progress'
-            if a == 'timer':
-                terminalPrintMode = 'timer'
-            elif a == 'percent':
-                terminalPrintMode = 'percent'
             elif a == 'quiet':
                 terminalPrintMode = 'quiet'                
             else:
                 verbose = int(a)
-        elif o == '--model':
-            model = 'LIF'                
-            realtime = 'yes'
-            print(' LIf simulation mode.')
         elif o == '--dry-run':
             dry_run = True
         elif o in  ('-p','--priority'):
@@ -348,10 +331,6 @@ def main():
             print('There are %d output channels and %d stimulus files: I don\'t know what to do.' % (len(outputChannels),len(stimfiles)))
             sys.exit(1)
 
-    if len(reversalPotentials)>0 and suffix == 'VC':
-        print('Conductance clamp requires current clamp mode. Stopping here...')
-        sys.exit(1)
-
     # default value of resetOutput, for voltage and current clamp stimulations
     if resetOutput is None:
         if suffix == 'CC':
@@ -364,23 +343,21 @@ def main():
     else:
         total = repetitions * len(stimfiles)
     cnt = 1
-    if len(reversalPotentials) == 0:
-        writeConfigurationFile = lambda cfile,dur,chan:lcg.writeIOConfigurationFile(
-            cfile,
-            samplingRate,
-            dur,
-            chan,
-            realtime,
-            outputFilename,
-            model)
-    else:
-        writeConfigurationFile = lambda cfile,dur,chan:lcg.writeConductanceStimulusConfigurationFile(
-            cfile,
-            samplingRate,
-            dur,
-            chan,
-            reversalPotentials,
-            model)
+
+    writeConfigurationFile = lambda cfile,dur,chan:lcg.writeIOExternalTriggerConfigurationFile(
+        cfile,
+        samplingRate,
+        dur,
+        chan,
+        outputFilename,
+        trigger = {'device':os.environ['COMEDI_DEVICE'],
+                   'subdevice':triggerSubdevice,
+                   'channel':triggerChannel,
+                   'stopChannel':triggerStopChannel},
+        digitalChannels = {'device':os.environ['COMEDI_DEVICE'],
+                           'subdevice':digitalSubdevice,
+                           'channels':digitalChannels})
+
     all_channels = []
     all_durations = []
     if outputChannels is None or len(stimfiles) == len(outputChannels):
@@ -422,20 +399,12 @@ def main():
                str(verbose)+' -c ' + config_file)
     timerString = '\rTrial {0:d} of {1:d}'
     if dry_run:
-        cmdstr = 'echo "' + cmd_str + '"'
+        cmd_str = 'echo "' + cmd_str + '"'
     if (verbose != 4) or (terminalPrintMode == 'quiet'):
         runLCG = lambda string,count,total,dur: runCommand(cmd_str,mode=None)
     elif terminalPrintMode == 'progress':
         runLCG = lambda string,count,total,dur: runCommand(cmd_str,'progress',duration, 
                                                            string +' ')
-    elif terminalPrintMode == 'timer':
-        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'timer',duration, 
-                                                           string + '; elapsed time: {0:.2f}s ')
-    elif terminalPrintMode == 'trial_bar':
-        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'trial_bar', 
-                                                           count,
-                                                           total,
-                                                           string + ' ')        
     sys.stdout.flush()
     # Main loop
     for i in range(repetitions):

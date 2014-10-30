@@ -5,7 +5,8 @@ import numpy as np
 
 __all__ = ['XMLEntry','XMLConfigurationFile',
            'completeWithDefaultValues','writeIOConfigurationFile',
-           'writeConductanceStimulusConfigurationFile']
+           'writeConductanceStimulusConfigurationFile',
+           'writeIOExternalTriggerConfigurationFile']
 
 class XMLEntry (object):
     def __init__(self, entry, name, id, connections):
@@ -78,7 +79,10 @@ class XMLConfigurationFile (object):
     Class for creating configuration files.
     This class is a part of lcg.
     """
-    def __init__(self, sampling_rate, trial_duration, output_filename=None):
+    def __init__(self, sampling_rate, trial_duration, output_filename=None, 
+                 trigger = {'device': None,
+                            'subdevice': None,
+                            'channel': None}):
         '''
         Initializes an XMLConfigurationFile.
         '''
@@ -86,10 +90,16 @@ class XMLConfigurationFile (object):
         self._xml_entities = None
         self._xml_streams = None
         self._xml_simulation = etree.SubElement(self._xml_root,'simulation')
-        if output_filename is None:
-            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration})
-        else:
-            self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration, 'outfile':output_filename})
+        self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration,
+                                                 'outfile':output_filename})
+        # Add trigger if present
+        if ((not trigger['device'] is None) or 
+            (not trigger['subdevice'] is None) or
+            (not trigger['channel'] is None)):
+            self._xml_simulation_trigger = etree.SubElement(self._xml_simulation,'trigger')
+            self._add_elements(self._xml_simulation_trigger,{'device':trigger['device'],
+                                                             'subdevice':trigger['subdevice'],
+                                                             'channel':trigger['channel']})
         self._entities = []
         self._streams = []
 
@@ -337,3 +347,75 @@ def writeConductanceStimulusConfigurationFile(config_file, sampling_rate, durati
     config.write(config_file)
     return True
 
+def writeIOExternalTriggerConfigurationFile(config_file, sampling_rate, duration,
+                                      channels, output_filename=None,
+                                      trigger = {'device':None,
+                                                 'subdevice':None,
+                                                 'channel':None,
+                                                 'stopChannel':None},
+                                      digitalChannels = {'device':None,
+                                                         'subdevice':None,
+                                                         'channels':None}):
+
+    config = lcg.XMLConfigurationFile(sampling_rate,
+                                      duration,
+                                      output_filename,
+                                      trigger=trigger)
+    ID = 0
+    config.add_entity(lcg.entities.H5Recorder(id=ID, 
+                                              filename=output_filename,
+                                              connections=()))
+    ID += 1
+    for chan in channels:
+        try:
+            chan = completeWithDefaultValues(chan)
+        except KeyError:
+            print('Each channel must contain a "type" key.')
+            return False
+        if chan['type'] == 'input':
+            config.add_entity(lcg.entities.AnalogInput(
+                    id=ID, connections=(0), 
+                    deviceFile=chan['device'],
+                    inputSubdevice=chan['subdevice'], 
+                    readChannel=chan['channel'],
+                    inputConversionFactor=chan['factor'],
+                    range=chan['range'],
+                    aref=chan['reference'],
+                    units=chan['units']))
+        else:
+            config.add_entity(lcg.entities.AnalogOutput(
+                    id=ID, connections=(),
+                    deviceFile=chan['device'],
+                    outputSubdevice=chan['subdevice'], 
+                    writeChannel=chan['channel'],
+                    outputConversionFactor=chan['factor'],
+                    aref=chan['reference'], units=chan['units'], 
+                    resetOutput=chan['resetOutput']))
+            config.add_entity(lcg.entities.Waveform(
+                    id=ID+1,
+                    connections=(0,ID), 
+                    filename=chan['stimfile'], 
+                    units=chan['units']))
+            ID += 1
+    ID += 1
+    if not digitalChannels['channels'] is None:
+        for channel in digitalChannels['channels']:
+            config.add_entity(lcg.entities.DigitalInput(
+                    id=ID, connections=(0), 
+                    deviceFile=digitalChannels['device'],
+                    inputSubdevice=digitalChannels['subdevice'], 
+                    readChannel=channel,
+                    units='Boolean',
+                    eventToSend=None))
+            ID += 1
+    if not trigger['stopChannel'] is None:
+            config.add_entity(lcg.entities.DigitalInput(
+                    id=ID, connections=(0), 
+                    deviceFile=trigger['device'],
+                    inputSubdevice=trigger['subdevice'], 
+                    readChannel=channel,
+                    units='Boolean',
+                    eventToSend='STOPRUN'))
+
+    config.write(config_file)
+    return True

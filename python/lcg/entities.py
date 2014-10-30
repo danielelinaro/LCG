@@ -160,6 +160,16 @@ class AnalogOutput (Entity):
         self.add_parameter('aref', aref)
         self.add_parameter('units', units)
         self.add_parameter('resetOutput', resetOutput)
+
+class DigitalInput (Entity):
+    def __init__(self, id, connections, deviceFile, inputSubdevice, readChannel,
+                 units, eventToSend):
+        super(AnalogInput,self).__init__('AnalogInput', id, connections)
+        self.add_parameter('deviceFile', deviceFile)
+        self.add_parameter('inputSubdevice', inputSubdevice)
+        self.add_parameter('readChannel', readChannel)
+        self.add_parameter('units', units)
+        self.add_parameter('eventToSend', eventToSend)
         
 class Connection (Entity):
     def __init__(self, id, connections, delay):

@@ -55,6 +55,7 @@ setup(
             'lcg-seal-test = lcg.seal_test_gui:main',
             'lcg-create-experiment-folder = lcg.create_folder:main',
             'lcg-experiment-launcher = lcg.exp_launcher:main',
+            'lcg-stimulus-external-trigger = lcg.stimulus_triggered:main',
             ]
         }
     )

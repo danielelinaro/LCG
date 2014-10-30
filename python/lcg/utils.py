@@ -288,8 +288,6 @@ def incrementLetterOrInteger(string):
                 string = None
     return string
             
-            
-
 def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
     """
     Parameters:
