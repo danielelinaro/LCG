@@ -390,7 +390,7 @@ void H5Recorder::stopWriterThread()
                 m_eventsDataQueue.push_back(m_eventsBufferInUse);
         Logger(Debug, "H5Recorder::stopWriterThread() >> %d values left to save in buffer #%d.\n",
                 m_bufferLengths[m_bufferInUse], m_bufferInUse);
-        Logger(Critical, "H5Recorder::stopWriterThread() >> %d events left to save in buffer #%d.\n",
+        Logger(Debug, "H5Recorder::stopWriterThread() >> %d events left to save in buffer #%d.\n",
                 m_eventsBufferLengths[m_eventsBufferInUse], m_eventsBufferInUse);
 			
         m_threadRun = false;
