@@ -27,7 +27,7 @@
 \definecolor{light_gray}{RGB}{230,230,230}
 \definecolor{dark_green}{RGB}{50,150,50}
 \lstset{ 
-  backgroundcolor=\color{light_gray},  
+  backgroundcolor=``\color{light_gray},  
   % the size of the fonts that are used for the code
   basicstyle = \footnotesize\ttfamily,       
 % sets if automatic breaks should only happen at whitespace
@@ -49,7 +49,7 @@
 % the step between two line-numbers. If it's 1, each line will be numbered 
   stepnumber=1,                   
 % string literal style
-  stringstyle=\color{mauve},      
+  stringstyle=\color{orange},      
   tabsize=4,
   deletekeywords={local,env},
   literate={\$}{{{\$}}}1
@@ -58,6 +58,9 @@
 \newcommand{\inlineCode}{\lstinline[basicstyle=\normalsize\ttfamily]}
 \newcommand{\progname}{\textsc{lcg}\xspace}
 \newcommand{\matlab}{Matlab\textsuperscript{\textregistered}}
+\newcommand{\unix}{UNIX\xspace}
+\newcommand{\comedi}{COMEDI\xspace}
+\newcommand{\hdf}{HDF5\xspace}
 
 \title{\textbf{LCG} - electrophysiology on the command-line \\ User manual}
 \author{Daniele Linaro \\ Jo\~ao Couto \\ Michele Giugliano}
@@ -122,9 +125,9 @@
 \bibliography{manual}
 \bibliographystyle{apsrev}
 
-%\appendix
-%\chapter{Stimulus Generator Library}
-%\input{stimgen/documentation}
+\appendix
+\chapter{Stimulus Generator Library}
+\input{stimgen/documentation}
 
 %\input{chapters/matlab}
 %\input{chapters/unix}

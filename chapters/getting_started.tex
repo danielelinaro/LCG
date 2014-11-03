@@ -1,5 +1,5 @@
 \paragraph{}
-This chapter will help you undestanding some basic concepts related to \progname. It starts by giving a notion of the basic commands using an artificial neuron and continues to interfacing with live cells. While it does not intend to be a detailed tutorial on either matlab nor python, some indications on how to use these software packages will be provided.
+This chapter will help you understanding some basic concepts related to \progname. It starts by giving a notion of the basic commands using an artificial neuron and continues to interfacing with live cells. While it does not intend to be a detailed tutorial on either matlab nor python, some indications on how to use these software packages will be provided.
 
 \section{Requirements}
 \paragraph{}
@@ -107,26 +107,313 @@ We will illustrate some basic concepts of data analysis of intracellular data us
 \progname does not require a particular folder structure to be used, i.e. when you run a command the recording will be executed in that very same directory. However it is very beneficial to use  a consistent folder structure. You can use \texttt{\progname create\_experiment\_folder} for that:
 
 \begin{lstlisting}[numbers=none,language=bash]
-lcg-create-experiment-folder -p YYYYMMDD_test_[001] -s LIFsteps,steps 
+lcg-create-experiment-folder -p YYYYMMDD_tutorial_[001] -s LIFsteps,steps 
 \end{lstlisting}
 
-Note that  \texttt{\progname create\_experiment\_folder} can do more than creating a folders such as add information files with details from the experiment, you can the read more about it further in the manual.
+Note that \texttt{lcg-create-experiment-folder} can do more than creating a folders i.e. it can add information files with details from the experiment, you can the read more about it in section \ref{lcg:create_experiment_folder}.
 
-\section{Interfacing with an amplifier}
+After running the above command you will see the name of the folder that was just created. Go into this folder using the \unix command \texttt{cd <foldername>}.
+By using the command \texttt{ls} you can list the directories under this directory i.e. LIFsteps and steps.  \texttt{lcg-create-experiment-folder} also created a folder \texttt{01} inside each of these with the intention of storing different sets of trials with the same protocol.  In this way the first time the protocol was run would be stored in the \texttt{01} directory, the second in \texttt{02} and so on.
+
+\subsection{Recording from a simulated neuron}
+
+To get started lets compute the frequency-current (FI) curve of simulated Linear Integrate and Fire neuron. For this we will use the \texttt{lcg-steps} protocol with the \texttt{--model} option. 
+Run the following commands in the terminal window (what follows \# is a comment).
+
+\begin{lstlisting}[numbers=none,language=bash]
+# Go into the stepsLIF/01 directory
+cd LIFsteps/01
+# Run the protocol
+lcg-steps -a -200,800,50  -d 1 --model --no-shuffle -n 1
+# Plot the results
+lcg-plot -f all
+\end{lstlisting}
+One of the most important things that you should know is that each protocol as computed like this has multiple switches or options and that these usually have default parameters. Make sure that the default parameters fit your purpose otherwise use switches to set them. All protocols have a \texttt{--help} switch that displays the supported options and default parameters.
+
+In the above example you used \progname to inject current steps from $-200$ to $800\pico\ampere$  with $50\pico\ampere$ increases and $1 \second$ duration into a simulated neuron. The \texttt{--no-shuffle} option makes that the steps amplitudes are not shuffled before applied.
+
+\subsection{Loading files and analyzing data}
+\paragraph{}Analyzing data is probably the most important step of an experiment. While this manual does not intent to go into details on the data analysis we will show examples of simple scripts to visualize and analyze data for this simple case.
+\paragraph{} Before proceeding you should understand the basic structure of the data files recorded by \progname when using \hdf files. For a detailed explanation read chapter \ref{chap:datafiles}. Each file contains at least 2 groups \emph{Entities} and \emph{Info}. The \emph{Entities} group contains each element (entity; see \ref{chap:entities}) of the recording, in this case the recorded voltage trace and the injected current step. It should be noted that each entity can also contain \textbf{metadata} representing its parameters e.g. the stimuli parameters for the \emph{Waveform} entity. The \emph{Info} group contains parameters of the experiment such as the \emph{time step (dt)} used and the \emph{duration (tend)} of the recording.
+
+\subsubsection{Python example}
+The scientific community often uses Python to analyze data and produce publication ready figures. We will show you how to produce a simple figure from the recorded traces using the \texttt{ipython notebook} which is a neat way to interact with the Python interpreter. In its essence it lets you write and annotate the data analysis script from a standard Internet browser. For details on how to use Python you should follow a tutorial on-line.
+
+Start by launching the notebook and creating a new document. 
+
+\begin{lstlisting}[numbers=none,language=bash]
+ ipython notebook --pylab
+\end{lstlisting}
+
+This should open a browser window and let you create a new notebook in the current working directory.
+You can now write Python code and execute it directly in the browser. Start by writing the following:
+\renewcommand{\lstlistingname}{Example}
+\begin{lstlisting}[caption={An example of a how to use Python to plot all entities in a \hdf file recorded with \progname.},label={python:plot_entities},language=Python,upquote=true]
+from glob import glob   # To list files
+import numpy as np      # To handle numerical arrays and some math 
+import pylab as p       # To plot and visualize
+import lcg              # To load experiment files and more
+# List experiment files
+files = glob('*.h5')
+# Load and investigate last file
+fname = files[-1]
+ent,info = lcg.loadH5Trace(fname)
+# Look at the names of the entities 
+print [e['name'] for e in ent]
+# Thus the first entity is the Neuron and second entity the Waveform
+
+# Create a time vector 
+#(This is done using size of the data and the sampling rate (1/dt))
+time = np.arange(len(ent[0]['data']))*info['dt']
+# Plot the data in 2 plots with shared x axis
+fig, ax = p.subplots(len(entities),1, sharex=True)
+for i,e in enumerate(ent): 
+    # Plot the data
+    ax[i].plot(time, e['data'])
+    # Add labels with the information from each entity
+    ax[i].set_xlabel('Time (s)')
+    ystr = '{0} entity ({1})'.format(e['name'],e['units'])
+    ax[i].set_ylabel(ystr)
+# Set the filename as title
+ax[0].set_title('Data from file {0}'.format(fname))
+\end{lstlisting} 
+
+The code in listing \ref{python:plot_entities} can be used to plot all entities in a file. We will now use the metadata to extract information about the stimulus. Of course this could also be extracted from the current waveforms but becomes much easier from the metadata (specially for more complicated protocols).
+
+By analyzing the current trace plotted before, we know that our stimulus consists of 1 sec recording followed by 1 sec of stimulus and 1 sec of recording. This is translates into a  protocol description (metadata, see \ref{chap:stimgen}) with 3 lines. The protocol code (second column) is the same for all rows. And the stimulation amplitude is therefore in the second row (third column). 
+
+\renewcommand{\lstlistingname}{Example}
+\begin{lstlisting}[caption= {Python example of the code to compute the spike rate during the stimulus for a LIF neuron.} ,label={python:spk_rate},language=Python, upquote=true]
+
+# Get the metadata
+metadata = ent[1]['metadata']
+V = ent[0]['data']
+# Cumulative sum of the first column is the duration 
+prot_time = np.cumsum(metadata[:,0])
+# The third column is the amplitude of the stimuli (for the DC protocols); we are interested in the amplitude of the second line since that is the one of the step of current.
+stim_amp = metadata[1,2]
+# Find the peaks that cross threshold
+threshold = 0.0
+# The following line is sufficient to detect the spike indexes by in the simulated neuron in real data another approach must be taken.
+indexes = np.where(V >= threshold)[0]
+spikes = time[indexes]
+
+rate = len(spikes[(spikes > prot_time[0]) & (spikes <= prot_time[1])])/(prot_time[1]-prot_time[0])
+print('The spike rate is {0} spikes per second for a current of {1}pA.'.format( rate, stim_amp))
+\end{lstlisting}
+
+The spike rate is then simply the number of spikes that happened during our current step divided by the duration
+
+We can now iterate through all the files and compute the FI curve i.e. the spike rate versus the current.
+
+\renewcommand{\lstlistingname}{Example}
+\begin{lstlisting}[caption= {Python example of the code to compute the FI curve of a LIF neuron.} ,label={python:FI},language=Python]
+def computeRateForLIF(time, V, metadata, threshold=0.0):
+    # Function to compute the rate and return the stimulus amplitude
+    # for a LIF neuron. See previous python code example.
+    prot_time = np.cumsum(metadata[:,0])
+    stim_amp = metadata[1,2]
+    indexes = np.where(V >= threshold)[0]
+    spikes = time[indexes]
+    rate = len(spikes[(spikes > prot_time[0]) & (spikes <= prot_time[1])])/(prot_time[1]-prot_time[0])
+    return rate, stim_amp
+
+# List experiment files
+files = glob('*.h5')
+F = []
+I = []
+# Iterate through the files
+for fname in files:
+    ent,info = lcg.loadH5Trace(fname)
+    V = ent[0]['data']
+    metadata = ent[1]['metadata']
+    time = np.arange(len(V))*info['dt']
+    # Use our function
+    tmp_rate,tmp_stim = computeRateForLIF(time,V,metadata)
+    F.append(tmp_rate)
+    I.append(tmp_stim)
+# Make list an numpy.array to sort it so that plotting locks nicer
+F = np.array(F)
+F = F[np.argsort(I)]
+I = np.sort(I)
+# Plot and add axis labels
+p.plot(I,F,'ko-', clip_on=False)
+p.xlabel('Current (pA)')
+p.ylabel('Rate (spikes per second)')
+p.grid(True)
+\end{lstlisting}
+
+Example \ref{python:FI} illustrates how to iterate through multiple files using Python. We would recommend that users not familiar with Python and willing to use it for data analysis engage in 2 simple exercises before continuing:
+\begin{itemize}
+\item{} compute the voltage-current (VI) curve for the traces where the LIF neuron does not fire and deduce the input resistance from the VI curve.
+\item{} make a more general function for spike detection that finds the local maxima  of putative spikes (and hence works also for real data). 
+\end{itemize} 
+
+\subsubsection{Matlab example}
+
+We will now see how to use \textbf{\matlab} to read this file and extract the timing of the spikes. 
+First open \matlab\ in a terminal window with the command: 
+\begin{lstlisting} 
+matlab -nodesktop 
+\end{lstlisting}
+
+You should see something like:
+\begin{lstlisting}[numbers=none,language=xml]
+		< M A T L A B (R) >
+Copyright 1984-2012 The MathWorks, Inc.
+	R2012b (8.0.0.783) 64-bit (maci64)
+		August 22, 2012
+
+To get started, type one of these: helpwin, helpdesk, or demo.
+For product information, visit www.mathworks.com.
+ 
+>> 
+\end{lstlisting}
+
+We will use \matlab\ without desktop in these examples if you prefer to use the desktop mode, you can launch \matlab\ with the command \inlineCode{matlab &}; all this assuming \matlab\ binaries have been added to path.
+\matlab\ can be used to automate the analysis method in a highly efficient manner however in this section we will focus on the basic concepts. Rest assured: once you get a grip of \matlab\ and \matlab\ functions you will greatly reduce the amount of time that you require to analyze these sort of traces.
+
+\paragraph{\matlab\ functions and the path}
+
+You could load these file only using the built in functions of \matlab\ to read HDF5 files however this would be rather time consuming. The basic notions of \matlab\ that you need to get acquainted with before continuing the are the concept of \texttt{functions} and \texttt{path}.
+
+The terminal that you have in front of you is interactive and the commands you type there will be ran as \matlab\ commands. Some of the power of \matlab\ lays in how simple it is to create functions. A function can be seen as a generic box that receives inputs and returns outputs. The computations processed to transform the inputs into the outputs are the core of the function. In \matlab functions are defined by naming a file with the name of the function and placing the code \inlineCode{function [out] = functionName(in)} in the first line of that file.
+
+This said, \matlab\ functions are just files which are named the same as the function. \matlab\ does not search for functions in all directories of your disk (this is a very good thing!) and because of that you have to tell \matlab\ where to search for functions. In order to do so you can use the \texttt{add path} command. 
+
+Every \matlab\ function/command has a documentation built in. You can access this by typing \inlineCode{help <name>}.
+
+Now you need to add the functions that ship with \progname\ to the path (in case they are not already there). You can do this (for the current \matlab\ session) by doing:
+
+\begin{lstlisting}[escapeinside=\{\}]
+addpath([getenv('{\progname}_path'),'\matlab'])
+\end{lstlisting}
+
+Note that the above command will not work if you haven't defined the variable \texttt{\progname\_path} in your environment (\texttt{\$HOME/.bashrc} file) as the location of the source code of \progname. Although this command may seem complicated to the first time user of \matlab, the only thing it does is retrieving the environment variable '\texttt{\progname\_path}' and concatenating it with the \texttt{'\textbackslash matlab'} string. This because the we want to add the files that are in this folder to the \matlab\ path.
+
+\paragraph{Loading and plotting the recorded traces}
+Now that you added the function in the source path of \progname\ to the path of \matlab\ with the command:
+
+\begin{lstlisting}[escapeinside=\{\}]
+addpath([getenv('{\progname}_path'),'\matlab'])
+\end{lstlisting}
+
+The function \texttt{loadH5Trace} will be available for \matlab. Type \inlineCode{help loadH5Trace} to access the help of this function.
+You can load and plot the data with the commands:
+
+\begin{lstlisting}[language=matlab,morekeywords={loadH5Trace,ls},escapeinside=\{\}]
+files = dir({\textquotesingle}*.h5{\textquotesingle});
+[entities,info] = loadH5Trace(files(end).name)
+entities(1).name
+Vm = entities(1).data;
+time = [0:length(Vm)-1]*info.dt;
+plot(time,Vm,{\textquotesingle}k{\textquotesingle})
+\end{lstlisting}
+
+The first line uses \matlab 's command \texttt{dir} to list all directories. Then \texttt{loadH5Trace} loads the data into the variables \texttt{entities} and \texttt{info} -  it loads one structure per entity connected to the \nameref{entities:h5recorder} and thus we will think of it as a structure array (read about \matlab\ datatypes).
+
+The third line in the above code is solely for illustration of how you can find out the name of an entity in the \texttt{entities} array. This can be particularly useful since it lets you find a particular entity based on it's type. Later we will see how to take advantage of this feature.
+The fourth and fifth line we associate the variable Vm to the recorded membrane potential of the \nameref{entities:lifneuron} and create a time vector with the size of \texttt{Vm} and using the time step that is saved in the \texttt{info} structure.
+
+The last line plots the time versus the voltage using the color black.
+
+\paragraph{Detecting the peak of the spikes}
+
+There are several ways of detecting the peaks of the spikes. We will focus on a relatively robust yet simple method of doing so by taking advantage of the \matlab\ function \texttt{findpeaks}.
+
+\begin{lstlisting}[language=matlab,morekeywords={findpeaks,THRESHOLD,MINPEAKDISTANCE},escapeinside=\{\}]
+% Define the refractory period of the peak detector (1ms); this can be useful when dealing with noisy signals.
+refractory = 1.e-3/info.dt; 
+% The following uses the function find peaks to find the spikes with threshold crossing at 0mV and a refractory period. 
+[peaks, loc] = findpeaks(Vm,{\textquotesingle}THRESHOLD{\textquotesingle},0,{\textquotesingle}MINPEAKDISTANCE{\textquotesingle},refractory);
+% The spikes are the locations of the peaks on the time vector
+spks = time(loc);
+% Plot time versus membrane potential
+plot(time, Vm,{\textquotesingle}k{\textquotesingle})
+hold on
+% Plot the spike times and the peaks of the Action Potentials. The {\textquotesingle}hold on{\textquotesingle} command makes that the plots overlap.
+plot(spks, peaks,{\textquotesingle}b.{\textquotesingle})
+\end{lstlisting}
+
+The above commands will get you to extract the peaks of the action potentials and the spike times and to plot them on the membrane voltage trace.
+These commands should work also with very noisy signals, as long as the threshold and the refractory period are defined accordingly.
+
+Now it would be useful to know the mean interspike interval. First we need to compute the interspike intervals, that can be easily done by using the \texttt{diff} command. 
+
+\begin{lstlisting}[language=matlab,morekeywords={findpeaks,THRESHOLD,MINPEAKDISTANCE},escapeinside=\{\}]
+% Compute te interspike intervals
+isi = diff(spks);
+% And the mean can be computed in a straight forward manner:
+mean(isi)
+% The reciprocal will give you the result in Hz
+1./mean(isi)
+\end{lstlisting}
+
+
+\subsection{Interfacing with a Patch Clamp amplifier}
+
+\progname is not bond to a particular amplifier or amplifier brand. While on one hand this adds versatility to the program, on the other it requires that the user is familiar with some of basic concepts of data acquisition and inner loops of the amplifier.
+
+A recording system for patch clamp electrophysiology using \progname is composed of:
+\begin{enumerate}
+\item{Patch-clamp Amplifier}
+\item{Data Acquisition Board} referred to as DAQ throughout this manual.
+\item{Recording computer running \progname}
+\end{enumerate}
+
+Assuming that the DAQ board is supported by the \comedi drivers (or other drivers supported by \progname) then it is need that the recording computer understands what the values being read through the DAQ card mean in terms of the physical quantities being measured. This is accomplished in \progname by a set of environmental variables \footnote{If you do not know what a Bash environmental variable is, please refer to a Bash introduction course.}.
+
+In essence we need to know:
+\begin{enumerate}
+\item{Where to measure from and what that measure means?}
+\item{Where to stimulate to how to output something meaningful?}
+\end{enumerate}
+All this information is set up during installation (see section \ref{sec:configuration}) simply by editing a text file. 
 
 \paragraph{}
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{figures/daq2amplifier}
-    \caption{Correspondency between Digital Data Acquisition board and the patch clamp amplifier.}
+    \caption{Correspondence between Digital Data Acquisition board and the patch clamp amplifier.}
     \label{fig:daq2amplifier}
 \end{figure}
 
+Figure \ref{fig:daq2amplifier} illustrates the most important connections and environmental variables that are involved in controlling the amplifier both in Current Clamp and in Voltage Clamp mode. Protocols ran in Current Clamp mode use the environmental variables with \textbf{CC} suffix while those ran in Voltage Clamp mode use the \textbf{VC} suffix which allows different gains, channels and units to be used with minimal interaction from the user side.
+ 
+Most \progname protocols that support both voltage clamp and current clamp modes have a \textbf{--voltage-clamp} switch that instructs the program to use the proper conversion factors.
 
+A small program called \textbf{lcg-find-conversion-factors} can help quickly discovering the conversion factors associated with the patch clamp amplifier.
 
-\section{Your first recording}
-\paragraph{}
+\subsection{Your first recording}
+Once you have configured the environmental variables as described in section \ref{sec:configuration}, \progname is ready to be used for patch clamp recordings.
+ We can now attempt to characterize the VI and FI curves of a patched cell as for the simulated neuron. This can be accomplished simply by running the \textbf{lcg-steps} protocol. 
+
+Set the amplifier to current clamp (CC) mode and enable the external command (if required by the patch clamp amplifier). You can now use Active Electrode Compensation to compensate pipette resistance errors so do not apply bridge compensation in the amplifier \footnote{if you do not wish to use Active Electrode Compensation use the \textbf{--no-kernel} switch.}. 
+
+Go to the proper recording folder (\textbf{<folder name>/steps/01} in the previous example) and type the following command:
+ \begin{lstlisting}[numbers=none,language=bash]
+lcg-steps -a -200,500,50  -d 1 
+# Plot the results
+lcg-plot -f all -k kernel.dat
+\end{lstlisting}
+
+This will first inject noise into the cell to compute the kernel that will be used for offline Active Electrode Compensation and prompt the user for the number of points that are to be considered the length of the Electrode Kernel. 
+Type a number so that the kernel encompasses the large peak and its decay. If you intend to use Active Electrode Compensation you should read \cite{Brette:2008}.
+
+After probing the electrode kernel the protocol will deliver shuffled current pulses between -200 and +500 pA with 50pA steps.
+
+All traces can be plotted by using the \textbf{lcg-plot -f all} command with the \textbf{-k kernel.dat} option that indicates the kernel file to use.
+
+There are also functions (for \matlab and Python) to perform the Active Electrode Compensation offline.
+
+%%%%%%%%%%%%%%%%%% COMMENT TRASH TEXT %%%%%%%%%
+\iffalse
+
 The example \ref{gettingStarted:example0} can solely help you check that \texttt{\progname} is installed, but it does not record/log anything on the disk. One way to save data is to use a Recorder object such as the \nameref{entities:h5recorder}.
+
+
+
+
 
 Lets then extend the previous example by adding a \nameref{entities:h5recorder} entity to the \texttt{entities} layer. 
 
@@ -392,5 +679,7 @@ hold on
 plot(spks, peaks,{\textquotesingle}b.{\textquotesingle})
 
 \end{lstlisting}
- 
+ \fi
+% END OF COMMENT OUT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
