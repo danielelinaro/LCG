@@ -1,18 +1,802 @@
-This chapter describes all the entities contained in \progname
-Short definition of entity and the general properties of entities.
+
+%\minitoc
+Entities are one of the basic building blocks of real-time experiments with \progname. As mentioned in chapter \ref{chap:configuration}, experiments are described in configuration files (that follow the XML standard) where entities are described and connected. Complex protocols can be designed by combining entities in different ways. 
+
+Going a little bit in the design of the entities, in its essence, these are C++ classes with particular defined methods that let them interface in the same way with the experiment engine. These methods are:
+\begin{itemize}
+	\item{initialise()} - where the initial parameters of the entity are set as well as the initial input.
+	\item{firstStep()} - executed in the first step of the experiment (where parameters that depend on precise timing can be initialised).
+	\item{step()} - that is executed at every timestep of the simulation/experiment.
+	\item{handleEvent()} - that is executed every time an event is received by the entity.
+	\item{terminate()} - that is executed when the simulation/experiment ends. 
+\end{itemize}
+Aside of the above described methods, entities have access to the \emph{outputs} of  all entities they are connected to and have an output of themselves. The output is nonetheless than a single double value that changes (or not) at every time-step depending on either the \emph{step()} or the \emph{handleEvent()} methods. 
+
+This chapter describes the entities contained in \progname, it provides short definitions of entity and the general properties. The descriptions can be used to create configuration files, however there are also Python helper classes to create configuration files. The helper classes are the ones used by most protocols and its usage is encouraged.
 
 \section{H5Recorder}
 
-The \emph{H5Recorder} records the entities that are connected to it to HDF5 files.
-
-\begin{table}[h] \centering
+The \emph{H5Recorder} records the entities that are connected to it to \hdf files.
+The entity saves the absolute time of the first step in the \hdf file \emph{Info} group in the \emph{startTimeSec} and \emph{startTimeNSec}. These times have nanosecond precision and are taken from the realtime clock. 
+\begin{table}[H] \centering
 \renewcommand{\arraystretch}{1.3}
-\begin{tabular}{@{}cccl@{}} \toprule
-\head{Parameter} & \head{Type} & \head{Type} &  \head{Description} \\ 
+
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
 \midrule
 \texttt{filename} & String & yyyymmddHHMMSS.h5  & Name of the file to record \\ 
 \texttt{compress} & Boolean & True & If true, file is saved with GZIP compression \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{H5Recorder configuration file parameters}
+\end{table}
+
+\section{TriggeredH5Recorder}
+
+The \emph{TriggeredH5Recorder} records the entities that are connected to it to \hdf files when a TRIGGER event is received; each trigger adds a row in the dataset.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{before} & Double & Required & Time to record before trigger \\
+\texttt{after} & Double & Required & Time to record after trigger \\
+\texttt{filename} & String & yyyymmddHHMMSS.h5  & Name of the file to record \\ 
+\texttt{compress} & Boolean & True & If true, file is saved with GZIP compression \\
+
+\bottomrule
+\end{tabularx}
+\caption{TriggeredH5Recorder configuration file parameters}
+\end{table}
+
+\section{Waveform}
+\label{entity:Waveform}
+
+The \emph{Waveform} entity reads a stimulus file and generates the corresponding waveform.
+The stimulus description is saved as \emph{metadata} when connected to a recorder.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{filename} & String &  Required & Path to the stimulus file. \\ 
+\texttt{units} & String & N/A & Sets the units of the entity. \\
+\texttt{triggered} & Boolean & False & If true the entity waits to be triggered by TRIGGER events. \\
+\bottomrule
+\end{tabularx}
+\caption{Waveform configuration file parameters}
+\end{table}
+
+\section{Constant}
+\label{entity:Constant}
+
+The \emph{Constant} entity holds a constant value with specified units.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{value} & Double &  Required & Value to hold. \\ 
+\texttt{untis} & String & N/A & Sets the units of the entity. \\
+\bottomrule
+\end{tabularx}
+\caption{Constant configuration file parameters}
+\end{table}
+
+
+\section{ConstantFromFile}
+\label{entity:ConstantFromFile}
+
+The \emph{ConstantFromFile} entity reads a value from a file and holds it constant in its output.
+Value is read from the file with the "\%lf" formating.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{filename} & String &  Required & Path of the filename to read the value from. \\ 
+\texttt{units} & String & N/A & Sets the units of the entity. \\
+\bottomrule
+\end{tabularx}
+\caption{ConstantFromFile configuration file parameters}
+\end{table}
+
+\section{AnalogInput}
+\label{entity:AnalogInput}
+
+The \emph{AnalogInput} entity records data from an analog channel of the Data Acquisition board.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{deviceFile} & String &  Required & Device File (example /dev/comedi0 to record from the first comedi board). \\ 
+\texttt{inputSubdevice} & Integer & Required & Subdevice (needs to be an analog input subdevice) \\
+\texttt{readChannel} & Integer & Required &  Input channel to read from.\\
+\texttt{inputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being measured.\\
+\texttt{range} & String & [-10,+10] &  Input range to control the board internal gains.\\
+\texttt{reference} & String & GRSE or NRSE & Refers to the grounding scheme being used, check the board manual.\\
+\texttt{units} & String & mV &  Units after conversion.\\
+\bottomrule
+\end{tabularx}
+\caption{AnalogInput configuration file parameters}
+\end{table}
+
+
+\section{AnalogOutput}
+\label{entity:AnalogOutput}
+
+The \emph{AnalogOutput} entity outputs data to an analog channel of the Data Acquisition board.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{deviceFile} & String &  Required & Device File (example /dev/comedi0 to record from the first comedi board). \\ 
+\texttt{ouputSubdevice} & Integer & Required & Subdevice (needs to be an analog output subdevice) \\
+\texttt{writeChannel} & Integer & Required &  Output channel to write to.\\
+\texttt{outputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being output.\\
+\texttt{range} & String & [-10,+10] &  Output range to control the board internal gains.\\
+\texttt{reference} & String & GRSE or NRSE & Refers to the grounding scheme being used, check the board manual.\\
+\texttt{units} & String & mV &  Units after conversion.\\
+\bottomrule
+\end{tabularx}
+\caption{AnalogOutput configuration file parameters}
+\end{table}
+
+\section{AnalogIO}
+\label{entity:AnalogIO}
+
+The \emph{AnalogIO} entity that combines entities \ref{entity:AnalogInput} and \ref{entity:AnalogOutput}. Reads from an input channel and outputs what is connected to it to an analog channel of the Data Acquisition board.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{deviceFile} & String &  Required & Device File (example /dev/comedi0 to record from the first comedi board). \\ 
+\texttt{inputSubdevice} & Integer & Required & Subdevice (needs to be an analog input subdevice) \\
+\texttt{readChannel} & Integer & Required &  Input channel to read from.\\
+\texttt{inputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being measured.\\
+\texttt{inputRange} & String & [-10,+10] &  Output range to control the board internal gains.\\
+\texttt{reference} & String & GRSE or NRSE & Refers to the grounding scheme being used, check the board manual.\\
+\texttt{units} & String & mV &  Input units after conversion.\\
+\texttt{ouputSubdevice} & Integer & Required & Subdevice (needs to be an analog output subdevice) \\
+\texttt{writeChannel} & Integer & Required &  Output channel to write to.\\
+\texttt{outputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being output.\\
+\bottomrule
+\end{tabularx}
+\caption{AnalogIO configuration file parameters}
+\end{table}
+
+\section{RealNeuron}
+\label{entity:RealNeuron}
+
+The \emph{RealNeuron} entity that combines entities \ref{entity:AnalogInput} and \ref{entity:AnalogOutput} and is able to perform Active Electrode Compensation Online \cite{Brette:2008}. Emits spikes upon threshold crossing.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{deviceFile} & String &  Required & Device File (example /dev/comedi0 to record from the first comedi board). \\ 
+\texttt{inputSubdevice} & Integer & Required & Subdevice (needs to be an analog input subdevice) \\
+\texttt{readChannel} & Integer & Required &  Input channel to read from.\\
+\texttt{inputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being measured.\\
+\texttt{inputRange} & String & [-10,+10] &  Output range to control the board internal gains.\\
+\texttt{kernelFile} & String &  Empty &  Location of the kernel file; sets AEC online.\\
+\texttt{spikeThreshold} & Double & Required &  Threshold for spike detection.\\
+\texttt{V0} & Double & Required &  Initial voltage guess (used to initialize the state of the entity).\\
+\texttt{reference} & String & GRSE or NRSE & Refers to the grounding scheme being used, check the board manual.\\
+\texttt{units} & String & mV &  Input units after conversion.\\
+\texttt{ouputSubdevice} & Integer & Required & Subdevice (needs to be an analog output subdevice) \\
+\texttt{writeChannel} & Integer & Required &  Output channel to write to.\\
+\texttt{outputConversionFactor} & Double & Required &  Conversion factor associated with the quantity being output.\\
+\texttt{holdLastValue} & Boolean & False &  Whether to hold the last value (offset).\\
+\texttt{holdLastValueFilename} & String & filename &  Path to the file where last value is to be written.\\
+\bottomrule
+\end{tabularx}
+\caption{RealNeuron configuration file parameters}
+\end{table}
+
+The \textbf{holdLastValue} parameter allows the constant injection of an offset value in the output of the entity. This can be useful to hold the cell at a certain value, it is used for instance in the PRC protocol in conjuntion with a \hyperref[entity:ConstantFromFile]{ConstantFromFile} entity .
+
+\section{LIFNeuron}
+\label{entity:LIFNeuron}
+
+The \emph{LIFNeuron} entity integrates the equation for a Linear Integrate and Fire neuron with refractory period and can be used to run independent simulations or to interface simulated neurons with real cells. It is often used also for debuging of complex protocols.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{C} & Double &  Required & Cell membrane capacitance. \\ 
+\texttt{tau} & Double & Required & Cell membrane time constant. \\
+\texttt{tarp} & Double & Required &  Refractory period.\\
+\texttt{Er} & Double & Required & Reset potential.\\
+\texttt{E0} & Double & Required & Equilibrium potential.\\
+\texttt{Vth} & Double & Required &  Threshold for spike emission.\\
+\texttt{Iext} & Double & Required &  External current offset.\\
+\texttt{holdLastValue} & Boolean & False &  Whether to hold the last value (offset).\\
+\texttt{holdLastValueFilename} & String & filename &  File where last value is written.\\
+\bottomrule
+\end{tabularx}
+\caption{LIFNeuron configuration file parameters}
+\end{table}
+
+\section{IzhikevichNeuron}
+\label{entity:IzhikevichNeuron}
+
+The \emph{IzhickevichNeuron} entity integrates the equation for a Izhickevich neuron with refractory period and can be used to run independent simulations or to interface simulated neurons with real cells; similarly to entity \ref{entity:LIFNeuron}. It is often used also for debuging of complex protocols.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{a} & Double &  0.02 & \emph{a} parameter. \\ 
+\texttt{b} & Double & 0.2 & \emph{b} parameter. \\
+\texttt{c} & Double & -65 &  \emph{c} parameter.\\
+\texttt{d} & Double & 2 & \emph{d} parameter.\\
+\texttt{Vspk} & Double & 30 & Spike voltage value.\\
+\texttt{Iext} & Double & 0 &  External current offset.\\
+\bottomrule
+\end{tabularx}
+\caption{IzhickevichNeuron configuration file parameters}
+\end{table}
+
+
+\section{FrequencyEstimator}
+\label{entity:FrequencyEstimator}
+
+The \emph{FrequencyEstimator} entity estimates the instantaneous frequency of an event by iterating the following formula:
+ \begin{equation}
+  \label{eq:freq_estimator}
+  \tilde{F}_k = {t_k}^{-1} \cdot \left(1 - e^{-t_k/\tau) }\right) + \tilde{F}_{k-1} \cdot e^{-t_k/\tau},
+\end{equation}
+where $t_{k}$ is the time of the $k^{th}$ event and $\tau$ (in $\second$) the time scale over which the instantaneous event rate is estimated, weighing each new event time and the previous event rate history $\tilde{F}_{k-1}$ \cite{Wallach:2011,Linaro:2014}.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{tau} & Double & Required & Estimator time constant. \\
+\texttt{initialFrequency} & Double &  0.0 & Initial frequency estimation ($\tilde{F}_{k-1}$). \\ 
+\bottomrule
+\end{tabularx}
+\caption{FrequencyEstimator configuration file parameters}
+\end{table}
+
+
+\section{PID}
+\label{entity:PID}
+
+The \emph{PID} entity is evolved by \textbf{TRIGGER} or \textbf{SPIKE}  events, here referred by triggers. The output of the entity is kept constant between triggers.
+Furthermore, it can be set ON or OFF by a \textbf{TOGGLE} event; when OFF, the triggers have no effect on the output of the entity. 
+
+The entity requires \textbf{two inputs}; the inputs are compared to yield the error signal $e_k = \text{input}_{2} - \text{input}_{1}$. 
+The output of the PID is then updated at every trigger by the equation:
+\begin{equation}
+  \label{eq:PID}
+  I_{k \, holding}=g_P \cdot e_k + g_I \cdot \sum_{i=0}^{k}{e_i} + g_D \cdot (e_k-e_{k-1}),
+\end{equation}
+where $g_P$, $g_I$, $g_D$ are the proportional, integral, and derivative gains, respectively.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{gp} & Double &  Required & Proportional gain. \\ 
+\texttt{gi} & Double & Required & Integral gain. \\
+\texttt{gd} & Double & 0.0 &  Derivative gain.\\
+\bottomrule
+\end{tabularx}
+\caption{PID configuration file parameters}
+\end{table}
+
+\section{EventCounter}
+\label{entity:EventCounter}
+
+The \emph{EventCounter} entity counts events received and emits events when a certain count is reached. It can be used to trigger or toggle other entities or to stop the experiment/simulation.
+
+\progname currently implements the following events:
+\begin{enumerate}
+\item{\textbf{SPIKE}} - Signal a spike in a Neuron.
+\item{\textbf{TRIGGER}} - Trigger other entities.
+\item{\textbf{RESET}} - Reset other entities.
+\item{\textbf{TOGGLE}} - Toggle other entities.
+\item{\textbf{STOPRUN}} - Terminate the simulation/experiment.
+\item{\textbf{DIGITAL\_RISE}} - Signal the rise of a digital line.
+\end{enumerate}
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{maxCount} & Integer &  Required & Number of events to count. \\ 
+\texttt{autoReset} & Boolean & True & Start from zero when maxCount events is reach. \\
+\texttt{eventToCount} & String & SPIKE &  Type of the events to be counted.\\
+\texttt{eventToSend} & String & TRIGGER &  Type of the events to send when maxCount is reach.\\
+\bottomrule
+\end{tabularx}
+\caption{EventCounter configuration file parameters}
+\end{table}
+
+\section{Poisson}
+\label{entity:Poisson}
+
+The \emph{Poisson} entity emits spike events following a Poisson distribution at a fixed rate.
+This entity has no output (is always zero) and the output is not recorded.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{rate} & Double &  Required & Rate of the poisson point Process. If the rate is 
+negative the point process becomes deterministic (fixed rate). \\ 
+\texttt{seed} & Integer &  Optional & Seed of the random algorithm. \\ 
+\bottomrule
+\end{tabularx}
+\caption{Poisson configuration file parameters}
+\end{table}
+
+\section{Connection}
+\label{entity:Connection}
+
+The \emph{Connection} is an entity that introduces a delay to an event.
+This entity has no output.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{delay} & Double &  Required & Value of the delay in seconds. \\ 
+\bottomrule
+\end{tabularx}
+\caption{Connection configuration file parameters}
+\end{table}
+
+\section{VariableDelayConnection}
+\label{entity:VariableDelayConnection}
+
+The \emph{VariableDelayConnection} is an entity that introduces a delay to an event. This entity has no output and no parameters, the behavior is dictated by the operators connected to it: see entities \hyperref[entity:PhasicDelay]{PhasicDelay}, \hyperref[entity:SobolDelay]{SobolDelay} and \hyperref[entity:RandomDelay]{RandomDelay}.
+
+\section{SynapticConnection}
+\label{entity:SynapticConnection}
+The \emph{SynapticConnection} is an entity that introduces a delay to a SPIKE event with synaptic weight.
+This entity has no output.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{delay} & Double &  Required & Value of the delay in seconds. \\ 
+\texttt{weight} & Double &  Required & Weight of the synapse. \\ 
+\bottomrule
+\end{tabularx}
+\caption{SynapticConnection configuration file parameters}
+\end{table}
+
+
+\section{PhasicDelay}
+\label{entity:PhasicDelay}
+
+The \emph{PhasicDelay} is a special type of entity (functor) that returns the input multiplied by a constant value.
+It can be used for instance to give the phase in an slightly noisy oscillatory cycle.
+This entity has no output.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{delay} & Double &  0.0 & Value of the delay (usually between zero and one) \\ 
+\bottomrule
+\end{tabularx}
+\caption{PhasicDelay configuration file parameters}
+\end{table}
+
+\section{SobolDelay}
+\label{entity:SobolDelay}
+
+The \emph{SobolDelay} is a special type of entity (functor) that returns numbers drawn from a Sobol Pseudo-Random distribution multiplied by the input to the entity.
+Its used for instance in the PRC protocol, use the \texttt{--dry-run} switch for an example.
+This entity has no output.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{min} & Double &  0.0 & Minimum of the Sobol distribution \\ 
+\texttt{max} & Double &  1.0 & Maximum of the Sobol distribution \\ 
+\texttt{startSample} & Integer &  0 & Sample to start drawing numbers from (can be used to have consistency across simulations/experiments). \\ 
+\bottomrule
+\end{tabularx}
+\caption{SobolDelay configuration file parameters}
+\end{table}
+
+
+\section{RandomDelay}
+\label{entity:RandomDelay}
+
+The \emph{RandomDelay} is a special type of entity (functor) that returns the input multiplied by a constant value.
+It can be defined using an interval or the mean and standard deviation of the gaussian distribution (see below).
+This entity has no output.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{interval} & Double,Double &  Required & Interval between the numbers are drawn from \\ 
+\bottomrule
+\end{tabularx}
+\caption{RandomDelay configuration file parameters using intervals.}
+\end{table}
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{mean} & Double &  Required & Mean of the gaussian distribution.\\ 
+\texttt{stdev} & Double &  Required & Standard deviation of the gaussian distribution.\\
+\bottomrule
+\end{tabularx}
+\caption{RandomDelay configuration file parameters using distribution parameters.}
+\end{table}
+
+
+\section{PeriodicPulse}
+\label{entity:PeriodicPulse}
+
+The \emph{PeriodicPulse} entity emits pulses at fixed periods with a given duration and amplitude.
+Emits a TRIGGER event when a pulse starts.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{frequency} & Double &  Required & Frequency of the pulses. \\ 
+\texttt{duration} & Double & Required & Sets the duration of the pulses (in seconds). \\
+\texttt{amplitude} & Double & Required &  Sets the amplitude of the pulses.\\
+\texttt{units} & String & pA &  Units of the output.\\
+
+\bottomrule
+\end{tabularx}
+\caption{PeriodicPulse configuration file parameters}
+\end{table}
+
+\section{PeriodicTrigger}
+\label{entity:PeriodicTrigger}
+
+The \emph{PeriodicTrigger} entity emits trigger events with a fixed period.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{frequency} & Double &  Required & Frequency of the triggers. \\ 
+\texttt{delay} & Double & 0 & Sets the Delay of the first trigger. \\
+\texttt{tend} & Double & INFINITY &  Sets the maximum time of the last trigger.\\
+\bottomrule
+\end{tabularx}
+\caption{PeriodicTrigger configuration file parameters}
+\end{table}
+
+\section{ExponentialSynapse}
+\label{entity:ExponentialSynapse}
+
+The \emph{ExponentialSynapse} entity models a synapse as a single exponential. Needs to be connected to a Neuron and injects a conductance.
+Spike events increase the weight of the synapse.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{E} & Double &  Required & Reversal Potential. \\ 
+\texttt{tau} & Double &  Required & Time constant. \\ 
+\bottomrule
+\end{tabularx}
+\caption{ExponentialSynapse configuration file parameters}
+\end{table}
+
+\section{Exp2Synapse}
+\label{entity:Exp2Synapse}
+
+The \emph{Exp2Synapse} entity models a synapse as a alpha function.
+Needs to be connected to a Neuron and injects a conductance.
+Spike events increase the weight of the synapse.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{E} & Double &  Required & Reversal Potential. \\ 
+\texttt{tauRise} & Double &  Required & Rise time constant. \\ 
+\texttt{tauDecay} & Double &  Required & Decay time constant. \\ 
+\bottomrule
+\end{tabularx}
+\caption{Exp2Synapse configuration file parameters}
+\end{table}
+
+\section{TMGSynapse}
+\label{entity:TMGSynapse}
+
+The \emph{TMGSynapse} entity models a Tsodyks-Markram synapse.
+Needs to be connected to a Neuron and injects a conductance.
+Spike events increase the weight of the synapse.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{E} & Double &  Required & Reversal Potential. \\ 
+\texttt{U} & Double &  Required & Amplitude. \\ 
+\texttt{tau1} & Double &  Required & Time constant. \\ 
+\texttt{tauRec} & Double &  Required & Recovery time constant. \\ 
+\texttt{tauFacil} & Double &  Required & Facilitation time constant. \\ 
+\bottomrule
+\end{tabularx}
+\caption{TMGSynapse configuration file parameters}
+\end{table}
+
+\section{ConductanceStimulus}
+\label{entity:ConductanceStimulus}
+
+The \emph{ConductanceStimulus} entity is used to inject a conductance into a neuron, it uses the first input as conductance waveform and must be connected to a RealNeuron to be used.
+The following formula is used to compute the conductance:
+\begin{equation}
+  \label{eq:conductance}
+  I_{k}=g \cdot (E - V),
+\end{equation}
+with $g$ the conductance waveform given by the first input, $E$ the reversal potential of the conductance and V the voltage taken from the RealNeuron.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{E} & Double &  Required & Reversal Potential. \\ 
+\bottomrule
+\end{tabularx}
+\caption{ConductanceStimulus configuration file parameters}
+\end{table}
+
+
+\section{NMDAConductanceStimulus}
+\label{entity:NMDAConductanceStimulus}
+
+The \emph{NMDAConductanceStimulus} entity is used to inject an NMDA conductance into a neuron, it uses the first input as conductance waveform and must be connected to a RealNeuron to be used (like entity \ref{entity:ConductanceStimulus} ).
+The following formula is used to compute the conductance:
+\begin{equation}
+  \label{eq:conductance}
+  I_{k}=\frac{g \cdot (E - V)}{1 + K_1 \cdot exp^{-K_2 \cdot V}},
+\end{equation}
+with $g$ the conductance waveform given by the first input, $E$ the reversal potential of the conductance and V the voltage taken from the RealNeuron.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{E} & Double &  Required & Reversal Potential. \\ 
+\texttt{K1} & Double &  Required & NMDA amplitude. \\ 
+\texttt{K2} & Double &  Required & NMDA time constant. \\ 
+\bottomrule
+\end{tabularx}
+\caption{ConductanceStimulus configuration file parameters}
+\end{table}
+
+
+\section{OU}
+\label{entity:OU}
+
+The \emph{OU} entity outputs an Ornstein-Uhlenbeck fluctuating waveform with static mean, standard deviation and time constant.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{mean} & Mean &  Required & Sets the mean of the OU process. \\ 
+\texttt{stdev} & Double & Required & Sets the standard deviation of the OU process. \\
+\texttt{tau} & Double & Required & Sets the time constant of the OU process. \\
+\texttt{units} & String & Required & Sets the units of the entity. \\
+\texttt{initialCondition} & Double & Required & Sets the initial Condition. \\
+\texttt{interval} & Double,Double & Required & Sets the interval. \\
+\\
+\bottomrule
+\end{tabularx}
+\caption{OU configuration file parameters}
+\end{table}
+
+\section{OUNonStationary}
+\label{entity:OUNonStationary}
+
+The \emph{OUNonStationary} entity outputs an Ornstein-Uhlenbeck fluctuating waveform with mean and standard deviation taken from the first two inputs.
+
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{mean} & Mean &  Required & Sets the mean of the OU process. \\ 
+\texttt{stdev} & Double & Required & Sets the standard deviation of the OU process. \\
+\texttt{tau} & Double & Required & Sets the time constant of the OU process. \\
+\texttt{units} & String & Required & Sets the units of the entity. \\
+\texttt{initialCondition} & Double & Required & Sets the initial Condition. \\
+\texttt{interval} & Double,Double & Required & Sets the interval. \\
+\\
+\bottomrule
+\end{tabularx}
+\caption{OUNonStationary configuration file parameters}
+\end{table}
+
+
+\section{HHSodium}
+\label{entity:HHSodium}
+The \emph{HHSodium} entity models a Hodgkin-Huxley sodium current.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.12 & Maximum conductance. \\ 
+\texttt{E} & Double &  50.0 & Reversal Potential. \\ 
+\bottomrule
+\end{tabularx}
+\caption{HHSodium configuration file parameters}
+\end{table}
+
+\section{HHPotassium}
+\label{entity:HHPotassium}
+The \emph{HHPotassium} entity models a Hodgkin-Huxley potassium current.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.036 & Maximum conductance. \\ 
+\texttt{E} & Double &  -77.0 & Reversal Potential. \\ 
+\bottomrule
+\end{tabularx}
+\caption{HHPotassium configuration file parameters}
+\end{table}
+
+\section{HHSodiumCN}
+\label{entity:HHSodiumCN}
+The \emph{HHSodiumCN} entity models a Hodgkin-Huxley sodium current with Channel Noise.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.12 & Maximum conductance. \\ 
+\texttt{E} & Double &  50.0 & Reversal Potential. \\ 
+\texttt{gamma} & Double &  10.0 & Single channel conductance. \\
+\bottomrule
+\end{tabularx}
+\caption{HHSodiumCN configuration file parameters}
+\end{table}
+
+\section{HHPotassiumCN}
+\label{entity:HHPotassiumCN}
+The \emph{HHPotassiumCN} entity models a Hodgkin-Huxley potassium current with channel noise.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.036 & Maximum conductance. \\ 
+\texttt{E} & Double &  -77.0 & Reversal Potential. \\
+\texttt{gamma} & Double &  10.0 & Single channel conductance. \\ 
+\bottomrule
+\end{tabularx}
+\caption{HHPotassiumCN configuration file parameters}
+\end{table}
+
+\section{HH2Sodium}
+\label{entity:HH2Sodium}
+The \emph{HH2Sodium} entity models a Hodgkin-Huxley sodium current with temperature correction.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.12 & Maximum conductance. \\ 
+\texttt{E} & Double &  50.0 & Reversal Potential. \\ 
+\texttt{vtraub} & Double &  -63 & variable to adjust threshold. \\
+\texttt{temperature} & Double &  36 & Reversal Potential. \\
+\bottomrule
+\end{tabularx}
+\caption{HH2Sodium configuration file parameters}
+\end{table}
+
+\section{HH2Potassium}
+\label{entity:HH2Potassium}
+The \emph{HH2Potassium} entity models a Hodgkin-Huxley potassium current with temperature correction.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.036 & Maximum conductance. \\ 
+\texttt{E} & Double &  -77.0 & Reversal Potential. \\ 
+\texttt{vtraub} & Double &  -63 & variable to adjust threshold. \\
+\texttt{temperature} & Double &  36 & Reversal Potential. \\
+\bottomrule
+\end{tabularx}
+\caption{HH2Potassium configuration file parameters}
+\end{table}
+
+\section{MCurrent}
+\label{entity:MCurrent}
+The \emph{MCurrent} entity models a persistent sodium current with temperature correction.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.12 & Maximum conductance. \\ 
+\texttt{E} & Double &  50.0 & Reversal Potential. \\ 
+\texttt{taumax} & Double &  1000 & time constant. \\
+\texttt{temperature} & Double &  36 & Reversal Potential. \\
+\bottomrule
+\end{tabularx}
+\caption{MCurrent configuration file parameters}
+\end{table}
+
+
+\section{WBSodium}
+\label{entity:WBSodium}
+The \emph{WBSodium} entity models a Wang-Buzsaki sodium current.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.035 & Maximum conductance. \\ 
+\texttt{E} & Double &  55.0 & Reversal Potential. \\ 
+\bottomrule
+\end{tabularx}
+\caption{WBSodium configuration file parameters}
+\end{table}
+
+\section{WBPotassium}
+\label{entity:WBPotassium}
+The \emph{WBPotassium} entity models a Wang-Buzsaki potassium current.
+\begin{table}[H] \centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{1.15\textwidth}{@{}l l l X@{}} \toprule
+\head{Parameter} & \head{Type} & \head{Default} &  \head{Description} \\ 
+\midrule
+\texttt{area} & Double &  Required & Area to be used in the conductance scaling. \\ 
+\texttt{gbar} & Double &  0.009 & Maximum conductance. \\ 
+\texttt{E} & Double &  -90.0 & Reversal Potential. \\ 
+\bottomrule
+\end{tabularx}
+\caption{WBPotassium configuration file parameters}
 \end{table}

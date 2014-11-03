@@ -1,4 +1,67 @@
 This chapter describes how to write custom configuration files to be
 used by \progname.
 
+\section{}Introduction
+\paragraph{}
+A configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>} or \texttt{vi <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
 
+\paragraph{}
+The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We communicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chap:entities} for a description of the built in entities.
+
+Lets examine one of these files closely:
+
+\renewcommand{\lstlistingname}{Example}
+\begin{lstlisting}[caption={A simple example of a configuration file with a simulated integrate and fire neuron.},label={gettingStarted:example0},language=XML,morekeywords={dynamic clamp,entities,entity,name,id,C,tau,tarp,Er,E0,Vth,Iext,parameters,connections,simulation,tend,rate}]
+<dynamicclamp>
+  <entities>
+    	<entity>
+      		<name>LIFNeuron</name>
+      		<id>1</id>
+      		<parameters>
+			<C>0.08</C>
+			<tau>0.0075</tau>
+			<tarp>0.0014</tarp>
+			<Er>-65.2</Er>
+			<E0>-70</E0>
+			<Vth>-50</Vth>
+			<Iext>220</Iext>
+      		</parameters>
+      		<connections></connections>
+    	</entity>
+  </entities>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
+</dynamicclamp>
+
+\end{lstlisting}
+ 
+This file is composed layers. The most general is the \texttt{<dynamicclamp>} layer; this basically tells the program that this is a configuration file. Inside this layer there are two other:
+\begin{itemize}
+\item
+\emph{ \texttt{<entities>}}  - where the entities are listed and connected to each other. Generally each \emph{ \texttt{<entity>}} has a 
+	\begin{itemize}
+	\item \emph{ \texttt{<name>}} - the global descriptor of the entitiy. 
+	\item \emph{ \texttt{<id>}} - the global identification number of an entity. This is used to connect entities and the ids have to be unique.
+	\item \emph{ \texttt{<parameters>}} - the parameters of the entity. These vary between each entity. You can use the manual section \ref{chap:entities}.
+	\item \emph{ \texttt{<connections>}} - the global \texttt{id}s to which this entity is connected.
+	\end{itemize}
+\item
+\emph{ \texttt{<simulation>}} - where the general parameters are defined e.g. the sampling rate (\texttt{rate}) and the duration (\texttt{tend}).
+\end{itemize}
+
+\paragraph{}
+Now lets create a file called \texttt{example.xml}. Open a terminal and copy the following lines one by one:
+
+\begin{lstlisting}[escapeinside=\{\}]
+mkdir ~/examples  # this creates a directory called under your home folder (that's what the tilt is for)
+cd ~/examples # goes inside this directory
+gedit example1.xml # creates and opens a file called example.xml in the current folder using gnome text editor.
+\end{lstlisting}
+
+Note that if you do have a system without \texttt{gnome} like Mac OS the command \texttt{gedit} will not work; any text editor can be used. Now copy the example (\ref{gettingStarted:example0}) above to this file. If you use copy and paste make sure that there are \textbf{no extra spaces}, this will depend on the your choice of editor. Save and close it. You can now run the example by doing: \texttt{\progname\ -c example.xml}
+
+The \texttt{-c} option stands for \textbf{configuration file} can be used to tell \progname\ that we are going to pass a configuration file as an argument.
+
+\paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded. In the next section you will see how you can record the data.

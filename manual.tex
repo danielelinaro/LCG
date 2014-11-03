@@ -18,11 +18,13 @@
 \usepackage{textcomp} % for the single quotes on the listings
 \usepackage[squaren]{SIunits}
 % tables
+\usepackage{tabularx}
 \usepackage{booktabs}
 \newcommand{\head}[1]{\textnormal{\textbf{#1}}}
 \usepackage{array}
-
-
+\usepackage{float}
+% chaptersection
+\usepackage{minitoc}
 
 \definecolor{light_gray}{RGB}{230,230,230}
 \definecolor{dark_green}{RGB}{50,150,50}
@@ -77,6 +79,7 @@
 \thispagestyle{empty}
 
 \pagenumbering{roman}
+\dominitoc
 \tableofcontents
 \newpage
 \pagenumbering{arabic}
@@ -96,7 +99,6 @@
 \chapter{Electrophysiology protocols}
 \label{chap:protocols}
 \input{chapters/protocols}
-
 
 \chapter{Stimulus generator}
 \label{chap:stimgen}
@@ -125,9 +127,9 @@
 \bibliography{manual}
 \bibliographystyle{apsrev}
 
-\appendix
-\chapter{Stimulus Generator Library}
-\input{stimgen/documentation}
+%\appendix
+%\chapter{Stimulus Generator Library}
+%\input{stimgen/documentation}
 
 %\input{chapters/matlab}
 %\input{chapters/unix}
