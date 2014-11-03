@@ -3,7 +3,7 @@ used by \progname.
 
 \section{}Introduction
 \paragraph{}
-A configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>} or \texttt{vi <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
+An \progname configuration file is a Extensible Markup Language \emph{xml} file and can be opened in a standard text editor (\texttt{gedit <filename>} or \texttt{vi <filename>}). Examples can be found in the examples folder of the \progname\ source code or in the webpage of \href{http://www.tnb.ua.ac.be}{\progname}.
 
 \paragraph{}
 The basic building blocks of \progname\ are called entities. An experiment consists of the interaction of several entities. We communicate with \progname\ by describing how the entities are connected to each other in a configuration file. Check section \ref{chap:entities} for a description of the built in entities.
@@ -12,7 +12,11 @@ Lets examine one of these files closely:
 
 \renewcommand{\lstlistingname}{Example}
 \begin{lstlisting}[caption={A simple example of a configuration file with a simulated integrate and fire neuron.},label={gettingStarted:example0},language=XML,morekeywords={dynamic clamp,entities,entity,name,id,C,tau,tarp,Er,E0,Vth,Iext,parameters,connections,simulation,tend,rate}]
-<dynamicclamp>
+<lcg>
+  <simulation>
+  	<tend>5</tend>
+   	<rate>20000</rate>
+  </simulation>
   <entities>
     	<entity>
       		<name>LIFNeuron</name>
@@ -29,16 +33,15 @@ Lets examine one of these files closely:
       		<connections></connections>
     	</entity>
   </entities>
-  <simulation>
-  	<tend>5</tend>
-   	<rate>20000</rate>
-  </simulation>
-</dynamicclamp>
+</lcg>
 
 \end{lstlisting}
  
-This file is composed layers. The most general is the \texttt{<dynamicclamp>} layer; this basically tells the program that this is a configuration file. Inside this layer there are two other:
+This file is composed layers. The most general is the \texttt{<lcg>} layer; this basically tells the program that this is a configuration file. Inside this layer there are two other:
 \begin{itemize}
+\item
+\emph{ \texttt{<simulation>}} - where the general parameters are defined e.g. the sampling rate (\texttt{rate}) and the duration (\texttt{tend}).
+
 \item
 \emph{ \texttt{<entities>}}  - where the entities are listed and connected to each other. Generally each \emph{ \texttt{<entity>}} has a 
 	\begin{itemize}
@@ -47,10 +50,9 @@ This file is composed layers. The most general is the \texttt{<dynamicclamp>} la
 	\item \emph{ \texttt{<parameters>}} - the parameters of the entity. These vary between each entity. You can use the manual section \ref{chap:entities}.
 	\item \emph{ \texttt{<connections>}} - the global \texttt{id}s to which this entity is connected.
 	\end{itemize}
-\item
-\emph{ \texttt{<simulation>}} - where the general parameters are defined e.g. the sampling rate (\texttt{rate}) and the duration (\texttt{tend}).
 \end{itemize}
 
+% This should be rephased/removed
 \paragraph{}
 Now lets create a file called \texttt{example.xml}. Open a terminal and copy the following lines one by one:
 
@@ -64,4 +66,4 @@ Note that if you do have a system without \texttt{gnome} like Mac OS the command
 
 The \texttt{-c} option stands for \textbf{configuration file} can be used to tell \progname\ that we are going to pass a configuration file as an argument.
 
-\paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded. In the next section you will see how you can record the data.
+\paragraph{} You have just ran a simulation of an integrate and fire neuron's membrane potential for 5 seconds. This was a very basic example, so the data was not recorded since there is no recording entity. 
