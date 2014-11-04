@@ -4,6 +4,11 @@
 *.aux
 *.out
 *.pdf
+!manual.pdf
 *.ps
 *.dvi
 *.blg
+*.fdb_latexmk
+*.fls
+*.maf
+*.mtc*

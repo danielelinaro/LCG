@@ -23,11 +23,11 @@ following instructions will be based on this distribution.
 we will refer to the stable version of Debian at the time of this
 writing (\emph{Squeeze 6.0}).
 
-\subsection{Patching and installing the realtime kernel}
+\subsection{Patching and installing the real-time kernel}
 If you don't want to use the real-time capabilities of \progname you
 can skip this paragraph.
 
-This is potentialy the most difficult part of the installation. In
+This is potentially the most difficult part of the installation. In
 order to achieve nanosecond precision, \progname requires a kernel
 with real-time capabilities. Both \href{http://www.rtai.org}{RTAI} or
 \textbf{\href{https://rt.wiki.kernel.org/index.php/Main\_Page}{PREEMPT\_RT}}
@@ -39,55 +39,54 @@ You may need to install tools to build the kernel. In Debian you can
 type, as root:
 \begin{lstlisting}
 apt-get update
-apt-get install build-essential binutils-dev libelf-dev libncurses5
-libncurses5-dev git-core make gcc subversion libc6 libc6-dev automake
-libtool bison flex autoconf flex libgsl0-dev 
+apt-get install build-essential binutils-dev libelf-dev libncurses5 libncurses5-dev git-core make gcc subversion libc6 libc6-dev automake libtool bison flex autoconf libgsl0-dev 
 \end{lstlisting}
 
 \begin{enumerate}
 \item \textbf{Check which kernels and patches are available.}
   It is advisable to install the real-time patch on a ``vanilla''
-  kernel. To do so, navigate to
-  \href{http://www.kernel.org/pub/linux/kernel/projects/rt/}{the
-      kernel.org ``rt'' project page} and check which patches are
-  available for the kernel that you wish to install. 
-\item \textbf{Download the kernel and the realtime patch} The
+  kernel. To do so, browse
+  \href{https://www.kernel.org/pub/linux/kernel/projects/rt/}{the
+      kernel.org ``rt'' project page} and find out which patches are
+  available for the kernel that you wish to install. In the following, we will
+  describe how to patch and compile the 3.8.4 version of the Linux kernel.
+\item \textbf{Download the kernel and the real-time patch} The
   directory \textbf{/usr/src} is a common place to install the Linux
-  kernel. You will need to have root access to perform these
+  kernel. You will need to have root privileges to perform these
   operations.
   \begin{lstlisting}
-    cd /usr/src
-    wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.8.4.tar.bz2
-    wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.8/patch-3.8.4-rt2.patch.bz2
+cd /usr/src
+wget https://www.kernel.org/pub/linux/kernel/v3.x/linux-3.8.4.tar.bz2
+wget http://www.kernel.org/pub/linux/kernel/projects/rt/3.8/patch-3.8.4-rt2.patch.bz2
   \end{lstlisting}
 \item \textbf{Decompress and patch the kernel.} Patching the kernel
-  will add realtime support to the kernel you have downloaded.
+  will add real-time support to the kernel you have downloaded.
   \begin{lstlisting}
-    tar xvf linux-3.8.4.tar.bz2
-    ln -s linux-3.8.4 linux
-    cd linux
-    bzcat ../patch-3.8.4-rt2.patch.bz2 | patch -p1
+tar xjf linux-3.8.4.tar.bz2
+ln -s linux-3.8.4 linux
+cd linux
+bzcat ../patch-3.8.4-rt2.patch.bz2 | patch -p1
   \end{lstlisting}
 \item \textbf{Configure the kernel.} The easiest way to do this is to
   use the configuration file from a kernel that was previously
   installed in your system or from a similar installation/system.
   \begin{lstlisting}
-    cp /boot/config-`uname -r` .config
-    make oldconfig
-    make menuconfig
+cp /boot/config-`uname -r` .config
+make oldconfig
+make menuconfig
   \end{lstlisting}
   This will evoke a user interface to configure the kernel options.
 You need to set the \texttt{Preemption model} to \texttt{Fully
   Preemptible Kernel (RT)} in the \texttt{Processor type and
   features}. Disable \texttt{CPU Frequency scaling} under
 \texttt{Power Management and ACPI options} and \texttt{Check for
-  stack overflow} and the options under \texttt{Tracers} (the later to
+  stack overflow} and all options under \texttt{Tracers} (the latter to
 make the kernel smaller) in \texttt{Kernel hacking}. Additionally you
 should also disable the \texttt{Comedi drivers} under the
-\texttt{Staging drivers} of the \texttt{Device drivers} menu. Save and
-exit.
-\item \textbf{Compile and install the kernel.} This step might take several
-  minutes to hours, depending on the size of the kernel and on the
+\texttt{Staging drivers} of the \texttt{Device drivers} menu. Save the configuration
+and exit.
+\item \textbf{Compile and install the kernel.} This step might take from several
+  minutes to a few hours, depending on the size of the kernel and on the
   speed of your machine.
 \begin{lstlisting}
 make && make modules && make modules_install && make install
@@ -107,24 +106,37 @@ name of the newly installed kernel in
 \label{install:required}
 \progname makes use of several libraries:
 \begin{enumerate}
-\item \textbf{BOOST C++ library.}
-  In order for \progname to work you will need to install the
-  \href{http://www.boost.org}{BOOST C++ library}. Only the last
-  command needs to be run as root.
-  \begin{lstlisting}
-    wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
-    tar --bzip2 -xvf boost_1_53_0.tar.bz2
-    cd boost_1_53_0
-    ./bootstrap.sh --prefix=/usr/local
-    ./b2 install
-  \end{lstlisting}
+\item \textbf{BOOST.}
+The \href{http://www.boost.org}{BOOST} C++ library is used for parsing XML files.
+BOOST can be installed by using the system's package manager: on Debian, enter the following
+command as root:
+\begin{lstlisting}
+apt-get install libboost-dev
+\end{lstlisting}
+\item \textbf{HDF5.}
+The \href{http://www.hdfgroup.org/HDF5/}{HDF Group} designed a set of
+libraries for data storage and management with high performance,
+efficiency and high volume/complexity in mind. \textbf{\progname} uses
+this library to save binary data files.
+HDF5 can be installed by using the system's package manager: on Debian, enter the following
+command as root:
+\begin{lstlisting}
+apt-get install hdf5-tools hdf5-serial-dev
+\end{lstlisting}
 \item \textbf{Comedi.}
 By default, \progname uses Comedi to interface to supported data
 acquisition cards. The installation of Comedi consists of three parts:
 a kernel-space library (\texttt{comedi} itself), a user-space
 interface (\texttt{comedilib}) and some additional programs for the
 calibration of the board (\texttt{comedi\_calibrate}). They can be
-downloaded from the following Git repositories:
+downloaded from the Git repository of the Comedi project. First of all,
+make a directory in your home folder, where all the source files will be downloaded
+and compiled, and move to that directory:
+\begin{lstlisting}
+mkdir -p $HOME/local/src
+cd $HOME/local/src
+\end{lstlisting}
+Then, download Comedi's source code from the repository:
 \begin{lstlisting}
 git clone git://comedi.org/git/comedi/comedi.git
 git clone git://comedi.org/git/comedi/comedilib.git
@@ -163,35 +175,15 @@ allow users to access the devices. To do that, create, as root, a file
 called \inlineCode{/etc/udev/rules.d/99-comedi.rules} and add the
 following line to it: \texttt{KERNEL=="comedi0", MODE="0666"}. In case
 you have multiple acquisition cards, add a line for each of them.
-\item \textbf{HDF5 library.}
-The \href{http://www.hdfgroup.org/HDF5/}{HDF Group} designed a set of
-libraries for data storage and management with high performance,
-efficiency and high volume/complexity in mind. \textbf{\progname} uses
-this library to save binary data files. The
-library can be installed from source in the following way (the last
-command should be run as root):
-\begin{lstlisting}
-tar xjf hdf5-1.8.9.tar.bz2
-cd hdf5-1.8.9
-./configure --prefix=/usr/local --enable-shared
-make
-make install
-\end{lstlisting}
-Alternatively, it is possible to use a package manager, such as
-Debian's \verb+apt-get+: 
-\begin{lstlisting}
-apt-get install hdf5-tools hdf5-serial-dev
-\end{lstlisting}
 \end{enumerate}
 
-\section{Installation of \progname}
+\section{Installation of LCG}
 \label{install:program}
 To install \progname, start by getting it from the
-\href{https://github.com/danielelinaro/dynclamp}{GithHub
-  repository}. We recommend to install \progname in a local folder, so
+\href{https://github.com/danielelinaro/dynclamp}{GitHub
+  repository}. We recommend installing \progname in a local folder, so
 that it is easier to have multiple installations for different users.
 \begin{lstlisting}
-mkdir -p $HOME/local/src
 cd $HOME/local/src
 git clone https://github.com/danielelinaro/dynclamp.git lcg
 cd lcg
@@ -215,6 +207,7 @@ to be able to use \progname.
 groupadd realtime
 usermod -a -G realtime USER
 \end{lstlisting}
+where USER is the actual login name of an existing user.
 You need to log out and log back in for the changes to take effect.
 
 \subsection{Installation of the Python bindings}
@@ -222,35 +215,48 @@ You need to log out and log back in for the changes to take effect.
 perform standard electrophysiology experiments and as starting point
 for developing new protocols.
 
-The full list of available protocols is described in
+The full list of available protocols (called \emph{commands}, in \progname terminology) is described in
 Chapter~\ref{chap:protocols}: here, we only describe how to install
 the Python bindings and their dependencies.
 
 Start by installing  \texttt{numpy}, \texttt{scipy},
 \texttt{matplotlib} and \texttt{pytables} if they are not already
 present on your system. In Debian this can be accomplished with the
-following command.
+following command:
 \begin{lstlisting}
-apt-get install python-numpy python-scipy python-matlablib python-tables
+apt-get install python-setuptools python-numpy python-scipy python-matplotlib python-tables python-lxml
 \end{lstlisting}
 Alternatively, to have the latest version of the modules, you can
 install them from source.
 
-To install \progname Python module, from the base directory (i.e.,
+To install \progname Python modules, from the base directory (i.e.,
 where you cloned the Git repository) type:
 \begin{lstlisting}
+export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.7/site-packages
 cd python
 python setup.py build
 python setup.py install --prefix=$HOME/local
 \end{lstlisting}
+In case you are using a different version of Python (2.6, for instance), change
+the directory accordingly (i.e., to \$HOME/local/lib/python2.6/site-packages).
 
 This will install the module in the directory
-\inlineCode{$HOME/local/lib/python2.6/site-packages}, which needs to
-be added to your \inlineCode{PYTHONPATH} environment variable, by
-adding the following line to your \inlineCode{.bashrc} file:
+\inlineCode{$HOME/local/lib/python2.7/site-packages}, which needs to
+be permanently added to your \inlineCode{PYTHONPATH} environment variable, by
+adding the previous \verb+export+ line to your \inlineCode{.bashrc} file.
+This can be accomplished with the following command:
 \begin{lstlisting}
-export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.6/site-packages
+echo 'export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.7/site-packages' >> $HOME/.bashrc
 \end{lstlisting}
+Again, change the directory accordingly if you are using a different Python version.
+You can test whether the installation was successful by
+issuing the following commands:
+\begin{lstlisting}
+cd $HOME
+python
+import lcg
+\end{lstlisting}
+If the last command produces no error, the installation was successfull.
 
 \section{Final configuration}
 \label{sec:configuration}
