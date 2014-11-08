@@ -4,7 +4,7 @@ title: Installation
 ---
 
 # LCG installation instructions
-This page provides step-by-step instruction on how to install LCG on your system.
+This page provides step-by-step instructions on how to install LCG on your system.
 
 The primary application of LCG is to perform electrophysiology experiments.
 Albeit not necessary, as it will be described in the following, it is however
@@ -23,6 +23,16 @@ a working Linux installation: if that is not the case, refer to the documentatio
 of one of the multiple distributions available. In our laboratory we use
 Debian and therefore the following instructions will be based on this distribution.
 
+<b>NOTES</b>: throughout the following instructions, commands starting
+with a hash sign (<b>#</b>) need to be run as root, whereas commands starting
+with a dollar sign (<b>$</b>) may be run as a normal
+user. Additionally, the environment variable <b>$HOME</b> indicates the
+home directory of the user that is issuing a specific command: for
+instance, if the user is called john, $HOME will be equal to /home/john.
+
+If you find any errors or omissions in the following instructions,
+please contact [Daniele Linaro](mailto:danielelinaro@gmail.com) or [João Couto](mailto:jpcouto@gmail.com).
+
 ## Configuration of the Linux machine
 LCG can be installed on a variety of Linux distributions. Here, we will refer to
 the stable version of Debian at the time of this writing (Squeeze 6.0).
@@ -31,8 +41,8 @@ the stable version of Debian at the time of this writing (Squeeze 6.0).
 If you don’t want to use the real-time capabilities of LCG you can skip this paragraph.
 
 This is potentialy the most difficult part of the installation. In order to achieve
-nanosecond precision, LCG requires a kernel with real time capabilities. Both RTAI
-and PREEMPT RT can be used. The latter is advisable since RTAI does not include
+nanosecond precision, LCG requires a kernel with real time capabilities. Both [RTAI](https://www.rtai.org)
+and [PREEMPT RT](https://rt.wiki.kernel.org) can be used. The latter is advisable since RTAI does not include
 support for the latest kernels, which might work better with the most recent hardware.
 
 You may need to install tools to build the kernel. In Debian you can type, as root:
@@ -40,7 +50,7 @@ You may need to install tools to build the kernel. In Debian you can type, as ro
         # apt-get update  
         # apt-get install build-essential binutils-dev libelf-dev libncurses5
           libncurses5-dev git-core make gcc subversion libc6 libc6-dev
-          automake libtool bison flex autoconf flex libgsl0-dev
+          automake libtool bison flex autoconf libgsl0-dev
 
 At the moment, LCG supports two real-time kernels, [RTAI](https://www.rtai.org/) and
 [PREEMPT_RT](https://rt.wiki.kernel.org/index.php/Main_Page). In our laboratory, we use
@@ -52,7 +62,9 @@ The following procedure should have you up and running:
 1. **Check which kernels and patches are available**.  
    The realtime patch is best installed on a plain vanilla kernel.
    Go to the the [real-time page on kernel.org](https://www.kernel.org/pub/linux/kernel/projects/rt/)
-   and check which patches are available for the kernel that you wish to install.
+   and check which patches are available for the kernel that you wish
+   to install. In the following, we will describe how to patch and
+   compile the 3.8.4 version of the Linux kernel.
 
 2. **Download the kernel and the realtime patch**.  
    Assuming that you want to perform this operation in /usr/src, you can type (as root):
@@ -64,7 +76,7 @@ The following procedure should have you up and running:
 3. **Decompress and patch the kernel**.  
    Patching the kernel will add real- time support to the kernel you have downloaded.
 
-        # tar xvf linux -3.8.4.tar.bz2
+        # tar xjf linux-3.8.4.tar.bz2
         # ln -s linux-3.8.4 linux
         # cd linux
         # bzcat ../patch-3.8.4-rt2.patch.bz2 | patch -p1
@@ -78,13 +90,15 @@ The following procedure should have you up and running:
         # make menuconfig
 
    This will evoke a user interface to configure the kernel options.
-   The following options are important for a correct function of the real-time system:  
-      + Set the Preemption model to Fully Preemptible Kernel (RT) in the Processor type and features.
-      + Disable CPU Frequency scaling under Power Management and ACPI options.
-      + Disable Check for stack overflow and the options under Tracers in Kernel hacking.
-      + Additionally you should also disable the Comedi drivers under the Staging drivers of the Device drivers menu.
+   The following options are important for a correct function of the
+   real-time system:
 
-5. Compile and install the kernel This step might from several minutes to hours, depending on the size of the kernel.
+      + Set the <b>Preemption model</b> to <b>Fully Preemptible Kernel (RT)</b> in the <b>Processor type and features</b>.
+      + Disable <b>CPU Frequency scaling</b> under <b>Power Management and ACPI options</b>.
+      + Disable <b>Check for stack overflow</b> and all options under <b>Tracers</b> in <b>Kernel hacking</b>.
+      + Additionally you should also disable the Comedi drivers under the <b>Staging drivers</b> of the <b>Device drivers</b> menu.
+
+5. Compile and install the kernel. This step might take from several minutes to hours, depending on the size of the kernel.
 
         # make && make modules && make modules_install && make install
 
@@ -102,17 +116,22 @@ The following procedure should have you up and running:
 LCG requires the following libraries:
 
 1. [**BOOST**](http://www.boost.org/).  
-   This library is used for parsing XML configuration files. The website provides extensive
-   documentation on how to install the library, but generally it is sufficient to type (for example
-   with version 1.53.0):
+   The BOOST C++ library is used for parsing XML files.
+   BOOST can be installed by using the system's package manager: on Debian, enter the following
+   command as root:
 
-        $ wget http://sourceforge.net/projects/boost/files/boost/1.53.0/boost_1_53_0.tar.bz2
-        $ tar --bzip2 -xvf boost_1_53_0.tar.bz2
-        $ cd boost_1_53_0
-        $ ./bootstrap.sh --prefix=/usr/local
-        # ./b2 install
+        # apt-get install libboost-dev
 
-2. [**Comedi**](http://www.comedi.org).  
+2. [**HDF5**](http://www.hdfgroup.org/HDF5/).  
+   The HDF Group designed a set of libraries for data storage and
+   management with high performance, efficiency and high
+   volume/complexity in mind. LCG uses this library to save binary
+   data files. HDF5 can be installed by using the system's package
+   manager: on Debian, enter the following command as root:
+
+        # apt-get install hdf5-tools hdf5-serial-dev
+
+3. [**Comedi**](http://www.comedi.org).  
    If you are going to use a data acquisition board (DAQ) to acquire signals you need to install the drivers
    that LCG uses to communicate with the data acquisition card.  
    To download and install the kernel modules, type:
@@ -145,34 +164,20 @@ LCG requires the following libraries:
         $ make
         # make install
 
-3. [**HDF5**](http://www.hdfgroup.org/HDF5/).
-   This library is used for data storage and management with high performance and efficiency. These libraries can be installed
-   from source in the following way:
-
-        $ tar xzf hdf5-1.8.9.tar.bz2
-        $ cd hdf5-1.8.9
-        $ ./configure --prefix=/usr/local --enable-shared
-        $ make
-        # make install
-
-   Alternatively, it is possible to use a package manager, such as Debian’s apt-get:
-
-        # apt-get install libhdf5-serial-1.8.4 libhdf5-serial-dev
-
 ## Installation of LCG
 
 To install LCG, start by getting it from the [GitHub repository](https://github.com/danielelinaro/dynclamp).
-We recommend to install LCG in a local folder, so that it is easier to have
+We recommend installing LCG in a local folder, so that it is easier to have
 multiple installations for different users.
 
-        $ mkdir $HOME/local/src
+        $ mkdir -p $HOME/local/src
         $ cd $HOME/local/src
         $ git clone https://github.com/danielelinaro/dynclamp.git lcg
-        $ cd dynclamp 
+        $ cd lcg 
         $ autoreconf -i 
         $ ./configure --prefix=$HOME/local 
         $ make 
-        # make install 
+        $ make install 
 
 Alternatively, LCG can be installed to other locations by changing the prefix.
 
@@ -183,19 +188,34 @@ of an additional Python module. This requires you to install [Numpy](http://www.
 [Matplotlib](http://matplotlib.org/), [PyTables](http://www.pytables.org) and [lxml](http://lxml.de). This can
 be done either from source or, if you are using Debian, by issuing the following command:
 
-        # apt-get install python-numpy python-scipy python-matplotlib python-tables python-lxml
+        # apt-get install python-setuptools python-numpy python-scipy python-matplotlib python-tables python-lxml
 
 In the LCG root directory, type:
 
+        $ export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.7/site-packages
         $ cd python
         $ python setup.py build
         $ python setup.py install --prefix=$HOME/local
 
-This will install the module in the directory $HOME/local/lib/python2.6/site-packages,
-which needs to be added to your PYTHONPATH environment variable, by adding the
-following line to your .bashrc file:
+In case you are using a different version of Python (2.6, for instance), change
+the directory accordingly (i.e., to $HOME/local/lib/python2.6/site-packages).
 
-        export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.6/site-packages
+This will install the module in the directory
+$HOME/local/lib/python2.7/site-packages, which needs to be permanently
+added to your PYTHONPATH environment variable, by adding the previous
+export line to your $HOME/.bashrc file.   
+This can be accomplished with the following command:
+
+        $ echo 'export PYTHONPATH=$PYTHONPATH:$HOME/local/lib/python2.7/site-packages' >> $HOME/.bashrc
+
+Again, change the directory accordingly if you are using a different Python version.
+You can test whether the installation was successful by issuing the following commands:
+
+        $ cd $HOME
+        $ python
+        >>> import lcg
+
+If the last command produces no error, the installation was successfull.
 
 ## Final configuration
 
@@ -229,6 +249,10 @@ To do this, add the following line to your .bashrc file:
 
         export PATH=$PATH:$HOME/local/bin
 
+with the command
+
+        $ echo 'export PATH=$PATH:$HOME/local/bin' >> $HOME/.bashrc
+
 After this, copy the files lcg-env.sh and lcg-completion.bash from lcg base directory to your home directory:
 
         $ cp lcg-env.sh ~/.lcg-env.sh
@@ -239,34 +263,67 @@ Source them any time you log in by adding the following lines to your .bashrc fi
         source ~/.lcg-env.sh
         source ~/.lcg-completion.bash
 
+with the commands
+
+        $ echo 'source ~/.lcg-env.sh' >> $HOME/.bashrc
+        $ echo 'source ~/.lcg-completion.bash' >> $HOME/.bashrc
+
 The script in lcg-completion.bash provides autocomplete capabilities to LCG but it is not
 required for correct functioning. The environment variables exported in lcg-env.sh, on the
 other hand, provide necessary defaults to LCG and should be tailored to your system.
 In particular, the file exports the following variables:
 
-- COMEDI DEVICE The path to the device file from which data is read.
-- AI CONVERSION FACTOR CC The conversion factor to be used for the analog input, in current clamp mode.
-- AO CONVERSION FACTOR CC The conversion factor to be used for the analog output, in current clamp mode.
-- AI CONVERSION FACTOR VC The conversion factor to be used for the analog input, in voltage clamp mode.
-- AO CONVERSION FACTOR VC The conversion factor to be used for the analog output, in current clamp mode.
+- COMEDI_DEVICE The path to the device file from which data is read.
+- AI_CONVERSION_FACTOR_CC The conversion factor to be used for the analog input, in current clamp mode.
+- AO_CONVERSION_FACTOR_CC The conversion factor to be used for the analog output, in current clamp mode.
+- AI_CONVERSION_FACTOR_VC The conversion factor to be used for the analog input, in voltage clamp mode.
+- AO_CONVERSION_FACTOR_VC The conversion factor to be used for the analog output, in current clamp mode.
 - RANGE The range of the output to the analog card.
-- AI SUBDEVICE The analog input subdevice on the acquisition card.
-- AI CHANNEL The default channel used for analog input.
-- AO SUBDEVICE The analog output subdevice on the acquisition card.
-- AO CHANNEL The default channel used for analog output.
-- AI UNITS CC The units for the analog input, in current clamp mode.
-- AO UNITS CC The units for the analog output, in current clamp mode.
-- AI UNITS VC The units for the analog input, in voltage clamp mode.
-- AO UNITS VC The units for the analog output, in voltage clamp mode.
-- SAMPLING RATE The default sampling rate of the acquisition.
-- GROUND REFERENCE The ground reference of the acquisition card. At present,
+- AI_SUBDEVICE The analog input subdevice on the acquisition card.
+- AI_CHANNEL The default channel used for analog input.
+- AO_SUBDEVICE The analog output subdevice on the acquisition card.
+- AO_CHANNEL The default channel used for analog output.
+- AI_UNITS_CC The units for the analog input, in current clamp mode.
+- AO_UNITS_CC The units for the analog output, in current clamp mode.
+- AI_UNITS_VC The units for the analog input, in voltage clamp mode.
+- AO_UNITS_VC The units for the analog output, in voltage clamp mode.
+- SAMPLING_RATE The default sampling rate of the acquisition.
+- GROUND_REFERENCE The ground reference of the acquisition card. At present,
   Ground-Referenced Single Ended (GRSE) and Non-Referenced Single Ended (NRSE) are supported.
+- LCG_REALTIME This variable tells whether the system
+  should preferentially use the real-time kernel if it is available or
+  not. The main advantage in using the real-time kernel (also for open
+  loop experiments) is that it provides synchronous input and output,
+  in contrast to the non-real-time mode, where input and output are
+  asynchronously managed by the DAQ board.
+- LCG_RESET_OUTPUT This variable tells whether the
+  output of the DAQ board should automatically be reset to zero every
+  time a trial ends. This is particularly useful when interrupting the
+  program (with Ctrl-C for example) and is valid only for current
+  clamp experiments.
 
-Most of the previous values depend on how your amplifier is configured and on how it is
-wired to the acquisition card. It is also important to note that the conversion factors
-and the units provided in .lcg-env.sh are meaningful when only one input and output
-channels are present. In all other cases, input/output conversion factors will have to
-be specified either in the configuration file or when invoking a script.
+Most of the previous values depend on how your amplifier is configured
+and on how it is wired to the acquisition card. It is also important to
+note that the conversion factors and the units provided in
+.lcg-env.sh are meaningful when only one input and output
+channel are present. In all other cases, input/output conversion
+factors will have to be specified either in the configuration file or
+when invoking a script. LCG provides a script that helps the
+user in finding the correct values for the conversion factors used on
+his/her system. To use it, turn on the amplifier and connect it to the
+board as you would during an experiment and run the following commands:
+
+         $ comedi_calibrate
+         $ lcg-find-conversion-factors --CC-channels 0,0 --VC-channels 1,1
+
+where the --CC-channels and --VC-channels
+options specify the input and output channels to use in current or
+voltage clamp mode, respectively, and should reflect the values
+used in the system that is being configured.
+The script will ask the user a few questions and then update the
+values of the conversion factors in the .lcg-env.sh file:
+due to rounding errors, however, these values might have to be rounded
+by the user afterwards by editing manually the .lcg-env.sh file.
 
 ## Installation without a realtime kernel
 
