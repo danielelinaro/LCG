@@ -6,6 +6,8 @@
 \usepackage[parfill]{parskip}
 \usepackage{amsthm}
 \usepackage{graphicx} 
+\usepackage{tikz}
+\usetikzlibrary{patterns}
 %\graphicspath {{figures/}}
 \usepackage{hyperref}
 \usepackage{natbib}
@@ -59,12 +61,12 @@
 
 \newcommand{\inlineCode}{\lstinline[basicstyle=\normalsize\ttfamily]}
 \newcommand{\progname}{\textsc{lcg}\xspace}
-\newcommand{\matlab}{Matlab\textsuperscript{\textregistered}}
+\newcommand{\matlab}{Matlab\textsuperscript{\textregistered}\xspace}
 \newcommand{\unix}{UNIX\xspace}
 \newcommand{\comedi}{COMEDI\xspace}
 \newcommand{\hdf}{HDF5\xspace}
 
-\title{\textbf{LCG} - electrophysiology on the command-line \\ User manual}
+\title{\progname \\ command line electrophysiology \\ A user manual}
 \author{Daniele Linaro \\ Jo\~ao Couto \\ Michele Giugliano}
 \date{\today}
 \hypersetup{
@@ -87,10 +89,6 @@
 \chapter{Introduction}
 \label{chap:intro}
 \input{chapters/introduction}
-
-%\chapter{Getting started}
-%\label{chap:start}
-%\input{chapters/getting_started}
 
 \chapter{Installation}
 \label{chap:installation}
@@ -116,9 +114,9 @@
 \label{chap:configuration}
 \input{chapters/configuration_files}
 
-\chapter{Streams}
-\label{chap:streams}
-\input{chapters/streams}
+%\chapter{Streams}
+%\label{chap:streams}
+%\input{chapters/streams}
 
 \chapter{Entities}
 \label{chap:entities}

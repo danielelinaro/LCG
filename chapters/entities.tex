@@ -14,7 +14,7 @@ Aside of the above described methods, entities have access to the \emph{outputs}
 
 This chapter describes the entities contained in \progname, it provides short definitions of entity and the general properties. The descriptions can be used to create configuration files, however there are also Python helper classes to create configuration files. The helper classes are the ones used by most protocols and its usage is encouraged.
 
-\section{H5Recorder}
+\section{H5Recorder}\label{entity:H5Recorder}
 
 The \emph{H5Recorder} records the entities that are connected to it to \hdf files.
 The entity saves the absolute time of the first step in the \hdf file \emph{Info} group in the \emph{startTimeSec} and \emph{startTimeNSec}. These times have nanosecond precision and are taken from the realtime clock. 
@@ -584,7 +584,7 @@ with $g$ the conductance waveform given by the first input, $E$ the reversal pot
 The \emph{NMDAConductanceStimulus} entity is used to inject an NMDA conductance into a neuron, it uses the first input as conductance waveform and must be connected to a RealNeuron to be used (like entity \ref{entity:ConductanceStimulus} ).
 The following formula is used to compute the conductance:
 \begin{equation}
-  \label{eq:conductance}
+  \label{eq:conductanceNMDA}
   I_{k}=\frac{g \cdot (E - V)}{1 + K_1 \cdot exp^{-K_2 \cdot V}},
 \end{equation}
 with $g$ the conductance waveform given by the first input, $E$ the reversal potential of the conductance and V the voltage taken from the RealNeuron.

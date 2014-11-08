@@ -22,6 +22,69 @@ hybrid experiments;
 \item simple installation and operation procedures.
 \end{itemize}
 
+\section{What is LCG?}
+%
+%\paragraph{}
+\progname is a software toolbox that can be used to perform
+electrophysiological experiments using simple stimulation protocols
+but also more complex paradigms such as dynamic clamp and/or hybrid networks.
+\progname is made up of two parts: the first one is a C++ library that implements the
+low-level objects responsible, among other things, of analog
+input/output, saving data to disk and interfacing with the real-time
+scheduling system of the OS. The second part is a Python interface
+that handles simpler tasks, mostly related to the high-level
+description of specific electrophysiological protocols and simple data
+analysis and plotting.
+
+% If you are an experienced programmer and you want to interface with lib\progname\, consult the Doxygen documentation and the source code in \href{https://github.com/danielelinaro/dynclamp}{GitHub}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The following is commented out
+%\iffalse
+
+\progname consists of a set of {\it commands}, each of which performs
+a specific task.
+The entry point of all \progname commands is the program called
+\verb+lcg+. Its purpose is merely to parse its arguments and
+call the appropriate protocol with the arguments with which it was
+invoked. To clarify this concept, let's look at the following example:
+\begin{lstlisting}
+lcg steps -a -200,100,50 -d 2
+\end{lstlisting}
+This command instructs \verb+lcg+ to look for a program called
+\verb+lcg-steps+ in the directories where executable files are
+located,\footnote{These are usually stored in the \inlineCode{\$PATH}
+environment variable.} and invoke it with the subsequent arguments
+unchanged. The previous call is therefore equivalent to
+\begin{lstlisting}
+lcg-steps -a -200,100,50 -d 2
+\end{lstlisting}
+This approach is particularly suited to adding extensions to
+\progname: to do so, it is sufficient to follow the naming scheme just
+described and place additional scripts or programs where
+\verb+lcg+ can find them, i.e., anywhere in the path.
+ 
+\progname comes with a \verb+help+ command, that can be used to
+display general information about \progname and a list of the most
+commonly used protocols, by simply invoking
+\begin{lstlisting}
+lcg help
+\end{lstlisting}
+Alternatively, \verb+lcg-help+ accepts one single argument,
+which must be the name of a recognized command and invokes it with
+the \verb+-h+ option. For example, the following four commands
+produce the same result:
+\begin{lstlisting}
+lcg help steps
+lcg-help steps
+lcg steps -h
+lcg-steps -h
+\end{lstlisting}
+For this to work, all commands must accept the \verb+-h+ option
+and interpret it as a request for help. All commands that come with
+\progname adhere to this convention, and additional ones should
+do the same.
+
 This manual is organized as follows: Chap.~\ref{chap:installation}
 covers in detail the installation of a real-time operating system and of
 \progname and its dependencies. Chapter~\ref{chap:start} explains how
@@ -43,6 +106,6 @@ Finally, Chap.~\ref{chap:features} covers some additional features of
 In the simplest scenario, in which \progname is already installed on a
 machine and the experimentalist only wants to perform conventional
 voltage and/or current clamp experiments, without the need for real
-time control over the experiment, Chapters~\ref{chap:protocols} and
+time control over the experiment, Chapters~\ref{chap:start}, \ref{chap:protocols} and
 \ref{chap:stimgen} with some parts of Chap.~\ref{chap:datafiles} are
 sufficient to get going.
