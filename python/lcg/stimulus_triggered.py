@@ -41,10 +41,10 @@ def usage():
     print(' -g, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
     print('                       (or %s if --voltage-clamp is used) for all channels)' % os.environ['AI_CONVERSION_FACTOR_VC'])
     print(' -u, --input-units     input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
-    print('                       --vclamp is used) for all channels)')
+    print('                       --voltage-clamp is used) for all channels)')
     print(' -O, --output-channels output channel(s) (default %s (%s in VC), but see note at the end for how to specify output channels)' % (os.environ['AO_CHANNEL'],os.environ['AO_CHANNEL_VC']))
     print(' -G, --output-gains    output conversion factors (comma separated values, default %s' % os.environ['AO_CONVERSION_FACTOR_CC'])
-    print('                       (or %s if --vclamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
+    print('                       (or %s if --voltage-clamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
     print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('                       --vclamp is used) for all channels)')
     print(' -V, --voltage-clamp   use default conversion factor and units for voltage clamp')
@@ -58,6 +58,7 @@ def usage():
     print('     --model           use a LIF neuron instead of real experiment')
     print('     --dry-run         do not run, simply generate the commands')
     print('')
+    print('To record spontaneous activity set the "-O none" option.')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
     print('  1) single value, as in `-I 1\'')
@@ -79,7 +80,8 @@ def main():
                                    'duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
-                                   '--trigger-subdevice=','trigger-channel=','trigger-stop-channel=','digital-channels=',
+                                   '--trigger-subdevice=','trigger-channel=',
+                                   'trigger-stop-channel=','digital-channels=',
                                    'output-channels=','output-gains=','output-units=',
                                    'voltage-clamp','offset=','output-file=',
                                    'reset-output=','verbose=','dry-run',
@@ -122,7 +124,6 @@ def main():
     triggerStopChannel = None
     digitalChannels = []
     offsets = []
-    
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
     terminalPrintMode = 'progress'
 
@@ -251,6 +252,7 @@ def main():
     # set higher priority for this process 
     os.nice(niceness)
 
+
     if inputChannels is None and outputChannels is None:
         print('No input or output channels specified. I cowardly refuse to continue.')
         sys.exit(0)
@@ -293,16 +295,17 @@ def main():
                 stimfiles = ['/tmp/tmp.stim']
                 sub.call('lcg stimgen -o %s dc -d %g 0' % (stimfiles[0],duration), shell=True)
             else:
-                # or whether a stimulus file was piped from lcg-stimgen
-                stimulus = sys.stdin.read()
-                if len(stimulus):
-                    stimfiles = ['/tmp/tmp.stim']
-                    with open(stimfiles[0],'w') as fid:
-                        fid.write(stimulus)
-                else:
-                    print('You must specify one of -s or -d.')
-                    sys.exit(0)
-
+                if not spontaneous:
+                    # or whether a stimulus file was piped from lcg-stimgen
+                    stimulus = sys.stdin.read()
+                    if len(stimulus):
+                        stimfiles = ['/tmp/tmp.stim']
+                        with open(stimfiles[0],'w') as fid:
+                            fid.write(stimulus)
+                    else:
+                        print('You must specify one of -s or -d.')
+                        sys.exit(0)
+                
         if stimdir is not None:
             if stimfiles is not None:
                 print('You cannot specify both -s and -D at the same time.')
@@ -343,7 +346,7 @@ def main():
     else:
         total = repetitions * len(stimfiles)
     cnt = 1
-
+    print duration
     writeConfigurationFile = lambda cfile,dur,chan:lcg.writeIOExternalTriggerConfigurationFile(
         cfile,
         samplingRate,

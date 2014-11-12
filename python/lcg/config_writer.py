@@ -93,8 +93,8 @@ class XMLConfigurationFile (object):
         self._add_elements(self._xml_simulation,{'rate':sampling_rate,'tend':trial_duration,
                                                  'outfile':output_filename})
         # Add trigger if present
-        if ((not trigger['device'] is None) or 
-            (not trigger['subdevice'] is None) or
+        if ((not trigger['device'] is None) and 
+            (not trigger['subdevice'] is None) and
             (not trigger['channel'] is None)):
             self._xml_simulation_trigger = etree.SubElement(self._xml_simulation,'trigger')
             self._add_elements(self._xml_simulation_trigger,{'device':trigger['device'],
