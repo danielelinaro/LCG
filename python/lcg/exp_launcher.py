@@ -16,6 +16,8 @@ from time import gmtime, strftime
 import atexit
 from glob import glob
 from functools import partial
+import numpy as np
+import re
 
 import lcg
 from lcg.plot_file import plotAllEntitiesFromFile
@@ -83,15 +85,17 @@ def readProtocolSection(cfg,sec):
         tmp['defaults'] =  values
         tmp['values'] =  values
         # Confirm dimensions of defaults and parameters
-        if (len(tmp['values']) 
+        nparameters = len(np.unique(re.compile('{*.}').findall(tmp['command'])))
+        if (len(tmp['values'])
             == len(tmp['parameters'])
-            == tmp['command'].count('{')):
+            == nparameters):
             return tmp.copy()
         else:
             print('''
 Wrong number of parameters in protocol {0}.
 Check the number of curly brackets in the command,
 the number of parameters, and the number of defaults!'''.format(tmp['name']))
+            raise
     return None
 
 def parseCfg(cfg, cfgfile):
@@ -216,11 +220,13 @@ class RunButton(QtGui.QPushButton):
             par.append(p.text())
 
         if len(par):
-            command = '{0} -e "{1}"'.format(self.app,
-                                            self.command.format(*par))
+            command = '{0} {1} -e "{1}"'.format(self.app,
+                                                self.command.format(*par),
+                                                ' '.join(options))
         else:
-            command = '{0} -e "{1}"'.format(self.app,
-                                            self.command)
+            command = '{0} {1} -e "{2}"'.format(self.app,
+                                                self.command,
+                                                ' '.join(options))
 
         print command
         externalProcess = sub.Popen(command, shell=True)
@@ -254,7 +260,7 @@ class RunButton(QtGui.QPushButton):
             self.timer.stop()
         else:
             if self.alternateText:
-                externalProcessLabel.setText('{0} - Running {1}'.
+                externalProcessLabel.setText('{0} - Busy with {1}'.
                                              format(currentTime,self.name))
             else:
                 externalProcessLabel.setText(' ')
@@ -375,7 +381,9 @@ class LCG_COMMANDER(QtGui.QDialog):
             for k,p in zip(log_keys,
                            self.expLogWidgets):
                 param[k.replace(' ','_')] = str(p.text())
-        foldername = createFoldersAndInfoFile(self.config,param,
+        foldername = createFoldersAndInfoFile(self.config,
+                                              param,
+                                              info=True,
                                               dryrun=dryRun)
         if not dryRun:
             self.foldername = os.path.abspath(foldername)
@@ -394,13 +402,13 @@ class LCG_COMMANDER(QtGui.QDialog):
         
     def outputCommander(self):
         form = QtGui.QGridLayout()
-        channel = QtGui.QLineEdit(str(os.environ['AO_CHANNEL']))
-        form.addWidget(QtGui.QLabel('{0}:'.format('Output Channel')),0,0,1,1)
+        channel = QtGui.QLineEdit(str(os.environ['AO_CHANNEL_VC']))
+        form.addWidget(QtGui.QLabel('{0}:'.format('Channel')),0,0,1,1)
         form.addWidget(channel,0,1,1,1)
         form.addWidget(QtGui.QLabel('CC hold: '),1,0,1,1)
         par = QtGui.QLineEdit(str(0))
         form.addWidget(par,1,1,1,1)
-        button = RunButton('lcg-output -c {0} {1}',
+        button = RunButton('lcg-output -c {0} -- {1}',
                            [channel]+[par],'CC hold',None)
         button.setText('HOLD')
         button.clicked.connect(button.runCommand)
@@ -408,7 +416,7 @@ class LCG_COMMANDER(QtGui.QDialog):
         form.addWidget(QtGui.QLabel('VC hold: '),2,0,1,1)
         par = QtGui.QLineEdit(str(-70))
         form.addWidget(par,2,1,1,1)
-        button = RunButton('lcg-output -c {0} {1}',
+        button = RunButton('lcg-output -c {0} -V -- {1}',
                            [channel]+[par],'VC hold',None)
         button.setText('HOLD')
         button.clicked.connect(button.runCommand)
@@ -448,10 +456,25 @@ class LCG_COMMANDER(QtGui.QDialog):
         groups.append(QtGui.QGroupBox('Output Command'))
         groups[-1].setLayout(self.outputCommander())
         protLayout = QtGui.QGridLayout(self.protTab)
-        protLayout.addWidget(externalProcessLabel,1,0,1,len(prot),
-                             QtCore.Qt.Alignment(QtCore.Qt.AlignTop))
+        # Assign "optimal" number of rows and collumns
+        nrows = 1
+        ncol = 4
+        N = len(groups)
+        if N > ncol:
+            if (N%ncol > 0) and (N%ncol < ncol/2):
+                ncol -= 1
+        else:
+            ncol = N
+        x = 0
+        y = 0
         for p,g in enumerate(groups):
-            protLayout.addWidget(g,0,p)
+            protLayout.addWidget(g,x,y)
+            y += 1
+            if y == ncol:
+                x +=1
+                y = 0
+        protLayout.addWidget(externalProcessLabel,  y + 1, 0, 1, N,
+                             QtCore.Qt.Alignment(QtCore.Qt.AlignTop))
         self.protDisplay = protLayout 
 
     def refreshFileModel(self,rootdir = '.'):
