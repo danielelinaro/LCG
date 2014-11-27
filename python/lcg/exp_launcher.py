@@ -185,6 +185,7 @@ class RunButton(QtGui.QPushButton):
             print('Install xterm (sudo apt-get install xterm).')
             sys.exit(1)
         self.folder = folder
+
     def runCommand(self):
         global externalProcess
         global experimentFolder
@@ -218,15 +219,16 @@ class RunButton(QtGui.QPushButton):
         par = []
         for p in self.par:
             par.append(p.text())
-
+        options = ['']
         if len(par):
-            command = '{0} {1} -e "{1}"'.format(self.app,
-                                                self.command.format(*par),
-                                                ' '.join(options))
+            command = '{0} {1} -e "{2}"'.format(self.app,
+                                                ' '.join(options),
+                                                self.command.format(*par))
+                                     
         else:
             command = '{0} {1} -e "{2}"'.format(self.app,
-                                                self.command,
-                                                ' '.join(options))
+                                                ' '.join(options),
+                                                self.command)
 
         print command
         externalProcess = sub.Popen(command, shell=True)

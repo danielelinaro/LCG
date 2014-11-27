@@ -41,8 +41,8 @@ lcg::Entity* DigitalInputFactory(string_dict& args)
 lcg::Entity* DigitalOutputFactory(string_dict& args)
 {
         uint outputSubdevice, writeChannel, reference, id;
-        std::string deviceFile,units;
-
+        std::string deviceFile,units, eventStr;
+        lcg::EventType eventToSend;
         id = lcg::GetIdFromDictionary(args);
 
         if ( ! lcg::CheckAndExtractValue(args, "deviceFile", deviceFile) ||
@@ -55,8 +55,21 @@ lcg::Entity* DigitalOutputFactory(string_dict& args)
         if (! lcg::CheckAndExtractValue(args, "units", units)) {
                 units = "Boolean";
         }
+        if (lcg::CheckAndExtractValue(args, "eventToSend", eventStr)) {
+                int i=0;
+                while(i < NUMBER_OF_EVENT_TYPES && strcasecmp(eventStr.c_str(), lcg::eventTypeNames[i].c_str()))
+                    i++;
+                if (i == NUMBER_OF_EVENT_TYPES) {
+                    lcg::Logger(lcg::Critical, "DigitalOutput(%d): Unknown event type [%s].\n", id, eventStr.c_str());
+                    return NULL;
+                }
+                eventToSend = static_cast<lcg::EventType>(i);
+		}
+		else {
+			eventToSend = lcg::DIGITAL_RISE;
+        }
         return new lcg::DigitalOutput(deviceFile.c_str(), outputSubdevice, writeChannel,
-                                         units, id);
+                                         units, eventToSend, id);
 }
 
 namespace lcg {
@@ -130,11 +143,12 @@ double DigitalInput::output()
 
 DigitalOutput::DigitalOutput(const char *deviceFile, uint outputSubdevice,
                            uint writeChannel,
-			   const std::string& units, uint id)
+			   const std::string& units, EventType eventToSend, uint id)
         : Entity(id),
 #if defined(HAVE_LIBCOMEDI)
-          m_output(deviceFile, outputSubdevice, writeChannel)
+          m_output(deviceFile, outputSubdevice, writeChannel),
 #endif
+	m_eventToSend(eventToSend)
 {
         setName("DigitalOutput");
         setUnits(units);
@@ -168,6 +182,32 @@ void DigitalOutput::step()
         for (i=0; i<n; i++)
                 m_data += m_inputs[i];
         m_output.write(m_data);
+	if (m_data > 2.5) {
+		switch (m_eventToSend) {
+			case DIGITAL_RISE:
+				emitEvent(new DigitalRiseEvent(this));
+				break;
+			case STOPRUN:
+				emitEvent(new StopRunEvent(this));
+				Logger(Important, "Simulation terminated by DigitalOutput(%d).\n", id());
+				break;
+			case RESET:
+				emitEvent(new ResetEvent(this));
+				break;
+			case TOGGLE:
+				emitEvent(new ToggleEvent(this));
+				break;
+			case TRIGGER: 
+				emitEvent(new TriggerEvent(this));
+				break;
+			case SPIKE:
+				emitEvent(new SpikeEvent(this));
+				break;
+			default:
+				Logger(Important, "DigitalOutput(%d): Can't send event.\n", id());
+				break;
+		}
+	}
 }
 
 double DigitalOutput::output()

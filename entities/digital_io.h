@@ -46,7 +46,7 @@ public:
         virtual double output();
 private:
         double m_data;
-		double m_previous;
+	double m_previous;
         EventType m_eventToSend;
 #if defined(HAVE_LIBCOMEDI)
         ComediDigitalInput m_input;
