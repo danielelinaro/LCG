@@ -126,6 +126,7 @@ void DigitalInput::step()
 				break;
 		}
 	}
+	m_previous = m_data;
 }
 
 void DigitalInput::firstStep()
@@ -152,6 +153,7 @@ DigitalOutput::DigitalOutput(const char *deviceFile, uint outputSubdevice,
 {
         setName("DigitalOutput");
         setUnits(units);
+	m_previous = 0;
 }
 
 DigitalOutput::~DigitalOutput()
@@ -182,7 +184,7 @@ void DigitalOutput::step()
         for (i=0; i<n; i++)
                 m_data += m_inputs[i];
         m_output.write(m_data);
-	if (m_data > 2.5) {
+	if (m_data - m_previous > 0) {
 		switch (m_eventToSend) {
 			case DIGITAL_RISE:
 				emitEvent(new DigitalRiseEvent(this));
@@ -208,6 +210,7 @@ void DigitalOutput::step()
 				break;
 		}
 	}
+	m_previous = m_data;
 }
 
 double DigitalOutput::output()
