@@ -169,7 +169,7 @@ experimentFolder = None
 
 class RunButton(QtGui.QPushButton):
     def __init__(self, command='', par=[], 
-                 name = '',folder = '', 
+                 name = '',folder = '', onLastFolder = None, 
                  *args, **kwargs):
         super(RunButton,self).__init__(*args, **kwargs)
         self.command = command
@@ -199,7 +199,10 @@ class RunButton(QtGui.QPushButton):
             externalProcessLabel.setText('Another process is running.')
             return
         if not self.folder is None:
-            os.chdir('{0}/{1}'.format(experimentFolder,self.folder))
+            folderpath ='{0}/{1}'.format(experimentFolder,self.folder) 
+            if not os.path.isdir(folderpath):
+                os.makedirs(folderpath)
+            os.chdir(folderpath)
             foundFolder = False
             for root,dirnames,filenames in os.walk(os.getcwd()):
                 print dirnames

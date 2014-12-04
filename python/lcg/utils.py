@@ -270,10 +270,11 @@ def incrementLetterOrInteger(string):
         # Try first to increment number
         number = int(string) + 1
         returnstr = '{0:0'+str(len(string))+'d}'
-        if number < len(string)*10:
+        if number < 10**len(string):
             string = returnstr.format(number)
         else:
-            string = None
+            returnstr = '{0:0d}'
+            string = returnstr.format(number)
     except ValueError:
         # Then it must be a letter...
         for ii in reversed(range(len(string))):
@@ -285,7 +286,7 @@ def incrementLetterOrInteger(string):
                 break
             elif ii == 0:
                 print('Can not increment letter (< Z). Try adding another (AAA) for instance.')
-                string = None
+                raise
     return string
             
 def computeRatesRatio(Vm=-57.6, g0_exc=50, g0_inh=190, Rin=0, tau_exc=5, tau_inh=10, E_exc=0, E_inh=-80):
