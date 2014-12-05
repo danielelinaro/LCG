@@ -80,7 +80,7 @@ def main():
                                    'duration=','repetitions=','interval=','sampling-rate=',
                                    'device=','subdevice=',
                                    'input-channels=','input-gains=','input-units=',
-                                   '--trigger-subdevice=','trigger-channel=',
+                                   'trigger-subdevice=','trigger-channel=',
                                    'trigger-stop-channel=','digital-channels=',
                                    'output-channels=','output-gains=','output-units=',
                                    'voltage-clamp','offset=','output-file=',
@@ -115,7 +115,7 @@ def main():
     reversalPotentials = []
     outputFilename = None
     resetOutput = None
-    verbose = 4
+    verbose = 3
     niceness = 0
     suffix = 'CC' 
     triggerSubdevice = os.environ['DIGITAL_SUBDEVICE']
@@ -125,7 +125,6 @@ def main():
     digitalChannels = []
     offsets = []
     realtime = os.environ['LCG_REALTIME'].lower() == 'yes'
-    terminalPrintMode = 'progress'
 
     model = None
     dry_run = False
@@ -239,12 +238,7 @@ def main():
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
         elif o == '--verbose':
-            if a == 'progress':
-                terminalPrintMode = 'progress'
-            elif a == 'quiet':
-                terminalPrintMode = 'quiet'                
-            else:
-                verbose = int(a)
+            verbose = int(a)
         elif o == '--dry-run':
             dry_run = True
         elif o in  ('-p','--priority'):
@@ -256,7 +250,7 @@ def main():
     if inputChannels is None and outputChannels is None:
         print('No input or output channels specified. I cowardly refuse to continue.')
         sys.exit(0)
-
+        
     if not outputChannels is None and not duration is None and (not stimfiles is None or not stimdir is None):
         print('Warning: if at least one output channel is specified, the duration of the recording')
         print('is given by the duration of the stimulus. Ignoring your %s option.' % duration_option)
@@ -295,7 +289,7 @@ def main():
                 stimfiles = ['/tmp/tmp.stim']
                 sub.call('lcg stimgen -o %s dc -d %g 0' % (stimfiles[0],duration), shell=True)
             else:
-                if not spontaneous:
+                if not outputChannels is None:
                     # or whether a stimulus file was piped from lcg-stimgen
                     stimulus = sys.stdin.read()
                     if len(stimulus):
@@ -346,7 +340,7 @@ def main():
     else:
         total = repetitions * len(stimfiles)
     cnt = 1
-    print duration
+
     writeConfigurationFile = lambda cfile,dur,chan:lcg.writeIOExternalTriggerConfigurationFile(
         cfile,
         samplingRate,
@@ -360,7 +354,6 @@ def main():
         digitalChannels = {'device':os.environ['COMEDI_DEVICE'],
                            'subdevice':digitalSubdevice,
                            'channels':digitalChannels})
-
     all_channels = []
     all_durations = []
     if outputChannels is None or len(stimfiles) == len(outputChannels):
@@ -403,17 +396,13 @@ def main():
     timerString = '\rTrial {0:d} of {1:d}'
     if dry_run:
         cmd_str = 'echo "' + cmd_str + '"'
-    if (verbose != 4) or (terminalPrintMode == 'quiet'):
-        runLCG = lambda string,count,total,dur: runCommand(cmd_str,mode=None)
-    elif terminalPrintMode == 'progress':
-        runLCG = lambda string,count,total,dur: runCommand(cmd_str,'progress',duration, 
-                                                           string +' ')
+    runLCG = lambda string,count,total,dur: runCommand(cmd_str,mode=None)
     sys.stdout.flush()
     # Main loop
     for i in range(repetitions):
         for duration,channels in zip(all_durations,all_channels):
             trialStart = time.time()
-            writeConfigurationFile(config_file, duration, channels)        
+            writeConfigurationFile(config_file, duration, channels) 
             runLCG(timerString.format(cnt, total), cnt, total, duration)
             sleepTime = (interval + duration - (time.time() - trialStart))
             if cnt < total and sleepTime > 0 :

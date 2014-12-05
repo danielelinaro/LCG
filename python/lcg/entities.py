@@ -164,7 +164,7 @@ class AnalogOutput (Entity):
 class DigitalInput (Entity):
     def __init__(self, id, connections, deviceFile, inputSubdevice, readChannel,
                  units, eventToSend):
-        super(AnalogInput,self).__init__('AnalogInput', id, connections)
+        super(DigitalInput,self).__init__('DigitalInput', id, connections)
         self.add_parameter('deviceFile', deviceFile)
         self.add_parameter('inputSubdevice', inputSubdevice)
         self.add_parameter('readChannel', readChannel)

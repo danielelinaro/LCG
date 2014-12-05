@@ -97,9 +97,10 @@ class XMLConfigurationFile (object):
             (not trigger['subdevice'] is None) and
             (not trigger['channel'] is None)):
             self._xml_simulation_trigger = etree.SubElement(self._xml_simulation,'trigger')
-            self._add_elements(self._xml_simulation_trigger,{'device':trigger['device'],
-                                                             'subdevice':trigger['subdevice'],
+            self._add_elements(self._xml_simulation_trigger,{'subdevice':trigger['subdevice'],
                                                              'channel':trigger['channel']})
+                                                          #'device':trigger['device'],
+
         self._entities = []
         self._streams = []
 
@@ -413,9 +414,8 @@ def writeIOExternalTriggerConfigurationFile(config_file, sampling_rate, duration
                     id=ID, connections=(0), 
                     deviceFile=trigger['device'],
                     inputSubdevice=trigger['subdevice'], 
-                    readChannel=channel,
+                    readChannel=trigger['stopChannel'],
                     units='Boolean',
                     eventToSend='STOPRUN'))
-
     config.write(config_file)
     return True
