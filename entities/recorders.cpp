@@ -251,6 +251,7 @@ bool BaseH5Recorder::allocateEventsDatasets(int dataRank,
                 return false;
         }
         Logger(Debug, "Dataset [%s] created.\n", datasetName);
+    return true;
 }
 //~~~
 
