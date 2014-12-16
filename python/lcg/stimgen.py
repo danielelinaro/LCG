@@ -225,7 +225,7 @@ def createStimulusGroup(entries):
         stimulus[i][1] = -n
     return stimulus
 
-def writeStimFile(filename, stimulus, preamble=None):
+def writeStimFile(filename, stimulus, preamble=None, preamble_holding=0.0):
     """
     Writes a generic stimulus file.
 
@@ -238,6 +238,7 @@ def writeStimFile(filename, stimulus, preamble=None):
                   in which case no preamble is added, or True, in which case default
                   values of -300 pA and -100 pA are used for the first and second pulse,
                   respectively.
+       preamble_holding  - a number that is added to P1 of the preamble waveforms 
     Returns:
        The duration of the stimulation.
            
@@ -253,11 +254,11 @@ def writeStimFile(filename, stimulus, preamble=None):
     if preamble:
         if type(preamble) != list or len(preamble) != 2:
             preamble = [-300,-100]
-        preamble = [[0.5,1,0,0,0,0,0,0,0,0,0,1],
-                    [0.01,1,preamble[0],0,0,0,0,0,0,0,0,1],
-                    [0.5,1,0,0,0,0,0,0,0,0,0,1],
-                    [0.6,1,preamble[1],0,0,0,0,0,0,0,0,1],
-                    [1,1,0,0,0,0,0,0,0,0,0,1]]
+        preamble = [[0.5,1,preamble_holding,0,0,0,0,0,0,0,0,1],
+                    [0.01,1,preamble[0]+preamble_holding,0,0,0,0,0,0,0,0,1],
+                    [0.5,1,preamble_holding,0,0,0,0,0,0,0,0,1],
+                    [0.6,1,preamble[1]+preamble_holding,0,0,0,0,0,0,0,0,1],
+                    [1,1,preamble_holding,0,0,0,0,0,0,0,0,1]]
         for row in preamble:
             preamble_dur = preamble_dur + row[0]
             for value in row:

@@ -44,8 +44,9 @@ def main():
         usage()
         sys.exit(1)
 
-    ao = int(os.environ['AO_CHANNEL'])
-    ai = int(os.environ['AI_CHANNEL'])
+    suffix = 'CC'
+    ao = int(os.environ['AO_CHANNEL_{0}'.format(suffix)])
+    ai = int(os.environ['AI_CHANNEL_{0}'.format(suffix)])
     samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
     holding = 0    # [pA]
     with_preamble = False
@@ -124,18 +125,19 @@ def main():
                 sys.exit(1)
 
     if with_preamble:
-        stimulus = [[duration,1,0,0,0,0,0,0,0,0,0,1],
-                    [tail,1,0,0,0,0,0,0,0,0,0,1]]
+        stimulus = [[duration,1,holding,0,0,0,0,0,0,0,0,1],
+                    [tail,1,holding,0,0,0,0,0,0,0,0,1]]
         row = 0
     else:
-        stimulus = [[tail,1,0,0,0,0,0,0,0,0,0,1],
-                    [duration,1,0,0,0,0,0,0,0,0,0,1],
-                    [tail,1,0,0,0,0,0,0,0,0,0,1]]
+        stimulus = [[tail,1,holding,0,0,0,0,0,0,0,0,1],
+                    [duration,1,holding,0,0,0,0,0,0,0,0,1],
+                    [tail,1,holding,0,0,0,0,0,0,0,0,1]]
         row = 1
 
     for i,amp in enumerate(amplitudes):
-        stimulus[row][2] = amp
-        lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, with_preamble)
+        stimulus[row][2] = amp + holding
+        lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, 
+                          with_preamble, preamble_holding=holding)
 
     if kernel:
         sub.call('lcg kernel -I %d -O %d -F %g -H %g --rt %s' % (ai,ao,samplf,holding,realtime), shell=True)
