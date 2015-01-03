@@ -33,3 +33,154 @@ and \ref{sec:fclamp}, respectively, can be implemented using only
 existence is simply the possibility to define appropriate default
 values, which make the application of the protocols even simpler.
 
+We will first briefly summarize the rationale behind the meta-language
+used to generate stimulation files and then describe how to generate
+them using \verb+lcg-stimgen+ and how to use \verb+lcg-stimulus+ to
+stimulate and record using stimulation files.
+
+\section{Stimulation files}
+Stimulation files, or in short \textit{stim-files}, are simply text
+files that contain a piecewise description of a particular
+waveform. More in detail, each stim-file is composed of a certain
+number of lines, with each line representing an elementary
+sub-waveform: the full waveform is therefore given by the
+concatenation of all sub-waveforms. Each elementary sub-waveform is
+described by 12 coefficients:
+\begin{table}[h!!]
+\centering
+\begin{tabular}{cccccccccccc}
+$T$ & code & $p_1$ & $p_2$ & $p_3$ & $p_4$ & $p_5$ & fix-seed & seed &
+subcode & op & exp
+\end{tabular}
+%\caption{Coefficients required for the definition of a sub-waveform.}
+\label{tab:subwav}
+\end{table}
+
+The meaning of the coefficients is the following:
+\begin{table}[h!!]
+\begin{tabular}{r|l}
+$T$ & duration of the sub-waveform \\
+code & code that identifies the sub-waveform \\
+$p_1, \ldots, p_5$ & parameters that specify the sub-waveform \\
+fix-seed & whether or not the seed should be fixed (only for
+stochastic sub-waveforms) \\
+seed & the seed to use (only for stochastic sub-waveforms) \\
+subcode & the code of another sub-waveform, if algebraic operations
+are to be performed \\
+op & the algebraic operation to perform \\
+exp & the exponent to which the sub-waveform should be raised
+\end{tabular}
+\label{tab:params}
+\end{table}
+
+Available codes range from 1 to 12 and identify 12 different types of
+elementary sub-waveforms, such as constants, sinusoids, square waves,
+Ornstein-Uhlenbeck stochastic process realizations, and so on. The
+full list of available waveforms is described in detailed in the
+companion manual, which can be found at
+\url{http://danielelinaro.github.io/dynclamp/stimgen_manual.pdf}.
+
+If a noisy waveform is to be used, it is possible to set the seed used
+in the generation of the pseudo-random numbers. It is also possible to
+specify whether the seed should be used or not: in the latter case, a
+random seed is generated using the device \verb+/dev/random+,
+available on most UNIX systems.
+
+As mentioned previously, sub-waveforms can be combined to yield more
+complex stimulation waveforms: this is not limited only to the
+concatenation of elementary sub-waveforms, but can be implemented also
+by applying algebraic operations to sets of sub-waveforms. The way
+this is achieved is described in the companion manual.
+
+Finally, each elementary sub-waveform can be raised to a particular
+exponent (for example 0.5 to obtain the square root of a waveform):
+this is achieved by setting the appropriate value for the last
+parameter of the sub-waveform.
+
+This description of stimulus files is by no means exhaustive: we
+strongly encourage readers to familiarize themselves with the
+definition of stimulation waveforms by reading carefully through the
+companion manual.
+
+\section{Generating stimulation files}
+As mentioned previously, stimulation files can be generated in
+\progname using the command \verb+lcg-stimgen+: this provides a
+convenient interface to the stim-file language, and saves the user the
+hassle of having to write stim-files manually. Also, it provides a way
+of interacting directly with \verb+lcg-stimulus+ by feeding the output
+of \verb+lcg-stimgen+ to \verb+lcg-stimulus+ by means of UNIX pipes,
+as will be described in the following section.
+
+The syntax of \verb+lcg-stimgen+ is the following:
+\begin{verbatim}
+lcg-stimgen -o|--output filename [-a|--append] 
+          <waveform_1> [option <value>] p_1 p_2 ... p_5
+          <waveform_2> [option <value>] p_1 p_2 ... p_5
+          ...
+          <waveform_N> [option <value>] p_1 p_2 ... p_5
+\end{verbatim}
+Since \verb+lcg-stimgen+ can deal with an arbitrary number of
+waveforms, the options that specify the output file name (\verb+-o+ or
+\verb+--output+ switches) and whether the output should be appended to
+an existing file (\verb+-a+ or \verb+--append+ switches) should
+precede the definition of any sub-waveform. If no output file is
+specified, \verb+lcg-stimgen+ will output the resulting stim-file to
+standard output: this is useful both for testing purposes and for
+usage in conjuction with \verb+lcg-stimulus+ as will be described in
+the following.
+
+Next comes the specification of each single sub-waveform with its
+parameters: the first parameter (i.e, \verb+waveform_1+,
+\verb+waveform_2+ and so on) is a code that represent the type of
+waveform. At present, the accepted codes are \verb+dc+, \verb+ou+,
+\verb+sine+, \verb+square+, \verb+saw+, \verb+chirp+, \verb+ramp+,
+\verb+poisson-reg+, \verb+poisson-exp+, \verb+poisson-bi+,
+\verb+gaussian+, \verb+alpha+. For the meaning of each one, see the
+companion manual. The optional arguments for each sub-waveform are the
+following:
+\begin{table}[h!!]
+\begin{tabular}{r|l}
+-d & duration of the sub-waveform in seconds \\
+-s & seed of the sub-waveform, also sets \verb+fix-seed+ accordingly \\
+-e & exponent of the sub-waveform \\
+-p & sum this sub-waveform and the following \\
+-m & subtract the following sub-waveform from this one \\
+-M & multiply this sub-waveform and the following \\
+-D & divide this sub-waveform by the following \\
+-E & compute the composite waveform: this option is required for the last waveform in a series
+\end{tabular}
+\label{tab:optargs}
+\end{table}
+\newline
+Every short option has a corresponding long one, detailed in the
+online help of \verb+lcg-stimgen+, accessible by issuing at a prompt the
+following command:
+\begin{lstlisting}
+lcg-stimgen -h
+\end{lstlisting}
+Additionally, all other options ---except for the duration--- have default
+values, which are also detailed in the online help of the command.
+
+The positional arguments \verb+p_1+ to \verb+p_5+ come after the
+optional arguments. Each waveform requires a certain number of
+parameters: for instance, the constant waveform requires just one
+parameter, whereas a sinusoidal waveform requires 4. The exact number
+of parameters required by each sub-waveform is accessible by issuing
+the command
+\begin{lstlisting}
+lcg-stimgen help <code>
+\end{lstlisting}
+where code is one of the sub-waveform codes described before: for
+example, the command
+\begin{lstlisting}
+lcg-stimgen help sine
+\end{lstlisting}
+produces the following output:
+\begin{verbatim}
+Waveform `sine' takes 4 parameters:
+   1) amplitude
+   2) frequency (Hz)
+   3) phase
+   4) offset
+\end{verbatim}
+\subsection{Examples}
