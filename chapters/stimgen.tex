@@ -183,4 +183,145 @@ Waveform `sine' takes 4 parameters:
    3) phase
    4) offset
 \end{verbatim}
+Note that, according to the argument passing convention on UNIX
+systems, if one of the positional arguments (i.e., one of the
+parameters of a sub-waveform) is negative (e.g., a negative amplitude
+in a constant sub-waveform), the \textbf{full} list of positional
+arguments should be preceded by a double minus sign, as in
+\begin{lstlisting}
+lcg-stimgen -o negative.stim dc -d 1 -- -100
+\end{lstlisting}
+
 \subsection{Examples}
+The following commands generate the stimulus files presented in the
+companion manual as examples.
+
+\textbf{Example 1}: a positive $5\,\second$-long step preceded and
+followed by a $2.5\,\second$-long constant of 0.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 dc -d 5 2 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 2}: a negative $5\,\second$-long step preceded and
+followed by a $2.5\,\second$-long constant of 0. Note the double minus
+sign used to delimit the beginning of the positional arguments, when
+at least one of them is negative.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 dc -d 5 -- -2 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 3}: 2 $200\,\milli\second$-long Ornsteing-Uhlenbeck
+waveforms with different mean interleaved by constant waveforms.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.1 0 ou -d 0.2 -- -2 0.5 1 dc -d 0.05 0 ou -d 0.2 2 0.5 1 dc -d 0.1 0
+\end{lstlisting}
+
+\textbf{Example 4}: 2 $200\,\milli\second$-long Ornsteing-Uhlenbeck
+waveforms with different time constants interleaved by constant
+waveforms.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.1 0 ou -d 0.2 2 0.5 1 dc -d 0.05 0 ou -d 0.2 2 0.5 10 dc -d 0.1 0
+\end{lstlisting}
+
+\textbf{Example 5}: 3 $200\,\milli\second$-long Ornsteing-Uhlenbeck
+waveforms with identical parameters. The first two also have the same
+seed, whereas the third one has no seed specified.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.1 0 ou -d 0.2 -s 21 2 0.5 100 dc -d 0.05 0 ou -d 0.2 -s 21 2 0.5 100 dc -d 0.05 0 ou -d 0.2 2 0.5 100 dc -d 0.1 0
+\end{lstlisting}
+
+\textbf{Example 6}: a $5\,\second$-long sinusoidal waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 sine -d 5 3 1 0 0 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 7}: a $5\,\second$-long square waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 square -d 5 3 1 50 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 8}: a $5\,\second$-long saw-tooth waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 saw -d 5 3 1 50 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 9}: a $5\,\second$-long chirp waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 0 chirp -d 5 4 1 10 dc -d 2.5 0
+\end{lstlisting}
+
+\textbf{Example 10}: a $5\,\second$-long ramp waveform. Note that the
+ramp waveform starts at the last value of the previous waveform (or
+zero, if there is no sub-waveform preceding the ramp) and ends at the
+value specified as a parameter, which therefore does \textbf{not}
+necessarily represent the total span of the ramp.
+\begin{lstlisting}
+lcg-stimgen dc -d 2.5 -1 ramp -d 5 4 dc -d 2.5 4
+\end{lstlisting}
+
+\textbf{Example 11}: unipolar $1.5\,\milli\second$-long square pulses
+of amplitude 4 delivered at a frequency of $10\,\hertz$.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 poisson-reg -d 1 -- 4 -10 1.5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 12}: exponential pulses with a decay time constant of
+$5\,\milli\second$ and amplitude 4 delivered at a frequency of
+$10\,\hertz$.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 poisson-exp -d 1 -- 4 -10 5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 13}: bipolar $5\,\milli\second$-long square pulses
+of amplitude 4 delivered at a frequency of $10\,\hertz$.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 poisson-bi -d 1 -- 4 -10 5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 14}: same as example 13, with the difference that here
+the pulses are not delivered regularly, but rather they are generated
+by an exponential distribution with mean rate equal to $10\,\hertz$.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 poisson-bi -d 1 4 10 5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 15}: three ``bursts'' of unipolar square pulses whose
+occurrence times are exponentially distributed. The first two bursts
+have the same seed (therefore producing the same sequence of events),
+while the third burst has no seed specified.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 poisson-reg -d 1 -s 43 4 10 5 dc -d 0.5 0 poisson-reg -d 1 -s 43 4 10 5 dc -d 0.5 0 poisson-reg -d 1 4 10 5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 16}: alpha function waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 alpha -d 1 4 15 50 200 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 17}: a rectified sinusoidal waveform. This can be
+accomplished by setting the exponent parameter to -1, which
+effectively takes the absolute value, point by point, of the original
+elementary sub-waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 sine -d 5 -e -1 4 1 0 0 dc -d 0.5 1
+\end{lstlisting}
+
+\textbf{Example 18}: positive part of a sinusoidal waveform. This can
+be accomplished by setting the exponent parameter to 0, which takes,
+point by point, the positive part of the original elementary sub-waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 sine -d 5 -e 0 4 1 0 0 dc -d 0.5 1
+\end{lstlisting}
+
+\textbf{Example 19}: sum of a sinusoidal and a Ornstein-Uhlenbeck
+waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 sine -d 5 -p 1 1 0 0 ou -E 0 0.2 5 dc -d 0.5 0
+\end{lstlisting}
+
+\textbf{Example 20}: product of a sinusoidal and a Ornstein-Uhlenbeck
+waveform.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 sine -d 5 -M 1 1 0 0 ou -E 0 0.2 5 dc -d 0.5 0
+\end{lstlisting}
+
