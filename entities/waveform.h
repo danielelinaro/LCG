@@ -37,7 +37,7 @@ namespace generators {
 class Waveform : public Generator {
 public:
         Waveform(const char *stimulusFile = NULL, bool triggered = false,
-                 const std::string& units = "N/A", uint id = GetId());
+                 const std::string& units = "N/A", bool emitEventOnEnd = true, uint id = GetId());
         virtual ~Waveform();
 
         const char* stimulusFile() const;
@@ -64,6 +64,7 @@ private:
         uint m_position;
         bool m_triggered;
         bool m_eventSent;
+        bool m_emitEventOnEnd;
         Stimulus *m_stimulus;
         char m_stimulusFile[FILENAME_MAXLEN];
 };

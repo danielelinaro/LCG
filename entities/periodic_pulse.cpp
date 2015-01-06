@@ -5,7 +5,7 @@
 lcg::Entity* PeriodicPulseFactory(string_dict& args)
 {
         uint id;
-        double frequency, duration, amplitude;
+        double frequency, duration, amplitude, delay;
         std::string units;
 
         id = lcg::GetIdFromDictionary(args);
@@ -17,17 +17,20 @@ lcg::Entity* PeriodicPulseFactory(string_dict& args)
                 return NULL;
         }
 
+        if ( ! lcg::CheckAndExtractDouble(args, "delay", &frequency))
+                delay = 0.;
+
         if ( ! lcg::CheckAndExtractValue(args, "units", units))
                 units = "pA";
 
-        return new lcg::generators::PeriodicPulse(frequency, duration, amplitude, units, id);
+        return new lcg::generators::PeriodicPulse(frequency, duration, amplitude, delay, units, id);
 }
 
 namespace lcg {
 
 namespace generators {
 
-PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, std::string units, uint id)
+PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude, double delay, std::string units, uint id)
         : Generator(id)
 {
         if (frequency <= 0)
@@ -39,6 +42,7 @@ PeriodicPulse::PeriodicPulse(double frequency, double duration, double amplitude
         PP_DURATION = duration;
         PP_AMPLITUDE = amplitude;
         PP_PERIOD = 1.0 / frequency;
+        PP_DELAY = delay;
 
         setName("PeriodicPulse");
         setUnits(units);
@@ -54,7 +58,7 @@ bool PeriodicPulse::initialise()
         //m_output = PP_AMPLITUDE;
         //m_tNextPulse = 0.0;
         m_output = 0.0;
-        m_tNextPulse = GetGlobalDt();
+        m_tNextPulse = PP_DELAY;
         return true;
 }
 

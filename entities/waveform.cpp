@@ -10,7 +10,7 @@
 lcg::Entity* WaveformFactory(string_dict& args)
 {
         uint id;
-        bool triggered;
+        bool triggered, emitEvent;
         std::string filename, units;
         const char *filenamePtr;
         id = lcg::GetIdFromDictionary(args);
@@ -22,15 +22,17 @@ lcg::Entity* WaveformFactory(string_dict& args)
                 triggered = false;
         if (!lcg::CheckAndExtractValue(args, "units", units))
                 units = "N/A";
-        return new lcg::generators::Waveform(filenamePtr, triggered, units, id);
+        if (!lcg::CheckAndExtractBool(args, "emitEvent", &emitEvent))
+                emitEvent = true;
+        return new lcg::generators::Waveform(filenamePtr, triggered, units, emitEvent, id);
 }
 
 namespace lcg {
 
 namespace generators {
 
-Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, uint id)
-        : Generator(id), m_triggered(triggered)
+Waveform::Waveform(const char *stimulusFile, bool triggered, const std::string& units, bool emitEventOnEnd, uint id)
+        : Generator(id), m_triggered(triggered), m_emitEventOnEnd(emitEventOnEnd)
 {
         setName("Waveform");
         setUnits(units);
@@ -110,11 +112,11 @@ double Waveform::output()
 { 
         if (m_position < m_stimulus->length())
                 return m_stimulus->at(m_position);
-        if (m_position == m_stimulus->length() && !m_eventSent) {
-				Logger(Debug, "Waveform: emitting event at t = %lf seconds.\n", GetGlobalTime());
+        if (m_position == m_stimulus->length() && m_emitEventOnEnd && !m_eventSent) {
+		Logger(Debug, "Waveform: emitting event at t = %lf seconds.\n", GetGlobalTime());
                 emitEvent(new TriggerEvent(this));
-				m_eventSent = true;
-		}
+		m_eventSent = true;
+	}
         return m_stimulus->at(m_stimulus->length()-1);
 }
 
@@ -123,7 +125,7 @@ void Waveform::handleEvent(const Event *event)
         switch(event->type()) {
         case TRIGGER:
                 if (m_triggered && m_position >= m_stimulus->length()){
-                    Logger(Info, "Waveform: triggered by event.\n");
+                    Logger(Debug, "Waveform: triggered by event.\n");
                     reset();
                 }
                 break;

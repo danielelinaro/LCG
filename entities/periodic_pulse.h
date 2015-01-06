@@ -29,6 +29,7 @@
 #define PP_DURATION     m_parameters["duration"]
 #define PP_AMPLITUDE    m_parameters["amplitude"]
 #define PP_PERIOD       m_parameters["period"]
+#define PP_DELAY        m_parameters["delay"]
 
 namespace lcg {
 
@@ -36,7 +37,7 @@ namespace generators {
 
 class PeriodicPulse : public Generator {
 public:
-        PeriodicPulse(double frequency, double duration, double amplitude, std::string units = "pA", uint id = GetId());
+        PeriodicPulse(double frequency, double duration, double amplitude, double delay = 0., std::string units = "pA", uint id = GetId());
 
         virtual bool initialise();
 
