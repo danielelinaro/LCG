@@ -21,38 +21,39 @@ def usage():
     print('')
     print('where options are:')
     print('')
-    print(' -h, --help            display this help message and exit')
-    print(' -s, --stimulus        stimulus file(s) to use')
-    print(' -d, --directory       directory where the stimulus files are located')
-    print(' -l, --duration        duration of the recording (only if -s or -d are not specified)')
-    print(' -n, --repetitions     number of repetitions (default 1)')
-    print(' -i, --interval        interval between repetitions (default 0 s)')
-    print(' -o, --output-file     name of the file where data will be saved.')
-    print(' -F, --sampling-rate   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
-    print(' -D, --device          input device (default %s)' % os.environ['COMEDI_DEVICE'])
-    print(' -S, --subdevice       input subdevice (default %s)' % os.environ['AI_SUBDEVICE'])
-    print(' -I, --input-channels  input channels (default %s (%s in VC), but see note at the end for how to specify input channels)' % (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
-    print(' -g, --input-gains     input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
-    print('                       (or %s if --voltage-clamp is used) for all channels)' % os.environ['AI_CONVERSION_FACTOR_VC'])
-    print(' -u, --input-units     input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
-    print('                       --vclamp is used) for all channels)')
-    print(' -O, --output-channels output channel(s) (default %s (%s in VC), but see note at the end for how to specify output channels)' % (os.environ['AO_CHANNEL'],os.environ['AO_CHANNEL_VC']))
-    print(' -G, --output-gains    output conversion factors (comma separated values, default %s' % os.environ['AO_CONVERSION_FACTOR_CC'])
-    print('                       (or %s if --vclamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
-    print(' -U, --output-units    output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
-    print('                       --vclamp is used) for all channels)')
-    print(' -V, --voltage-clamp   use default conversion factor and units for voltage clamp')
-    print(' -E, --conductance     reversal potentials for conductance clamp experiment (comma separated values (mV))')
-    print(' -H, --offset          offset value, summed to the stimulation (in pA or mV, default 0)')
-    print(' -R, --reset-output    whether output should be reset to 0 after every trial (yes or no,')
-    print('                       default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
-    print(' -p, --priority        set the priority of this thread, -20 is maximum, default is zero')
-    print('     --rt              use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
-    print('     --verbose         set the verbosity level of lcg-experiment (default is 4 - silent)')
-    print('                       it is also possible to specify options to control the behavior of')
-    print('                       lcg-stimulus using "timer", "percent" or "silent"')
-    print('     --model           use a LIF neuron instead of real experiment')
-    print('     --dry-run         do not run, simply generate the commands')
+    print(' -h, --help               display this help message and exit')
+    print(' -s, --stimulus           stimulus file(s) to use')
+    print(' -d, --directory          directory where the stimulus files are located')
+    print(' -l, --duration           duration of the recording (only if -s or -d are not specified)')
+    print(' -n, --repetitions        number of repetitions (default 1)')
+    print(' -i, --interval           interval between repetitions (default 0 s)')
+    print(' -o, --output-file        name of the file where data will be saved.')
+    print(' -F, --sampling-rate      sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
+    print(' -D, --device             input device (default %s)' % os.environ['COMEDI_DEVICE'])
+    print('     --input-subdevice    input subdevice (default %s)' % os.environ['AI_SUBDEVICE'])
+    print('     --output-subdevice   output subdevice (default %s)' % os.environ['AO_SUBDEVICE'])
+    print(' -I, --input-channels     input channels (default %s (%s in VC), but see note at the end for how to specify input channels)' % (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
+    print(' -g, --input-gains        input conversion factors (comma separated values, default %s' % os.environ['AI_CONVERSION_FACTOR_CC'])
+    print('                          (or %s if --voltage-clamp is used) for all channels)' % os.environ['AI_CONVERSION_FACTOR_VC'])
+    print(' -u, --input-units        input units (comma separated values, default %s (or %s if' % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
+    print('                          --vclamp is used) for all channels)')
+    print(' -O, --output-channels    output channel(s) (default %s (%s in VC), but see note at the end for how to specify output channels)' % (os.environ['AO_CHANNEL'],os.environ['AO_CHANNEL_VC']))
+    print(' -G, --output-gains       output conversion factors (comma separated values, default %s' % os.environ['AO_CONVERSION_FACTOR_CC'])
+    print('                          (or %s if --vclamp is used) for all channels)' % os.environ['AO_CONVERSION_FACTOR_VC'])
+    print(' -U, --output-units       output units (comma separated values, default %s (or %s if' % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
+    print('                          --vclamp is used) for all channels)')
+    print(' -V, --voltage-clamp      use default conversion factor and units for voltage clamp')
+    print(' -E, --conductance        reversal potentials for conductance clamp experiment (comma separated values (mV))')
+    print(' -H, --offset             offset value, summed to the stimulation (in pA or mV, default 0)')
+    print(' -R, --reset-output       whether output should be reset to 0 after every trial (yes or no,')
+    print('                          default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
+    print(' -p, --priority           set the priority of this thread, -20 is maximum, default is zero')
+    print('     --rt                 use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
+    print('     --verbose            set the verbosity level of lcg-experiment (default is 4 - silent)')
+    print('                          it is also possible to specify options to control the behavior of')
+    print('                          lcg-stimulus using "timer", "percent" or "silent"')
+    print('     --model              use a LIF neuron instead of real experiment')
+    print('     --dry-run            do not run, simply generate the commands')
     print('')
     print('Input and output channels (-I and -O switches, respectively) can be specified in one of four ways:')
     print('')
@@ -70,10 +71,10 @@ def get_stimulus_duration(stimfile):
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:S:I:g:u:O:G:U:Vo:E:H:R:p:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hs:d:l:n:i:F:D:I:g:u:O:G:U:Vo:E:H:R:p:',
                                   ['help','stimulus=','directory=',
                                    'duration=','repetitions=','interval=','sampling-rate=',
-                                   'device=','subdevice=',
+                                   'device=','input-subdevice=','output-subdevice=',
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
                                    'voltage-clamp','offset=','conductance=','rt=','output-file=',
@@ -94,7 +95,8 @@ def main():
     samplingRate = float(os.environ['SAMPLING_RATE'])    # [Hz]
 
     device = os.environ['COMEDI_DEVICE']
-    subdevice = os.environ['AI_SUBDEVICE']
+    inputSubdevice = os.environ['AI_SUBDEVICE']
+    outputSubdevice = os.environ['AO_SUBDEVICE']
     inputChannels = []
     inputGains = []
     inputUnits = []
@@ -152,8 +154,10 @@ def main():
                 print('Device \'%s\' does not exist.' % a)
                 sys.exit(1)
             device = a
-        elif o in ('-S','--subdevice'):
-            subdevice = a
+        elif o == '--input-subdevice':
+            inputSubdevice = a
+        elif o == '--output-subdevice':
+            outputSubdevice = a
         elif o in ('-I','--input-channels'):
             if a.lower() == 'none':
                 # no input channels
@@ -238,6 +242,10 @@ def main():
 
     if outputChannels is None and len(offsets) != 0:
         print('You specified an offset but no output channel(s). I don\'t know what to do.')
+        sys.exit(0)
+
+    if inputSubdevice == outputSubdevice:
+        print('Input and output subdevices must be different.')
         sys.exit(0)
 
     # check the correctness of the arguments
@@ -347,8 +355,8 @@ def main():
         tmpchannels = []
         # input channels
         if not inputChannels is None:
-            tmpchannels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
-                            'units':inputUnits[j]} for j in range(len(inputChannels))]
+            tmpchannels = [{'type':'input', 'subdevice': inputSubdevice, 'channel':inputChannels[j],
+                            'factor':inputGains[j], 'units':inputUnits[j]} for j in range(len(inputChannels))]
         if not outputChannels is None:
             # there are as many stimulus files as output channels
             duration = get_stimulus_duration(stimfiles[0])
@@ -362,7 +370,7 @@ def main():
             if i == 0 and differentDurations:
                 print('Warning: not all stimulus files have the same duration. Will use the longest, %g sec.' % duration)
             for j in range(len(outputChannels)):
-                tmpchannels.append({'type':'output', 'channel':outputChannels[j], 'factor':outputGains[j],
+                tmpchannels.append({'type':'output', 'subdevice': outputSubdevice, 'channel':outputChannels[j], 'factor':outputGains[j],
                                     'units':outputUnits[j], 'stimfile':stimfiles[j], 'offset':offsets[j], 'resetOutput': resetOutput})
         all_channels.append(tmpchannels)
         all_durations.append(duration)
@@ -370,9 +378,9 @@ def main():
         # there is one output channel and many stimulus files
         for f in stimfiles:
             all_durations.append(np.sum(np.loadtxt(f)[:,0]))
-            tmpchannels = [{'type':'input', 'channel':inputChannels[j], 'factor':inputGains[j],
+            tmpchannels = [{'type':'input', 'subdevice': inputSubdevice, 'channel':inputChannels[j], 'factor':inputGains[j],
                             'units':inputUnits[j]} for j in range(len(inputChannels))]
-            tmpchannels.append({'type':'output', 'channel':outputChannels[0], 'factor':outputGains[0],
+            tmpchannels.append({'type':'output', 'subdevice': outputSubdevice, 'channel':outputChannels[0], 'factor':outputGains[0],
                                 'units':outputUnits[0], 'stimfile':f, 'offset':offsets[0], 'resetOutput': resetOutput})
             all_channels.append(tmpchannels)
 
