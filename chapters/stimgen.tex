@@ -108,7 +108,7 @@ As mentioned previously, stimulation files can be generated in
 convenient interface to the stim-file language, and saves the user the
 hassle of having to write stim-files manually. Also, it provides a way
 of interacting directly with \verb+lcg-stimulus+ by feeding the output
-of \verb+lcg-stimgen+ to \verb+lcg-stimulus+ by means of UNIX pipes,
+of \verb+lcg-stimgen+ to \verb+lcg-stimulus+ by means of UNIX pipelines,
 as will be described in the following section.
 
 The syntax of \verb+lcg-stimgen+ is the following:
@@ -187,7 +187,7 @@ Note that, according to the argument passing convention on UNIX
 systems, if one of the positional arguments (i.e., one of the
 parameters of a sub-waveform) is negative (e.g., a negative amplitude
 in a constant sub-waveform), the \textbf{full} list of positional
-arguments should be preceded by a double minus sign, as in
+arguments should be preceded by a double dash sign, as in
 \begin{lstlisting}
 lcg-stimgen -o negative.stim dc -d 1 -- -100
 \end{lstlisting}
@@ -325,3 +325,233 @@ waveform.
 lcg-stimgen dc -d 0.5 0 sine -d 5 -M 1 1 0 0 ou -E 0 0.2 5 dc -d 0.5 0
 \end{lstlisting}
 
+\section{Using stimulation files}
+Stimulation files are the preferred way to represent arbitrary
+waveforms in \progname. To ensure flexibility, stim-files do not
+contain information about the unit of measure of the stimulus: on the
+contrary, the same stimulus can be used to represent, for instance, a
+current waveform (in which case the unit of measure will be
+$\pico\ampere$) or a voltage waveform (in which case the unit of
+measure will be $\milli\volt$). In other words, the \textit{meaning}
+of a particular waveform will depend on the \textit{context} it is
+used in: we will discuss this in more detail when talking about
+configuration files in Chap.~\ref{chap:configuration}.
+
+In this section we will see how to use \verb+lcg-stimulus+ to perform
+conventional voltage and current clamp experiments, which typically
+(but not necessarily) require the usage of stimulation
+files. \verb+lcg-stimulus+ is a general purpose command that
+reads from and writes to as many channels as the data acquisition card
+on your system supports.
+
+The syntax of \verb+lcg-stimgen+ is the following:
+\begin{verbatim}
+lcg-stimulus [option <value>]
+\end{verbatim}
+The command supports a large set of options: here we describe the most
+commonly used ones, but we encourage the user to read carefully the
+help page of \verb+lcg-stimulus+, which can be accessed by issuing the
+command
+\begin{lstlisting}
+lcg-stimulus -h
+\end{lstlisting}
+The majority of short options have a corresponding long one, detailed
+in the online help of \verb+lcg-stimulus+: here we will use either
+long or short options.
+
+Input and output channels are specified by using the \verb+-I+ and
+\verb+-O+ options, respectively. Since input and output from multiple
+channels are supported, \verb+lcg-stimulus+ understands four different
+ways of specifying channels:
+\begin{enumerate}
+\item a single value, as in \verb+-I 1+, which means that the program
+  should read only from channel 1. Note that data acquisition cards
+  typically label channels starting from 0, so that channel 1 is
+  effectively the \textit{second} input channel of the board.
+\item a list of comma separated values, as in \verb+-I 0,1,2+, which
+  instructs \verb+lcg-stimulus+ to read from the first three input
+  channels.
+\item a range of values, as in \verb+-I 0-2+, which is equivalent to
+  \verb+-I 0,1,2+.
+\item the string \verb+none+, as in \verb+-I none+, which instructs
+  \verb+lcg-stimulus+ to use no input channels. The same is obviously
+  valid also for output channels.
+\end{enumerate}
+
+Other options related to input and output are the following:
+\begin{itemize}
+\item \verb+-F+ to specify the sampling rate.
+\item \verb+-D+ to specify the path of the device the data acquisition
+  card is mapped to. In the case of comedi devices, this is typically
+  \verb+/dev/comedi0+.
+\item \verb+--input-subdevice+ and \verb+--output-subdevice+ to
+  specify the input and output subdevices to use. In the case of
+  National Instruments data acquisition cards, these are gerally equal
+  to 0 and 1, respectively.
+\item \verb+--input-gains+ to specify the input conversion factors. If
+  only one value is specified, then the same conversion factor is used
+  for all input channels. Alternatively, the user can specify as many
+  conversion factors as there are input channels, separating them with
+  commas, as in \verb+--input-gains 100,1,20+.
+\item \verb+--output-gains+ to specify the output conversion factors.
+\item \verb+--input-units+ and \verb+--output-units+ to specify the
+  input and output units for each channel. As described previously for
+  the input and output conversion factor, the user can either specify
+  a single value (such as \verb+pA+ or \verb+mV+), or as many values
+  as there are input and output channels, as in \verb+--output-units pA,V+.
+\end{itemize}
+
+Other important options are:
+\begin{itemize}
+\item \verb+-n+ to specify the number of trials.
+\item \verb+-i+ to specify the interval (in seconds) between trials.
+\item \verb+-o+ to specify the output file name. If this option is not
+  passed, the program generates a file name based on the current date
+  and time.
+\end{itemize}
+
+The user can specify the stimulation files to use with the \verb+-s+
+option: in the case a single output channel is used, the simplest
+scenario is that in which a single stimulation file is passed to the
+program. In the case in which multiple stimulation files are passed to
+\verb+lcg-stimulus+, the program will apply them sequentially to the
+output channel. If multiple output channels are used and just one
+stimulation file is specified, then the same output is fed to all
+output channels. Alternatively, the user can specify as many
+stimulation files as there are output channels, and
+\verb+lcg-stimulus+ will apply each stimulation file to an output
+channel, in the order in which they were passed at the command
+line. The duration of the recording is equivalent to that of the
+longest stimulus.
+
+An alternative way to specify stimulation files is to use the
+\verb+-d+ option: this tells \verb+lcg-stimulus+ to look for
+stimulation files (i.e., all files that have a \verb+stim+ suffix) in
+a specific directory. The same rules concerning number of output
+channels and stimulation files outlined previously apply also in this
+case.
+
+As mentioned previously, \verb+lcg-stimulus+ can be used without
+stimulation files: in this case, the program only records from the set
+of input channels specified, without applying any stimulation. The
+duration of the recording has to be specified with the \verb+-l+
+option.
+
+\subsection{Default values and pipelines}
+Most \progname commands use environment variables to store default
+values that rarely change, such as the path of the device that
+represents your data acquisition cards: consequently, only a very
+limited subset of \verb+lcg-stimulus+ options need to be passed on the
+command line during the execution of routine protocols. For example,
+in the simple but very common scenario in which the user wants to
+record from one channel while injecting a stimulation current, the
+following command can be used:
+\begin{lstlisting}
+lcg-stimulus -s current.stim -n 10 -i 5
+\end{lstlisting}
+where \verb+current.stim+ is a stim-file generated with
+\verb+lcg-stimgen+ and the \verb+-n+ and \verb+-i+ options instruct
+the program to run the stimulation 10 times with an interval of
+$5\,\second$. \\
+The full list of \progname-related environment variables can be found
+in Sec.~\ref{sec:envvar}.
+
+Further flexibility in the on-the-fly execution of simple protocols is
+provided by pipelines\footnote{If you don't know what a UNIX pipeline
+  is, read \href{http://en.wikipedia.org/wiki/Pipeline\_\%28Unix\%29}{this
+    page} on Wikipedia.}: these allow feeding the output of
+\verb+lcg-stimgen+ to \verb+lcg-stimulus+, therefore removing the need
+of writing to file the stimulation file. The usage of pipelines is
+best explained with an example: suppose that you want to inject a
+$500\,\milli\second$-long step of depolarizing current of amplitude
+$300\,\pico\ampere$ into a cell, preceded and followed by $2\,\second$
+of baseline recording. The following one-line command performs such
+stimulation:
+\begin{lstlisting}
+lcg-stimgen dc -d 2 0 dc -d 0.5 300 dc -d 2 0 | lcg-stimulus
+\end{lstlisting}
+Note however that pipelines can be used only when one output channel
+is required. Another example that highlights the power and flexibility
+of using \verb+lcg-stimgen+ and \verb+lcg-stimulus+ in conjunction is
+the following:
+\begin{lstlisting}
+lcg-stimgen dc -d 1 0 poisson-reg -d 0.5 -- 2000 -20 1 dc -d 1 0 | lcg-stimulus -I 0,1 -O 0 -n 30 -i 5
+\end{lstlisting}
+This command can be used, for instance, to test the presence of a
+connection between two cells recorded intracellularly simultaneously:
+\verb+lcg-stimgen+ generates a $20\,\hertz$ train of
+$1\,\milli\second$-long pulses with an amplitude of $2\,\nano\ampere$,
+preceded and followed by a $1\,\second$-long baseline. The duration of
+the train is $0.5\,\second$, which, at $20\,\hertz$, implies that 10
+pulses will be delivered. \verb+lcg-stimulus+ outputs the stimulus on
+channel 0 (connected to the putative presynaptic cell), while
+simultaneously recording from channels 0 and 1. The stimulation is
+performed 30 times at $5\,\second$ intervals. Notice that, to test the
+other connection, it is sufficient to change the output channel to 1,
+assuming that that is the output channel connected to the other cell
+in the pair. This combination of \verb+lcg-stimgen+ and
+\verb+lcg-stimulus+ is effectively equivalent to the \verb+lcg-pulses+
+command, described in Sec.~\ref{sec:train}.
+
+Note that, even though when piping the output of \verb+lcg-stimgen+ to
+\verb+lcg-stimulus+ no stim-file is explicitly written to disk, every
+time an \progname command is run all the metadata\sidenote{Metadata} necessary for
+reconstructing unambiguously the performed protocol is stored in a
+hidden directory in the folder where the command is run: such metadata
+includes the stim-file and configuration file used. More information
+about this can be found in Sec.~\ref{sec:metadata}.
+
+\subsection{Examples}
+As mentioned previously, the majority of the electrophysiology
+protocols described in Chap.~\ref{chap:protocols} can be realized
+simply by using \verb+lcg-stimgen+ in conjunction with
+\verb+lcg-stimulus+. In this section, we present a series of
+commands or short scripts that reproduce some of the electrophysiology
+protocols previously described.
+
+\subsubsection{Depolarizing or hyperpolarizing pulse protocol}
+In this case, the same stimulation is repeated 20 times, so it is
+appropriate to pipe the output of \verb+lcg-stimgen+ to \verb+lcg-stimulus+
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 dc -d 0.001 2000 dc -d 0.5 0 | lcg-stimulus -n 20 -i 5
+\end{lstlisting}
+To inject a hyperpolarizing pulse of current, it is sufficient to
+change the parameters of the second constant waveform in the call to
+\verb+lcg-stimgen+.
+
+\subsubsection{Depolarizing or hyperpolarizing steps protocol}
+For this protocol, we first create a directory and store all the
+stimulation files in it and then run \verb+lcg-stimulus+ specifying the
+directory containing the stim-files.
+\begin{lstlisting}
+mkdir stimuli
+for amp in `seq -300 50 50` ; do
+    lcg-stimgen -o stimuli/step_$amp.stim dc -d 0.5 0 dc -d 1 $amp dc -d 0.5 0
+done
+lcg-stimulus -d stimuli -n 2 -i 1
+\end{lstlisting}
+
+\subsubsection{Ramp protocol}
+For this protocol, we want the ramp to start from $50\,\pico\ampere$
+and end at $300\,\pico\ampere$. This can be accomplished by summing a
+constant with amplitude $50\,\pico\ampere$ and a ramp with final value
+$250\,\pico\ampere$.
+\begin{lstlisting}
+lcg-stimgen dc -d 0.5 0 dc -p -d 30 50 ramp -E 300 dc -d 0.5 0 | lcg-stimulus -n 2 -i 30
+\end{lstlisting}
+
+\subsubsection{Input resistance protocol}
+This protocol is similar to the train of pulses described previously
+and in Sec.~\ref{sec:train}, and can be accomplished with the
+following command:
+\begin{lstlisting}
+lcg-stimgen dc -d 1 0 poisson-reg -d 90 -- -100 1 300 | lcg-stimulus
+\end{lstlisting}
+
+\subsubsection{Recording of spontaneous activity}
+To record spontaneous activity, a stimulus file is not necessary, but
+we must specify the duration of the recording, using the \verb+-l+
+option of \verb+lcg-stimulus+.
+\begin{lstlisting}
+lcg-stimulus -l 60 -I 0-3
+\end{lstlisting}

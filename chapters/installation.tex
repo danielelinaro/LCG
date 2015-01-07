@@ -282,8 +282,15 @@ source ~/.lcg-completion.bash
 \end{lstlisting}
 The script in \inlineCode{lcg-completion.bash} provides autocomplete
 capabilities to \progname but is not required for correct
-functioning. The environment variables exported in
-\inlineCode{lcg-env.sh}, on the other hand, provide necessary defaults
+functioning.
+
+\section{LCG environment variables}
+\label{sec:envvar}
+The environment variables\footnote{If you
+  don't know what a UNIX environment variable is, read
+  \href{http://en.wikipedia.org/wiki/Environment\_variable}{this page}
+  on Wikipedia.} exported in
+\inlineCode{lcg-env.sh}, provide necessary defaults
 to \progname and should be tailored to your system. In particular, the
 file exports the following variables:
 \begin{itemize}
@@ -300,10 +307,16 @@ file exports the following variables:
 \item \textbf{RANGE} The range of the output to the analog card.
 \item \textbf{AI\_SUBDEVICE} The analog input subdevice on the
   acquisition card.
-\item \textbf{AI\_CHANNEL} The default channel used for analog input.
+\item \textbf{AI\_CHANNEL\_CC} The default channel used for analog
+  input in current clamp mode.
+\item \textbf{AI\_CHANNEL\_VC} The default channel used for analog
+  input in voltage clamp mode.
 \item \textbf{AO\_SUBDEVICE} The analog output subdevice on the
   acquisition card.
-\item \textbf{AO\_CHANNEL} The default channel used for analog output.
+\item \textbf{AO\_CHANNEL\_CC} The default channel used for analog
+  output in current clamp mode.
+\item \textbf{AO\_CHANNEL\_VC} The default channel used for analog
+  output in voltage clamp mode.
 \item \textbf{AI\_UNITS\_CC} The units for the analog input, in current
   clamp mode.
 \item \textbf{AO\_UNITS\_CC} The units for the analog output, in current
@@ -312,6 +325,9 @@ file exports the following variables:
   clamp mode.
 \item \textbf{AO\_UNITS\_VC} The units for the analog output, in voltage
   clamp mode.
+\item \textbf{DIGITAL\_SUBDEVICE} The digital subdevice on the
+  acquisition card.
+\item \textbf{DIGITAL\_CHANNEL} The default digital channel.
 \item \textbf{SAMPLING\_RATE} The default sampling rate of the acquisition.
 \item \textbf{GROUND\_REFERENCE} The ground reference of the
   acquisition card. At present, Ground-Referenced Single Ended (GRSE)
@@ -327,6 +343,16 @@ file exports the following variables:
   time a trial ends. This is particularly useful when interrupting the
   program (with Ctrl-C for example) and is valid only for current
   clamp experiments.
+\item \textbf{KERNEL\_DUR} The duration of the white noise injection
+  used in the computation of the kernel used for the Active Electrode
+  Compensation. The default values is $10\,\second$.
+\item \textbf{KERNEL\_STD} The standard deviation (in $\pico\ampere$)
+  of the noisy current injected for the computation of the kernel. The
+  default value of $200\,\pico\ampere$ is suitable for cortical
+  cells with input resistance in the range
+  $50-150\,\mega\ohm$. As a rule of thumb, decrease this value if you
+  are dealing with small cells that present an input resistance in
+  excess of $200\,\mega\ohm$.
 \end{itemize}
 Most of the previous values depend on how your amplifier is configured
 and on how it is wired to the acquisition card. It is also important to
@@ -334,7 +360,9 @@ note that the conversion factors and the units provided in
 \inlineCode{.lcg-env.sh} are meaningful when only one input and output
 channel are present. In all other cases, input/output conversion
 factors will have to be specified either in the configuration file or
-when invoking a script. \progname provides a script that helps the
+when invoking a script.
+
+\progname provides a script that helps the
 user in finding the correct values for the conversion factors used on
 his/her system. To use it, turn on the amplifier and connect it to the
 board as you would during an experiment and run the following commands:
@@ -366,6 +394,7 @@ the real-time kernel and not compile parts of \progname. If you are
 installing \progname on Mac OS X, note that the equivalent of the
 \verb+.bashrc+ file is called \verb+.profile+.
 
+%%%%% COMPLETE THIS
 \section{Installing the live medium to a USB drive}
 \label{note:liveUSB}
 \subsection{From a Debian/Ubuntu distribution}

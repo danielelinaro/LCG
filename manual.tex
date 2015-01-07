@@ -1,4 +1,4 @@
-\documentclass[10pt,a4paper,twoside]{book}
+\documentclass[10pt,a4paper,oneside]{book}
 
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -27,11 +27,15 @@
 \usepackage{float}
 % chaptersection
 \usepackage{minitoc}
+% margin notes using the geometry package
+\usepackage{marginnote}
+\usepackage[top=4cm, bottom=3cm, outer=3cm, inner=3cm, heightrounded,
+marginparwidth=2.75cm, marginparsep=0.5cm]{geometry}
 
 \definecolor{light_gray}{RGB}{230,230,230}
 \definecolor{dark_green}{RGB}{50,150,50}
 \lstset{ 
-  backgroundcolor=``\color{light_gray},  
+  backgroundcolor=\color{light_gray},
   % the size of the fonts that are used for the code
   basicstyle = \footnotesize\ttfamily,       
 % sets if automatic breaks should only happen at whitespace
@@ -65,6 +69,7 @@
 \newcommand{\unix}{UNIX\xspace}
 \newcommand{\comedi}{COMEDI\xspace}
 \newcommand{\hdf}{HDF5\xspace}
+\newcommand{\sidenote}[1]{\marginnote{\textit{#1}}}
 
 \title{\progname \\ command line electrophysiology \\ A user manual}
 \author{Daniele Linaro \\ Jo\~ao Couto \\ Michele Giugliano}
