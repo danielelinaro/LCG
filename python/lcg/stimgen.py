@@ -22,7 +22,7 @@ waveform_parameters = {'dc': ['amplitude'],
                        'poisson-exp': ['amplitude','frequency','pulse duration (ms)'],
                        'poisson-bi': ['amplitude','frequency','pulse duration (ms)'],
                        'gaussian': ['mean','standard deviation'],
-                       'alpha': ['amplitude','rise time (ms)','decay time (ms)'] }
+                       'alpha': ['amplitude','rise time (ms)','decay time (ms)','delay (s)', 'offset'] }
 
 default_waveform_options = {'name': None,
                             'parameters': [None for i in range(5)],
@@ -30,6 +30,40 @@ default_waveform_options = {'name': None,
                             'seed': None,
                             'exponent': 1.,
                             'operator': None}
+
+def is_positive(wavename, parameters, idx):
+    for i in idx:
+        if parameters[i] < 0:
+            raise Exception('%s: parameter `%s\' (--p%d) must be positive.' % (wavename,waveform_parameters[wavename][i],i+1))
+
+def square_constraints(duration, pars):
+    if pars[2] > 100:
+        raise Exception('square: parameter `%s\' (--p3) must be < 100.' % waveform_parameters['square'][2])
+    is_positive('square', pars, (1,2))
+
+def saw_constraints(duration, pars):
+    if pars[2] > 100:
+        raise Exception('saw: parameter `%s\' (--p3) must be < 100.' % waveform_parameters['saw'][2])
+    is_positive('saw', pars, (1,2))
+
+def alpha_constraints(duration, pars):
+    if pars[3] > duration:
+        print('alpha: parameter `%s\' must be shorter than the waveform duration.' % waveform_parameters['alpha'][3])
+        return False
+    return is_positive('alpha', pars, (1,2,3))
+
+waveform_constraints = {'dc': lambda T,p: None,
+                        'ou': lambda T,p: is_positive('ou', p, (1,2)),
+                        'sine': lambda T,p: is_positive('sine', p, (1)),
+                        'square': square_constraints,
+                        'saw': saw_constraints,
+                        'chirp': lambda T,p: is_positive('chirp', p, (1,2)),
+                        'ramp':lambda T,p: None,
+                        'poisson-reg': lambda T,p: is_positive('ou', p, (2)),
+                        'poisson-exp': lambda T,p: is_positive('ou', p, (2)),
+                        'poisson-bi': lambda T,p: is_positive('ou', p, (2)),
+                        'gaussian': lambda T,p: is_positive('ou', p, (1)),
+                        'alpha': alpha_constraints}
 
 def usage():
     print('This script writes stimulus files that can be used by LCG to perform voltage')
@@ -191,7 +225,7 @@ def createStimulusEntry(opts):
     if not opts['name'] in waveform_parameters.keys():
         raise Exception('%s: unknown waveform' % opts['name'])
     if opts['duration'] is None and opts['operator'] is None:
-        raise Exception('missing duration in waveform `%s\'' % opts['name'])
+        raise Exception('%s: missing duration.' % opts['name'])
     if opts['seed'] is None:
         fixseed = 0
         seed = 0
@@ -201,10 +235,12 @@ def createStimulusEntry(opts):
     stimulus = [opts['duration'],waveform_codes[opts['name']],0,0,0,0,0,fixseed,seed,0,0,opts['exponent']]
     for i in range(len(waveform_parameters[opts['name']])):
         if opts['parameters'][i] is None:
-            raise Exception('missing parameter `%s\' (--p%d) in waveform %s' % 
-                            (waveform_parameters[opts['name']][i], i+1, opts['name']))
+            raise Exception('%s: missing parameter `%s\' (--p%d).' % 
+                            (opts['name'], waveform_parameters[opts['name']][i], i+1))
         else:
             stimulus[2+i] = opts['parameters'][i]
+    # will raise an exception if something goes wrong
+    waveform_constraints[opts['name']](opts['duration'],opts['parameters'])
     return stimulus
 
 def createStimulusGroup(entries):
@@ -238,7 +274,7 @@ def writeStimFile(filename, stimulus, preamble=None, preamble_holding=0.0):
                   in which case no preamble is added, or True, in which case default
                   values of -300 pA and -100 pA are used for the first and second pulse,
                   respectively.
-       preamble_holding  - a number that is added to P1 of the preamble waveforms 
+       preamble_holding  - a number that is added to P1 of the preamble waveforms
     Returns:
        The duration of the stimulation.
            
