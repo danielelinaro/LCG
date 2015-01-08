@@ -13,6 +13,7 @@ integrated.
 
 ### Features
 The main features of LCG are the following:
+
 - dynamic clamp capabilities, with built-in active electrode compensation; 
 - straightforward design and implementation of closed loop and hybrid experiments; 
 - command-line operability; 
@@ -24,6 +25,10 @@ The main features of LCG are the following:
 
 ### Installation
 Detailed installation instructions can be found [here](installation.html).
+
+### Environment variables
+For correct functioning, LCG uses a set of environment variables, described in detail
+[here](environment.html).
 
 ### Documentation
 Extensive documentation on the usage of LCG can be found [here](manual.html).

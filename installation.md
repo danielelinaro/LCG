@@ -269,61 +269,9 @@ with the commands
         $ echo 'source ~/.lcg-completion.bash' >> $HOME/.bashrc
 
 The script in lcg-completion.bash provides autocomplete capabilities to LCG but it is not
-required for correct functioning. The environment variables exported in lcg-env.sh, on the
-other hand, provide necessary defaults to LCG and should be tailored to your system.
-In particular, the file exports the following variables:
+required for correct functioning.
 
-- COMEDI_DEVICE The path to the device file from which data is read.
-- AI_CONVERSION_FACTOR_CC The conversion factor to be used for the analog input, in current clamp mode.
-- AO_CONVERSION_FACTOR_CC The conversion factor to be used for the analog output, in current clamp mode.
-- AI_CONVERSION_FACTOR_VC The conversion factor to be used for the analog input, in voltage clamp mode.
-- AO_CONVERSION_FACTOR_VC The conversion factor to be used for the analog output, in current clamp mode.
-- RANGE The range of the output to the analog card.
-- AI_SUBDEVICE The analog input subdevice on the acquisition card.
-- AI_CHANNEL The default channel used for analog input.
-- AO_SUBDEVICE The analog output subdevice on the acquisition card.
-- AO_CHANNEL The default channel used for analog output.
-- AI_UNITS_CC The units for the analog input, in current clamp mode.
-- AO_UNITS_CC The units for the analog output, in current clamp mode.
-- AI_UNITS_VC The units for the analog input, in voltage clamp mode.
-- AO_UNITS_VC The units for the analog output, in voltage clamp mode.
-- SAMPLING_RATE The default sampling rate of the acquisition.
-- GROUND_REFERENCE The ground reference of the acquisition card. At present,
-  Ground-Referenced Single Ended (GRSE) and Non-Referenced Single Ended (NRSE) are supported.
-- LCG_REALTIME This variable tells whether the system
-  should preferentially use the real-time kernel if it is available or
-  not. The main advantage in using the real-time kernel (also for open
-  loop experiments) is that it provides synchronous input and output,
-  in contrast to the non-real-time mode, where input and output are
-  asynchronously managed by the DAQ board.
-- LCG_RESET_OUTPUT This variable tells whether the
-  output of the DAQ board should automatically be reset to zero every
-  time a trial ends. This is particularly useful when interrupting the
-  program (with Ctrl-C for example) and is valid only for current
-  clamp experiments.
-
-Most of the previous values depend on how your amplifier is configured
-and on how it is wired to the acquisition card. It is also important to
-note that the conversion factors and the units provided in
-.lcg-env.sh are meaningful when only one input and output
-channel are present. In all other cases, input/output conversion
-factors will have to be specified either in the configuration file or
-when invoking a script. LCG provides a script that helps the
-user in finding the correct values for the conversion factors used on
-his/her system. To use it, turn on the amplifier and connect it to the
-board as you would during an experiment and run the following commands:
-
-         $ comedi_calibrate
-         $ lcg-find-conversion-factors --CC-channels 0,0 --VC-channels 1,1
-
-where the --CC-channels and --VC-channels
-options specify the input and output channels to use in current or
-voltage clamp mode, respectively, and should reflect the values
-used in the system that is being configured.
-The script will ask the user a few questions and then update the
-values of the conversion factors in the .lcg-env.sh file:
-due to rounding errors, however, these values might have to be rounded
-by the user afterwards by editing manually the .lcg-env.sh file.
+For a detailed description of the environment variables used by LCG, read [this page](environment.html).
 
 ## Installation without a realtime kernel
 
