@@ -181,7 +181,7 @@ def plotAllEntitiesFromFile(fig, filename, kernelFiles = [],
                             downsampleFactor = 1):
     # TODO: Cleanup function (filesCounter and return values)
     ent, info = lcg.loadH5Trace(filename)
-#    print('Loaded file %s'%filename)
+    # print('Loaded file %s'%filename)
     time = np.linspace(0,info['tend'],len(ent[0]['data']))
     compensateWithKernelOffline(ent,kernelFiles)
     if (not len(ax) == len(ent)) and len(ax):
@@ -213,6 +213,7 @@ def plotAllEntitiesFromFile(fig, filename, kernelFiles = [],
     ax[0].set_xlim([time[0],time[-1]])
     filesCounter.append(filename)
     return ax,filesCounter
+
 def main():
     opts = parse_options()
 

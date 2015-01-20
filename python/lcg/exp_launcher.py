@@ -539,12 +539,18 @@ class LCG_COMMANDER(QtGui.QDialog):
         filename = os.path.abspath(str(self.fileModel.filePath(selected)))
         if (os.path.isfile(filename) and ('h5' in filename) and
             (not filename in self.plotCounter)):
+            filestats = os.stat(filename)
+            if filestats.st_size < 1e7:
+                downsample = 1
+            else:
+                downsample = 2
+
             self.plotAxes,self.plotCounter = plotAllEntitiesFromFile(
                 self.plotFigure,
                 filename,
                 [],
                 self.plotCounter,
-                self.plotAxes, 1)
+                self.plotAxes, downsample)
             self.plotCanvas.draw()
 
 def main():
