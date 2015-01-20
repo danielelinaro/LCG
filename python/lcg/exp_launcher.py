@@ -440,7 +440,10 @@ class LCG_COMMANDER(QtGui.QDialog):
         self.protBox = []
         global externalProcessLabel
         externalProcessLabel = QtGui.QLabel('')
-        self.protTab = QtGui.QWidget()
+        protWidget = QtGui.QWidget()
+        self.protTab = QtGui.QScrollArea()
+        self.protTab.setWidget(protWidget)
+        self.protTab.setWidgetResizable(True)
         groups = []
         self.protParameterWidgets = []
         for ii,prot in enumerate(self.protocols):
@@ -460,7 +463,7 @@ class LCG_COMMANDER(QtGui.QDialog):
             groups[ii].setLayout(self.protBox[ii])
         groups.append(QtGui.QGroupBox('Output Command'))
         groups[-1].setLayout(self.outputCommander())
-        protLayout = QtGui.QGridLayout(self.protTab)
+        protLayout = QtGui.QGridLayout(protWidget)
         # Assign "optimal" number of rows and collumns
         nrows = 1
         ncol = 4
