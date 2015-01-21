@@ -50,6 +50,7 @@ AC_TYPE_SIZE_T
 # required libraries
 AC_CHECK_LIB([dl], [dlopen], [], [AC_MSG_ERROR(dl library missing.)])
 AC_CHECK_LIB([hdf5], [H5Fcreate], [], [AC_MSG_ERROR([HDF5 library missing.])])
+AC_CHECK_LIB([glut], [glutInit], [], [AC_MSG_ERROR([GLUT library missing.])])
 AC_CHECK_LIB([hdf5_hl], [H5LTmake_dataset_double], [], [AC_MSG_ERROR([HDF5 library missing.])])
 AC_LANG_CPLUSPLUS
 AC_CHECK_LIB([boost_thread], [main], [], [AC_MSG_ERROR([BOOST thread library missing.])])

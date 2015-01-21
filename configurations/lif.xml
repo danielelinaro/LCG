@@ -24,7 +24,14 @@
 	<holdLastValue>true</holdLastValue>
 	<holdLastValueFilename>LIFlastValue.current</holdLastValueFilename>
       </parameters>
-      <connections>0</connections>
+      <connections>0,2</connections>
+    </entity>
+
+    <entity>
+      <name>Plot</name>
+      <id>2</id>
+      <parameters>
+      </parameters>
     </entity>
 
   </entities>

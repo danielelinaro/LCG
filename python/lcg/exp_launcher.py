@@ -40,9 +40,9 @@ defaultProtocol = [
      'defaults': '10,1,3,100,150,20',
      'foldername': 'ou'},
     {'name': 'Steps Protocol',
-     'command': 'lcg-steps -n {0} -i {1} -d {2} -a {3},{4},{5} --model',
-     'parameters': 'Number of trials,Inter-trial interval,Duration,Start amplitude,Max amplitude,Step increment',
-     'defaults': '1,5,1,-200,+250,50',
+     'command': 'lcg-steps -n {0} -i {1} -d {2} -a {3},{4},{5} {6}',
+     'parameters': 'Number of trials,Inter-trial interval,Duration,Start amplitude,Max amplitude,Step increment,Additional options',
+     'defaults': '1,5,1,-200,+250,50,--model',
      'foldername': 'steps'},
     ]
 protocolKeys = ['name','command','parameters','defaults','foldername']
@@ -169,7 +169,8 @@ experimentFolder = None
 
 class RunButton(QtGui.QPushButton):
     def __init__(self, command='', par=[], 
-                 name = '',folder = '', onLastFolder = None, 
+                 name = '',folder = '', 
+                 holdTerminal = None, useLastFolder = None, 
                  *args, **kwargs):
         super(RunButton,self).__init__(*args, **kwargs)
         self.command = command
@@ -177,6 +178,9 @@ class RunButton(QtGui.QPushButton):
         self.name = name
         self.timer = QtCore.QTimer()
         self.alternateText = False
+        self.holdTerminal = holdTerminal
+        self.useLastFolder = useLastFolder
+        self.lastFolder = None
         QtCore.QObject.connect(self.timer,
                                QtCore.SIGNAL('timeout()'),
                                self.handleTimer)
@@ -205,7 +209,6 @@ class RunButton(QtGui.QPushButton):
             os.chdir(folderpath)
             foundFolder = False
             for root,dirnames,filenames in os.walk(os.getcwd()):
-                print dirnames
                 for subfolder in dirnames:
                     tmpFolder = '{0}'.format(subfolder)
                     h5files = glob('{0}/*.h5'.format(tmpFolder))
@@ -213,26 +216,43 @@ class RunButton(QtGui.QPushButton):
                         foundFolder = True
                         runFolder = tmpFolder
                 break
-            if not foundFolder:
+            if ((not foundFolder and 
+                 not self.useLastFolder.isChecked())
+                or (self.useLastFolder.isChecked() and 
+                    self.lastFolder is None)):
                 runFolder = makeIncrementingFolders(
                     folderPattern='[01]',
                     dryRun=False)
+            elif self.useLastFolder.isChecked():
+                runFolder = self.lastFolder
+            print [self.lastFolder,runFolder,self.useLastFolder.isChecked(),runFolder]
+            #if not foundFolder:
+            #    runFolder = makeIncrementingFolders(
+            #        folderPattern='[01]',
+            #        dryRun=False)
             os.chdir(runFolder)
-            self.lastRunFolder = os.getcwd()
+            self.lastFolder = os.getcwd()
+
         par = []
         for p in self.par:
             par.append(p.text())
-        options = ['']
+        options = []
+        if not self.holdTerminal is None and self.holdTerminal.isChecked():
+            options.append('-hold -im')
         if len(par):
-            command = '{0} {1} -e "{2}"'.format(self.app,
+            command = '{0} {1} -e "{2}'.format(self.app,
                                                 ' '.join(options),
                                                 self.command.format(*par))
                                      
         else:
-            command = '{0} {1} -e "{2}"'.format(self.app,
+            command = '{0} {1} -e "{2}'.format(self.app,
                                                 ' '.join(options),
                                                 self.command)
 
+        if not self.holdTerminal is None and self.holdTerminal.isChecked():
+            command += ' ; exec /bin/bash"'
+        else:
+            command += '"'
         print command
         externalProcess = sub.Popen(command, shell=True)
         externalProcessLabel.setStyleSheet(
@@ -455,11 +475,15 @@ class LCG_COMMANDER(QtGui.QDialog):
                 self.protBox[ii].addRow(QtGui.QLabel('{0}:'.format(p)),
                                         par[-1])
             self.protParameterWidgets.append(par)
+            checkHoldTerminal = QtGui.QCheckBox('Hold term')
+            checkUseLastFolder = QtGui.QCheckBox('Use last folder')
+            self.protBox[ii].addRow(checkUseLastFolder)
             button = RunButton(prot['command'],par,
-                               prot['name'],prot['foldername'])
+                               prot['name'],prot['foldername'],
+                               checkHoldTerminal,checkUseLastFolder)
             button.clicked.connect(button.runCommand)
             button.setText('Run Protocol')
-            self.protBox[ii].addRow(button)
+            self.protBox[ii].addRow(button,checkHoldTerminal)
             groups[ii].setLayout(self.protBox[ii])
         groups.append(QtGui.QGroupBox('Output Command'))
         groups[-1].setLayout(self.outputCommander())
