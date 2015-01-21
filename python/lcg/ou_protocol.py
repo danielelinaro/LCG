@@ -146,24 +146,17 @@ def main():
 		opts['holding'] = opts['holding']*2
     for ai,ao,stim in zip(opts['ai'],opts['ao'],stim_file):
         if opts['kernel']:
-            sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
-                      ' -c ' + str(ao) + ' -v ' + str(opts['holding'][0]) + 
-                      ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
+            sub.call('lcg output ' + str(opts['holding'][0]), shell=True)
             if not opts['holding'][0] in [0]:
                 sleep(2)
             if ncells>1:
-                sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + 
-                         ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]) + ' -a', shell=True)
+                sub.call('lcg kernel -F '+ str(opts['srate']) + ' -H ' + str(opts['holding'][0]) + ' -a', shell=True)
             else:
-                sub.call('lcg kernel -I ' + str(ai) + ' -O ' + str(ao) + 
-                         ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][0]), shell=True)
+                sub.call('lcg kernel -F '+ str(opts['srate']) + ' -H ' + str(opts['holding'][0]), shell=True)
     
-        sub.call('lcg output -s ' + os.environ['AO_SUBDEVICE'] +
-                 ' -c ' + str(ao) + ' -v ' + str(opts['holding'][1]) + 
-                 ' -f ' + os.environ['AO_CONVERSION_FACTOR_CC'], shell=True)
         if not opts['holding'][0] == opts['holding'][1]:
             sleep(2)
-        sub.call('lcg vcclamp -f ' + stim +  ' -i ' + str(opts['interval']) +
+        sub.call('lcg-stimulus -s ' + stim +  ' -i ' + str(opts['interval']) +
                  ' -F ' + str(opts['srate']) + ' -H ' + str(opts['holding'][1]), shell=True)
         if opts['report']:
             isim,cv,Vm,Vsd = analyse_last_file()
