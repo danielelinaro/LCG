@@ -29,7 +29,7 @@ def usage():
     print(' --with-preamble   include stability preamble.')
     print('    --no-shuffle   do not shuffle trials.')
     print('     --no-kernel   do not compute the electrode kernel.')
-    print('     --model   use a model.')
+    print('         --model   use a leaky integrate-and-fire model.')
     print('')
 
 def main():

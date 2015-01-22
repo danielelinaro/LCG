@@ -298,6 +298,7 @@ def main():
                 print('%s: no such directory.' % stimdir)
                 sys.exit(1)
             stimfiles = glob.glob(stimdir + '/*.stim')
+            stimfiles.sort()
             if len(stimfiles) == 0:
                 print('The directory %s contains no stimulus files.' % stimdir)
                 sys.exit(0)
