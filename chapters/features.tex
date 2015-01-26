@@ -1,7 +1,7 @@
 This chapter describes some additional commands and features present
 in \progname that can be quite useful in a number of situations.
 
-\section{Seal test}
+\section{lcg-seal-test} \label{sec:seal_test}
 
 \texttt{lcg-seal-test} is a resistance test to aid establishing/monitoring the seal in patch-clamp experiments. It can be extremely useful when the amplifier does not provide a graphical interface to monitor the resistance trough the pipette. Both voltage clamp and current clamp modes are available, depending on the selected mode a voltage/current step is delivered through the pipette and the resistance is calculated and constantly updated on screen. 
 This program supports the following options:
@@ -33,7 +33,18 @@ You can use the \textbf{+} and \textbf{-} keys to increase/decrease the holding 
 \paragraph{Blind patch clamping} This feature is experimental, contact Jo\~ao Couto if you want to use them.
 
 
-\section{Experiment launcher}
+\section{lcg-experiment-launcher} \label{sec:exp_launcher}
+The \texttt{lcg-experiment-launcher} is a dynamical graphical user interface that allows protocol standardization and automates some commands that would otherwise need to be re-typed every experiment. It also provides a way to append metadata to experiments in a reproducible way, or to manage projects that require a wide range of different protocols. \\
+In addition it provides a versatile way to abstract from the \emph{command line interface} and to quickly plot experiment files. \\
+It can be evoked using the command \texttt{lcg-experiment-launcher} and is composed of three tabs: 
+\begin{itemize}
+\item{\emph{General parameters}} Allows creating an experiment folder following a standardized nomenclature specified by the experimenter (left panel) and appending custom \emph{metadata} to that experiment (right panel).
+	
+\item{\emph{Protocols}} Allows running experiment commands a.k.a. \emph{protocols} and organizes the results in folders.
+
+\item{\emph{Data display}} Allows visualization of the resulting data (similarly to the command \texttt{lcg-plot}).
+\end{itemize}
+
 
 \section{Experiment folder} \label{sec:exp_folder}
 
