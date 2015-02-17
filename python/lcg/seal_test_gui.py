@@ -38,7 +38,9 @@ when using this.
     Options:
         -a: Amplitude of the pulses (5mV)
         -d: Duration of the pulses (5ms)
-        -i: Inter-pulse interval (ms)
+        -I: Input channel
+        -O: Output channel
+        -n,--number-of-traces-overlap: Number of traces to display and compute the mean
         --CC: Current clamp mode.
         --reset: runs lcg-zero before quitting
         --kernel Computes the kernel for AEC
@@ -69,6 +71,7 @@ class Window(QtGui.QDialog):
                     'ao':env('AO_CHANNEL_VC'),
                     'amp':10,
                     'duration':15,
+                    'nTracesOverlap':5,
                     'holding':0,
                     'mode':'VC',
                     'kernel':False,
@@ -85,6 +88,8 @@ class Window(QtGui.QDialog):
                 options['duration'] = float(a)
             elif o == '-a':
                 options['amp'] = float(a)
+            elif o in ['-n','--number-of-traces-overlap']:
+                options['nTracesOverlap'] = int(a)
             elif o == '-H':
                 options['holding'] = float(a)                
             elif o == '--kernel':
@@ -419,7 +424,7 @@ class Window(QtGui.QDialog):
 
     def plot(self):
         sys.stdout.flush()
-        if len(self.I) > 9:
+        if len(self.I) > self.opts['nTracesOverlap']:
             self.postI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
             self.preI_line.set_xdata(np.array([self.time[0],self.time[-1]]))
             self.mean_I_plot.set_xdata(self.time)
@@ -427,22 +432,18 @@ class Window(QtGui.QDialog):
                 self.postI_line.set_ydata(self.Vpost*np.array([1,1]))
                 self.preI_line.set_ydata(self.Vpre*np.array([1,1]))
                 self.mean_I_plot.set_ydata(self.meanV)
-                for ii in range(len(self.V)):
-                    if not len(self.raw_data_plot[ii].get_xdata()):
+                for ii in range(1,self.opts['nTracesOverlap']+1):
+                    if not len(self.raw_data_plot[-ii].get_xdata()):
                         self.raw_data_plot[ii].set_xdata(self.time)
-                    self.raw_data_plot[ii].set_ydata(self.V[ii])
-                    if ii > 10:
-                        break
+                    self.raw_data_plot[ii].set_ydata(self.V[-ii])
             else:
                 self.postI_line.set_ydata(self.Ipost*np.array([1,1]))
                 self.preI_line.set_ydata(self.Ipre*np.array([1,1]))
                 self.mean_I_plot.set_ydata(self.meanI)
-                for ii in range(len(self.I)):
+                for ii in range(1,self.opts['nTracesOverlap']+1):
                     if not len(self.raw_data_plot[ii].get_xdata()):
                         self.raw_data_plot[ii].set_xdata(self.time)
-                    self.raw_data_plot[ii].set_ydata(self.I[ii])
-                    if ii > 10:
-                        break
+                    self.raw_data_plot[ii].set_ydata(self.I[-ii])
             self.Rtext.set_text('{0:.1f}MOhm'.format(np.mean(self.resistance[-10:])))
             self.resistance_plot.set_xdata(np.array(self.resistance_time - self.resistance_time[0])/60.0)
             self.resistance_plot.set_ydata(np.array(self.resistance))
@@ -453,7 +454,7 @@ class Window(QtGui.QDialog):
                 self.autoscale = False
             if not self.exp_param is None:
                 maxtau = np.max(np.array(self.exp_param)[[1,3]])
-                I = np.mean(np.vstack(self.I).T[:,-8:],axis=1)
+                I = np.mean(np.vstack(self.I).T[:,-self.opts['nTracesOverlap']:],axis=1)
                 idxpost = np.where((self.time<(self.duration)))[0][-1]
                 if self.opts['amp']>0:
                     idxpre = np.argmax(I)
@@ -620,9 +621,10 @@ class Window(QtGui.QDialog):
     ############################
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'H:I:O:a:d:',
+        opts,args = getopt.getopt(sys.argv[1:], 'H:I:O:a:d:n:',
                                   ['kernel',
                                    'CC',
+                                   'number-of-traces-overlap='
                                    'remote-blind-patch=',
                                    'reset',
                                    'patch-opts='])
