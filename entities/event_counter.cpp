@@ -108,17 +108,20 @@ void EventCounter::handleEvent(const Event *event)
 {	
 	//Logger(Debug, "EventCounter(%d): Received %d , comparing with %d.\n", id(), event->type(), m_eventToCount);
 	if(event->type() == m_eventToCount) {
-		m_count++;
-	    if (m_count == m_maxCount) {
-			Logger(Debug, "EventCounter(%d): Received %d events at t = %g sec.\n", id(), m_maxCount, GetGlobalTime());
-			dispatch(); 
-			if (m_autoReset)
-				reset();
-		}
+	        m_count++;
+	        if (m_count == m_maxCount) {
+	                Logger(Debug, "EventCounter(%d): Received %d events at t = %g sec.\n", id(), m_maxCount, GetGlobalTime());
+	        	dispatch(); 
+	        	if (m_autoReset) {
+	        	        reset();
+                        }
+	        }
 	}
-	else 
-		if(event->type() == RESET)
-			reset();
+	else {
+                if(event->type() == RESET) {
+		        reset();
+                }
+        }
 }
 
 void EventCounter::step()
@@ -127,6 +130,11 @@ void EventCounter::step()
 double EventCounter::output()
 {
         return 0.0;
+}
+
+bool EventCounter::hasOutput() const
+{
+        return false;
 }
 
 bool EventCounter::initialise()

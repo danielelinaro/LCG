@@ -38,6 +38,8 @@
 
 #include "h5rec.h"
 
+#define NUMBER_OF_EVENTS_DATASETS 3
+
 namespace lcg {
 
 namespace recorders {
@@ -75,8 +77,6 @@ protected:
 protected:
         // number of inputs
         uint m_numberOfInputs;
-        uint m_numberOfDatasets;
-        uint m_numberOfEventsDatasets;
 };
 
 class H5Recorder : public BaseH5Recorder {
@@ -109,7 +109,7 @@ private:
         // the data
         std::vector<double**> m_data;
         // the events data
-        std::vector<int32_t**> m_eventsData;
+        int32_t **m_eventsData[NUMBER_OF_EVENTS_DATASETS];
         // the queue of the indices of the buffers to save
         std::deque<uint> m_dataQueue;
         // the queue of the indices of the buffers to save
@@ -128,7 +128,7 @@ private:
         uint m_eventsBufferInUse;
         
         // the thread that continuosly waits for data to save
-		pthread_t m_writerThread;
+        pthread_t m_writerThread;
         // multithreading stuff for controlling access to the queue m_dataQueue;
         pthread_mutex_t m_mutex;
         pthread_cond_t m_cv;
