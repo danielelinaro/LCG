@@ -22,7 +22,6 @@ setup(
             'disynaptic_microcircuit = lcg.disynaptic_microcircuit:main',
             'izhikevich_network = lcg.izhikevich_network:main',
             'reliability_disynaptic = lcg.reliability_disynaptic:main',
-
             'lcg-ap = lcg.ap:main',
             'lcg-correlations = lcg.correlations:main',
             'lcg-cv = lcg.cv:main',
@@ -44,6 +43,7 @@ setup(
             'lcg-sinusoids = lcg.sinusoids:main',
             'lcg-spontaneous = lcg.spontaneous:main',
             'lcg-steps = lcg.step:main',
+            'lcg-steps-with-bg = lcg.steps_with_bg:main',
             'lcg-stimgen = lcg.stimgen:main',
             'lcg-stimulus = lcg.stimulus:main',
             'lcg-tau = lcg.tau:main',

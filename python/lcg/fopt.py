@@ -8,8 +8,9 @@ import subprocess as sub
 import numpy as np
 import lcg
 
-def frequency_error(Vbal, target, Rm, R_exc, ai=0, ao=0, duration=10, interval=1, sampling_rate=20000):
+def frequency_error(Vbal, target, Rm, R_inh, ai=0, ao=0, duration=10, interval=1, sampling_rate=20000):
     ratio = lcg.computeRatesRatio(Vm=Vbal, Rin=Rm)
+    R_exc = R_inh * ratio[0]
     G0_exc,G0_inh,sigma_exc,sigma_inh = lcg.computeSynapticBackgroundCoefficients(ratio[0], R_exc, Rin=Rm)
     lcg.writeSpontaneousConfig(0, G0_exc, sigma_exc, G0_inh, sigma_inh, ai, ao, duration, sampling_rate, outfile='spontaneous.xml')
     if interval > 0:
@@ -42,7 +43,7 @@ def usage():
     print('     -h    display this help message and exit.')
     print('     -R    input resistance of the cell in MOhm.')
     print('     -f    target frequency (default 1 Hz).')
-    print('     -r    background synaptic rate (default 7000 Hz).')
+    print('     -r    background synaptic rate (default 3000 Hz).')
     print('     -i    interval between repetitions (default 1 s).')
     print('     -d    duration of the stimulation (default 10 s).')
     print('     -V    minimum (hyperpolarized) voltage (default -60 mV).')
@@ -61,7 +62,7 @@ def main():
         sys.exit(1)
 
     targetFrequency = 1    # [mV]
-    rate = 7000            # [Hz]
+    rate = 3000            # [Hz]
     duration = 10          # [s]
     interval = 1           # [s]
     Rm = -1                # [MOhm]
