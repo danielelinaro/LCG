@@ -20,6 +20,7 @@ const char *lcg_commands[] = {
         "   experiment    Perform a voltage, current or dynamic clamp experiment described in an XML configuration file",
         "   fclamp        Find the current necessary to make a neuron spike at a given frequency",
         "   fi            Compute an f-I curve using a PID controller",
+        "   impedance     Inject subthreshold currents into a neuron to measure its impedance",
         "   kernel        Inject a noisy current for the computation of the kernel used for Active Electrode Compensation",
         "   ou            Inject Ornstein-Uhlenbeck noise into a neuron",
         "   output        Output a constant value to a certain channel of the DAQ board",
