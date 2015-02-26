@@ -54,15 +54,15 @@ def alpha_constraints(duration, pars):
 
 waveform_constraints = {'dc': lambda T,p: None,
                         'ou': lambda T,p: is_positive('ou', p, (1,2)),
-                        'sine': lambda T,p: is_positive('sine', p, (1)),
+                        'sine': lambda T,p: is_positive('sine', p, (1,)),
                         'square': square_constraints,
                         'saw': saw_constraints,
                         'chirp': lambda T,p: is_positive('chirp', p, (1,2)),
                         'ramp':lambda T,p: None,
-                        'poisson-reg': lambda T,p: is_positive('ou', p, (2)),
-                        'poisson-exp': lambda T,p: is_positive('ou', p, (2)),
-                        'poisson-bi': lambda T,p: is_positive('ou', p, (2)),
-                        'gaussian': lambda T,p: is_positive('ou', p, (1)),
+                        'poisson-reg': lambda T,p: is_positive('ou', p, (2,)),
+                        'poisson-exp': lambda T,p: is_positive('ou', p, (2,)),
+                        'poisson-bi': lambda T,p: is_positive('ou', p, (2,)),
+                        'gaussian': lambda T,p: is_positive('ou', p, (1,)),
                         'alpha': alpha_constraints}
 
 def usage():
