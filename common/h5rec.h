@@ -35,7 +35,7 @@
 #define GROUP_NAME_LEN   128
 #define DATASET_NAME_LEN 128
 #define ENTITIES_GROUP   "/Entities"
-#define EVENTS_GROUP   "/Events"
+#define EVENTS_GROUP     "/Events"
 #define INFO_GROUP       "/Info"
 #define COMMENTS_GROUP   "/Comments"
 #define DATA_DATASET     "Data"
@@ -109,8 +109,9 @@ protected:
 
         virtual void writeComments();
 
-        // sets that events have been saved to file
-        virtual void setHasEvents();
+        virtual bool hasEvents() const;
+        virtual void setHasEvents(bool hasEvents);
+
 protected:
         std::deque<Comment*> m_comments;
 
@@ -122,9 +123,9 @@ protected:
         char m_filename[FILENAME_MAXLEN];
         // tells whether the filename should be generated from the timestamp
         bool m_makeFilename;
-        
-        // indicates that events have been saved to file
-		bool m_hasEvents;
+        // indicates whether events are present
+	bool m_hasEvents;
+
         // H5 stuff
         hid_t m_infoGroup;
         hid_t m_commentsGroup;

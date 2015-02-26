@@ -178,13 +178,15 @@ bool BaseH5Recorder::allocateForEntity(Entity *entity, int dataRank,
         }
         Logger(Debug, "Group [%s] created.\n", groupName);
 
-        // dataset for actual data (i.e., /Entities/0001/Data)
-        sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), DATA_DATASET);
-        if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset)) {
-                Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
-                return false;
+        if (entity->hasOutput()) {
+                // dataset for actual data (i.e., /Entities/0001/Data)
+                sprintf(datasetName, "%s/%04d/%s", ENTITIES_GROUP, entity->id(), DATA_DATASET);
+                if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset)) {
+                        Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
+                        return false;
+                }
+                Logger(Debug, "Dataset [%s] created.\n", datasetName);
         }
-        Logger(Debug, "Dataset [%s] created.\n", datasetName);
 
         // save name and units as attributes of the group
         writeStringAttribute(grp, "Name", entity->name().c_str());
@@ -231,28 +233,30 @@ bool BaseH5Recorder::allocateEventsDatasets(int dataRank,
 {
         hid_t dspace, dset;
         char datasetName[DATASET_NAME_LEN];
-        sprintf(datasetName, "%s/%s",EVENTS_GROUP, "Code");
+        sprintf(datasetName, "%s/%s", EVENTS_GROUP, "Code");
         if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset, H5T_STD_I32LE)) {
                 Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
                 return false;
         }
         Logger(Debug, "Dataset [%s] created.\n", datasetName);
         
-	sprintf(datasetName, "%s/%s",EVENTS_GROUP, "Sender");
+	sprintf(datasetName, "%s/%s", EVENTS_GROUP, "Sender");
 	if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset, H5T_STD_I32LE)) {
                 Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
                 return false;
         }
         Logger(Debug, "Dataset [%s] created.\n", datasetName);
         
-	sprintf(datasetName, "%s/%s",EVENTS_GROUP, "Timestamp");
+	sprintf(datasetName, "%s/%s", EVENTS_GROUP, "Timestamp");
 	if (!createUnlimitedDataset(datasetName, dataRank, dataDims, maxDataDims, chunkDims, &dspace, &dset, H5T_STD_I32LE)) {
                 Logger(Critical, "Unable to create dataset [%s].\n", datasetName);
                 return false;
         }
         Logger(Debug, "Dataset [%s] created.\n", datasetName);
-    return true;
+
+        return true;
 }
+
 //~~~
 
 const uint H5Recorder::numberOfBuffers = 2;
@@ -260,7 +264,7 @@ const int  H5Recorder::rank            = 1;
 
 H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
         : BaseH5Recorder(compress, 1024, 20, filename, id), // 1024 = chunkSize and 20 = numberOfChunks
-          m_data(), m_eventsData(), m_threadRun(false), m_runCount(0)
+          m_data(), m_threadRun(false), m_runCount(0)
 {
         m_bufferLengths = new hsize_t[H5Recorder::numberOfBuffers];
         m_eventsBufferLengths = new hsize_t[H5Recorder::numberOfBuffers];
@@ -270,14 +274,14 @@ H5Recorder::H5Recorder(bool compress, const char *filename, uint id)
 H5Recorder::~H5Recorder()
 {
 	closeFile();
-        for (int i=0; i<m_numberOfDatasets; i++) {
+        for (int i=0; i<m_data.size(); i++) {
                 for(int j=0; j<H5Recorder::numberOfBuffers; j++)
                         delete m_data[i][j];
                 delete m_data[i];
         }
         delete m_bufferLengths;
 	// Delete events data buffers
-        for (int i=0; i < m_numberOfEventsDatasets; i++) {
+        for (int i=0; i<NUMBER_OF_EVENTS_DATASETS; i++) {
                 for(int j=0; j<H5Recorder::numberOfBuffers; j++) 
                         delete m_eventsData[i][j];
                 delete m_eventsData[i];
@@ -308,30 +312,23 @@ bool H5Recorder::finaliseInit()
         m_bufferInUse = H5Recorder::numberOfBuffers-1;
         m_bufferPosition = 0;
         m_datasetSize = 0;
-        m_eventsDatasetSize = 0;
-	m_numberOfDatasets = 0;        
         for (int i=0; i<m_pre.size(); i++) {
-		if (m_pre[i]->hasOutput()) {
-                if (!allocateForEntity(m_pre[i], H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
-		        	return false;
-		m_numberOfDatasets += 1;
-		}
+		if (!allocateForEntity(m_pre[i], H5Recorder::rank, &bufsz, &maxbufsz, &chunksz))
+		        return false;
         }
+
 	// Initialize events datasets (Code,Origin,Timestamps)	
-	#define NUMBER_OF_EVENTS_DATASETS 3        
         m_eventsBufferInUse = H5Recorder::numberOfBuffers-1;
         m_eventsBufferPosition = 0;
+        m_eventsDatasetSize = 0;
         if (!allocateEventsDatasets(H5Recorder::rank, &evbufsz, &maxbufsz, &chunksz))
         	return false;
-        m_eventsDatasetSize = 0;
-	m_numberOfEventsDatasets = 0;
-	for (int j=0; j<NUMBER_OF_EVENTS_DATASETS; j++) {
-        	int32_t **eventsBuffer = new int32_t*[H5Recorder::numberOfBuffers];
-        	for (int i=0; i<H5Recorder::numberOfBuffers; i++)
-                	eventsBuffer[i] = new int32_t[bufferSize()];
-       		m_eventsData.push_back(eventsBuffer);
-		m_numberOfEventsDatasets += 1;
+	for (int i=0; i<NUMBER_OF_EVENTS_DATASETS; i++) {
+        	m_eventsData[i] = new int32_t*[H5Recorder::numberOfBuffers];
+        	for (int j=0; j<H5Recorder::numberOfBuffers; j++)
+                	m_eventsData[i][j] = new int32_t[bufferSize()];
         }
+
 	err = pthread_mutex_init(&m_mutex, NULL);
         if (err) {
                 Logger(Critical, "pthread_mutex_init: %s.", strerror(err));
@@ -436,11 +433,10 @@ void H5Recorder::step()
                 m_bufferLengths[m_bufferInUse] = 0;
                 Logger(Debug, "H5Recorder::step() >> Starting to write in buffer #%d @ t = %g.\n", m_bufferInUse, GetGlobalTime());
         }
-	int ent_idx = 0;
-        for (int i=0; i<m_numberOfInputs; i++) {
+        for (int i=0, j=0; i<m_numberOfInputs; i++) {
 		if (m_pre[i]->hasOutput()) {
-               		m_data[ent_idx][m_bufferInUse][m_bufferPosition] = m_inputs[i];
-			ent_idx += 1;
+               		m_data[j][m_bufferInUse][m_bufferPosition] = m_inputs[i];
+			j++;
 		}
 	}
         m_bufferLengths[m_bufferInUse]++;
@@ -508,80 +504,91 @@ void* H5Recorder::buffersWriter(void *arg)
 #endif
 
         uint bufferToSave;
-        while (self->m_threadRun || self->m_dataQueue.size() != 0) {
+        while (self->m_threadRun || self->m_dataQueue.size() != 0 || self->m_eventsDataQueue.size() != 0) {
+
                 pthread_mutex_lock(&self->m_mutex);
-                while (self->m_dataQueue.size() == 0) {
-                        //Logger(Debug, "H5Recorder::buffersWriter() >> The data queue is empty.\n");
+                while (self->m_dataQueue.size() == 0 && self->m_eventsDataQueue.size() == 0) {
+                        Logger(Debug, "H5Recorder::buffersWriter() >> The data queues are empty.\n");
                         pthread_cond_wait(&self->m_cv, &self->m_mutex);
                 }
-                bufferToSave = self->m_dataQueue.front();
-                pthread_mutex_unlock(&self->m_mutex);
-                Logger(Debug, "H5Recorder::buffersWriter() >> Acquired lock: will save data in buffer #%d.\n", bufferToSave);
 
-                hid_t filespace;
-                herr_t status;
-                hsize_t offset;
+                Logger(Debug, "H5Recorder::buffersWriter() >> m_threadRun = %s.\n", self->m_threadRun ? "true" : "false");
 
-                if (self->m_bufferLengths[bufferToSave] > 0) {
-                        offset = self->m_datasetSize;
-                        self->m_datasetSize += self->m_bufferLengths[bufferToSave];
+                if (self->m_dataQueue.size()) {
+                        // there is data to save
+                        bufferToSave = self->m_dataQueue.front();
+                        pthread_mutex_unlock(&self->m_mutex);
+                        Logger(Debug, "H5Recorder::buffersWriter() >> Acquired lock: will save data in buffer #%d.\n", bufferToSave);
 
-                        Logger(Debug, "Dataset size = %d.\n", self->m_datasetSize);
-                        Logger(Debug, "Offset = %d.\n", offset);
-                        Logger(Debug, "Time = %g sec.\n", self->m_datasetSize*GetGlobalDt());
+                        hid_t filespace;
+                        herr_t status;
+                        hsize_t offset;
 
-                        for (int i=0; i<self->m_numberOfDatasets; i++) {
+                        if (self->m_bufferLengths[bufferToSave] > 0) {
+                                offset = self->m_datasetSize;
+                                self->m_datasetSize += self->m_bufferLengths[bufferToSave];
 
-                                // extend the dataset
-                                status = H5Dset_extent(self->m_datasets[i], &self->m_datasetSize);
-                                if (status < 0)
-                                        throw "Unable to extend dataset.";
-                                else
-                                        Logger(All, "Extended dataset.\n");
+                                Logger(Debug, "Dataset size = %d.\n", self->m_datasetSize);
+                                Logger(Debug, "Offset = %d.\n", offset);
+                                Logger(Debug, "Time = %g sec.\n", self->m_datasetSize*GetGlobalDt());
 
-                                // get the filespace
-                                filespace = H5Dget_space(self->m_datasets[i]);
-                                if (filespace < 0)
-                                        throw "Unable to get filespace.";
-                                else
-                                        Logger(All, "Obtained filespace.\n");
+                                for (int i=0; i<self->m_data.size(); i++) {
 
-                                // select an hyperslab
-                                status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &self->m_bufferLengths[bufferToSave], NULL);
-                                if (status < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to select hyperslab.";
+                                        // extend the dataset
+                                        status = H5Dset_extent(self->m_datasets[i], &self->m_datasetSize);
+                                        if (status < 0)
+                                                throw "Unable to extend dataset.";
+                                        else
+                                                Logger(All, "Extended dataset.\n");
+
+                                        // get the filespace
+                                        filespace = H5Dget_space(self->m_datasets[i]);
+                                        if (filespace < 0)
+                                                throw "Unable to get filespace.";
+                                        else
+                                                Logger(All, "Obtained filespace.\n");
+
+                                        // select an hyperslab
+                                        status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL,
+                                                        &self->m_bufferLengths[bufferToSave], NULL);
+                                        if (status < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to select hyperslab.";
+                                        }
+                                        else {
+                                                Logger(All, "Selected hyperslab.\n");
+                                        }
+
+                                        // define memory space
+                                        self->m_dataspaces[i] = H5Screate_simple(H5Recorder::rank,
+                                                        &self->m_bufferLengths[bufferToSave], NULL);
+                                        if (self->m_dataspaces[i] < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to define memory space.";
+                                        }
+                                        else {
+                                                Logger(All, "Memory space defined.\n");
+                                        }
+
+                                        // write data
+                                        status = H5Dwrite(self->m_datasets[i], H5T_IEEE_F64LE, self->m_dataspaces[i],
+                                                        filespace, H5P_DEFAULT, self->m_data[i][bufferToSave]);
+                                        if (status < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to write data.";
+                                        }
+                                        else {
+                                                Logger(All, "Written data.\n");
+                                        }
                                 }
-                                else {
-                                        Logger(All, "Selected hyperslab.\n");
-                                }
-
-                                // define memory space
-                                self->m_dataspaces[i] = H5Screate_simple(H5Recorder::rank, &self->m_bufferLengths[bufferToSave], NULL);
-                                if (self->m_dataspaces[i] < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to define memory space.";
-                                }
-                                else {
-                                        Logger(All, "Memory space defined.\n");
-                                }
-
-                                // write data
-                                status = H5Dwrite(self->m_datasets[i], H5T_IEEE_F64LE, self->m_dataspaces[i], filespace, H5P_DEFAULT, self->m_data[i][bufferToSave]);
-                                if (status < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to write data.";
-                                }
-                                else {
-                                        Logger(All, "Written data.\n");
-                                }
+                                H5Sclose(filespace);
+                                Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                         }
-                        H5Sclose(filespace);
-                        Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                 }
-                if (self->m_eventsDataQueue.size() > 0) {
+
+                if (self->m_eventsDataQueue.size()) {
                 
-                	bufferToSave = self->m_dataQueue.front();
+                	bufferToSave = self->m_eventsDataQueue.front();
                 	pthread_mutex_unlock(&self->m_mutex);
                 	Logger(Debug, "H5Recorder::buffersWriter() >> Acquired lock: will save data in buffer #%d.\n", bufferToSave);
 
@@ -597,67 +604,77 @@ void* H5Recorder::buffersWriter(void *arg)
                         	Logger(Debug, "Events dataset size = %d.\n", self->m_eventsDatasetSize);
                         	Logger(Debug, "Events offset = %d.\n", offset);
 
-                        for (int i=self->m_numberOfDatasets; i<(self->m_numberOfDatasets + self->m_numberOfEventsDatasets) ; i++) {
-                                // extend the dataset
-                                status = H5Dset_extent(self->m_datasets[i], &self->m_eventsDatasetSize);
-                                if (status < 0)
-                                        throw "Unable to extend dataset.";
-                                else
-                                        Logger(All, "Extended dataset [%d].\n",i);
+                                for (int i=self->m_data.size(); i<self->m_datasets.size(); i++) {
+                                        // extend the dataset
+                                        status = H5Dset_extent(self->m_datasets[i], &self->m_eventsDatasetSize);
+                                        if (status < 0)
+                                                throw "Unable to extend dataset.";
+                                        else
+                                                Logger(All, "Extended dataset [%d].\n",i);
 
-                                // get the filespace
-                                filespace = H5Dget_space(self->m_datasets[i]);
-                                if (filespace < 0)
-                                        throw "Unable to get filespace.";
-                                else
-                                        Logger(All, "Obtained filespace.\n");
+                                        // get the filespace
+                                        filespace = H5Dget_space(self->m_datasets[i]);
+                                        if (filespace < 0)
+                                                throw "Unable to get filespace.";
+                                        else
+                                                Logger(All, "Obtained filespace.\n");
 
-                                // select an hyperslab
-                                status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL, &self->m_eventsBufferLengths[bufferToSave], NULL);
-                                if (status < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to select hyperslab.";
-                                }
-                                else {
-                                        Logger(All, "Selected hyperslab [%d].\n",i);
-                                }
+                                        // select an hyperslab
+                                        status = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &offset, NULL,
+                                                        &self->m_eventsBufferLengths[bufferToSave], NULL);
+                                        if (status < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to select hyperslab.";
+                                        }
+                                        else {
+                                                Logger(All, "Selected hyperslab [%d].\n",i);
+                                        }
 
-                                // define memory space
-                                self->m_dataspaces[i] = H5Screate_simple(H5Recorder::rank, &self->m_eventsBufferLengths[bufferToSave], NULL);
-                                if (self->m_dataspaces[i] < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to define memory space.";
-                                }
-                                else {
-                                        Logger(All, "Memory space defined [%d].\n",i-self->m_numberOfDatasets);
-                                }
+                                        // define memory space
+                                        self->m_dataspaces[i] = H5Screate_simple(H5Recorder::rank,
+                                                        &self->m_eventsBufferLengths[bufferToSave], NULL);
+                                        if (self->m_dataspaces[i] < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to define memory space.";
+                                        }
+                                        else {
+                                                Logger(All, "Memory space defined [%d].\n",i-self->m_data.size());
+                                        }
 
-                                // write data
-                                status = H5Dwrite(self->m_datasets[i], 
-					H5T_STD_I32LE, self->m_dataspaces[i], filespace, H5P_DEFAULT, 
-					self->m_eventsData[i-self->m_numberOfDatasets][bufferToSave]);
-                                if (status < 0) {
-                                        H5Sclose(filespace);
-                                        throw "Unable to write data.";
+                                        // write data
+                                        status = H5Dwrite(self->m_datasets[i], 
+			        		H5T_STD_I32LE, self->m_dataspaces[i], filespace, H5P_DEFAULT, 
+			        		self->m_eventsData[i-self->m_data.size()][bufferToSave]);
+                                        if (status < 0) {
+                                                H5Sclose(filespace);
+                                                throw "Unable to write data.";
+                                        }
+                                        else {
+                                                Logger(All, "Written data.\n");
+			        		self->setHasEvents(true);
+                                        }
                                 }
-                                else {
-                                        Logger(All, "Written data.\n");
-					self->setHasEvents();
-                                }
-                        }
-                        H5Sclose(filespace);
-                        Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
+                                H5Sclose(filespace);
+                                Logger(Debug, "H5Recorder::buffersWriter() >> Finished writing data.\n");
                 	}
 		}
+
                 pthread_mutex_lock(&self->m_mutex);
                 Logger(Debug, "H5Recorder::buffersWriter() >> Locked the mutex.\n");
-                self->m_dataQueue.pop_front();
-                Logger(Debug, "H5Recorder::buffersWriter() >> Removed data from the queue.\n");
+                if (self->m_dataQueue.size()) {
+                        self->m_dataQueue.pop_front();
+                        Logger(Debug, "H5Recorder::buffersWriter() >> Removed data from the queue.\n");
+                }
+                if (self->m_eventsDataQueue.size()) {
+                        self->m_eventsDataQueue.pop_front();
+                        Logger(Debug, "H5Recorder::buffersWriter() >> Removed data from the events queue.\n");
+                }
                 pthread_cond_broadcast(&self->m_cv);
                 Logger(Debug, "H5Recorder::buffersWriter() >> Signalled the condition variable.\n");
                 pthread_mutex_unlock(&self->m_mutex);
                 Logger(Debug, "H5Recorder::buffersWriter() >> Unlocked the mutex.\n");
         }
+
 endBuffersWriter:
         Logger(Debug, "H5Recorder::buffersWriter() >> Writing thread has terminated.\n");
         pthread_exit(NULL);
@@ -667,10 +684,12 @@ endBuffersWriter:
 void H5Recorder::finaliseAddPre(Entity *entity)
 {
         Logger(All, "--- H5Recorder::finaliseAddPre(Entity*) ---\n");
-        double **buffer = new double*[H5Recorder::numberOfBuffers];
-        for (int i=0; i<H5Recorder::numberOfBuffers; i++)
-                buffer[i] = new double[bufferSize()];
-        m_data.push_back(buffer);
+        if (entity->hasOutput()) {
+                double **buffer = new double*[H5Recorder::numberOfBuffers];
+                for (int i=0; i<H5Recorder::numberOfBuffers; i++)
+                        buffer[i] = new double[bufferSize()];
+                m_data.push_back(buffer);
+        }
 }
 
 //~~~

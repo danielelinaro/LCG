@@ -48,6 +48,7 @@ public:
         virtual void step();
         double output();
         bool initialise();
+        virtual bool hasOutput() const;
         
 private:
         void reset();

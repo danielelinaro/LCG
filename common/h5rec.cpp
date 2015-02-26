@@ -173,10 +173,10 @@ void H5RecorderCore::closeFile()
                         H5Sclose(m_dataspaces[i]);
                 for (i=0; i<m_groups.size(); i++)
                         H5Gclose(m_groups[i]);
-				if (!m_hasEvents) {
-					H5Ldelete(m_fid,EVENTS_GROUP,H5P_DEFAULT);
-					Logger(Debug,"Deleting (empty) Events group.\n");
-				}
+		if (!m_hasEvents) {
+		        H5Ldelete(m_fid, EVENTS_GROUP, H5P_DEFAULT);
+			Logger(Debug,"Deleting (empty) Events group.\n");
+		}
                 H5Fclose(m_fid);
                 m_fid = -1;
         }
@@ -205,8 +205,13 @@ void H5RecorderCore::writeComments()
         }
 }
 
-void H5RecorderCore::setHasEvents() {
-	m_hasEvents = true;
+void H5RecorderCore::setHasEvents(bool hasEvents) {
+	m_hasEvents = hasEvents;
+}
+
+
+bool H5RecorderCore::hasEvents() const {
+        return m_hasEvents;
 }
 
 bool H5RecorderCore::createGroup(const char *groupName, hid_t *grp)
