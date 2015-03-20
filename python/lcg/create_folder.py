@@ -98,9 +98,10 @@ def createFoldersAndInfoFile(cfg, options,
                 nfo.set(nfosection,k,log[k])
             nfo.write(nfofile)
             nfofile.close()
-        for subfolder in options['subfolders'].split(','):
-            os.makedirs(os.path.abspath('{0}/{1}/01'.format(foldername,
-                                                            subfolder)))
+        if not options['subfolders'] is None:
+            for subfolder in options['subfolders'].split(','):
+                os.makedirs(os.path.abspath('{0}/{1}/01'.format(foldername,
+                                                                subfolder)))
     return foldername
 
 def main():

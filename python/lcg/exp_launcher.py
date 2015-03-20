@@ -248,12 +248,13 @@ class RunButton(QtGui.QPushButton):
             command = '{0} {1} -e "{2}'.format(self.app,
                                                 ' '.join(options),
                                                 self.command)
-
+        
         if not self.holdTerminal is None and self.holdTerminal.isChecked():
             command += ' ; exec /bin/bash"'
         else:
             command += '"'
         print command
+        
         externalProcess = sub.Popen(command, shell=True)
         externalProcessLabel.setStyleSheet(
             'QLabel {color:red; font-weight:bold; font-size:16}')
@@ -406,6 +407,8 @@ class LCG_COMMANDER(QtGui.QDialog):
             for k,p in zip(log_keys,
                            self.expLogWidgets):
                 param[k.replace(' ','_')] = str(p.text())
+        # Do not create folder in the beginning
+        param['subfolders'] = None
         foldername = createFoldersAndInfoFile(self.config,
                                               param,
                                               info=True,
