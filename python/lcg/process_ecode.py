@@ -5,8 +5,7 @@ import os
 import sys
 import matplotlib.pylab as plt 
 import aec
-from scipy.signal import argrelmax
-from scipy.interpolate import interp1d
+#from scipy.interpolate import interp1d
 plt.rc('font',**{'family':'sans-serif','sans-serif':['Arial'], 'size': 8})
 plt.rc('axes', linewidth =  1)
 plt.rc("xtick", direction="out")
@@ -148,7 +147,7 @@ def analyseVIprotocol(folder, ax = None):
         tmpy = a.get_ylim()
         a.set_yticks(np.linspace(tmpy[0],tmpy[-1], 4).astype(int))
         a.set_xticks(np.round(np.linspace(tmpx[0],tmpx[ -1], 4), 3) )
-    print time[idx[0]]  
+#    print time[idx[0]]  
     tmpx = ax[1].get_xticks()   
     tmpy = ax[1].get_yticks()
 
@@ -230,7 +229,7 @@ def analyseSTEPprotocol(folder, ax = None):
     spks =  [time[sp] for sp in spks]
     isi =  [np.diff(sp) for sp in spks]
     adapt_coeff =  [(i[-1] - i[0]) / i[0] for i in isi]
-    print adapt_coeff
+#    print adapt_coeff
     ax.axis('tight')
     remove_spines(ax)
     ax.set_ylabel('Voltage (mV)')
@@ -280,7 +279,6 @@ def analyseRAMPprotocol(folder, ax = None):
     remove_spines(ax[0])
     ax[0].set_ylabel('Voltage (mV)')
     ax[0].set_xlabel('Time (s)')
-    
     remove_spines(ax[1], v = 'right')
     ax[1].spines['top'].set_visible(False)
     ax[1].xaxis.set_visible(False)
@@ -339,22 +337,20 @@ def create_figure():
     return (fig, ax)
 
 def analyze(directory='.'):
-    experiments =  os.listdir(directory)
-    for exp in experiments:
-        if os.path.isdir(exp):
-            (fig, ax) =  create_figure()
-            threshold = analyseAPprotocol('{0}/ap/01'.format(exp), ax = ax[0])
-            analyseVIprotocol('{0}/vi/01'.format(exp), ax[1:3])
-            analyseRAMPprotocol('{0}/ramp/01'.format(exp), ax[3: 5])
-            analyseTAUprotocol('{0}/tau/01'.format(exp), ax[5])
-            analyseSTEPprotocol('{0}/steps/01'.format(exp), ax[6])
-            for a in ax[:3]:
-                a.axis('off')
+    (fig, ax) =  create_figure()    
+    threshold = analyseAPprotocol('ap/01', ax = ax[0])
+    analyseVIprotocol('vi/01', ax[1:3])
+    analyseRAMPprotocol('ramp/01', ax[3: 5])
+    analyseTAUprotocol('tau/01', ax[5])
+    analyseSTEPprotocol('steps/01', ax[6])
+    for a in ax[:3]:
+        a.axis('off')
 
-            args = {}
-            args['format'] = 'pdf'
-            figname =  '{0}/ecode{0}.'.format(exp)
-            fig.savefig('{0}{1}'.format(figname, args['format']),**args)
-            args['format'] = 'png'
-            fig.savefig('{0}{1}'.format(figname, args['format']),**args)
-            plt.show()
+    args = {}
+    args['format'] = 'pdf'
+    print('Saving figure...')
+    figname =  'ecode{0}.'.format('01')
+    fig.savefig('{0}{1}'.format(figname, args['format']),**args)
+    args['format'] = 'png'
+    fig.savefig('{0}{1}'.format(figname, args['format']),**args)
+    plt.show()

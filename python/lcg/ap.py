@@ -46,7 +46,7 @@ def main():
             sys.exit(0)
         elif o == '--no-kernel':
             with_kernel = False
-        else:
+        elif o != '--no-preamble':
             cmd += ' ' + o + ' ' + a
             if o == '-a':
                 got_amplitude = True

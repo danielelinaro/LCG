@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from PyQt4 import QtGui,QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 
 #from ipdb import set_trace
 import sys
@@ -203,28 +203,31 @@ class RunButton(QtGui.QPushButton):
             externalProcessLabel.setText('Another process is running.')
             return
         if not self.folder is None:
-            folderpath ='{0}/{1}'.format(experimentFolder,self.folder) 
-            if not os.path.isdir(folderpath):
-                os.makedirs(folderpath)
-            os.chdir(folderpath)
-            foundFolder = False
-            for root,dirnames,filenames in os.walk(os.getcwd()):
-                for subfolder in dirnames:
-                    tmpFolder = '{0}'.format(subfolder)
-                    h5files = glob('{0}/*.h5'.format(tmpFolder))
-                    if not len(h5files):
-                        foundFolder = True
-                        runFolder = tmpFolder
-                break
-            if ((not foundFolder and 
-                 not self.useLastFolder.isChecked())
-                or (self.useLastFolder.isChecked() and 
-                    self.lastFolder is None)):
-                runFolder = makeIncrementingFolders(
-                    folderPattern='[01]',
-                    dryRun=False)
-            elif self.useLastFolder.isChecked():
-                runFolder = self.lastFolder
+            if not self.folder == '.':
+                folderpath ='{0}/{1}'.format(experimentFolder,self.folder) 
+                if not os.path.isdir(folderpath):
+                    os.makedirs(folderpath)
+                os.chdir(folderpath)
+                foundFolder = False
+                for root,dirnames,filenames in os.walk(os.getcwd()):
+                    for subfolder in dirnames:
+                        tmpFolder = '{0}'.format(subfolder)
+                        h5files = glob('{0}/*.h5'.format(tmpFolder))
+                        if not len(h5files):
+                            foundFolder = True
+                            runFolder = tmpFolder
+                        break
+                if ((not foundFolder and 
+                     not self.useLastFolder.isChecked())
+                    or (self.useLastFolder.isChecked() and 
+                        self.lastFolder is None)):
+                    runFolder = makeIncrementingFolders(
+                        folderPattern='[01]',
+                        dryRun=False)
+                elif self.useLastFolder.isChecked():
+                    runFolder = self.lastFolder
+            else:
+                runFolder = '.'
             print [self.lastFolder,runFolder,self.useLastFolder.isChecked(),runFolder]
             #if not foundFolder:
             #    runFolder = makeIncrementingFolders(
@@ -566,16 +569,17 @@ class LCG_COMMANDER(QtGui.QDialog):
         filename = os.path.abspath(str(self.fileModel.filePath(selected)))
         if (os.path.isfile(filename) and ('h5' in filename) and
             (not filename in self.plotCounter)):
+            kernels = glob(os.path.dirname(filename)+'/*_kernel.dat')
             filestats = os.stat(filename)
             if filestats.st_size < 1e7:
                 downsample = 1
             else:
                 downsample = 2
-
+                
             self.plotAxes,self.plotCounter = plotAllEntitiesFromFile(
                 self.plotFigure,
                 filename,
-                [],
+                kernels,
                 self.plotCounter,
                 self.plotAxes, downsample)
             self.plotCanvas.draw()

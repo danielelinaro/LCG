@@ -174,7 +174,8 @@ def compensateWithKernelOffline(ent,kernelFiles=[]):
             else:
                 I = Iidx[Iidx[ii]]['data']
             V = ent[Vidx[ii]]['data']
-            ent[Vidx[ii]]['data'] = aec.compensate(V, I, Ke*1e-9)
+            if not 'metadata' in ent[Vidx[ii]].keys():
+                ent[Vidx[ii]]['data'] = aec.compensate(V, I, Ke*1e-9)
 
 def plotAllEntitiesFromFile(fig, filename, kernelFiles = [],
                             filesCounter=[], ax = [],

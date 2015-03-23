@@ -250,7 +250,7 @@ class PID (Entity):
         self.add_parameter('gp', gp)
         self.add_parameter('gi', gi)
         self.add_parameter('gd', gd)
-        self.add_paraemter('units', units)
+        self.add_parameter('units', units)
 
 class Poisson (Entity):
     def __init__(self, id, connections, rate, seed):

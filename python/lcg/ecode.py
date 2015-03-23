@@ -101,6 +101,7 @@ def run_command(directory, module, opts=None, kernel_file=None):
     os.chdir(directory)
     if not kernel_file is None:
         os.symlink(kernel_file, os.path.basename(kernel_file))
+        os.symlink(kernel_file, 'kernel.dat')
         command += '--no-kernel'
     while command[-1] == ' ':
         command = command[:-1]
@@ -204,6 +205,7 @@ def main():
             kernel_file = glob(d + '/*_kernel.dat')[0]
     import process_ecode
     process_ecode.analyze()
+
 
 if __name__ == '__main__':
     main()
