@@ -50,7 +50,7 @@ namespace lcg {
 
 class PID : public Entity {
 public:
-        PID(double baseline, double gp, double gi, double gd = 0.0, uint id = GetId());
+        PID(double baseline, double gp, double gi, double gd = 0.0, const std::string& units = "N/A", uint id = GetId());
         bool state();
         void changeState();
         virtual double output();

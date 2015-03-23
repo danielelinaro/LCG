@@ -4,6 +4,7 @@ lcg::Entity* PIDFactory(string_dict& args)
 {
         uint id;
         double baseline, gp, gi, gd;
+        std::string units;
         id = lcg::GetIdFromDictionary(args);
         if ( ! lcg::CheckAndExtractDouble(args, "baselineCurrent", &baseline) ||
              ! lcg::CheckAndExtractDouble(args, "gp", &gp) ||
@@ -13,13 +14,15 @@ lcg::Entity* PIDFactory(string_dict& args)
         }
         if (! lcg::CheckAndExtractDouble(args, "gd", &gd))
                 gd = 0.0;
-        return new lcg::PID(baseline, gp, gi, gd, id);
+        if (! lcg::CheckAndExtractValue(args, "units", units))
+                units = "N/A";
+        return new lcg::PID(baseline, gp, gi, gd, units, id);
         
 }
 
 namespace lcg {
 
-PID::PID(double baseline, double gp, double gi, double gd, uint id)
+PID::PID(double baseline, double gp, double gi, double gd, const std::string& units, uint id)
         : Entity(id)
 {
         PID_BASELINE = baseline;
@@ -27,6 +30,7 @@ PID::PID(double baseline, double gp, double gi, double gd, uint id)
         PID_GI = gi;
         PID_GD = gd;
         setName("PID");
+        setUnits(units);
 }
 
 double PID::output()

@@ -99,7 +99,7 @@ def writeFiles(options):
                                               inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
                                               kernelFile='kernel.dat'))
     config.add_entity(lcg.entities.PID(id=2, connections=(0,1), baseline=options['amplitude'],
-                                       gp=options['gp'], gi=options['gi'], gd=options['gd']))
+                                       gp=options['gp'], gi=options['gi'], gd=options['gd'], units='pA'))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,2), filename='frequency.stim', units='Hz'))
     config.add_entity(lcg.entities.FrequencyEstimator(id=4, connections=(0,2), tau=options['tau'],
                                                       initial_frequency=options['min_freq']))

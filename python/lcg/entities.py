@@ -244,12 +244,13 @@ class PeriodicPulse (Entity):
             self.add_parameter('units', units)
 
 class PID (Entity):
-    def __init__(self, id, connections, baseline, gp, gi, gd=0.0):
+    def __init__(self, id, connections, baseline, gp, gi, gd=0.0, units='N/A'):
         super(PID,self).__init__('PID', id, connections)
         self.add_parameter('baselineCurrent', baseline)
         self.add_parameter('gp', gp)
         self.add_parameter('gi', gi)
         self.add_parameter('gd', gd)
+        self.add_paraemter('units', units)
 
 class Poisson (Entity):
     def __init__(self, id, connections, rate, seed):
