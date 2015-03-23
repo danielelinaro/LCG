@@ -202,6 +202,8 @@ def main():
                 run_command(d, lcg.fi_pid, {'-M': max_firing_rate, '-a': rheobase+50}, kernel_file)
         if kernel_file is None:
             kernel_file = glob(d + '/*_kernel.dat')[0]
+    import process_ecode
+    process_ecode.analyze()
 
 if __name__ == '__main__':
     main()
