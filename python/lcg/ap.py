@@ -27,7 +27,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:', ['help','rt=','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:d:n:i:I:O:F:', ['help','rt=','no-kernel','no-preamble'])
     except getopt.GetoptError, err:
         print(str(err))
         usage()

@@ -32,7 +32,7 @@ def usage():
 
 def parseArgs():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:s:t:p:i:d:T:D:n:w:F:I:O:', ['help','no-kernel'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:s:t:p:i:d:T:D:n:w:F:I:O:', ['help','no-kernel','no-preamble'])
     except getopt.GetoptError, err:
         print str(err)
         usage()

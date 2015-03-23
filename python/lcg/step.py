@@ -36,7 +36,7 @@ def main():
     try:
         opts,args = getopt.getopt(sys.argv[1:],
                                   'hd:a:t:n:i:I:O:F:H:',
-                                  ['help','with-preamble',
+                                  ['help','with-preamble','no-preamble',
                                    'no-shuffle','no-kernel',
                                    'model','rt='])
     except getopt.GetoptError, err:

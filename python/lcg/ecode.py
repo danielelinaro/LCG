@@ -92,7 +92,7 @@ def parse_argv():
     return (pulse_amplitude,ramp_amplitude,max_firing_rate)
 
 def run_command(directory, module, opts=None, kernel_file=None):
-    command = 'lcg-foo '
+    command = 'lcg-foo --no-preamble '
     for k,v in global_opts.iteritems():
         command += '%s %s ' % (k,v)
     if not opts is None:
@@ -100,7 +100,7 @@ def run_command(directory, module, opts=None, kernel_file=None):
             command += '%s %s ' % (k,v)
     os.chdir(directory)
     if not kernel_file is None:
-        os.symlink(kernel_file, 'kernel.dat')
+        os.symlink(kernel_file, os.path.basename(kernel_file))
         command += '--no-kernel'
     while command[-1] == ' ':
         command = command[:-1]
@@ -201,7 +201,6 @@ def main():
             else:
                 run_command(d, lcg.fi_pid, {'-M': max_firing_rate, '-a': rheobase+50}, kernel_file)
         if kernel_file is None:
-            from glob import glob
             kernel_file = glob(d + '/*_kernel.dat')[0]
 
 if __name__ == '__main__':
