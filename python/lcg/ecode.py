@@ -91,16 +91,19 @@ def parse_argv():
 
     return (pulse_amplitude,ramp_amplitude,max_firing_rate)
 
-def run_command(directory, module, opts=None):
+def run_command(directory, module, opts=None, kernel_file=None):
     command = 'lcg-foo '
     for k,v in global_opts.iteritems():
         command += '%s %s ' % (k,v)
     if not opts is None:
         for k,v in opts.iteritems():
             command += '%s %s ' % (k,v)
+    os.chdir(directory)
+    if not kernel_file is None:
+        os.symlink(kernel_file, 'kernel.dat')
+        command += '--no-kernel'
     while command[-1] == ' ':
         command = command[:-1]
-    os.chdir(directory)
     sys.argv = command.split(' ')
     module.main()
     os.chdir(base_dir)
@@ -171,24 +174,35 @@ def create_directory(base):
 
 def main():
     pulse_amplitude,ramp_amplitude,max_firing_rate = parse_argv()
+    kernel_file = None
+    rheobase = None
     for proto in protocols:
         d = create_directory(proto)
         if proto == 'ap':
-            run_command(d, lcg.ap, {'-a': pulse_amplitude, '--rt': os.environ['LCG_REALTIME']})
+            run_command(d, lcg.ap, {'-a': pulse_amplitude, '--rt': os.environ['LCG_REALTIME']}, kernel_file)
         elif proto == 'vi':
-            run_command(d, lcg.vi, {'--rt': os.environ['LCG_REALTIME']})
+            run_command(d, lcg.vi, {'--rt': os.environ['LCG_REALTIME']}, kernel_file)
         elif proto == 'ramp':
-            run_command(d, lcg.ramp, {'-A': ramp_amplitude, '--rt': os.environ['LCG_REALTIME']})
+            run_command(d, lcg.ramp, {'-A': ramp_amplitude, '--rt': os.environ['LCG_REALTIME']}, kernel_file)
             rheobase = analyse_ramp(d)[0]
             rheobase = 10.*round(rheobase/10.)
         elif proto == 'tau':
-            run_command(d, lcg.tau, {'--rt': os.environ['LCG_REALTIME']})
+            run_command(d, lcg.tau, {'--rt': os.environ['LCG_REALTIME']}, kernel_file)
         elif proto == 'steps':
-            run_command(d, lcg.step, {'-n': 2, '-d': 2, '-i': 10,
-                                      '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50),
-                                      '--rt': os.environ['LCG_REALTIME']})
+            if rheobase is None:
+                print('You need to run a ramp protocol before running a steps protocol.')
+            else:
+                run_command(d, lcg.step, {'-n': 2, '-d': 2, '-i': 10,
+                                          '-a': '%g,%g,%g' % (rheobase+50,2*rheobase,rheobase-50),
+                                          '--rt': os.environ['LCG_REALTIME']}, kernel_file)
         elif proto == 'fi':
-            run_command(d, lcg.fi_pid, {'-M': max_firing_rate, '-a': rheobase+50})
+            if rheobase is None:
+                print('You need to run a ramp protocol before running an f-I protocol.')
+            else:
+                run_command(d, lcg.fi_pid, {'-M': max_firing_rate, '-a': rheobase+50}, kernel_file)
+        if kernel_file is None:
+            from glob import glob
+            kernel_file = glob(d + '/*_kernel.dat')[0]
 
 if __name__ == '__main__':
     main()

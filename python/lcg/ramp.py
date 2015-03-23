@@ -13,22 +13,23 @@ def usage():
     print('It can be used to find the current at which the neuron starts spiking.')
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -h    Display this help message and exit.')
-    print('     -A    Final amplitude of the ramp (in pA).')
-    print('     -a    Initial amplitude of the ramp (default 0 pA).')
-    print('     -d    Duration of the ramp (default 10 sec).')
-    print('     -n    Number of repetitions (default 2).')
-    print('     -i    Interval between repetitions (default 20 sec).')
-    print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
-    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
-    print('   --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
-    print(' --without-preamble   Do not include stability preamble.')
+    print('            -h    Display this help message and exit.')
+    print('            -A    Final amplitude of the ramp (in pA).')
+    print('            -a    Initial amplitude of the ramp (default 0 pA).')
+    print('            -d    Duration of the ramp (default 10 sec).')
+    print('            -n    Number of repetitions (default 2).')
+    print('            -i    Interval between repetitions (default 20 sec).')
+    print('            -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('            -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
+    print('            -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('          --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
+    print('   --no-kernel    Do not compute the electrode kernel.')
+    print(' --no-preamble    Do not include stability preamble.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hA:a:d:n:i:I:O:F:', ['help','without-preamble','rt='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hA:a:d:n:i:I:O:F:', ['help','no-kernel','no-preamble','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -42,6 +43,7 @@ def main():
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
     with_preamble = True
+    with_kernel = True
     before = 0.5                 # [s]
     after = 0.5                  # [s]
     realtime = os.environ['LCG_REALTIME']
@@ -66,7 +68,9 @@ def main():
             ao = int(a)
         elif o == '-F':
             sampling_frequency = float(a)
-        elif o == '--without-preamble':
+        elif o == '--no-kernel':
+            with_kernel = False
+        elif o == '--no-preamble':
             with_preamble = False
         elif o == '--rt':
             realtime = a
@@ -99,7 +103,8 @@ def main():
     stimulus += 'dc -d %g 0' % after
 
     sub.call(stimulus, shell=True)
-    sub.call('lcg kernel -I %d -O %d -F %g --rt %s' % (ai,ao,sampling_frequency,realtime), shell=True)
+    if with_kernel:
+        sub.call('lcg kernel -I %d -O %d -F %g --rt %s' % (ai,ao,sampling_frequency,realtime), shell=True)
     sub.call('lcg stimulus -I %d -O %d -s %s -n %d -i %g -F %g --rt %s' % (ai,ao,stim_file,reps,interval,sampling_frequency,realtime), shell=True)
 
 if __name__ == '__main__':

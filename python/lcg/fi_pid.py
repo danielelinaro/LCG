@@ -11,27 +11,28 @@ config_file = 'fi_pid.xml'
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -h    Display this help message and exit.')
-    print('     -a    Initial amplitude of the injected current.')
-    print('     -s    Standard deviation of the additionally injected noisy current (default 0 pA).')
-    print('     -t    Time constant of the additionally injected noisy current (default 20 ms).')
-    print('     -m    Minimal frequency (default 5 Hz).')
-    print('     -M    Maximal frequency (default 30 Hz).')
-    print('     -P    Proportional gain of the controller (default 0.01).')
-    print('     -I    Integral gain of the controller (default 1).')
-    print('     -D    Derivative gain of the controller (default 0).')
-    print('     -T    Time constant of the frequency estimator (default 1 sec).')
-    print('     -d    Duration of the protocol (default 30 sec).')
-    print('     -n    Number of repetitions (default 1).')
-    print('     -w    Interval between repetitions (default 60 sec).')
-    print('     -F    Sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default 0).')
-    print('     -O    Output channel (default 0).')
+    print('          -h    Display this help message and exit.')
+    print('          -a    Initial amplitude of the injected current.')
+    print('          -s    Standard deviation of the additionally injected noisy current (default 0 pA).')
+    print('          -t    Time constant of the additionally injected noisy current (default 20 ms).')
+    print('          -m    Minimal frequency (default 5 Hz).')
+    print('          -M    Maximal frequency (default 30 Hz).')
+    print('          -p    Proportional gain of the controller (default 0.01).')
+    print('          -i    Integral gain of the controller (default 1).')
+    print('          -d    Derivative gain of the controller (default 0).')
+    print('          -T    Time constant of the frequency estimator (default 1 sec).')
+    print('          -D    Duration of the protocol (default 30 sec).')
+    print('          -n    Number of repetitions (default 1).')
+    print('          -w    Interval between repetitions (default 60 sec).')
+    print('          -F    Sampling rate (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('          -I    Input channel (default 0).')
+    print('          -O    Output channel (default 0).')
+    print(' --no-kernel    Do not compute the electrode kernel (assumes that a kernel.dat file is present).')
     print('')
 
 def parseArgs():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:s:t:P:I:D:T:d:n:w:F:I:O:', ['help'])
+        opts,args = getopt.getopt(sys.argv[1:], 'ha:m:M:s:t:p:i:d:T:D:n:w:F:I:O:', ['help','no-kernel'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -39,7 +40,8 @@ def parseArgs():
 
     options = {'amplitude': None, 'current_tau': 20, 'max_freq': 30, 'min_freq': 5,
                'gp': 0.001, 'gi': 1, 'gd': 0, 'tau': 1, 'duration': 30,
-               'trials': 1, 'interval': 60, 'sampling_rate': float(os.environ['SAMPLING_RATE']), 'ai': 0, 'ao': 0}
+               'trials': 1, 'interval': 60, 'sampling_rate': float(os.environ['SAMPLING_RATE']), 'ai': 0, 'ao': 0,
+               'with_kernel': True}
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -55,15 +57,15 @@ def parseArgs():
             options['min_freq'] = float(a)
         elif o == '-M':
             options['max_freq'] = float(a)
-        elif o == '-P':
+        elif o == '-p':
             options['gp'] = float(a)
-        elif o == '-I':
+        elif o == '-i':
             options['gi'] = float(a)
-        elif o == '-D':
+        elif o == '-d':
             options['gd'] = float(a)
         elif o == '-T':
             options['tau'] = float(a)
-        elif o == '-d':
+        elif o == '-D':
             options['duration'] = float(a)
         elif o == '-n':
             options['trials'] = int(a)
@@ -75,6 +77,8 @@ def parseArgs():
             options['ai'] = int(a)
         elif o == '-O':
             options['ao'] = int(a)
+        elif o == '--no-kernel':
+            options['with_kernel'] = False
 
     if options['amplitude'] is None:
         print('You must specify the initial amplitude of the injected current (-a switch).')
@@ -116,7 +120,8 @@ def writeFiles(options):
 def main():
     opts = parseArgs()
     writeFiles(opts)
-    sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
+    if opts['with_kernel']:
+        sub.call('lcg kernel -I ' + str(opts['ai']) + ' -O ' + str(opts['ao']), shell=True)
     sub.call(lcg.common.prog_name + ' -c ' + config_file + ' -n ' + str(opts['trials']) +
              ' -i ' + str(opts['interval']), shell=True)
 
