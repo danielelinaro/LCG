@@ -16,12 +16,13 @@ def usage():
     print('')
     print('where options are:')
     print('')
-    print('          -f   initial and final frequencies (comma separated values, default 1,20).')
+    print('          -f   initial and final frequencies (comma separated values, default 0.1,200).')
     print('          -a   stimulation amplitude (default 50 pA).')
-    print('          -d   stimulation duration (default 10 sec).')
+    print('          -o   offset (default 0 pA).')
+    print('          -d   stimulation duration (default 12 sec).')
     print('          -t   tail duration (0 pA of output after the stimulation, default 1 sec).')
-    print('          -n   number of repetitions (default 2).')
-    print('          -i   interval between repetitions (default 20 sec).')
+    print('          -n   number of repetitions (default 20).')
+    print('          -i   interval between repetitions (default 1 sec).')
     print('          -I   input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('          -O   output channel (default %s).' % os.environ['AO_CHANNEL'])
     print('          -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
@@ -32,24 +33,25 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hf:a:d:t:n:i:I:O:F:',
+        opts,args = getopt.getopt(sys.argv[1:], 'hf:a:o:d:t:n:i:I:O:F:',
                                   ['help','preamble=','kernel=','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
         sys.exit(1)
 
-    freq = [1,20]
+    freq = [0.1,200.]
     ao = int(os.environ['AO_CHANNEL'])
     ai = int(os.environ['AI_CHANNEL'])
     samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
     preamble = True
     kernel = True
-    nreps = 2
-    duration = 10      # [s]
-    interval = 20      # [s]
+    nreps = 20
+    duration = 12      # [s]
+    interval = 1       # [s]
     tail = 1           # [s]
     amplitude = 50     # [pA]
+    offset = 0         # [pA]
     realtime = os.environ['LCG_REALTIME']
 
     for o,a in opts:
@@ -68,7 +70,9 @@ def main():
         elif o == '-d':
             duration = float(a)
         elif o == '-a':
-            amplitude.append(float(amp))
+            amplitude = float(a)
+        elif o == '-o':
+            offset = float(a)
         elif o == '-t':
             tail = float(a)
         elif o == '-n':
@@ -104,7 +108,7 @@ def main():
     stimulus = 'lcg-stimgen -o %s ' % stim_file
     if preamble:
         stimulus += 'dc -d 0.5 0 dc -d 0.01 -- -300 dc -d 0.5 0 dc -d 0.6 -- -100 '
-    stimulus += 'dc -d 1 0 chirp -d %g -- %g %g %g dc -d %g 0' % (duration,amplitude,freq[0],freq[1],tail)
+    stimulus += 'dc -d 1 0 dc -d %g -p -- %g chirp -E -- %g %g %g dc -d %g 0' % (duration,offset,amplitude,freq[0],freq[1],tail)
 
     sub.call(stimulus, shell=True)
 

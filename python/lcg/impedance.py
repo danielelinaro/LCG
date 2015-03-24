@@ -15,8 +15,9 @@ def usage():
     print('     -N    Number of cycles (default 50).')
     print('     -f    Tested frequencies (comma separated values, default 0.1,0.2,0.5,1,2,5,10,20,30,50,80,100,200 Hz).')
     print('     -a    Amplitude of the stimulation (default 50 pA).')
+    print('     -o    Current offset (default 0 pA).')
     print('     -d    (Minimal) duration of the stimulation (default 2 s).')
-    print('     -D    (Maximal) duration of the stimulation (default 100 s).')
+    print('     -D    (Maximal) duration of the stimulation (default 50 s).')
     print('     -n    Number of repetitions (default 1).')
     print('     -i    Interval between repetitions (default 1 sec).')
     print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
@@ -27,7 +28,7 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hN:f:a:d:D:n:i:I:O:F:', ['help','rt='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hN:f:a:o:d:D:n:i:I:O:F:', ['help','rt='])
     except getopt.GetoptError, err:
         print(str(err))
         sys.exit(1)
@@ -35,8 +36,9 @@ def main():
     ncycles = 50
     frequencies = [0.1,0.2,0.5,1.,2.,5.,10.,20.,30.,50.,80.,100.,200.] # [Hz]
     amplitude = 50. # [pA]
+    offset = 0. # [pA]
     min_duration = 2. # [s]
-    max_duration = 100. # [s]
+    max_duration = 50. # [s]
     nreps = 1
     interval = 1 # [s]
     sampling_rate = float(os.environ['SAMPLING_RATE'])
@@ -63,6 +65,8 @@ def main():
             if amplitude <= 0:
                 print('Amplitude (-a option) must be positive.')
                 sys.exit(4)
+        elif o == '-o':
+            offset = float(a)
         elif o == '-d':
             min_duration = float(a)
             if min_duration <= 0:
@@ -102,8 +106,8 @@ def main():
                 duration = round(max_duration*f)/f
             elif duration < min_duration:
                 duration = round(min_duration*f)/f
-            cmd = 'lcg stimgen dc -d 0.5 -- 0 sine -d %f -- %f %f 0 0 dc -d 0.5 -- 0' % \
-                (duration, amplitude, f)
+            cmd = 'lcg stimgen dc -d 0.5 -- 0 sine -d %f -- %f %f 0 %f dc -d 0.5 -- 0' % \
+                (duration, amplitude, f, offset)
             cmd += ' | lcg stimulus -F %g -I %s -O %s --rt %s' % \
                 (sampling_rate, ai, ao, realtime)
             sub.call(cmd, shell=True)
