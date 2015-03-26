@@ -13,7 +13,7 @@ def usage():
     print('\nwhere options are:\n')
     print('     -h    Display this help message and exit.')
     print('     -N    Number of cycles (default 50).')
-    print('     -f    Tested frequencies (comma separated values, default 0.1,0.2,0.5,1,2,5,10,20,30,50,80,100,200 Hz).')
+    print('     -f    Tested frequencies (comma separated values, default 0.1,0.2,0.5,1,2,5,10,20,50,100,200 Hz).')
     print('     -a    Amplitude of the stimulation (default 50 pA).')
     print('     -o    Current offset (default 0 pA).')
     print('     -d    (Minimal) duration of the stimulation (default 2 s).')
@@ -21,8 +21,8 @@ def usage():
     print('     -n    Number of repetitions (default 1).')
     print('     -i    Interval between repetitions (default 1 sec).')
     print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL'])
-    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL'])
+    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL_CC'])
+    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL_CC'])
     print('   --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
     print('')
 
@@ -34,7 +34,7 @@ def main():
         sys.exit(1)
 
     ncycles = 50
-    frequencies = [0.1,0.2,0.5,1.,2.,5.,10.,20.,30.,50.,80.,100.,200.] # [Hz]
+    frequencies = [0.1,0.2,0.5,1.,2.,5.,10.,20.,50.,100.,200.] # [Hz]
     amplitude = 50. # [pA]
     offset = 0. # [pA]
     min_duration = 2. # [s]
@@ -42,8 +42,8 @@ def main():
     nreps = 1
     interval = 1 # [s]
     sampling_rate = float(os.environ['SAMPLING_RATE'])
-    ai = os.environ['AI_CHANNEL']
-    ao = os.environ['AO_CHANNEL']
+    ai = os.environ['AI_CHANNEL_CC']
+    ao = os.environ['AO_CHANNEL_CC']
     realtime = os.environ['LCG_REALTIME']
 
     for o,a in opts:
@@ -100,7 +100,7 @@ def main():
 
     for i in range(nreps):
         for f in frequencies:
-            f = sampling_rate / round(sampling_rate / f)
+            f = sampling_rate / np.ceil(sampling_rate / f)
             duration = ncycles / f
             if duration > max_duration:
                 duration = round(max_duration*f)/f
