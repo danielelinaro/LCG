@@ -39,6 +39,10 @@
 extern "C" {
 #endif
 
+typedef enum {
+        LINEAR = 0, LOG
+} sweep_type;
+
 double how_long_lasts_trial(double **, uint);
 int    simple_waveform(double *, double *, uint *, uint, double, double, int);
 int    composite_waveform(double **, uint, double *, uint *, uint, double, double, int);
@@ -53,7 +57,7 @@ void BIPOLAR_SHOT(double, double, double, double *, uint *, uint, double, double
 void RAMP(double, double *, uint *, uint, double, double, double);      
 void SQUARE(double, double, double, double *, uint *, uint, double, double, double);
 void SAW(double, double, double, double *, uint *, uint, double, double, double); 
-void SWEEP(double, double, double, double *, uint *, uint, double, double, double);
+void SWEEP(double, double, double, sweep_type, double *, uint *, uint, double, double, double);
 void UNIFNOISE(double, double, double *, uint *, uint, double, double, double); 
 void ALPHA(double, double, double, double *, uint *, uint, double, double, double); 
 #ifdef __cplusplus

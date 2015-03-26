@@ -16,7 +16,7 @@ waveform_parameters = {'dc': ['amplitude'],
                        'sine': ['amplitude','frequency (Hz)','phase','offset'],
                        'square': ['maximum','frequency (Hz)','duty cycle'],
                        'saw': ['maximum','frequency (Hz)','duty cycle'],
-                       'chirp': ['amplitude','starting frequency (Hz)','end frequency (Hz)'],
+                       'chirp': ['amplitude','starting frequency (Hz)','end frequency (Hz)','sweep type (0: linear, 1: logarithmic)'],
                        'ramp': ['maximum'],
                        'poisson-reg': ['amplitude','frequency','pulse duration (ms)'],
                        'poisson-exp': ['amplitude','frequency','pulse duration (ms)'],
@@ -48,16 +48,20 @@ def saw_constraints(duration, pars):
 
 def alpha_constraints(duration, pars):
     if pars[3] > duration:
-        print('alpha: parameter `%s\' must be shorter than the waveform duration.' % waveform_parameters['alpha'][3])
-        return False
-    return is_positive('alpha', pars, (1,2,3))
+        raise Exception('alpha: parameter `%s\' must be shorter than the waveform duration.' % waveform_parameters['alpha'][3])
+    is_positive('alpha', pars, (1,2,3))
+
+def chirp_constraints(duration, pars):
+    if not pars[3] in (0,1):
+        raise Exception('chirp: parameter `sweep type\' must be either 0 (linear) or 1 (logarithmic).')
+    is_positive('chirp', pars, (1,2))
 
 waveform_constraints = {'dc': lambda T,p: None,
                         'ou': lambda T,p: is_positive('ou', p, (1,2)),
                         'sine': lambda T,p: is_positive('sine', p, (1,)),
                         'square': square_constraints,
                         'saw': saw_constraints,
-                        'chirp': lambda T,p: is_positive('chirp', p, (1,2)),
+                        'chirp': chirp_constraints,
                         'ramp':lambda T,p: None,
                         'poisson-reg': lambda T,p: is_positive('ou', p, (2,)),
                         'poisson-exp': lambda T,p: is_positive('ou', p, (2,)),
