@@ -203,20 +203,20 @@ class RunButton(QtGui.QPushButton):
             externalProcessLabel.setText('Another process is running.')
             return
         if not self.folder is None:
+            folderpath ='{0}/{1}'.format(experimentFolder,self.folder)
+            if not os.path.isdir(folderpath):
+                os.makedirs(folderpath)
+            os.chdir(folderpath)
             if not self.folder == '.':
-                folderpath ='{0}/{1}'.format(experimentFolder,self.folder) 
-                if not os.path.isdir(folderpath):
-                    os.makedirs(folderpath)
-                os.chdir(folderpath)
                 foundFolder = False
                 for root,dirnames,filenames in os.walk(os.getcwd()):
                     for subfolder in dirnames:
-                        tmpFolder = '{0}'.format(subfolder)
-                        h5files = glob('{0}/*.h5'.format(tmpFolder))
+                        h5files = glob('{0}/*.h5'.format(subfolder))
                         if not len(h5files):
                             foundFolder = True
-                            runFolder = tmpFolder
-                        break
+                            runFolder = '{0}'.format(subfolder)
+                    
+                    break
                 if ((not foundFolder and 
                      not self.useLastFolder.isChecked())
                     or (self.useLastFolder.isChecked() and 
@@ -228,11 +228,6 @@ class RunButton(QtGui.QPushButton):
                     runFolder = self.lastFolder
             else:
                 runFolder = '.'
-            print [self.lastFolder,runFolder,self.useLastFolder.isChecked(),runFolder]
-            #if not foundFolder:
-            #    runFolder = makeIncrementingFolders(
-            #        folderPattern='[01]',
-            #        dryRun=False)
             os.chdir(runFolder)
             self.lastFolder = os.getcwd()
 
