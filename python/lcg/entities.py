@@ -316,7 +316,7 @@ class HHPotassium (IonicCurrent):
         super(HHPotassium,self).__init__('HHPotassium', id, connections, area, gbar, E)
 
 class HH2Sodium (IonicCurrent):
-    def __init__(self, id, connections, area, gbar=0.12, E=50.,
+    def __init__(self, id, connections, area, gbar=0.003, E=50.,
                  vtraub=-63., temperature=36):
         super(HH2Sodium,self).__init__('HH2Sodium', id, connections, area, gbar, E)
         self.add_parameter('vtraub', vtraub)
