@@ -178,6 +178,12 @@ namespace lcg {
 
 extern ThreadSafeQueue<Event*> eventsQueue;
 
+integration_method integr_algo = EULER;
+
+void SetIntegrationMethod(integration_method algo) {
+        integr_algo = algo;
+}
+
 namespace neurons {
 
 Neuron::Neuron(double Vm0, uint id)
@@ -312,6 +318,35 @@ void LIFNeuron::terminate()
 	}
 }
 
+void IzhiStepEuler(double *V, double *U, double dt, double I, double a, double b)
+{
+        double v = *V, u = *U;
+        *V = v + dt * ((0.04 * v * v) + 5 * v + 140 - u + I);
+	*U = u + dt * (a * (b * v - u));
+}
+
+void IzhiStepRK4(double *V, double *U, double dt, double I, double a, double b)
+{
+        double v = *V, u = *U;
+        double k1, k2, k3, k4, l1, l2, l3, l4,x,y;
+        k1 = (0.04 * v * v) + 5 * v + 140 - u + I;
+        l1 = a * (b * v - u);
+        x = v + dt * 0.5 * k1; 
+        y = u + dt * 0.5 * l1;
+        k2 = (0.04 * (x * x) + 5 * x + 140 - y + I); 
+        l2 = a * (b * x - y);
+        x = v + dt * 0.5 * k2; 
+        y = u + dt * 0.5 * l2;
+        k3 = (0.04 * (x * x) + 5 * x + 140 - y + I); 
+        l3 = a * (b * x - y);
+        x = v + dt * k3; 
+        y = u + dt * l3;
+        k4 = (0.04 * (x * x) + 5 * x + 140 - y + I); 
+        l4 = a * (b * x - y);
+        *V = v + dt * ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
+        *U = u + dt * ONE_OVER_SIX * (l1+2*l2+2*l3+l4);
+}
+
 IzhikevichNeuron::IzhikevichNeuron(double a, double b, double c,
                      double d, double Vspk, double Iext,
                      uint id)
@@ -326,6 +361,17 @@ IzhikevichNeuron::IzhikevichNeuron(double a, double b, double c,
         IZH_IEXT = Iext;
         setName("IzhikevichNeuron");
         setUnits("mV");
+        switch (lcg::integr_algo) {
+                case EULER:
+                        doStep = IzhiStepEuler;
+                        break;
+                case RK4:
+                        doStep = IzhiStepRK4;
+                        break;
+                default:
+                        doStep = IzhiStepEuler;
+                        break;
+        }
 }
 
 bool IzhikevichNeuron::initialise()
@@ -337,47 +383,24 @@ bool IzhikevichNeuron::initialise()
 
 void IzhikevichNeuron::evolve()
 {
-        double t = GetGlobalTime();
-        double dt = GetGlobalDt()*1e3; //parameters for the model are in ms.
-        double Iinj = IZH_IEXT, k1, k2, k3, k4, l1, l2, l3, l4,x,y;
-        int nInputs = m_inputs.size();
-        for (int i=0; i<nInputs; i++)
+        double v = VM, u = IZH_U, Iinj = IZH_IEXT;
+        for (int i=0; i<m_inputs.size(); i++)
              Iinj += m_inputs[i];
-		
-        //Euler
-
-		VM = VM + dt * ((0.04 * VM * VM) + 5 * VM + 140 - IZH_U + Iinj);
-		IZH_U = IZH_U + dt * (IZH_A * (IZH_B * VM - IZH_U));
-
-		// Runge-Kutta 4
-		/*
-		k1 = (0.04 * VM * VM) + 5 * VM + 140 - IZH_U + Iinj;
-		l1 = IZH_A * (IZH_B * VM - IZH_U);
-		
-		x = VM + dt * 0.5 * k1; 
-		y = IZH_U + dt * 0.5 * l1;
-		k2 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
-		l2 = IZH_A * (IZH_B * x - y);
-	
-		x = VM + dt * 0.5 * k2; 
-		y = IZH_U + dt * 0.5 * l2;
-		k3 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
-		l3 = IZH_A * (IZH_B * x - y);
-	
-		x = VM + dt * k3; 
-		y = IZH_U + dt * l3;
-		k4 = (0.04 * (x * x) + 5 * x + 140 - y + Iinj); 
-		l4 = IZH_A * (IZH_B * x - y);
-		
-		VM = VM + dt * ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
-		IZH_U = IZH_U + dt * ONE_OVER_SIX * (l1+2*l2+2*l3+l4);
-		*/
-		if(VM >= IZH_VSPK) {
+        doStep(&v, &u, GetGlobalDt()*1e3, IZH_IEXT, IZH_A, IZH_B);
+        VM = v;
+        IZH_U = u;
+	if(VM >= IZH_VSPK) {
                 VM = IZH_C;
-				IZH_U += IZH_D;
+                IZH_U += IZH_D;
                 emitSpike();
         }
 }
+
+double CBNStepEuler(double V, double dt, double I, double C, double area)
+{
+        return V + dt / (C*1e-5*area) * I;
+}
+
 ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, double Iext,
                                                double area, double spikeThreshold, double V0,
                                                uint id)
@@ -396,21 +419,31 @@ ConductanceBasedNeuron::ConductanceBasedNeuron(double C, double gl, double El, d
 
         setName("ConductanceBasedNeuron");
         setUnits("mV");
+
+        switch (lcg::integr_algo) {
+                case EULER:
+                        doStep = CBNStepEuler;
+                        break;
+                case RK4:
+                        // FIX!!!
+                        doStep = CBNStepEuler;
+                        break;
+                default:
+                        doStep = CBNStepEuler;
+                        break;
+        }
 }
 
 void ConductanceBasedNeuron::evolve()
 {
-        double Iinj, Ileak;
-	
-	Ileak = CBN_GL_NS * (CBN_EL - VM);	// (pA)
-	
-	Iinj = 0.;
+        double Iinj, v;
+        // externally applied current plus leak current
+	Iinj = CBN_IEXT + CBN_GL_NS * (CBN_EL - VM);	// (pA)
+        // sum all the ionic currents
 	for(uint i=0; i<m_inputs.size(); i++)
 		Iinj += m_inputs[i];	        // (pA)
-
         CBN_VM_PREV = VM;
-        VM = VM + CBN_COEFF * (CBN_IEXT + Ileak + Iinj);
-
+        VM = doStep(VM, GetGlobalDt(), Iinj, CBN_C, CBN_AREA);
         if (VM >= CBN_SPIKE_THRESH && CBN_VM_PREV < CBN_SPIKE_THRESH)
                 emitSpike();
 }

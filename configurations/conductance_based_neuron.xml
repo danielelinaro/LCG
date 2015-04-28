@@ -76,6 +76,7 @@
   <simulation>
     <tend>5</tend>
     <rate>100000</rate>
+    <algorithm>RK4</algorithm>
   </simulation>
 
 </lcg>

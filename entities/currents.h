@@ -50,6 +50,7 @@ public:
         double output();
 protected:
         virtual void addPost(Entity *entity);
+        double (*doStep)(double x, double dt, double xinf, double taux);
 protected:
         neurons::Neuron *m_neuron;
 };

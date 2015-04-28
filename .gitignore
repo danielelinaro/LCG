@@ -36,3 +36,4 @@ stamp-h1
 aclocal.m4
 lcg-env.sh
 debian
+.lcg

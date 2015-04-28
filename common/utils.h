@@ -58,6 +58,9 @@ void Logger(LogLevel level, const char *fmt, ...);
 void ResetIds();
 uint GetId();
 
+std::string ToUpper(std::string& str);
+std::string ToLower(std::string& str);
+
 ullong GetRandomSeed();
 uint GetIdFromDictionary(string_dict& args);
 ullong GetSeedFromDictionary(string_dict& args);

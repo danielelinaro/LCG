@@ -15,6 +15,7 @@
 #include "engine.h"
 #include "recorders.h"
 #include "stream.h"
+#include "neurons.h"
 
 #include "sha1.h"
 
@@ -169,6 +170,25 @@ int parse_configuration_file(const std::string& filename,
                         }
                 }
 
+                SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
+                SetRunTime(*tend);
+		
+                /*** integration algorithm, in case ionic currents are present ***/
+                try {
+                        std::string algo = pt.get<std::string>("lcg.simulation.algorithm");
+                        if (ToUpper(algo).compare("EULER") == 0) {
+                                Logger(Info, "Using Euler integration method.\n");
+                                lcg::SetIntegrationMethod(lcg::EULER);
+                        }
+                        else if (ToUpper(algo).compare("RK4") == 0) {
+                                Logger(Info, "Using Runge-Kutta integration method.\n");
+                                lcg::SetIntegrationMethod(lcg::RK4);
+                        }
+                        else {
+                                Logger(Important, "Unknown integration method [%s]: will use default.\n", algo.c_str());
+                        }
+                } catch(...) {}
+
                 /*** output file name (makes sense only for streams) ***/
                 try {
                         outfilename = pt.get<std::string>("lcg.simulation.outfile");
@@ -176,9 +196,6 @@ int parse_configuration_file(const std::string& filename,
                         outfilename = "";
                 }
 
-                SetGlobalDt(*dt); // So that the entities are loaded with the proper sampling rate.
-                SetRunTime(*tend);
-		
 		/*** trigger subdevice and channel***/
 		trigger->use = false;	
                 try {
@@ -199,6 +216,7 @@ int parse_configuration_file(const std::string& filename,
                 } catch(...) {
                         trigger->channel = 0;
                 }
+
                 /*** entities ***/
                 const char *children[2] = {"lcg.entities","lcg.streams"};
                 for (int i=0; i<2; i++) {

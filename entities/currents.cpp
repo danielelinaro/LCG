@@ -165,10 +165,26 @@ lcg::Entity* WBPotassiumFactory(string_dict& args)
                 E = -90;
         return new lcg::ionic_currents::WBPotassium(area, gbar, E, id);
 }
+
 namespace lcg {
+
+extern integration_method integr_algo;
 
 namespace ionic_currents {
 
+double StepEuler(double x, double dt, double xinf, double taux) {
+        return x + dt * (xinf - x) / (taux*1e-3);
+}
+
+double StepRK4(double x, double dt, double xinf, double taux) {
+        double k1, k2, k3, k4;
+        taux *= 1e-3;
+        k1 = dt * (xinf-x)/taux;
+        k2 = dt * (xinf-(x+0.5*k1))/taux;
+        k3 = dt * (xinf-(x+0.5*k2))/taux;
+        k4 = dt * (xinf-(x+k3))/taux;
+        return x + 0.1666666667 * (k1+2*k2+2*k3+k4);
+}
 
 IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
         : DynamicalEntity(id), m_neuron(NULL)
@@ -183,6 +199,18 @@ IonicCurrent::IonicCurrent(double area, double gbar, double E, uint id)
 
         setName("IonicCurrent");
         setUnits("pA");
+
+        switch (lcg::integr_algo) {
+                case EULER:
+                        doStep = StepEuler;
+                        break;
+                case RK4:
+                        doStep = StepRK4;
+                        break;
+                default:
+                        doStep = StepEuler;
+                        break;
+        }
 }
 
 bool IonicCurrent::initialise()
@@ -244,26 +272,8 @@ void HHSodium::evolve()
         tauh = 1.0 / (ah + bh);
         minf = am * taum;
         hinf = ah * tauh;
-
-        // Euler
-        HH_NA_M = HH_NA_M + dt * (minf - HH_NA_M) / (taum*1e-3);
-        HH_NA_H = HH_NA_H + dt * (hinf - HH_NA_H) / (tauh*1e-3);
-
-        // Runge-Kutta 4
-        /*
-        double k1, k2, k3, k4;
-        k1 = dt * (minf-HH_NA_M)/(taum*1e-3);
-        k2 = dt * (minf-(HH_NA_M+0.5*k1))/(taum*1e-3);
-        k3 = dt * (minf-(HH_NA_M+0.5*k2))/(taum*1e-3);
-        k4 = dt * (minf-(HH_NA_M+k3))/(taum*1e-3);
-        HH_NA_M = HH_NA_M + 0.1666666667 * (k1+2*k2+2*k3+k4);
-        k1 = dt * (hinf-HH_NA_H)/(tauh*1e-3);
-        k2 = dt * (hinf-(HH_NA_H+0.5*k1))/(tauh*1e-3);
-        k3 = dt * (hinf-(HH_NA_H+0.5*k2))/(tauh*1e-3);
-        k4 = dt * (hinf-(HH_NA_H+k3))/(tauh*1e-3);
-        HH_NA_H = HH_NA_H + 0.1666666667 * (k1+2*k2+2*k3+k4);
-        */
-
+        HH_NA_M = doStep(HH_NA_M, dt, minf, taum);
+        HH_NA_H = doStep(HH_NA_H, dt, hinf, tauh);
         IC_FRACTION = HH_NA_M*HH_NA_M*HH_NA_M*HH_NA_H;
 }
 
@@ -292,20 +302,7 @@ void HHPotassium::evolve()
         bn = betan(v);
         taun = 1.0 / (an + bn);
         ninf = an * taun;
-        
-        // Euler
-        HH_K_N = HH_K_N + dt * (ninf - HH_K_N) / (taun*1e-3);
-
-        // Runge-Kutta 4
-        /*
-        double k1, k2, k3, k4;
-        k1 = dt * (ninf-HH_K_N)/(taun*1e-3);
-        k2 = dt * (ninf-(HH_K_N+0.5*k1))/(taun*1e-3);
-        k3 = dt * (ninf-(HH_K_N+0.5*k2))/(taun*1e-3);
-        k4 = dt * (ninf-(HH_K_N+k3))/(taun*1e-3);
-        HH_K_N = HH_K_N + ONE_OVER_SIX * (k1+2*k2+2*k3+k4);
-        */
-
+        HH_K_N = doStep(HH_K_N, dt, ninf, taun);
         IC_FRACTION = HH_K_N*HH_K_N*HH_K_N*HH_K_N;
 }
 
@@ -361,11 +358,8 @@ void HH2Sodium::evolve()
         hinf = ah * tauh;
         taum = taum / m_tadj;
         tauh = tauh / m_tadj;
-
-        // Euler
-        HH2_NA_M = HH2_NA_M + dt * (minf - HH2_NA_M) / (taum*1e-3);
-        HH2_NA_H = HH2_NA_H + dt * (hinf - HH2_NA_H) / (tauh*1e-3);
-
+        HH2_NA_M = doStep(HH2_NA_M, dt, minf, taum);
+        HH2_NA_H = doStep(HH2_NA_H, dt, hinf, tauh);
         IC_FRACTION = HH2_NA_M*HH2_NA_M*HH2_NA_M*HH2_NA_H;
 }
 
@@ -407,10 +401,7 @@ void HH2Potassium::evolve()
         taun = 1.0 / (an + bn);
         ninf = an * taun;
         taun = taun / m_tadj;
-        
-        // Euler
-        HH2_K_N = HH2_K_N + dt * (ninf - HH2_K_N) / (taun*1e-3);
-
+        HH2_K_N = doStep(HH2_K_N, dt, ninf, taun);
         IC_FRACTION = HH2_K_N*HH2_K_N*HH2_K_N*HH2_K_N;
 }
 
@@ -442,9 +433,7 @@ void MCurrent::evolve()
         v = m_neuron->output();
         taum = m_tauPeak / (3.3 * exp(0.05*(v+35)) + exp(-0.05*(v+35)));
         minf = 1. / (1. + exp(-0.1*(v+35)));
-
-        // Euler
-        IM_M = IM_M + dt * (minf - IM_M) / (taum*1e-3);
+        IM_M = doStep(IM_M, dt, minf, taum);
         IC_FRACTION = IM_M;
 }
 

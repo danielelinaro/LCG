@@ -12,6 +12,7 @@
 #include <time.h>
 #include <signal.h>
 #include <math.h>
+#include <ctype.h>
 
 #include <sstream>
 #include <algorithm>
@@ -47,6 +48,22 @@ const std::vector< std::pair<std::string,time_t> >* GetComments()
         while (commentsThreadRunning)
                 ;
         return &comments;
+}
+
+std::string ToUpper(std::string& str)
+{
+        std::string ret = str;
+        for (int i=0; i<ret.size(); i++)
+                ret[i] = toupper(ret[i]);
+        return ret;
+}
+
+std::string ToLower(std::string& str)
+{
+        std::string ret = str;
+        for (int i=0; i<ret.size(); i++)
+                ret[i] = tolower(ret[i]);
+        return ret;
 }
 
 void* CommentsReader(void *)
