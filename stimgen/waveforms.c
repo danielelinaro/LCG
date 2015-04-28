@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "waveforms.h"
 #include "rando.h"
 #include "error_msgs.h"
@@ -71,7 +72,7 @@ int simple_waveform(double *vector, double *output, uint *index, uint Ni, double
                         SAW(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
                         break;                    
                 case SWEEP_WAVE:                                                                // SWEEP Waveform has been selected
-                        SWEEP(vector[P1], vector[P2], vector[P3], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
+                        SWEEP(vector[P1], vector[P2], vector[P3], (sweep_type) vector[P4], output, index, Ni, vector[EXPON], srate, dt);  // ..then generate it.
                         break;
                 case UNIF_NOISE:	
                         UNIFNOISE(vector[P1], vector[P2], output, index, Ni, vector[EXPON], srate, dt); // pseudo-delta-correlated process (NOT FEASIBLE ANYWAY).
@@ -629,29 +630,43 @@ void SAW(double amplitude, double frequency, double dutycycle, double *output, u
 
 // Generate SWEEP waveform -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=-
 // OK TESTED
-void SWEEP(double amplitude, double frequency_start, double frequency_stop, double *output, uint *index, uint Ni, double expon, double srate, double dt)
+void SWEEP(double amplitude, double frequency_start, double frequency_stop, sweep_type stype, double *output, uint *index, uint Ni, double expon, double srate, double dt)
 {
- uint i;
- double tmp1, tmp2, tmp3;
-
-  tmp1 = TWOPI * frequency_start;   // This is just to compute once for all such terms (: 2*PI*freq )
-  tmp2 = TWOPI * (frequency_stop - frequency_start);
-  tmp3 = amplitude;                 // Here is the amplitude of the sinusoidal waveform.
-
- if (expon == -1) 
-  for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
-    output[(*index)++] = fabs(tmp3 * sin(  (tmp1 + (double)i/(Ni) * tmp2 * 0.5) * i * dt));    
- else if (expon == 0)
-  for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
-    output[(*index)++] = POSPART(tmp3 * sin(  (tmp1 + (double)i/(Ni) * tmp2 * 0.5) * i * dt));    
- else if (expon != 1)
-  for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
-    output[(*index)++] = pow(tmp3 * sin(  (tmp1 + (double)i/(Ni) * tmp2 * 0.5) * i * dt), expon);    
- else
-  for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
-    output[(*index)++] = tmp3 * sin(  (tmp1 + (double)i/(Ni) * tmp2 * 0.5) * i * dt);    
-        
-  return;
+        uint i;
+        double tmp1, tmp2, tmp3;
+        double *F;
+        // will contain the instantaneous frequency of the oscillation
+        F = (double *) malloc(Ni*sizeof(double));
+        memset((void *) F, 0, Ni*sizeof(double));
+        switch (stype) {
+                case LINEAR:
+                        // linearly increasing frequency
+                        for (i=0; i<Ni; i++)
+                                F[i] = frequency_start + (double) i / Ni * (frequency_stop-frequency_start) * 0.5;
+                        break;
+                case LOG:
+                        // logarithmically increasing frequency
+                        for (i=0; i<Ni; i++)
+                                F[i] = exp(log(frequency_start) + (log(frequency_stop)-log(frequency_start)) * i / Ni);
+                        break;
+        }
+        if (expon == -1) {
+                for (i=0; i<Ni; i++)              // I go through the entire data vector and I initialize it appropriately.
+                        output[(*index)++] = fabs(amplitude * sin(TWOPI * F[i] * i * dt));    
+        }
+        else if (expon == 0) {
+                for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
+                        output[(*index)++] = POSPART(amplitude * sin(TWOPI * F[i] * i * dt));    
+        }
+        else if (expon != 1) {
+                for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
+                        output[(*index)++] = pow(amplitude * sin(TWOPI * F[i] * i * dt), expon);    
+        }
+        else {
+                for (i=0; i<Ni; i++)               // I go through the entire data vector and I initialize it appropriately.
+                        output[(*index)++] = amplitude * sin(TWOPI * F[i] * i * dt);
+        }
+        free(F);
 } // end SWEEP()  -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 

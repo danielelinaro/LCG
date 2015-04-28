@@ -108,7 +108,7 @@ def main():
     stimulus = 'lcg-stimgen -o %s ' % stim_file
     if preamble:
         stimulus += 'dc -d 0.5 0 dc -d 0.01 -- -300 dc -d 0.5 0 dc -d 0.6 -- -100 '
-    stimulus += 'dc -d 1 0 dc -d %g -p -- %g chirp -E -- %g %g %g dc -d %g 0' % (duration,offset,amplitude,freq[0],freq[1],tail)
+    stimulus += 'dc -d 1 0 dc -d %g -p -- %g chirp -E -- %g %g %g 1 dc -d %g 0' % (duration,offset,amplitude,freq[0],freq[1],tail)
 
     sub.call(stimulus, shell=True)
 
