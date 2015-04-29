@@ -302,7 +302,7 @@ class TMGSynapse (Synapse):
 
 class IonicCurrent (Entity):
     def __init__(self, name, id, connections, area, gbar, E):
-        super(IonicCurrent,self).__init__('IonicCurrent', id, connections)
+        super(IonicCurrent,self).__init__(name, id, connections)
         self.add_parameter('area', area)
         self.add_parameter('gbar', gbar)
         self.add_parameter('E', E)
