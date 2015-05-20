@@ -9,6 +9,7 @@ import subprocess as sub
 import sys
 import time
 from lcg.utils import runCommand
+import random
 
 config_file = 'stimulus.xml'
 
@@ -48,6 +49,7 @@ def usage():
     print(' -R, --reset-output       whether output should be reset to 0 after every trial (yes or no,')
     print('                          default %s for current clamp and no for voltage clamp experiments)' % os.environ['LCG_RESET_OUTPUT'])
     print(' -p, --priority           set the priority of this thread, -20 is maximum, default is zero')
+    print('     --shuffle            shuffle the order in which stimulus files are applied')
     print('     --rt                 use real-time engine (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('     --verbose            set the verbosity level of lcg-experiment (default is 4 - silent)')
     print('                          it is also possible to specify options to control the behavior of')
@@ -78,8 +80,7 @@ def main():
                                    'input-channels=','input-gains=','input-units=',
                                    'output-channels=','output-gains=','output-units=',
                                    'voltage-clamp','offset=','conductance=','rt=','output-file=',
-                                   'reset-output=','verbose=','dry-run','model',
-                                   'priority='])
+                                   'reset-output=','verbose=','dry-run','model','shuffle','priority='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
@@ -106,6 +107,7 @@ def main():
     reversalPotentials = []
     outputFilename = None
     resetOutput = None
+    shuffle = False
     verbose = 4
     niceness = 0
     suffix = 'CC'
@@ -210,6 +212,8 @@ def main():
             realtime = a.lower() == 'yes'
         elif o in ('-R','--reset-output'):
             resetOutput = a.lower() == 'yes'
+        elif o == '--shuffle':
+            shuffle = True
         elif o == '--verbose':
             if a == 'progress':
                 terminalPrintMode = 'progress'
@@ -311,6 +315,8 @@ def main():
         # if there is one stimfile and many output channels, we output the same stimulus
         # to all of them
         if len(stimfiles) == 1 and len(outputChannels) > 1:
+            # doesn't make sense to shuffle in this case
+            shuffle = False
             stimfiles = [stimfiles[0] for i in range(len(outputChannels))]
 
         if len(outputChannels) != 1 and len(stimfiles) != len(outputChannels):
@@ -378,7 +384,10 @@ def main():
     else:
         # there is one output channel and many stimulus files
         for f in stimfiles:
-            all_durations.append(np.sum(np.loadtxt(f)[:,0]))
+            try:
+                all_durations.append(np.sum(np.loadtxt(f)[:,0]))
+            except:
+                all_durations.append(np.loadtxt(f)[0])
             tmpchannels = [{'type':'input', 'subdevice': inputSubdevice, 'channel':inputChannels[j], 'factor':inputGains[j],
                             'units':inputUnits[j]} for j in range(len(inputChannels))]
             tmpchannels.append({'type':'output', 'subdevice': outputSubdevice, 'channel':outputChannels[0], 'factor':outputGains[0],
@@ -408,6 +417,12 @@ def main():
     sys.stdout.flush()
     # Main loop
     for i in range(repetitions):
+        if shuffle:
+            random.shuffle(stimfiles)
+            for stimfile,channels in zip(stimfiles,all_channels):
+                for channel in channels:
+                    if 'stimfile' in channel:
+                        channel['stimfile'] = stimfile
         for duration,channels in zip(all_durations,all_channels):
             trialStart = time.time()
             writeConfigurationFile(config_file, duration, channels)        
