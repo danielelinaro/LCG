@@ -31,7 +31,7 @@ def main():
     add_amplitudes = True
     add_duration = True
 
-    cmd = 'lcg-steps -t 0.1 -n 2 -i 0.5'
+    cmd = 'lcg-steps -t 0.5 -n 2 -i 0.5'
     for o,a in opts:
         if o in ['-h','--help']:
             usage()
