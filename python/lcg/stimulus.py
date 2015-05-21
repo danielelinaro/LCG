@@ -418,7 +418,7 @@ def main():
     # Main loop
     for i in range(repetitions):
         if shuffle:
-            idx = range(len(stimfile))
+            idx = range(len(stimfiles))
             random.shuffle(idx)
             all_durations = [all_durations[i] for i in idx]
             all_channels = [all_channels[i] for i in idx]
