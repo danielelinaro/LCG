@@ -418,14 +418,13 @@ def main():
     # Main loop
     for i in range(repetitions):
         if shuffle:
-            random.shuffle(stimfiles)
-            for stimfile,channels in zip(stimfiles,all_channels):
-                for channel in channels:
-                    if 'stimfile' in channel:
-                        channel['stimfile'] = stimfile
+            idx = range(len(stimfile))
+            random.shuffle(idx)
+            all_durations = [all_durations[i] for i in idx]
+            all_channels = [all_channels[i] for i in idx]
         for duration,channels in zip(all_durations,all_channels):
             trialStart = time.time()
-            writeConfigurationFile(config_file, duration, channels)        
+            writeConfigurationFile(config_file, duration, channels)
             runLCG(timerString.format(cnt, total), cnt, total, duration)
             sleepTime = (interval + duration - (time.time() - trialStart))
             if cnt < total and sleepTime > 0 :
