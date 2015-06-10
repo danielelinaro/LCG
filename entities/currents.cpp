@@ -54,6 +54,26 @@ lcg::Entity* HH2SodiumFactory(string_dict& args)
         return new lcg::ionic_currents::HH2Sodium(area, gbar, E, vtraub, temperature, id);
 }
 
+lcg::Entity* HH2SodiumSlowInactFactory(string_dict& args)
+{
+        uint id;
+        double area, gbar, E, vtraub, temperature;
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area)) {
+                lcg::Logger(lcg::Critical, "Unable to build an HH2 sodium current.\n");
+                return NULL;
+        }
+        if (!lcg::CheckAndExtractDouble(args, "gbar", &gbar))
+                gbar = 0.003;
+        if (!lcg::CheckAndExtractDouble(args, "E", &E))
+                E = 50;
+        if (!lcg::CheckAndExtractDouble(args, "vtraub", &vtraub))
+                vtraub = -63;
+        if (!lcg::CheckAndExtractDouble(args, "temperature", &temperature))
+                temperature = 36;
+        return new lcg::ionic_currents::HH2SodiumSlowInact(area, gbar, E, vtraub, temperature, id);
+}
+
 lcg::Entity* HH2PotassiumFactory(string_dict& args)
 {
         uint id;
@@ -361,6 +381,81 @@ void HH2Sodium::evolve()
         HH2_NA_M = doStep(HH2_NA_M, dt, minf, taum);
         HH2_NA_H = doStep(HH2_NA_H, dt, hinf, tauh);
         IC_FRACTION = HH2_NA_M*HH2_NA_M*HH2_NA_M*HH2_NA_H;
+}
+
+//~~
+
+HH2SodiumSlowInact::HH2SodiumSlowInact(double area, double gbar, double E, double vtraub, double temperature, uint id)
+        : IonicCurrent(area, gbar, E, id)
+{
+        m_state.push_back(0);           // m
+        m_state.push_back(0);           // h
+        m_state.push_back(0);           // s
+        HH2_VTRAUB = vtraub;
+        HH2_TEMPERATURE = temperature;
+        m_tadj = pow(3., (HH2_TEMPERATURE - 36.) / 10.);
+        setName("HH2SodiumSlowInactCurrent");
+        setUnits("pA");
+}
+
+bool HH2SodiumSlowInact::initialise()
+{
+        for (uint i=0; i<m_state.size(); i++)
+                m_state[i] = 0.0;
+        return true;
+}
+
+double HH2SodiumSlowInact::alpham(double v) {
+	return 0.32 * vtrap(13.-v, 4.);
+}
+
+double HH2SodiumSlowInact::betam(double v) {
+	return 0.28 * vtrap(v-40., 5.);
+}
+
+double HH2SodiumSlowInact::alphah(double v) {
+	return 0.128 * exp((17.-v)/18.);
+}
+
+double HH2SodiumSlowInact::betah(double v) {
+	return 4. / (1. + exp(0.2*(40.-v)));
+}
+
+double HH2SodiumSlowInact::alphas(double v)
+{
+	return 0.001 * exp(-(v+85)/30.);
+}
+
+double HH2SodiumSlowInact::betas(double v)
+{
+	return 0.0034 / (exp(-(v+17)/10.)+1);
+}
+
+void HH2SodiumSlowInact::evolve()
+{
+        double dt, v, am, bm, ah, bh, as, bs, minf, hinf, sinf, taum, tauh, taus;
+        dt = GetGlobalDt();
+        v = m_neuron->output() - HH2_VTRAUB; // convert to Traub convention
+        am = alpham(v);
+        bm = betam(v);
+        ah = alphah(v);
+        bh = betah(v);
+        v = m_neuron->output(); // do not convert to Traub convention
+        as = alphas(v);
+        bs = betas(v);
+        taum = 1.0 / (am + bm);
+        tauh = 1.0 / (ah + bh);
+        taus = 1.0 / (as + bs);
+        minf = am * taum;
+        hinf = ah * tauh;
+        sinf = as * taus;
+        taum = taum / m_tadj;
+        tauh = tauh / m_tadj;
+        taus = taus / m_tadj;
+        HH2_NASI_M = doStep(HH2_NASI_M, dt, minf, taum);
+        HH2_NASI_H = doStep(HH2_NASI_H, dt, hinf, tauh);
+        HH2_NASI_S = doStep(HH2_NASI_S, dt, sinf, taus);
+        IC_FRACTION = HH2_NASI_M*HH2_NASI_M*HH2_NASI_M*HH2_NASI_H*HH2_NASI_S;
 }
 
 //~~

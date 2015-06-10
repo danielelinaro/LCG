@@ -75,7 +75,6 @@ protected:
 
 #define HH_K_N          m_state[1]
 
-
 class HHPotassium : public IonicCurrent {
 public:
         HHPotassium(double area, double gbar = 0.036, double E = -77, uint id = GetId());
@@ -104,6 +103,30 @@ public:
         static double betam(double v);
         static double alphah(double v);
         static double betah(double v);
+
+protected:
+        void evolve();
+
+private:
+        double m_tadj;
+};
+
+#define HH2_NASI_M        m_state[1]
+#define HH2_NASI_H        m_state[2]
+#define HH2_NASI_S        m_state[3]
+
+class HH2SodiumSlowInact : public IonicCurrent {
+public:
+        HH2SodiumSlowInact(double area, double gbar = 0.003, double E = 50, double vtraub = -63., double temperature = 36., uint id = GetId());
+
+        virtual bool initialise();
+
+        static double alpham(double v);
+        static double betam(double v);
+        static double alphah(double v);
+        static double betah(double v);
+        static double alphas(double v);
+        static double betas(double v);
 
 protected:
         void evolve();
@@ -321,6 +344,7 @@ extern "C" {
 lcg::Entity* HHSodiumFactory(string_dict& args);
 lcg::Entity* HHPotassiumFactory(string_dict& args);
 lcg::Entity* HH2SodiumFactory(string_dict& args);
+lcg::Entity* HH2SodiumSlowInactFactory(string_dict& args);
 lcg::Entity* HH2PotassiumFactory(string_dict& args);
 lcg::Entity* MCurrentFactory(string_dict& args);
 lcg::Entity* TCurrentFactory(string_dict& args);
