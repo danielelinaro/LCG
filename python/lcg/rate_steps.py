@@ -14,27 +14,28 @@ config_file = 'rate_steps.xml'
 def usage():
     print('\nUsage: %s [--option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -h   Display this help message and exit.')
-    print('     -n   Number of repetitions (default 100).')
-    print('     -i   Interval between trials (default 2 s).')
-    print('     -d   Duration of the stimulation (default 0.5 sec per step).')
-    print('     -b   Time before the beginning of the stimulation (default 0.1 s).')
-    print('     -a   Time after the end of the stimulation (default 0.1 s).')
-    print('     -I   Input channel (default 0).')
-    print('     -O   Output channel (default 0).')
-    print('     -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -k   Frequency at which a new kernel should be computed (default is just at the beginning)')
-    print('     -R   Input resistance of the cell (in MOhm).')
-    print('     -v   Value of voltage at which the background activity should be balanced.')
-    print('     -r   Baseline firing frequency of the excitatory background population.')
-    print('     -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
-    print('  --exc   Modulate the firing rate of the excitatory presynaptic population.')
-    print('  --inh   Modulate the firing rate of the inhibitory presynaptic population.')
+    print('      -h   Display this help message and exit.')
+    print('      -n   Number of repetitions (default 100).')
+    print('      -i   Interval between trials (default 2 s).')
+    print('      -d   Duration of the stimulation (default 0.5 sec per step).')
+    print('      -b   Time before the beginning of the stimulation (default 0.1 s).')
+    print('      -a   Time after the end of the stimulation (default 0.1 s).')
+    print('      -I   Input channel (default 0).')
+    print('      -O   Output channel (default 0).')
+    print('      -F   sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('      -k   Frequency at which a new kernel should be computed (default is just at the beginning)')
+    print('      -R   Input resistance of the cell (in MOhm).')
+    print('      -v   Value of voltage at which the background activity should be balanced.')
+    print('      -r   Baseline firing frequency of the excitatory background population.')
+    print('      -m   Fraction of the baseline firing frequency used as a modulation (default 0.1).')
+    print('   --exc   Modulate the firing rate of the excitatory presynaptic population.')
+    print('   --inh   Modulate the firing rate of the inhibitory presynaptic population.')
+    print('  --step   Specify how to perform the step: accepted values are "continuous" or "discontinuous".')
     print('')
 
 def parseArgs():
     switches = 'hn:i:d:b:a:I:O:F:k:R:v:r:m:'
-    long_switches = ['help','exc','inh']
+    long_switches = ['help','exc','inh','step=']
     try:
         opts,args = getopt.getopt(sys.argv[1:],switches,long_switches)
     except getopt.GetoptError, err:
@@ -53,6 +54,7 @@ def parseArgs():
                'dR': None,
                'exc': False,
                'inh': False,
+               'step': None,
                'pre': 0.1, 'post': 0.1,   # [s]
                'ai': 0, 'ao': 0}
 
@@ -95,6 +97,8 @@ def parseArgs():
             options['exc'] = True
         elif o == '--inh':
             options['inh'] = True
+        elif o == '--step':
+            options['step'] = a
 
     if not options['kernel_frequency']:
         options['kernel_frequency'] = options['reps']
@@ -142,6 +146,14 @@ def parseArgs():
         print('You must specify the rate steps of the background population.')
         sys.exit(1)
 
+    if options['step'] is None:
+        print('You must specify a step type (either "continuous" or "discontinuous".')
+        sys.exit(1)
+
+    if not options['step'] in ('continuous','discontinuous'):
+        print('--step must be either "continuous" or "discontinuous".')
+        sys.exit(1)
+
     return options
 
 def writeConfigurationFile(options):
@@ -172,17 +184,27 @@ def main():
     
     gexc = [[opts['pre'],1,0,0,0,0,0,0,0,0,0,1]]
     ginh = [[opts['pre'],1,0,0,0,0,0,0,0,0,0,1]]
+    if opts['exc']:
+        ginh.append([opts['step_duration']*len(opts['dR']), 2, Gm_inh, Gs_inh, 10, Gm_inh, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+    else:
+        gexc.append([opts['step_duration']*len(opts['dR']), 2, Gm_exc, Gs_exc, 5, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
     for dr in opts['dR']:
         if opts['exc']:
             gm = Gm_exc * (1+dr)
             gs = Gs_exc * np.sqrt(1+dr)
-            gexc.append([opts['step_duration'], 2, gm, gs, 5, Gm_exc, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
-            ginh.append([opts['step_duration'], 2, Gm_inh, Gs_inh, 10, Gm_inh, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+            if opts['step'] == 'continuous':
+                g0 = Gm_exc
+            else:
+                g0 = gm
+            gexc.append([opts['step_duration'], 2, gm, gs, 5, g0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
         else:
             gm = Gm_inh * (1+dr)
             gs = Gs_inh * np.sqrt(1+dr)
-            gexc.append([opts['step_duration'], 2, Gm_exc, Gs_exc, 5, 0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
-            ginh.append([opts['step_duration'], 2, gm, gs, 10, Gm_inh, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
+            if opts['step'] == 'continuous':
+                g0 = Gm_inh
+            else:
+                g0 = gm
+            ginh.append([opts['step_duration'], 2, gm, gs, 10, g0, 0, 0, int(np.random.uniform(high=10000)), 0, 0, 1])
     gexc.append([opts['post'],1,0,0,0,0,0,0,0,0,0,1])
     ginh.append([opts['post'],1,0,0,0,0,0,0,0,0,0,1])
     lcg.writeStimFile(gexc_file, gexc, False)
