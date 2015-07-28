@@ -57,6 +57,7 @@ setup(
             'lcg-create-experiment-folder = lcg.create_folder:main',
             'lcg-experiment-launcher = lcg.exp_launcher:main',
             'lcg-stimulus-external-trigger = lcg.stimulus_triggered:main',
+            'lcg-short = lcg.short:main'
             ]
         }
     )

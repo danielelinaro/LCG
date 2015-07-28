@@ -161,6 +161,24 @@ class AnalogOutput (Entity):
         self.add_parameter('units', units)
         self.add_parameter('resetOutput', resetOutput)
 
+class Short (Entity):
+    def __init__(self, id, connections, deviceFile, inputSubdevice, outputSubdevice,
+                 readChannel, writeChannel, inputConversionFactor, outputConversionFactor,
+                 inputUnits, outputUnits, inputRange, reference, resetOutput):
+        super(Short,self).__init__('Short', id, connections)
+        self.add_parameter('deviceFile', deviceFile)
+        self.add_parameter('inputSubdevice', inputSubdevice)
+        self.add_parameter('outputSubdevice', outputSubdevice)
+        self.add_parameter('readChannel', readChannel)
+        self.add_parameter('writeChannel', writeChannel)
+        self.add_parameter('inputConversionFactor', inputConversionFactor)
+        self.add_parameter('outputConversionFactor', outputConversionFactor)
+        self.add_parameter('inputUnits', inputUnits)
+        self.add_parameter('outputUnits', outputUnits)
+        self.add_parameter('inputRange', inputRange)
+        self.add_parameter('reference', reference)
+        self.add_parameter('resetOutput', resetOutput)
+
 class DigitalInput (Entity):
     def __init__(self, id, connections, deviceFile, inputSubdevice, readChannel,
                  units, eventToSend):
