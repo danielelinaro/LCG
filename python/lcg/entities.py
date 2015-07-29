@@ -307,6 +307,10 @@ class IonicCurrent (Entity):
         self.add_parameter('gbar', gbar)
         self.add_parameter('E', E)
 
+class LeakCurrent (IonicCurrent):
+    def __init__(self, id, connections, area, gbar, E):
+        super(LeakCurrent,self).__init__('LeakCurrent', id, connections, area, gbar, E)
+
 class HHSodium (IonicCurrent):
     def __init__(self, id, connections, area, gbar=0.12, E=50.):
         super(HHSodium,self).__init__('HHSodium', id, connections, area, gbar, E)

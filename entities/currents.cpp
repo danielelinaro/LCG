@@ -2,6 +2,20 @@
 #include "currents.h"
 #include "utils.h"
 
+lcg::Entity* LeakCurrentFactory(string_dict& args)
+{
+        uint id;
+        double area, gbar, E;
+        id = lcg::GetIdFromDictionary(args);
+        if (!lcg::CheckAndExtractDouble(args, "area", &area) ||
+            !lcg::CheckAndExtractDouble(args, "gbar", &gbar) ||
+            !lcg::CheckAndExtractDouble(args, "E", &E)) {
+                lcg::Logger(lcg::Critical, "Unable to build a leak current.\n");
+                return NULL;
+        }
+        return new lcg::ionic_currents::LeakCurrent(area, gbar, E, id);
+}
+
 lcg::Entity* HHSodiumFactory(string_dict& args)
 {
         uint id;
@@ -261,6 +275,25 @@ void IonicCurrent::addPost(Entity *entity)
         }
 }
         
+//~~
+
+LeakCurrent::LeakCurrent(double area, double gbar, double E, uint id)
+        : IonicCurrent(area, gbar, E, id)
+{
+        setName("LeakCurrent");
+        setUnits("pA");
+}
+
+bool LeakCurrent::initialise()
+{
+        IC_FRACTION = 1.0;
+        return true;
+}
+
+void LeakCurrent::evolve()
+{
+}
+
 //~~
 
 HHSodium::HHSodium(double area, double gbar, double E, uint id)

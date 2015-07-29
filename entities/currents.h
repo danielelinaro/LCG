@@ -55,6 +55,14 @@ protected:
         neurons::Neuron *m_neuron;
 };
 
+class LeakCurrent : public IonicCurrent {
+public:
+        LeakCurrent(double area, double gbar, double E, uint id = GetId());
+        virtual bool initialise();
+protected:
+        void evolve();
+};
+
 #define HH_NA_M         m_state[1]
 #define HH_NA_H         m_state[2]
 
@@ -341,6 +349,7 @@ extern "C" {
 #endif
 
 ///// DETERMINISTIC /////
+lcg::Entity* LeakCurrentFactory(string_dict& args);
 lcg::Entity* HHSodiumFactory(string_dict& args);
 lcg::Entity* HHPotassiumFactory(string_dict& args);
 lcg::Entity* HH2SodiumFactory(string_dict& args);
