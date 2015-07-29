@@ -14,22 +14,10 @@ progname = os.path.basename(sys.argv[0])
 
 PSUM2_TO_SCM2 = 1e-4
 
-def write_xml_file(duration,srate,area,gbar_Na=30,gbar_K=50,model_cell=False):
+def write_xml_file(duration, srate, area, gbar_Na, gbar_K, g_leak, with_kernel=True):
     config = lcg.XMLConfigurationFile(srate,duration)
     config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
-    if model_cell:
-        # don't need a kernel file when using a model cell
-        config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-40, V0=-70,
-                                                  deviceFile=os.environ['COMEDI_DEVICE'],
-                                                  inputSubdevice=os.environ['AI_SUBDEVICE'],
-                                                  outputSubdevice=os.environ['AO_SUBDEVICE'],
-                                                  readChannel=os.environ['AI_CHANNEL_CC'],
-                                                  writeChannel=os.environ['AO_CHANNEL_CC'],
-                                                  inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
-                                                  outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
-                                                  inputRange=os.environ['RANGE'],
-                                                  reference=os.environ['GROUND_REFERENCE']))
-    else:
+    if with_kernel:
         config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-40, V0=-70,
                                                   deviceFile=os.environ['COMEDI_DEVICE'],
                                                   inputSubdevice=os.environ['AI_SUBDEVICE'],
@@ -41,12 +29,30 @@ def write_xml_file(duration,srate,area,gbar_Na=30,gbar_K=50,model_cell=False):
                                                   inputRange=os.environ['RANGE'],
                                                   reference=os.environ['GROUND_REFERENCE'],
                                                   kernelFile='kernel.dat'))
+    else:
+        config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-40, V0=-70,
+                                                  deviceFile=os.environ['COMEDI_DEVICE'],
+                                                  inputSubdevice=os.environ['AI_SUBDEVICE'],
+                                                  outputSubdevice=os.environ['AO_SUBDEVICE'],
+                                                  readChannel=os.environ['AI_CHANNEL_CC'],
+                                                  writeChannel=os.environ['AO_CHANNEL_CC'],
+                                                  inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
+                                                  outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
+                                                  inputRange=os.environ['RANGE'],
+                                                  reference=os.environ['GROUND_REFERENCE']))
     config.add_entity(lcg.entities.Waveform(id=2, connections=(0,1), filename=stim_file, units='pA'))
-    config.add_entity(lcg.entities.HH2Sodium(id=3, connections=(0,1), area=area, gbar=gbar_Na*PSUM2_TO_SCM2,
-                                             E=60., vtraub=-53., temperature=33))
-    if model_cell:
-        config.add_entity(lcg.entities.HH2Potassium(id=4, connections=(0,1), area=area, gbar=gbar_K*PSUM2_TO_SCM2,
+    id = 3
+    if g_leak > 0:
+        config.add_entity(lcg.entities.LeakCurrent(id=id, connections=(0,1), area=area, gbar=g_leak*PSUM2_TO_SCM2, E=-70.))
+        id += 1
+    if gbar_Na > 0:
+        config.add_entity(lcg.entities.HH2Sodium(id=id, connections=(0,1), area=area, gbar=gbar_Na*PSUM2_TO_SCM2,
+                                                 E=60., vtraub=-53., temperature=33))
+        id += 1
+    if gbar_K > 0:
+        config.add_entity(lcg.entities.HH2Potassium(id=id, connections=(0,1), area=area, gbar=gbar_K*PSUM2_TO_SCM2,
                                                     E=-90., vtraub=-53., temperature=33))
+        id += 1
     config.write(xml_file)
 
 def write_stim_file(amp,dur=1,before=1,after=1):
@@ -73,14 +79,12 @@ def usage():
     print('    -h,--help    Display this help message and exit.')
     print('    -A,--area    The area of the neuron\'s membrane (in um2).')
     print('    --gbar-na    Maximal conductance of the sodium current (default 30 pS/um2).')
-    print('     --gbar-k    Maximal conductance of the potassium current (default 50 pS/um2,')
-    print('                 used only if the --model-cell option is present).')
+    print('     --gbar-k    Maximal conductance of the potassium current (default 50 pS/um2).')
+    print('     --g-leak    Leak conductance (default 1 pS/um2).')
     print('           -d    Duration of the stimulation (default 0.5 sec).')
     print('           -b    Time before the application of the stimulation (default 0.25 sec).')
     print('           -a    Time after the application of the stimulation (default 0.25 sec).')
-    print(' --model-cell    Indicates that the experiment will be performed with a model')
-    print('                 cell. An additional potassium current will be simulated and the')
-    print('                 area option is not required.')
+    print('  --no-kernel    Do not compute the electrode kernel.')
     print('    --shuffle    Indicates that current amplitudes should be shuffled.')
     print('')
     print('Examples:')
@@ -108,8 +112,8 @@ def usage():
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hb:a:d:A:', ['help','model-cell','shuffle',
-                                                              'area=','gbar-na=','gbar-k='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hb:a:d:A:', ['help','shuffle','no-kernel','area=',
+                                                              'gbar-na=','gbar-k=','g-leak='])
     except getopt.GetoptError, err:
         print('%s: %s. Type \'%s -h\' for help.' % (progname,str(err),progname))
         sys.exit(1)
@@ -120,9 +124,10 @@ def main():
     dur = 0.5           # [s]
     gbar_Na = 30.       # [pS/um2]
     gbar_K = 50.        # [pS/um2]
+    g_leak = 1.         # [pS/um2]
     srate = 15000.      # [Hz]
-    model_cell = False
     shuffle = False
+    with_kernel = True
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -134,34 +139,32 @@ def main():
             gbar_Na = float(a)
         elif o == '--gbar-k':
             gbar_K = float(a)
+        elif o == '--g-leak':
+            g_leak = float(a)
         elif o == '-b':
             before = float(a)
         elif o == '-a':
             after = float(a)
         elif o == '-d':
             dur = float(a)
-        elif o == '--model-cell':
-            model_cell = True
         elif o == '--shuffle':
             shuffle = True
+        elif o == '--no-kernel':
+            with_kernel = False
             
-    if not model_cell:
-        if area is None:
-            print('You must specify the area of the neuron\'s membrane (-A option).')
-            sys.exit(1)
-        elif area <= 0:
-            print('The area of the neuron\'s membrane must be positive.')
-            sys.exit(1)
-    elif area is None:
-        area = 30000.
-        
-    if gbar_Na < 0:
-        print('The maximal sodium conductance must be non-negative (--gbar-na option).')
-        sys.exit(0)
+    if area is None:
+        print('You must specify the area of the neuron\'s membrane (-A option).')
+        sys.exit(1)
 
-    if model_cell and gbar_K < 0:
-        print('The maximal potassium conductance must be non-negative (--gbar-k option).')
-        sys.exit(0)
+    if area <= 0:
+        print('The area of the neuron\'s membrane must be positive.')
+        sys.exit(1)
+
+    for val,lbl,opt in zip([gbar_Na,gbar_K,g_leak],['maximal sodium','maximal potassium','leak'], \
+                               ['--gbar-na','--gbar-k','--g-leak']):
+        if val < 0:
+            print('The %s conductance must be non-negative (%s option).' % (lbl,opt))
+            sys.exit(1)
 
     for val,lbl,opt in zip([before,after,dur],['before','after','of'],['-b','-a','-d']):
         if val < 0:
@@ -184,13 +187,13 @@ def main():
         print('You must specify the amplitude(s) of the injected current as start[,stop,step].')
         sys.exit(1)
 
-    if not model_cell:
+    if with_kernel:
         sub.call('lcg-kernel')
-    write_xml_file(duration=dur+before+after,srate=srate,area=area,gbar_Na=gbar_Na,gbar_K=gbar_K,model_cell=model_cell)
+    write_xml_file(dur+before+after, srate, area, gbar_Na, gbar_K, g_leak, with_kernel)
     for amp in amplitudes:
         write_stim_file(amp, dur, before, after)
         sub.call('lcg-experiment -c ' + xml_file, shell=True)
-        if not model_cell and amp != amplitudes[-1]:
+        if amp != amplitudes[-1]:
             time.sleep(dur*10)
 
 if __name__ == '__main__':
