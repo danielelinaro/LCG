@@ -43,6 +43,7 @@ when using this.
         -n,--number-of-traces-overlap: Number of traces to display and compute the mean
         --CC: Current clamp mode.
         --reset: runs lcg-zero before quitting
+        --reset-channel: reset only the channel that is used for the seal test
         --kernel Computes the kernel for AEC
         --remote-blind-patch clamp (server:port,axes)
         --patch-opts [hunt depth, max depth, step size, hunt step size]
@@ -76,6 +77,7 @@ class Window(QtGui.QDialog):
                     'mode':'VC',
                     'kernel':False,
                     'reset':False,
+                    'resetChannel': False,
                     'remoteManipulator':None,
                     'patchOptions':[300., 1000., 10., 2.]}
         options = defaults.copy()
@@ -96,6 +98,8 @@ class Window(QtGui.QDialog):
                 options['kernel'] = True
             elif o == '--reset':
                 options['reset'] = True
+            elif o == '--reset-channel':
+                options['resetChannel'] = True
             elif o == '--CC':
                 options['ai'] = int(env('AI_CHANNEL_CC'))
                 options['ao'] = int(env('AO_CHANNEL_CC'))
@@ -209,6 +213,8 @@ class Window(QtGui.QDialog):
     def on_exit(self):
         if self.opts['reset']:
             sub.call('lcg-zero')
+        elif self.opts['resetChannel']:
+            sub.call('lcg-output -c %d 0' % self.opts['ao'])
 
     def keyPressEvent(self, event):
         step = 10
