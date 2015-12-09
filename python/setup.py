@@ -35,7 +35,7 @@ setup(
             'lcg-ou = lcg.ou_protocol:main',
             'lcg-pspopt = lcg.psp_opt:main',
             'lcg-pulse = lcg.pulse:main',
-            'lcg-pulses = lcg.pulses:main',
+            'lcg-pulses-pair = lcg.pulses_pair:main',
             'lcg-pulses-with-level = lcg.repetitive_pulses_with_level:main',
             'lcg-ramp = lcg.ramp:main',
             'lcg-rate-steps = lcg.rate_steps:main',
@@ -57,6 +57,7 @@ setup(
             'lcg-create-experiment-folder = lcg.create_folder:main',
             'lcg-experiment-launcher = lcg.exp_launcher:main',
             'lcg-stimulus-external-trigger = lcg.stimulus_triggered:main',
+            'lcg-pulses = lcg.pulses:main',
             ]
         }
     )

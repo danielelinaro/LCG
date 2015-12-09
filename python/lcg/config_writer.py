@@ -98,8 +98,8 @@ class XMLConfigurationFile (object):
             (not trigger['channel'] is None)):
             self._xml_simulation_trigger = etree.SubElement(self._xml_simulation,'trigger')
             self._add_elements(self._xml_simulation_trigger,{'subdevice':trigger['subdevice'],
+                                                             'device':trigger['device'],
                                                              'channel':trigger['channel']})
-                                                          #'device':trigger['device'],
 
         self._entities = []
         self._streams = []
