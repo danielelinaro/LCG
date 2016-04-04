@@ -8,7 +8,7 @@ import numpy as np
 import lcg
 import aec
 
-protocols = ['ap','vi','ramp','tau','steps','fi']
+protocols = ['ap','vi','ramp','tau','steps']
 
 global_opts = {'-I': os.environ['AI_CHANNEL'],
                '-O': os.environ['AO_CHANNEL'],
@@ -26,7 +26,6 @@ def usage():
     print('   3) ramp to extract the rheobase')
     print('   4) time constant')
     print('   5) DC steps of current')
-    print('   6) f-I curve with a PID controller')
     print('')
     print('Usage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('')
@@ -100,8 +99,8 @@ def run_command(directory, module, opts=None, kernel_file=None):
             command += '%s %s ' % (k,v)
     os.chdir(directory)
     if not kernel_file is None:
-        os.symlink(kernel_file, os.path.basename(kernel_file))
-        os.symlink(kernel_file, 'kernel.dat')
+        os.symlink(os.path.relpath(kernel_file), os.path.basename(kernel_file))
+        os.symlink(os.path.relpath(kernel_file), 'kernel.dat')
         command += '--no-kernel'
     while command[-1] == ' ':
         command = command[:-1]
