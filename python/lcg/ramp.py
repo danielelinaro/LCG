@@ -42,7 +42,7 @@ def main():
     sampling_frequency = float(os.environ['SAMPLING_RATE'])   # [Hz]
     ai = int(os.environ['AI_CHANNEL'])
     ao = int(os.environ['AO_CHANNEL'])
-    with_preamble = True
+    with_preamble = False
     with_kernel = True
     before = 0.5                 # [s]
     after = 0.5                  # [s]

@@ -11,24 +11,25 @@ def usage():
     print('This script injects subthreshold currents into a neuron to measure its impedance.')
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('     -h    Display this help message and exit.')
-    print('     -N    Number of cycles (default 50).')
-    print('     -f    Tested frequencies (comma separated values, default 0.1,0.2,0.5,1,2,5,10,20,50,100,200 Hz).')
-    print('     -a    Amplitude of the stimulation (default 50 pA).')
-    print('     -o    Current offset (default 0 pA).')
-    print('     -d    (Minimal) duration of the stimulation (default 2 s).')
-    print('     -D    (Maximal) duration of the stimulation (default 50 s).')
-    print('     -n    Number of repetitions (default 1).')
-    print('     -i    Interval between repetitions (default 1 sec).')
-    print('     -F    Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
-    print('     -I    Input channel (default %s).' % os.environ['AI_CHANNEL_CC'])
-    print('     -O    Output channel (default %s).' % os.environ['AO_CHANNEL_CC'])
-    print('   --rt    Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
+    print('          -h   Display this help message and exit.')
+    print('          -N   Number of cycles (default 50).')
+    print('          -f   Tested frequencies (comma separated values, default 0.1,0.2,0.5,1,2,5,10,20,50,100,200 Hz).')
+    print('          -a   Amplitude of the stimulation (default 50 pA).')
+    print('          -o   Current offset (default 0 pA).')
+    print('          -d   (Minimal) duration of the stimulation (default 2 s).')
+    print('          -D   (Maximal) duration of the stimulation (default 50 s).')
+    print('          -n   Number of repetitions (default 1).')
+    print('          -i   Interval between repetitions (default 1 sec).')
+    print('          -F   Sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
+    print('          -I   Input channel (default %s).' % os.environ['AI_CHANNEL_CC'])
+    print('          -O   Output channel (default %s).' % os.environ['AO_CHANNEL_CC'])
+    print('        --rt   Use real-time system (yes or no, default %s).' % os.environ['LCG_REALTIME'])
+    print(' --no-kernel   Do not compute the kernel.')
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hN:f:a:o:d:D:n:i:I:O:F:', ['help','rt='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hN:f:a:o:d:D:n:i:I:O:F:', ['help','rt=','no-kernel'])
     except getopt.GetoptError, err:
         print(str(err))
         sys.exit(1)
@@ -45,6 +46,7 @@ def main():
     ai = os.environ['AI_CHANNEL_CC']
     ao = os.environ['AO_CHANNEL_CC']
     realtime = os.environ['LCG_REALTIME']
+    with_kernel = True
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -95,8 +97,13 @@ def main():
             ao = a
         elif o == '--rt':
             realtime = a
+        elif o == '--no-kernel':
+            with_kernel = False
 
-    sub.call('lcg kernel', shell=True)
+    np.random.shuffle(frequencies)
+
+    if with_kernel:
+        sub.call('lcg kernel', shell=True)
 
     for i in range(nreps):
         for f in frequencies:

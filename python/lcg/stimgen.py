@@ -293,7 +293,11 @@ def writeStimFile(filename, stimulus, preamble=None, preamble_holding=0.0):
     preamble_dur = 0
     if preamble:
         if type(preamble) != list or len(preamble) != 2:
-            preamble = [-300,-100]
+            try:
+                preamble = map(float,os.environ['PREAMBLE_AMPLITUDES'].split(','))
+            except:
+                # appropriate for most cells
+                preamble = [-200,-50]
         preamble = [[0.5,1,preamble_holding,0,0,0,0,0,0,0,0,1],
                     [0.01,1,preamble[0]+preamble_holding,0,0,0,0,0,0,0,0,1],
                     [0.5,1,preamble_holding,0,0,0,0,0,0,0,0,1],

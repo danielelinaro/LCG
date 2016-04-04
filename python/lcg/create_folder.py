@@ -78,7 +78,7 @@ def createFoldersAndInfoFile(cfg, options,
             try:
                 log[k] = options[k.replace(' ','_')]
             except:
-                print('Confliting options and config file ({0}).'.format(k))
+                print('Conflicting options and config file ({0}).'.format(k))
     foldername = makeIncrementingFolders(
         folderName=options['foldername'],
         folderPattern=options['pattern'],

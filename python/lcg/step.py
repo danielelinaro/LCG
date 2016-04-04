@@ -10,7 +10,7 @@ import lcg
 stimuli_directory = 'stimuli'
 
 def usage():
-    print('This script injects a constant step of current into a cell.')
+    print('This script can be used to generate voltage or current steps.')
     print('')
     print('Usage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('')
@@ -21,11 +21,22 @@ def usage():
     print('              -t   tail duration (0 pA of output after the stimulation, default 1 s)')
     print('              -n   number of repetitions of each amplitude (default 1)')
     print('              -i   interval between repetitions (default 1 s)')
-    print('              -I   input channel (default %s)' % os.environ['AI_CHANNEL'])
-    print('              -O   output channel (default %s)' % os.environ['AO_CHANNEL'])
+    print('              -I   input channel (default %s in current clamp, %s in voltage clamp' % \
+          (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
+    print('              -O   output channel (default %s in current clamp, %s in voltage clamp' % \
+          (os.environ['AO_CHANNEL_CC'],os.environ['AO_CHANNEL_VC']))
     print('              -F   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('              -H   holding current (default 0 pA)')
     print('            --rt   use real-time system (yes or no, default %s)' % os.environ['LCG_REALTIME'])
+    print('    --input-gain   input conversion factor (default %s for current clamp, %s for voltage clamp).' \
+              % (os.environ['AI_CONVERSION_FACTOR_CC'],os.environ['AI_CONVERSION_FACTOR_VC']))
+    print('   --output-gain   output conversion factor (default %s for current clamp, %s for voltage clamp).' \
+              % (os.environ['AO_CONVERSION_FACTOR_CC'],os.environ['AO_CONVERSION_FACTOR_VC']))
+    print('   --input-units   input units (default %s for current clamp, %s for voltage clamp).' \
+              % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
+    print('  --output-units   output units (default %s for current clamp, %s for voltage clamp).' \
+              % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
+    print('        --vclamp   record the cell in voltage clamp mode.')
     print(' --with-preamble   include stability preamble.')
     print('    --no-shuffle   do not shuffle trials.')
     print('     --no-kernel   do not compute the electrode kernel.')
@@ -36,19 +47,19 @@ def main():
     try:
         opts,args = getopt.getopt(sys.argv[1:],
                                   'hd:a:t:n:i:I:O:F:H:',
-                                  ['help','with-preamble','no-preamble',
-                                   'no-shuffle','no-kernel',
-                                   'model','rt='])
+                                  ['help','with-preamble','no-preamble','vclamp'
+                                   'no-shuffle','no-kernel','model','rt=',
+                                   'input-gain=','output-gain=','input-units=','output-units='])
     except getopt.GetoptError, err:
         print(str(err))
         usage()
         sys.exit(1)
 
     suffix = 'CC'
-    ao = int(os.environ['AO_CHANNEL_{0}'.format(suffix)])
-    ai = int(os.environ['AI_CHANNEL_{0}'.format(suffix)])
+    ao = None
+    ai = None
     samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
-    holding = 0    # [pA]
+    holding = 0
     with_preamble = False
     shuffle = True
     kernel = True
@@ -59,6 +70,7 @@ def main():
     stim_ampl = []     # [pA]
     realtime = os.environ['LCG_REALTIME']
     model = ''
+    
     for o,a in opts:
         if o in ['-h','--help']:
             usage()
@@ -82,6 +94,8 @@ def main():
             samplf = float(a)
         elif o == '-H':
             holding = float(a)
+        elif o == '--vclamp':
+            suffix = 'VC'
         elif o == '--with-preamble':
             with_preamble = True
         elif o == '--no-shuffle':
@@ -95,6 +109,14 @@ def main():
         elif o == '--rt':
             realtime = a
 
+    if suffix == 'VC':
+        with_preamble = False
+        
+    if ai is None:
+        ai = int(os.environ['AI_CHANNEL_{0}'.format(suffix)])
+    if ao is None:
+        ao = int(os.environ['AO_CHANNEL_{0}'.format(suffix)])
+        
     if duration is None:
         print('You must specify the duration of the stimulation (-d switch)')
         sys.exit(1)
