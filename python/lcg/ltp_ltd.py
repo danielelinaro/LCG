@@ -49,8 +49,7 @@ def writeConfigFile(options):
                                                 outputConversionFactor=1., aref=os.environ['GROUND_REFERENCE'], units='V',
                                                 resetOutput=True))
     config.add_entity(lcg.entities.Waveform(id=3, connections=(0,2), filename=extracellular_stim_file, units='V'))
-    if options['pairing']:
-        config.add_entity(lcg.entities.Waveform(id=4, connections=(0,1), filename=intracellular_stim_file, units='pA'))
+    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,1), filename=intracellular_stim_file, units='pA'))
     config.write(config_file)
 
 def run_batch(repetitions, interval, stim_dur, stim_amp, intra_no_pulses, intra_interval, hyperpolarizing_pulse, pre, post,
