@@ -7,8 +7,8 @@ import subprocess as sub
 import numpy as np
 import lcg
 
-extracellular_stim_file = 'extra.stim'
 intracellular_stim_file = 'intra.stim'
+extracellular_stim_file = 'extra.stim'
 config_file = 'ltp_ltd.xml'
 
 def usage():
@@ -17,7 +17,7 @@ def usage():
     print('     -h    display this help message and exit.')
     print('     -t    period of the stimulation (in s).')
     print('     -n    number of repetitions.')
-    print('     -k    period, in minutes, at which a new kernel should be computed (default 10).')
+    print('     -k    period, in minutes, at which a new kernel should be computed (default 10 min).')
     print('     -H    hyperpolarizing pulse amplitude (default -50 pA).')
     print('     -s    duration of the extracellular stimulation (default 0.1 ms).')
     print('     -I    input channel (default %s).' % os.environ['AI_CHANNEL_CC'])
@@ -33,31 +33,14 @@ def usage():
     print('     -T    period of the intracellular pulses (default 10 ms).')
     print('')
 
-def writeConfigFile(options):
-    config = lcg.XMLConfigurationFile(options['sampling_rate'],options['tend'])
-    config.add_entity(lcg.entities.H5Recorder(id=0, connections=(), compress=True))
-    config.add_entity(lcg.entities.RealNeuron(id=1, connections=(0), spikeThreshold=-20, V0=-65, deviceFile=os.environ['COMEDI_DEVICE'],
-                                              inputSubdevice=os.environ['AI_SUBDEVICE'],
-                                              outputSubdevice=os.environ['AO_SUBDEVICE'],
-                                              readChannel=options['ai'], writeChannel=options['ao_intra'],
-                                              inputConversionFactor=os.environ['AI_CONVERSION_FACTOR_CC'],
-                                              outputConversionFactor=os.environ['AO_CONVERSION_FACTOR_CC'],
-                                              inputRange=os.environ['RANGE'], reference=os.environ['GROUND_REFERENCE'],
-                                              kernelFile='kernel.dat'))
-    config.add_entity(lcg.entities.AnalogOutput(id=2, connections=(), deviceFile=os.environ['COMEDI_DEVICE'],
-                                                outputSubdevice=os.environ['AO_SUBDEVICE'], writeChannel=options['ao_extra'],
-                                                outputConversionFactor=1., aref=os.environ['GROUND_REFERENCE'], units='V',
-                                                resetOutput=True))
-    config.add_entity(lcg.entities.Waveform(id=3, connections=(0,2), filename=extracellular_stim_file, units='V'))
-    config.add_entity(lcg.entities.Waveform(id=4, connections=(0,1), filename=intracellular_stim_file, units='pA'))
-    config.write(config_file)
-
 def run_batch(repetitions, interval, stim_dur, stim_amp, intra_no_pulses, intra_interval, hyperpolarizing_pulse, pre, post,
               ai, ao, pairing=False, offset=None):
-    options = {'sampling_rate': os.environ['SAMPLING_RATE'], 'tend': pre+post, 'ai': ai, \
-               'ao_intra': ao['intra'], 'ao_extra': ao['extra'], 'pairing':pairing}
-
-    writeConfigFile(options)
+    channels = [
+        {'type':'input', 'channel':ai},
+        {'type':'output', 'channel':ao['intra'], 'units':'pA', 'stimfile':intracellular_stim_file},
+        {'type':'output', 'channel':ao['extra'], 'factor':1, 'units':'V', 'stimfile':extracellular_stim_file},
+        ]
+    lcg.writeIOConfigurationFile(config_file,os.environ['SAMPLING_RATE'],pre+post,channels)
 
     extra_stim = [[pre,1,0,0,0,0,0,0,0,0,0,1],
                   [stim_dur['extra'],1,stim_amp['extra'],0,0,0,0,0,0,0,0,1],
@@ -94,21 +77,21 @@ def main():
         usage()
         sys.exit(1)
 
-    repetitions = None    # [1]
-    pre = 0.5             # [s]
-    post = 1              # [s]
-    interval = None       # [s]
-    ai = int(os.environ['AI_CHANNEL'])
-    ao = {'intra': 0, 'extra': 2}
-    stim_dur = {'extra': 0.1, 'intra': 1}  # [ms]
+    repetitions = None     # [1]
+    pre = 0.5              # [s]
+    post = 1               # [s]
+    interval = None        # [s]
+    ai = os.environ['AI_CHANNEL_CC']
+    ao = {'intra': os.environ['AO_CHANNEL_CC'], 'extra': '2'}
+    stim_dur = {'extra': 0.1e-3, 'intra': 1e-3}  # [s]
     stim_amp = {'extra': 5,    # [V] TTL pulse
                 'intra': None} # [pA]
-    offset = None         # [ms]
-    intra_no_pulses = 2
-    intra_interval = 10e-3
+    offset = None          # [s]
+    intra_no_pulses = 2    # [1]
+    intra_interval = 10e-3 # [s]
 
     pairing = False
-    kernel_period = 10    # [minutes]
+    kernel_period = 10     # [minutes]
 
     hyperpolarizing_pulse = {'dur': 0.3,  # [s]
                              'amp': -50} # [pA]
@@ -126,15 +109,15 @@ def main():
             for rep in a.split(','):
                 repetitions.append(int(rep))
         elif o == '-s':
-            stim_dur['extra'] = float(a)
+            stim_dur['extra'] = float(a)*1e-3
         elif o == '-H':
             hyperpolarizing_pulse['amp'] = float(a)
         elif o == '-D':
-            offset = float(a)
+            offset = float(a)*1e-3
         elif o == '-a':
             stim_amp['intra'] = float(a)
         elif o == '-d':
-            stim_dur['intra'] = float(a)
+            stim_dur['intra'] = float(a)*1e-3
         elif o == '--pairing':
             pairing = True
         elif o == '-I':
@@ -142,7 +125,7 @@ def main():
         elif o == '-N':
             intra_no_pulses = int(a)
         elif o == '-T':
-            intra_interval = float(a)
+            intra_interval = float(a)*1e-3
         elif o == '-O':
             channels = a.split(',')
             ao['intra'] = channels[0]
@@ -173,10 +156,8 @@ def main():
         print('You must specify the period of the stimulation (-T switch).')
         sys.exit(1)
 
-    stim_dur['extra'] = stim_dur['extra']*1e-3        # [s]
-    if pairing:
-        stim_dur['intra'] = stim_dur['intra']*1e-3    # [s]
-        offset = offset * 1e-3                        # [s]
+    with open('stimulation_period','w') as fid:
+        fid.write('%f' % interval)
 
     if len(repetitions) == 1:
         run_batch(repetitions[0], interval, stim_dur, stim_amp, intra_no_pulses, intra_interval, \
