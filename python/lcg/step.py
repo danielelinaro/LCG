@@ -16,9 +16,10 @@ def usage():
     print('')
     print('where options are:')
     print('')
-    print('              -a   stimulation amplitudes in the form start,[stop,step] (in pA).')
+    print('              -a   stimulation amplitudes in the form start,[stop,step] (in pA or mV).')
     print('              -d   stimulation duration (in seconds).')
-    print('              -t   tail duration (0 pA of output after the stimulation, default 1 s)')
+    print('              -t   tail duration (duration of the output after the stimulation, ' + \
+          'default 1 s in current clamp, 0.1 s in voltage clamp)')
     print('              -n   number of repetitions of each amplitude (default 1)')
     print('              -i   interval between repetitions (default 1 s)')
     print('              -I   input channel (default %s in current clamp, %s in voltage clamp' % \
@@ -26,7 +27,7 @@ def usage():
     print('              -O   output channel (default %s in current clamp, %s in voltage clamp' % \
           (os.environ['AO_CHANNEL_CC'],os.environ['AO_CHANNEL_VC']))
     print('              -F   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
-    print('              -H   holding current (default 0 pA)')
+    print('              -H   holding current or voltage (default 0 pA in current clamp or -70 mV in voltage clamp)')
     print('            --rt   use real-time system (yes or no, default %s)' % os.environ['LCG_REALTIME'])
     print('    --input-gain   input conversion factor (default %s for current clamp, %s for voltage clamp).' \
               % (os.environ['AI_CONVERSION_FACTOR_CC'],os.environ['AI_CONVERSION_FACTOR_VC']))
@@ -38,8 +39,8 @@ def usage():
               % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
     print('        --vclamp   record the cell in voltage clamp mode.')
     print(' --with-preamble   include stability preamble.')
-    print('    --no-shuffle   do not shuffle trials.')
-    print('     --no-kernel   do not compute the electrode kernel.')
+    print('    --no-shuffle   do not shuffle trials (defalut yes in voltage clamp mode).')
+    print('     --no-kernel   do not compute the electrode kernel (default yes in voltage clamp mode).')
     print('         --model   use a leaky integrate-and-fire model.')
     print('')
 
@@ -47,7 +48,7 @@ def main():
     try:
         opts,args = getopt.getopt(sys.argv[1:],
                                   'hd:a:t:n:i:I:O:F:H:',
-                                  ['help','with-preamble','no-preamble','vclamp'
+                                  ['help','with-preamble','vclamp',
                                    'no-shuffle','no-kernel','model','rt=',
                                    'input-gain=','output-gain=','input-units=','output-units='])
     except getopt.GetoptError, err:
@@ -59,14 +60,14 @@ def main():
     ao = None
     ai = None
     samplf = float(os.environ['SAMPLING_RATE'])    # [Hz]
-    holding = 0
-    with_preamble = False
-    shuffle = True
-    kernel = True
+    holding = None
+    with_preamble = None
+    shuffle = None
+    kernel = None
     nreps = 1
     duration = None    # [s]
     interval = 1       # [s]
-    tail = 1           # [s]
+    tail = None        # [s]
     stim_ampl = []     # [pA]
     realtime = os.environ['LCG_REALTIME']
     model = ''
@@ -109,8 +110,29 @@ def main():
         elif o == '--rt':
             realtime = a
 
-    if suffix == 'VC':
-        with_preamble = False
+    # default values
+    if suffix == 'CC':
+        if holding is None:
+            holding = 0
+        if with_preamble is None:
+            with_preamble = False
+        if shuffle is None:
+            shuffle = True
+        if kernel is None:
+            kernel = True
+        if tail is None:
+            tail = 1
+    else:
+        if holding is None:
+            holding = -70
+        if with_preamble is None:
+            with_preamble = False
+        if shuffle is None:
+            shuffle = False
+        if kernel is None:
+            kernel = False
+        if tail is None:
+            tail = 0.1
         
     if ai is None:
         ai = int(os.environ['AI_CHANNEL_{0}'.format(suffix)])
@@ -147,9 +169,17 @@ def main():
                 sys.exit(1)
 
     if with_preamble:
-        stimulus = [[duration,1,holding,0,0,0,0,0,0,0,0,1],
-                    [tail,1,holding,0,0,0,0,0,0,0,0,1]]
-        row = 0
+        if suffix == 'CC':
+            stimulus = [[duration,1,holding,0,0,0,0,0,0,0,0,1],
+                        [tail,1,holding,0,0,0,0,0,0,0,0,1]]
+            row = 0
+        else:
+            stimulus = [[0.02,1,holding,0,0,0,0,0,0,0,0,1],
+                        [duration,1,holding-10,0,0,0,0,0,0,0,0,1],
+                        [duration,1,holding,0,0,0,0,0,0,0,0,1],
+                        [tail,1,holding,0,0,0,0,0,0,0,0,1]]
+            row = 2
+            with_preamble = False
     else:
         stimulus = [[tail,1,holding,0,0,0,0,0,0,0,0,1],
                     [duration,1,holding,0,0,0,0,0,0,0,0,1],
@@ -157,19 +187,22 @@ def main():
         row = 1
 
     for i,amp in enumerate(amplitudes):
-        stimulus[row][2] = amp + holding
+        if suffix == 'CC':
+            stimulus[row][2] = amp + holding
+        else:
+            stimulus[row][2] = amp
         lcg.writeStimFile('%s/step_%02d.stim' % (stimuli_directory,i+1), stimulus, 
                           with_preamble, preamble_holding=holding)
 
     if kernel:
         sub.call('lcg kernel -I %d -O %d -F %g -H %g --rt %s' % (ai,ao,samplf,holding,realtime), shell=True)
-    
-    sub.call('lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s' % 
-             (stimuli_directory,
-              interval,ai,ao,
-              nreps,samplf,
-              realtime,
-              model), shell=True)
+
+    command = 'lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s' % \
+              (stimuli_directory,interval,ai,ao,nreps,samplf,realtime,model)
+    if suffix == 'VC':
+        command += ' --voltage-clamp'
+
+    sub.call(command, shell=True)
 
 if __name__ == '__main__':
     main()

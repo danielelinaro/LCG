@@ -166,12 +166,13 @@ externalProcessLabel = None
 runStatus = 'Idle'
 printToStdOut = lambda x:sys.stdout.write(x);sys.stdout.flush()
 experimentFolder = None
+protocolsWithOptionalKernel = ['steps','tau','vi','ap','ramp','impedance','zap','rin']
 
 class RunButton(QtGui.QPushButton):
     def __init__(self, command='', par=[], 
                  name = '',folder = '', 
-                 holdTerminal = None, useLastFolder = None, 
-                 *args, **kwargs):
+                 holdTerminal = None, useLastFolder = None,
+                 withKernel = None, *args, **kwargs):
         super(RunButton,self).__init__(*args, **kwargs)
         self.command = command
         self.par = par
@@ -180,6 +181,7 @@ class RunButton(QtGui.QPushButton):
         self.alternateText = False
         self.holdTerminal = holdTerminal
         self.useLastFolder = useLastFolder
+        self.withKernel = withKernel
         self.lastFolder = None
         QtCore.QObject.connect(self.timer,
                                QtCore.SIGNAL('timeout()'),
@@ -237,6 +239,14 @@ class RunButton(QtGui.QPushButton):
         options = []
         if not self.holdTerminal is None and self.holdTerminal.isChecked():
             options.append('-hold -im')
+        if not self.withKernel is None:
+            # we have a 'with kernel' button
+            if not self.withKernel.isChecked() and not '--no-kernel' in self.command:
+                # add the --no-kernel option
+                self.command += ' --no-kernel'
+            elif self.withKernel.isChecked() and '--no-kernel' in self.command:
+                # remove the --no-kernel option
+                self.command = ''.join(self.command.split(' --no-kernel'))
         if len(par):
             command = '{0} {1} -e "{2}'.format(self.app,
                                                 ' '.join(options),
@@ -322,7 +332,7 @@ class LCG_COMMANDER(QtGui.QDialog):
                          screen.height()*0.05,
                          screen.width()*0.7,
                          screen.height()*0.7)
-        self.setWindowTitle('LGC Experiment Manager')
+        self.setWindowTitle('LCG Experiment Manager')
         self.show(),printToStdOut(' Done.\n\n')
 
     def initExperiment(self):
@@ -478,13 +488,21 @@ class LCG_COMMANDER(QtGui.QDialog):
             self.protParameterWidgets.append(par)
             checkHoldTerminal = QtGui.QCheckBox('Hold term')
             checkUseLastFolder = QtGui.QCheckBox('Use last folder')
+            if prot['command'].split()[0].split('-')[1] in protocolsWithOptionalKernel and \
+               not '--vclamp' in prot['command']:
+                checkWithKernel = QtGui.QCheckBox('With kernel')
+                checkWithKernel.setChecked(True)
+                self.protBox[ii].addRow(checkWithKernel)
+            else:
+                checkWithKernel = None
             self.protBox[ii].addRow(checkUseLastFolder)
+            self.protBox[ii].addRow(checkHoldTerminal)
             button = RunButton(prot['command'],par,
                                prot['name'],prot['foldername'],
-                               checkHoldTerminal,checkUseLastFolder)
+                               checkHoldTerminal,checkUseLastFolder,checkWithKernel)
             button.clicked.connect(button.runCommand)
             button.setText('Run Protocol')
-            self.protBox[ii].addRow(button,checkHoldTerminal)
+            self.protBox[ii].addRow(button)
             groups[ii].setLayout(self.protBox[ii])
         groups.append(QtGui.QGroupBox('Output Command'))
         groups[-1].setLayout(self.outputCommander())
