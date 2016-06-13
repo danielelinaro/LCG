@@ -9,8 +9,8 @@ import subprocess as sub
 def usage():
     print('\nUsage: %s [option <value>]' % os.path.basename(sys.argv[0]))
     print('\nwhere options are:\n')
-    print('            -a    stimulation amplitudes (default -300,50,50 pA).')
-    print('            -d    stimulation duration (default 3 s).')
+    print('            -a    stimulation amplitudes (default -200,100,50 pA).')
+    print('            -d    stimulation duration (default 1 s).')
     print('            -I    input channel (default %s).' % os.environ['AI_CHANNEL'])
     print('            -O    output channel (default %s).' % os.environ['AO_CHANNEL'])
     print('            -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
@@ -45,8 +45,8 @@ def main():
                 add_duration = False
             cmd = cmd + ' ' + o + ' ' + a
 
-    if add_amplitudes: cmd += ' -a -300,50,50'
-    if add_duration: cmd += ' -d 3'
+    if add_amplitudes: cmd += ' -a -200,100,50'
+    if add_duration: cmd += ' -d 1'
     if with_preamble: cmd += ' --with-preamble'
 
     sub.call(cmd, shell=True)
