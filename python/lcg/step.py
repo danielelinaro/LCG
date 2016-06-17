@@ -124,7 +124,10 @@ def main():
             tail = 1
     else:
         if holding is None:
-            holding = -70
+            try:
+                holding = float(os.environ['VC_HOLDING_POTENTIAL'])
+            except:
+                holding = -70
         if with_preamble is None:
             with_preamble = False
         if shuffle is None:

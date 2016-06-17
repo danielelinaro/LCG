@@ -8,7 +8,8 @@ import numpy as np
 import lcg
 import aec
 
-protocols = ['ap','vi','ramp','tau','steps']
+#protocols = ['ap','vi','ramp','tau','steps','fi']
+protocols = ['ap','vi','ramp','tau']
 
 global_opts = {'-I': os.environ['AI_CHANNEL'],
                '-O': os.environ['AO_CHANNEL'],
