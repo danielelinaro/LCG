@@ -16,32 +16,32 @@ def usage():
     print('')
     print('where options are:')
     print('')
-    print('              -a   stimulation amplitudes in the form start,[stop,step] (in pA or mV).')
-    print('              -d   stimulation duration (in seconds).')
+    print('              -a   stimulation amplitudes in the form start,[stop,step]')
+    print('              -d   stimulation duration (in seconds)')
     print('              -t   tail duration (duration of the output after the stimulation, ' + \
           'default 1 s in current clamp, 0.1 s in voltage clamp)')
     print('              -n   number of repetitions of each amplitude (default 1)')
     print('              -i   interval between repetitions (default 1 s)')
-    print('              -I   input channel (default %s in current clamp, %s in voltage clamp' % \
+    print('              -I   input channel (default %s in current clamp, %s in voltage clamp)' % \
           (os.environ['AI_CHANNEL_CC'],os.environ['AI_CHANNEL_VC']))
-    print('              -O   output channel (default %s in current clamp, %s in voltage clamp' % \
+    print('              -O   output channel (default %s in current clamp, %s in voltage clamp)' % \
           (os.environ['AO_CHANNEL_CC'],os.environ['AO_CHANNEL_VC']))
     print('              -F   sampling frequency (default %s Hz)' % os.environ['SAMPLING_RATE'])
     print('              -H   holding current or voltage (default 0 pA in current clamp or -70 mV in voltage clamp)')
     print('            --rt   use real-time system (yes or no, default %s)' % os.environ['LCG_REALTIME'])
-    print('    --input-gain   input conversion factor (default %s for current clamp, %s for voltage clamp).' \
+    print('    --input-gain   input conversion factor (default %s for current clamp, %s for voltage clamp)' \
               % (os.environ['AI_CONVERSION_FACTOR_CC'],os.environ['AI_CONVERSION_FACTOR_VC']))
     print('   --output-gain   output conversion factor (default %s for current clamp, %s for voltage clamp).' \
               % (os.environ['AO_CONVERSION_FACTOR_CC'],os.environ['AO_CONVERSION_FACTOR_VC']))
-    print('   --input-units   input units (default %s for current clamp, %s for voltage clamp).' \
+    print('   --input-units   input units (default %s for current clamp, %s for voltage clamp)' \
               % (os.environ['AI_UNITS_CC'],os.environ['AI_UNITS_VC']))
-    print('  --output-units   output units (default %s for current clamp, %s for voltage clamp).' \
+    print('  --output-units   output units (default %s for current clamp, %s for voltage clamp)' \
               % (os.environ['AO_UNITS_CC'],os.environ['AO_UNITS_VC']))
-    print('        --vclamp   record the cell in voltage clamp mode.')
-    print(' --with-preamble   include stability preamble.')
-    print('    --no-shuffle   do not shuffle trials (defalut yes in voltage clamp mode).')
-    print('     --no-kernel   do not compute the electrode kernel (default yes in voltage clamp mode).')
-    print('         --model   use a leaky integrate-and-fire model.')
+    print('        --vclamp   record the cell in voltage clamp mode')
+    print(' --with-preamble   include stability preamble')
+    print('    --no-shuffle   do not shuffle trials (default yes in voltage clamp mode)')
+    print('     --no-kernel   do not compute the electrode kernel (default yes in voltage clamp mode)')
+    print('         --model   use a leaky integrate-and-fire model')
     print('')
 
 def main():
@@ -71,7 +71,11 @@ def main():
     stim_ampl = []     # [pA]
     realtime = os.environ['LCG_REALTIME']
     model = ''
-    
+    input_gain = None
+    output_gain = None
+    input_units = None
+    output_units = None
+
     for o,a in opts:
         if o in ['-h','--help']:
             usage()
@@ -109,6 +113,14 @@ def main():
             kernel = False
         elif o == '--rt':
             realtime = a
+        elif o == '--input-gain':
+            input_gain = float(a)
+        elif o == '--output-gain':
+            output_gain = float(a)
+        elif o == '--input-units':
+            input_units = a
+        elif o == '--output-units':
+            output_units = a
 
     # default values
     if suffix == 'CC':
@@ -122,7 +134,15 @@ def main():
             kernel = True
         if tail is None:
             tail = 1
-    else:
+        if input_gain is None:
+            input_gain = float(os.environ['AI_CONVERSION_FACTOR_CC'])
+        if output_gain is None:
+            output_gain = float(os.environ['AO_CONVERSION_FACTOR_CC'])
+        if input_units is None:
+            input_units = 'mV'
+        if output_units is None:
+            output_units = 'pA'
+    elif suffix == 'VC':
         if holding is None:
             try:
                 holding = float(os.environ['VC_HOLDING_POTENTIAL'])
@@ -136,6 +156,14 @@ def main():
             kernel = False
         if tail is None:
             tail = 0.1
+        if input_gain is None:
+            input_gain = float(os.environ['AI_CONVERSION_FACTOR_VC'])
+        if output_gain is None:
+            output_gain = float(os.environ['AO_CONVERSION_FACTOR_VC'])
+        if input_units is None:
+            input_units = 'pA'
+        if output_units is None:
+            output_units = 'mV'
         
     if ai is None:
         ai = int(os.environ['AI_CHANNEL_{0}'.format(suffix)])
@@ -153,7 +181,7 @@ def main():
         print('The amplitudes must be in the form start[,stop,step].')
         sys.exit(1)
 
-    amplitudes = np.arange(stim_ampl[0],stim_ampl[1]+1,stim_ampl[2])
+    amplitudes = np.arange(stim_ampl[0],stim_ampl[1]+stim_ampl[2]/2,stim_ampl[2])
     if shuffle:
         np.random.shuffle(amplitudes)
 
@@ -200,8 +228,8 @@ def main():
     if kernel:
         sub.call('lcg kernel -I %d -O %d -F %g -H %g --rt %s' % (ai,ao,samplf,holding,realtime), shell=True)
 
-    command = 'lcg stimulus -d %s -i %g -I %d -O %d -n %d -F %g --rt %s %s' % \
-              (stimuli_directory,interval,ai,ao,nreps,samplf,realtime,model)
+    command = 'lcg stimulus -d %s -i %g -I %d -g %f -u %s -O %d -G %f -U %s -n %d -F %g --rt %s %s' % \
+              (stimuli_directory,interval,ai,input_gain,input_units,ao,output_gain,output_units,nreps,samplf,realtime,model)
     if suffix == 'VC':
         command += ' --voltage-clamp'
 
