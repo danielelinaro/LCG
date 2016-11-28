@@ -58,6 +58,7 @@ setup(
             'lcg-experiment-launcher = lcg.exp_launcher:main',
             'lcg-stimulus-external-trigger = lcg.stimulus_triggered:main',
             'lcg-pulses = lcg.pulses:main',
+            'lcg-ampa-nmda = lcg.ampa_nmda:main',
             ]
         }
     )
