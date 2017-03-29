@@ -22,17 +22,18 @@ def usage():
     print('             -I    input channel (default %s).' % os.environ['AI_CHANNEL_VC'])
     print('             -F    sampling frequency (default %s Hz).' % os.environ['SAMPLING_RATE'])
     print('             -d    stimulation duration (default 0.5 s).')
-    print('             -n    number of repetitions of the stimulation (default 20).')
+    print('             -n    number of repetitions of the stimulation (default 50).')
     print('             -i    interval between repetitions (default 2 s).')
     print('             -b    time before the beginning of the stimulation (default 0.2 s).')
     print('             -a    time after the end of the stimulation (default 0.5 s).')
+    print('         --full    use Vhold = -80:10:40 instead of just Vhold = [-70,40].')
     print('   --input-gain    input conversion factor (default %s).' % os.environ['AI_CONVERSION_FACTOR_VC'])
     print('  --output-gain    output conversion factor (default %s)' % os.environ['AO_CONVERSION_FACTOR_VC'])
     print('')
 
 def main():
     try:
-        opts,args = getopt.getopt(sys.argv[1:], 'hH:n:F:d:i:b:a:D:I:O:',['help','input-gain=','output-gain='])
+        opts,args = getopt.getopt(sys.argv[1:], 'hH:n:F:d:i:b:a:D:I:O:',['help','input-gain=','output-gain=','full'])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -44,13 +45,14 @@ def main():
     pre = 0.2
     post = 0.5
     stimulusDelay = 0.1
-    nTrials = 20
+    nTrials = 50
     interTrialInterval = 2.
+    full = False
     samplingRate = float(os.environ['SAMPLING_RATE'])  # [Hz]
     analogOutputs = [int(os.environ['AO_CHANNEL_VC']),2]
     analogInput = int(os.environ['AI_CHANNEL_VC'])
     inputGain = float(os.environ['AI_CONVERSION_FACTOR_VC'])
-    outputGain = float(os.environ['AI_CONVERSION_FACTOR_VC'])
+    outputGain = float(os.environ['AO_CONVERSION_FACTOR_VC'])
 
     for o,a in opts:
         if o in ('-h','--help'):
@@ -72,6 +74,8 @@ def main():
             stimulusDelay = float(a)
         elif o == '-H':
             V0 = float(a)
+        elif o == '--full':
+            full = True
         elif o == '-I':
             analogInput = int(a)
         elif o == '-O':
@@ -91,7 +95,11 @@ def main():
 
     sub.call('lcg-stimgen -o pulse.stim dc -d %g 0 dc -d %g 5 dc -d %g 0' % \
                  (pre+stimulusDelay,pulseDuration,dur-pulseDuration-stimulusDelay+post), shell=True)
-    Vhold = [-70,40]
+
+    if full:
+        Vhold = [-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40]
+    else:
+        Vhold = [-70,40]
     n = len(Vhold)
 
     for i,V in enumerate(Vhold):
